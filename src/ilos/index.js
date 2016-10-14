@@ -11,5 +11,6 @@ import Logger from './Logger'
 
 export default obj.assign({
   LinkedList,
-  Configuration
+  Configuration,
+  Logger
 }, common, is, coll, obj, string, cls)

@@ -18,7 +18,7 @@ module.exports = function(config) {
         plugins: [multiEntry()].concat(rollup.plugins)
       },
       bundle: {
-        sourceMap: 'inline',
+        sourceMap: false,
         useStrict: false,
         format: 'iife',
         moduleId: pkg.namespace,

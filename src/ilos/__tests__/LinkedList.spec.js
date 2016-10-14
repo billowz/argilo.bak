@@ -1,4 +1,8 @@
 import LinkedList from '../LinkedList'
+import {
+  filter,
+  each
+} from '../collection'
 
 describe("LinkedList", () => {
 
@@ -115,8 +119,8 @@ describe("LinkedList", () => {
     expect(list.last().val).equal(10)
     expect(list.map(v => v.val)).eql(arr)
 
-    arr = arr.filter(v => !(v % 2))
-    list.filter(v => v.val % 2).forEach(v => list.remove(v))
+    arr = filter(arr, v => !(v % 2))
+    each(list.filter(v => v.val % 2), v => list.remove(v))
 
     expect(list.size()).equal(5)
     expect(list.first().val).equal(2)

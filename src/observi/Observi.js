@@ -1,62 +1,158 @@
-import _ from 'ilos'
-import proxy from './proxy'
-import configuration from './configuration'
-import logger from './log'
 import {
   createWatcher
-} from './watcher'
+} from './watcherFactory'
+import notify from './notify'
+import proxy from './proxy'
+import _ from 'ilos'
+import configuration from './configuration'
+import logger from './log'
 
-configuration.register({
-  lazy: true,
-  bindObservi: '__observi__',
-  bindComplexObservi: '__complex_observi__'
-})
+
+configuration.register('bindWatcher', '__observi_watcher__', 'init')
+configuration.register('lazy', true, 'init')
+
+const hasOwn = Object.prototype.hasOwnProperty,
+  cfg = configuration.get()
+
+function getOrCreateWatcher(obj) {
+  if (hasOwn.call(obj, cfg.bindWatcher))
+    return obj[cfg.bindWatcher]
+  return (obj[cfg.bindWatcher] = createWatcher(obj))
+}
 
 export default _.dynamicClass({
-  constructor(obj) {
-    this.listens = {}
-    this.changeRecords = {}
-    this.notify = this.notify.bind(this)
-    this.watchCnt = 0
-    this.watcher = createWatcher(obj)
+  constructor(obj, expr, path) {
+    this.obj = obj
+    this.expr = expr
+    this.path = path
+    this.watchers = Array(path.length)
+    this.callbacks = this.createCallbacks()
+    this.watch(obj, 0)
+    this.watcher = this.watchers[0]
+    this.handlers = new _.LinkedList()
   },
-
-  addListen(attr, handler) {
-    let handlers = this.listens[attr],
-      ret
-
-    if (!handlers)
-      this.listens[attr] = handlers = new LinkedList()
-
-    if ((ret = handlers.push(handler) == 1) && handlers.size() == 1) {
-      this.watch(attr)
-      this.watchCnt++
-    }
-    return ret
+  on(handler) {
+    return this.handlers.push(handler)
   },
-
-  removeListen(attr, handler) {
-    let handlers = this.listens[attr],
-      ret
-
-    if (handlers && (ret = handlers.remove(handler) == 1) && handlers.empty()) {
-      this.unwatch(attr)
-      this.watchCnt--
+  un(handler) {
+    if (!arguments.length) {
+      var size = this.landlers.size()
+      this.handlers.clean()
+      return size
+    } else {
+      return this.handlers.remove(handler)
     }
-    return ret
   },
-
-  hasListen(attr, handler) {
-    switch (arguments.length) {
-      case 0:
-        return !!this.watchCnt
-      case 1:
-        return _.isFunc(attr) ? !_.each(this.listens, (handlers) => {
-          return !handlers.contains(attr)
-        }) : !!this.listens[attr]
-      default:
-        let handlers = this.listens[attr]
-        return !!handlers && handlers.contains(handler)
+  isListened(handler) {
+    return _.isNil(handler) ? !this.handlers.empty() : this.handlers.contains(handler)
+  },
+  fire(val, oldVal, eq) {
+    var expr = this.expr,
+      _proxy = this.watcher.proxy
+    this.handlers.each(cb => cb(expr, val, oldVal, _proxy, eq))
+  },
+  notify() {
+    if (this.dirty) {
+      this.fire(this.newVal, this.oldVal, this.eq)
+      this.dirty = false
     }
+  },
+  update(val, oldVal, eq) {
+    if (cfg.lazy) {
+      this.newVal = val
+      if (this.dirty) {
+        if ((eq = proxy.eq(val, this.oldVal)) && _.isPrimitive(val)) {
+          this.dirty = false
+          return
+        }
+        this.eq = eq
+      } else {
+        this.oldVal = oldVal
+        this.eq = eq
+        this.dirty = true
+        notify(this)
+      }
+    } else {
+      this.fire(val, oldVal, eq)
+    }
+  },
+  createCallbacks() {
+    return _.map(this.path, function(prop, i) {
+      return this.createCallback(i)
+    }, this)
+  },
+  createCallback(idx) {
+    let path = this.path,
+      nextIdx = idx + 1,
+      rpath = (path.length - nextIdx) && path.slice(nextIdx)
+
+    return (attr, val, oldVal, watcher, eq) => {
+      if (rpath) {
+        if (eq) return
+
+        // unwatch & get old value
+        if (oldVal) {
+          oldVal = proxy.obj(oldVal)
+          this.unwatch(oldVal, nextIdx)
+          oldVal = _.get(oldVal, rpath)
+        } else {
+          oldVal = undefined
+        }
+        // watch & get new value
+        if (val) {
+          if (proxy.isEnable()) { // reset value on up-level object
+            val = proxy.obj(val)
+            var watcher = this.watch(val, nextIdx),
+              i = 0,
+              obj = this.obj
+            while (i < idx) { // find up-level object
+              obj = proxy.obj(obj[path[i++]])
+              if (!obj) return
+            }
+            obj[path[idx]] = watcher.proxy
+          } else {
+            this.watch(val, nextIdx)
+          }
+          val = _.get(val, rpath)
+        } else {
+          val = undefined
+        }
+        if ((eq = proxy.eq(val, oldVal)) && _.isPrimitive(val))
+          return
+      }
+      this.update(val, oldVal, eq)
+    }
+  },
+  watch(obj, idx) {
+    let path = this.path,
+      attr = path[idx],
+      watcher = this.watchers[idx] || (this.watchers[idx] = getOrCreateWatcher(obj)),
+      val
+
+    watcher.setter(attr, this.callbacks[idx])
+
+    if (++idx < path.length && (val = obj[attr])) {
+      if (proxy.isEnable()) {
+        obj[attr] = this.watch(proxy.obj(val), idx).proxy
+      } else {
+        this.watch(val, idx)
+      }
+    }
+    return watcher
+  },
+  unwatch(obj, idx) {
+    let watcher = this.watchers[idx]
+    if (watcher) {
+      var path = this.path,
+        attr = path[idx],
+        val
+
+      watcher.unsetter(attr, this.callbacks[idx])
+      this.watchers[idx] = undefined
+
+      if (++idx < path.length && (val = obj[attr]))
+        this.unwatch(proxy.obj(val), idx)
+    }
+    return watcher
   }
 })

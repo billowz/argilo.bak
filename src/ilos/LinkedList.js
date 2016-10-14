@@ -13,7 +13,7 @@ let IDGenerator = 1
 
 export default dynamicClass({
   statics: {
-    ListKey: LIST_KEY
+    LIST_KEY: LIST_KEY
   },
   constructor() {
     this._id = IDGenerator++;

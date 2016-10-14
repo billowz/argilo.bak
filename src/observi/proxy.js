@@ -1,13 +1,11 @@
 import _ from 'ilos'
 import configuration from './configuration'
 
-const toStr = Object.prototype.toString,
-  hasOwn = Object.prototype.hasOwnProperty,
-  LISTEN_CONFIG = 'bindProxy'
 
-configuration.register(LISTEN_CONFIG, '__observi_proxy__')
+configuration.register('bindProxy', '__observi_proxy__', 'init')
 
-const cfg = configuration.get()
+const hasOwn = Object.prototype.hasOwnProperty,
+  cfg = configuration.get()
 
 const defaultPolicy = {
     eq(o1, o2) {
@@ -22,8 +20,8 @@ const defaultPolicy = {
   },
   apply = {
     change(obj, p) {
-      let handlers = _.getOwnProp(obj, cfg[LISTEN_CONFIG])
-
+      let key = cfg.bindProxy,
+        handlers = hasOwn.call(obj, key) ? obj[key] : undefined
       if (handlers)
         handlers.each(handler => handler(obj, p))
     },
@@ -31,29 +29,30 @@ const defaultPolicy = {
       if (!_.isFunc(handler))
         throw TypeError(`Invalid Proxy Event Handler[${handler}`)
 
-      let key = cfg[LISTEN_CONFIG],
-        handlers = _.getOwnProp(obj, key)
-      if (!handlers)
-        obj[key] = handlers = new _.LinkedList()
-      handlers.push(handler)
+      obj = proxy.obj(obj)
+      let key = cfg.bindProxy,
+        handlers = hasOwn.call(obj, key) ? obj[key] : (obj[key] = new _.LinkedList())
+      return handlers.push(handler) == 1
     },
     un(obj, handler) {
-      let handlers = _.getOwnProp(obj, cfg[LISTEN_CONFIG])
+      obj = proxy.obj(obj)
+      let key = cfg.bindProxy,
+        handlers = hasOwn.call(obj, key) ? obj[key] : undefined
 
       if (handlers && _.isFunc(handler))
-        handlers.remove(handler)
+        return handlers.remove(handler) == 1
       return false
     },
     clean(obj) {
-      if (obj[proxy.listenKey])
-        obj[proxy.listenKey] = undefined
+      let key = cfg.bindProxy
+      obj = proxy.obj(obj)
+      if (hasOwn.call(obj, key))
+        obj[key] = undefined
     }
   }
-
 export default function proxy(o) {
   return proxy.proxy(o)
 }
-
 let hasEnabled = false
 _.assign(proxy, {
   isEnable() {
@@ -62,11 +61,10 @@ _.assign(proxy, {
   enable(policy) {
     applyPolicy(policy)
     if (!hasEnabled) {
-      _.overridePolicy('hasOwn', function(obj, prop) {
+      _.policy('hasOwn', function(obj, prop) {
         return hasOwn.call(proxy.obj(obj), prop)
       })
-
-      _.overridePolicy('eq', proxy.eq)
+      _.policy('eq', proxy.eq)
       hasEnabled = true
     }
   },
@@ -74,7 +72,6 @@ _.assign(proxy, {
     applyPolicy(defaultPolicy)
   }
 })
-
 
 function applyPolicy(policy) {
   let _apply = policy !== defaultPolicy ? function(fn, name) {
@@ -87,5 +84,4 @@ function applyPolicy(policy) {
     proxy[name] = fn
   })
 }
-
 proxy.disable()
