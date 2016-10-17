@@ -7,81 +7,78 @@ configuration.register('bindProxy', '__observi_proxy__', 'init')
 const hasOwn = Object.prototype.hasOwnProperty,
   cfg = configuration.get()
 
-const defaultPolicy = {
-    eq(o1, o2) {
-      return o1 === o2
-    },
-    obj(o) {
-      return o
-    },
-    proxy(o) {
-      return o
-    }
+let enabled = undefined
+
+const core = {
+  eq(o1, o2) {
+    return o1 === o2
   },
-  apply = {
-    change(obj, p) {
-      let key = cfg.bindProxy,
-        handlers = hasOwn.call(obj, key) ? obj[key] : undefined
-      if (handlers)
-        handlers.each(handler => handler(obj, p))
-    },
-    on(obj, handler) {
-      if (!_.isFunc(handler))
-        throw TypeError(`Invalid Proxy Event Handler[${handler}`)
+  obj(o) {
+    return o
+  },
+  proxy(o) {
+    return o
+  },
+  change(obj, p) {
+    let key = cfg.bindProxy,
+      handlers = hasOwn.call(obj, key) ? obj[key] : undefined
+    if (handlers)
+      handlers.each(handler => handler(obj, p))
+  },
+  on(obj, handler, checkFirst) {
+    if (!_.isFunc(handler))
+      throw TypeError(`Invalid Proxy Event Handler[${handler}`)
 
-      obj = proxy.obj(obj)
-      let key = cfg.bindProxy,
-        handlers = hasOwn.call(obj, key) ? obj[key] : (obj[key] = new _.LinkedList())
-      return handlers.push(handler) == 1
-    },
-    un(obj, handler) {
-      obj = proxy.obj(obj)
-      let key = cfg.bindProxy,
-        handlers = hasOwn.call(obj, key) ? obj[key] : undefined
+    let realObj = proxy.obj(obj),
+      key = cfg.bindProxy,
+      handlers = hasOwn.call(realObj, key) ? realObj[key] : (realObj[key] = new _.LinkedList())
 
-      if (handlers && _.isFunc(handler))
-        return handlers.remove(handler) == 1
-      return false
-    },
-    clean(obj) {
-      let key = cfg.bindProxy
-      obj = proxy.obj(obj)
-      if (hasOwn.call(obj, key))
-        obj[key] = undefined
+    if (handlers.push(handler) == 1) {
+      var p
+      if (obj === realObj && (p = proxy.proxy(obj)) !== obj)
+        handler(obj, p)
+      return true
     }
-  }
-export default function proxy(o) {
-  return proxy.proxy(o)
-}
-let hasEnabled = false
-_.assign(proxy, {
+    return false
+  },
+  un(obj, handler) {
+    obj = proxy.obj(obj)
+    let key = cfg.bindProxy,
+      handlers = hasOwn.call(obj, key) ? obj[key] : undefined
+
+    if (handlers && _.isFunc(handler))
+      return handlers.remove(handler) == 1
+    return false
+  },
+  clean(obj) {
+    let key = cfg.bindProxy
+    obj = proxy.obj(obj)
+    if (hasOwn.call(obj, key))
+      obj[key] = undefined
+  },
   isEnable() {
-    return proxy.on !== _.emptyFunc
+    return enabled
   },
   enable(policy) {
-    applyPolicy(policy)
-    if (!hasEnabled) {
+    if (enabled === undefined) {
+      proxy.eq = policy.eq
+      proxy.obj = policy.obj
+      proxy.proxy = policy.proxy
       _.policy('hasOwn', function(obj, prop) {
         return hasOwn.call(proxy.obj(obj), prop)
       })
       _.policy('eq', proxy.eq)
-      hasEnabled = true
+      enabled = true
     }
   },
   disable() {
-    applyPolicy(defaultPolicy)
+    if (enabled === undefined) {
+      enabled = false
+      proxy.change = proxy.on = proxy.un = proxy.clean = _.emptyFunc
+    }
   }
-})
-
-function applyPolicy(policy) {
-  let _apply = policy !== defaultPolicy ? function(fn, name) {
-    proxy[name] = fn
-  } : function(fn, name) {
-    proxy[name] = _.emptyFunc
-  }
-  _.each(apply, _apply)
-  _.each(policy, (fn, name) => {
-    proxy[name] = fn
-  })
 }
-proxy.disable()
+export default function proxy(o) {
+  return proxy.proxy(o)
+}
+_.assign(proxy, core)

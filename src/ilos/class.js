@@ -28,7 +28,7 @@ export function isExtendOf(cls, parent) {
 export function Base() {
 
 }
-
+const emptyArray = []
 assign(Base.prototype, {
   super(args) {
     let method = arguments.callee.caller

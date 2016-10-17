@@ -2,7 +2,8 @@ import {
   hasOwnProp
 } from './common'
 import {
-  isFunc
+  isFunc,
+  isString
 } from './is'
 import {
   each,
@@ -49,31 +50,38 @@ export default dynamicClass({
     return i >= ci
   },
   config(name, val) {
-    if (arguments.length == 1) {
-      each(name, (val, name) => {
-        this.config(name, val)
-      })
-    } else if (hasOwnProp(this.cfg, name)) {
-      var {
-        statusIdx,
-        validator
-      } = this.cfgStatus[name]
+    if (!arguments.length) {
+      return create(this.cfg)
+    } else if (arguments.length == 1) {
+      if (isString(name)) {
+        return this.cfg[name]
+      } else if (isObject(name)) {
+        each(name, (val, name) => {
+          this.config(name, val)
+        })
+      }
+    } else if (isString(name)) {
+      if (hasOwnProp(this.cfg, name)) {
+        var {
+          statusIdx,
+          validator
+        } = this.cfgStatus[name]
 
-      if (statusIdx != -1 && !this.checkStatus(status, currentStatus, statusIdx, currentStatusIdx)) {
-        logger.warn('configuration[{}]: must use in status[{}]', name, status)
-        return this
+        if (statusIdx != -1 && !this.checkStatus(status, currentStatus, statusIdx, currentStatusIdx)) {
+          logger.warn('configuration[{}]: must use in status[{}]', name, status)
+          return
+        }
+        if (isFunc(validator) && validator(name, val, this) !== true) {
+          logger.warn('configuration[{}]: invalid value[{}]', name, val)
+          return
+        }
+        var oldVal = this.cfg[name]
+        this.cfg[name] = val
+        each(this.listens[name], cb => {
+          cb(name, val, oldVal, this)
+        })
       }
-      if (isFunc(validator) && validator(name, val, this) !== true) {
-        logger.warn('configuration[{}]: invalid value[{}]', name, val)
-        return this
-      }
-      var oldVal = this.cfg[name]
-      this.cfg[name] = val
-      each(this.listens[name], cb => {
-        cb(name, val, oldVal, this)
-      })
     }
-    return this
   },
   get(name) {
     return arguments.length ? this.cfg[name] : create(this.cfg)

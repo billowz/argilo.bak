@@ -23,5 +23,7 @@ describe("Configuration", () => {
     expect(cfg.test1).equal(2)
     expect(cfg.test2).equal(2)
     expect(cfg.test3).equal(undefined)
+    cfg.test0 = 1
+    expect(config.get('test0')).equal(undefined)
   })
 })

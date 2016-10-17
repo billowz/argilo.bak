@@ -60,11 +60,6 @@ const logLevels = ['debug', 'info', 'warn', 'error'],
   })
 
 let console = window.console
-if (console && !console.debug)
-  console.debug = function() {
-    Function.apply.call(console.log, console, arguments)
-  }
-
 const Logger = dynamicClass({
   statics: {
     enableSimulationConsole() {
@@ -76,7 +71,7 @@ const Logger = dynamicClass({
   },
   constructor(_module, level) {
     this.module = _module
-    this.level = indexOf(logLevels, level || 'info')
+    this.setLevel(level)
   },
   setLevel(level) {
     this.level = indexOf(logLevels, level || 'info')
@@ -85,37 +80,52 @@ const Logger = dynamicClass({
     return logLevels[this.level]
   },
   _print(level, args, trace) {
-    Function.apply.call(console[level], console, args)
-    if (trace && console.trace) console.trace()
+    try {
+      Function.apply.call(console[level] || console.log, console, args)
+      if (trace && console.trace) console.trace()
+    } catch (e) {}
   },
   _log(level, args, trace) {
     if (level < this.level || !console) return
-    let msg = '[%s] %s -' + (isString(args[0]) ? ' ' + args.shift() : ''),
-      errors = []
-    args = filter(args, arg => {
-      if (arg instanceof Error) {
-        errors.push(arg)
-        return false
-      }
-      return true
-    })
-    each(errors, err => {
-      args.push.call(args, err.message, '\n', err.stack)
-    })
-    level = logLevels[level]
-    this._print(level, [msg, level, this.module].concat(args), trace)
+    args = this._parseArgs(level, args)
+    this._print(level, args, trace)
+  },
+  _parseArgs(level, args) {
+    let i = 0,
+      l = args.length,
+      msg = `[${logLevels[level]}] ${this.module} - `,
+      _args = []
+
+    if (isString(args[0])) {
+      msg += args[0]
+      i++
+    }
+    _args.push(msg)
+    for (; i < l; i++) {
+      this.parseArg(_args, args[i])
+    }
+    return _args
+  },
+  parseArg(args, arg) {
+    if (arg === undefined) {
+      args.push('undefined')
+    } else if (arg instanceof Error) {
+      args.push(arg.message, '\n', arg.stack)
+    } else {
+      args.push(arg)
+    }
   },
   debug() {
-    this._log(0, slice.call(arguments, 0))
+    this._log(0, arguments)
   },
   info() {
-    this._log(1, slice.call(arguments, 0))
+    this._log(1, arguments)
   },
   warn() {
-    this._log(2, slice.call(arguments, 0))
+    this._log(2, arguments)
   },
   error() {
-    this._log(3, slice.call(arguments, 0))
+    this._log(3, arguments)
   }
 })
 

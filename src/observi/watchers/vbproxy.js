@@ -9,23 +9,11 @@ import _ from 'ilos'
 registerWatcher('VBScriptProxy', 40, function(config) {
   return VBClassFactory.isSupport()
 }, function(config) {
-  let factory
-  proxy.enable({
-    obj(obj) {
-      return obj && factory.obj(obj)
-    },
-    eq(o1, o2) {
-      return o1 === o2 || proxy.obj(o1) === proxy.obj(o2)
-    },
-    proxy(obj) {
-      return obj && (factory.proxy(obj) || obj)
-    }
-  })
-  factory = new VBClassFactory([
+  let factory = new VBClassFactory([
     config.bindWatcher, config.bindObservi, config.bindProxy, _.LinkedList.LIST_KEY
   ].concat(config.defaultProps || []), proxy.change)
 
-  return _.dynamicClass({
+  let cls = _.dynamicClass({
     extend: ArrayWatcher,
     watch(attr) {
       if (this.super([attr])) return
@@ -40,4 +28,16 @@ registerWatcher('VBScriptProxy', 40, function(config) {
       })
     }
   })
+  proxy.enable({
+    obj(obj) {
+      return obj && factory.obj(obj)
+    },
+    eq(o1, o2) {
+      return o1 === o2 || proxy.obj(o1) === proxy.obj(o2)
+    },
+    proxy(obj) {
+      return obj && (factory.proxy(obj) || obj)
+    }
+  })
+  return cls
 })

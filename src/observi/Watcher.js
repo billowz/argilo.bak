@@ -13,16 +13,8 @@ export default _.dynamicClass({
   constructor(obj) {
     this.obj = obj
     this.proxy = obj // proxy object eg: ES6 Proxy, VBScript
-    this.getters = {} // getter callback queue
     this.setters = {} // setter callback queue
     this.watched = {} // watched cache
-  },
-  get(attr, val) {
-    if (interceptGetter) {
-      var queue = this.getters[attr]
-      if (queue)
-        queue.each(cb => cb(attr, val))
-    }
   },
   set(attr, val, oldVal) {
     queue = this.setters[attr]
@@ -33,14 +25,8 @@ export default _.dynamicClass({
       }
     }
   },
-  getter(attr, cb) {
-    return this.accessor(this.getters, attr, cb)
-  },
   setter(attr, cb) {
     return this.accessor(this.setters, attr, cb)
-  },
-  ungetter(attr, cb) {
-    return this.unaccessor(this.getters, attr, cb)
   },
   unsetter(attr, cb) {
     return this.unaccessor(this.setters, attr, cb)

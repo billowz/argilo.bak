@@ -1,8 +1,13 @@
-const FuncProto = Function.prototype,
-  slice = Array.prototype.slice
+const slice = Array.prototype.slice
 
-if (!FuncProto.bind) {
-  FuncProto.bind = function bind(scope) {
+if (!Object.freeze) {
+  Object.freeze = function freeze(obj) {
+    return obj
+  }
+}
+
+if (!Function.prototype.bind) {
+  Function.prototype.bind = function bind(scope) {
     let fn = this
     if (arguments.length > 1) {
       var args = slice.call(arguments, 1)
@@ -13,11 +18,5 @@ if (!FuncProto.bind) {
     return function() {
       return fn.apply(scope, arguments)
     }
-  }
-}
-
-if (!Object.freeze) {
-  Object.freeze = function freeze(obj) {
-    return obj
   }
 }

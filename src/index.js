@@ -1,14 +1,36 @@
+import Template from './template'
+import expression from './expression'
+import translate from './translate'
+import {
+  Directive
+} from './binding'
+import directives from './directives'
+import * as util from './util'
+import dom from './dom'
+import configuration from './configuration'
+import logger from './log'
 import _ from 'ilos'
 import observi from 'observi'
 
-const argilo = {
-  observe: observi.on,
-  unobserve: observi.un
+const core = _.assign({}, {
+  Template,
+  translate,
+  expression,
+  Directive,
+  directives,
+  logger,
+  config() {
+    observi.config.apply(observi, arguments)
+    return configuration.config.apply(configuration, arguments)
+  }
+}, dom, util)
+
+function argilo(templ, cfg) {
+  return new Template(templ, cfg)
 }
-
-
-export default _.assignIf(_.create(argilo), {
-  argilo: argilo,
-  observi: observi,
+_.assignIf(argilo, {
+  argilo,
+  observi,
   ilos: _
-}, observi.observi, _)
+}, core, _, observi.observi)
+export default argilo

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta name="description" content="dbmon vue" />
+    <link href="./lib/bootstrap.min.css" rel="stylesheet" type="text/css" />
+    <link href="./styles.css" rel="stylesheet" type="text/css" />
+    <title>dbmon (tpl.js)</title>
+</head>
+
+<body>
+    <div id="app"></div>
+</body>
+<script src="../lib/ENV.js"></script>
+<script src="../lib/monitor.js"></script>
+<script src="../dist/argilo.js"></script>
+<script>
+var app = {
+    databases: []
+}
+argilo.proxy.on(app, function(obj, proxy) {
+    app = proxy || obj;
+})
+argilo.ready(function() {
+    argilo(argilo.html(document.getElementById('tpl/tpl.html')))
+        .complie(app).appendTo('#app');
+
+    function loadSamples() {
+        app.databases = ENV.generateData().toArray();
+        Monitoring.renderRate.ping();
+        setTimeout(loadSamples, 0);
+    }
+    loadSamples()
+})
+</script>
+<script id="tpl/tpl.html" type="text/template">
+    <a href="../index.html">Back</a>
+    <table class="table table-striped lastest-data">
+        <tbody>
+            <tr ag-each="db in databases track by dbname">
+                <td class="dbname">{db.dbname}</td>
+                <td class="query-count">
+                    {db.lastSample.countClassName}
+                </td>
+                <td class="query-count">
+                    <span ag-class="db.lastSample.countClassName">{db.lastSample.nbQueries}</span>
+                </td>
+                <td ag-each="q,idx in db.lastSample.topFiveQueries " class="Query" ag-class="q.elapsedClassName">
+                    {q.formatElapsed}
+                    <div class="popover left">
+                        <div class="popover-content">{q.query}</div>
+                        <div class="arrow"></div>
+                    </div>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</script>
+
+</html>

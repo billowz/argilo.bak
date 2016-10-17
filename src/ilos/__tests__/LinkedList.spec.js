@@ -65,7 +65,6 @@ describe("LinkedList", () => {
     }
 
 
-    console.log(list.toArray())
     expect(list.size()).equal(10)
     expect(list.first().val).equal(1)
     expect(list.last().val).equal(10)
@@ -79,7 +78,6 @@ describe("LinkedList", () => {
       })
       arr3.push(i + 101, arr2[i].val)
     }
-    console.log(list.toArray())
     expect(list.size()).equal(20)
     expect(list.first().val).equal(101)
     expect(list.last().val).equal(10)

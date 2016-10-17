@@ -25,18 +25,22 @@ function initWatcher() {
   if (!watchers) return
   configuration.nextStatus()
   _.each(watchers, watcher => {
-    let validator = watcher.validator,
-      builder = watcher.builder
+    let {
+      validator,
+      builder,
+      name,
+      priority
+    } = watcher
 
     if (!_.isFunc(validator) || validator(cfg)) {
       try {
         watcher = builder(cfg)
         if (_.isFunc(watcher) && _.isExtendOf(watcher, Watcher)) {
           currentWatcher = watcher
-          logger.info('apply observi Watcher[%s], priority = %d', watcher.name, watcher.priority)
+          logger.info('apply observi Watcher[%s], priority = %d', name, priority)
           return false
         } else {
-          logger.error('invalid observi Watcher[%s], priority = %d', watcher.name, watcher.priority)
+          logger.error('invalid observi Watcher[%s], priority = %d', name, priority)
         }
       } catch (e) {
         logger.error('apply observi Watcher[%s] failed', e)

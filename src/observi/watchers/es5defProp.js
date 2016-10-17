@@ -2,6 +2,7 @@ import ArrayWatcher from './ArrayWatcher'
 import {
   registerWatcher
 } from '../watcherFactory'
+import proxy from '../proxy'
 import _ from 'ilos'
 
 registerWatcher('ES5DefineProperty', 20, function(config) {
@@ -22,7 +23,7 @@ registerWatcher('ES5DefineProperty', 20, function(config) {
   }
   return false
 }, function(config) {
-  return _.dynamicClass({
+  let cls = _.dynamicClass({
     extend: ArrayWatcher,
     watch(attr) {
       if (this.super([attr])) return
@@ -32,7 +33,6 @@ registerWatcher('ES5DefineProperty', 20, function(config) {
         enumerable: true,
         configurable: true,
         get: () => {
-          this.get(attr, value)
           return value
         },
         set: (val) => {
@@ -43,4 +43,6 @@ registerWatcher('ES5DefineProperty', 20, function(config) {
       })
     }
   })
+  proxy.disable()
+  return cls
 })

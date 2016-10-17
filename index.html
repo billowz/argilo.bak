@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>tpl.js</title>
+</head>
+
+<body>
+    <h3>Examples</h3>
+    <ul>
+        <li><a href="example/base.html">Base</a></li>
+        <li><a href="example/todomvc/index.html">TODO MVC</a></li>
+        <li><a href="example/performance.html">DBMON</a></li>
+        <li><a href="example/each.html">Each</a></li>
+    </ul>
+</body>
+<script src="dist/argilo.js"></script>
+<script>
+argilo.ready(function() {
+    var data = {
+        time: null
+    }
+    argilo.proxy.on(data, function(obj, proxy) {
+        data = proxy || obj;
+    });
+    argilo('<h3> Current Time: <span style="color:red">{time}</span></h3>')
+        .complie(data).appendTo(document.body)
+
+    function updateTime() {
+        data.time = new Date().toLocaleString();
+        setTimeout(updateTime, 1000);
+    }
+    updateTime();
+});
+</script>
+
+</html>

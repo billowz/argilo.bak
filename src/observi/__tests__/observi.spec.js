@@ -30,7 +30,6 @@ function test(name, obj, path, steps, done) {
     } else {
       setTimeout(update, 0)
     }
-
   }
   obj = observi.on(obj, path, handler)
 

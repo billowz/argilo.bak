@@ -19,7 +19,6 @@ describe("collection", () => {
       rs[idx] = val
     })
     expect(rs).to.eql(obj)
-
   })
 
   it('map', () => {

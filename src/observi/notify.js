@@ -16,6 +16,6 @@ export default function notify(observi) {
   queue.push(observi)
   if (!waiting) {
     waiting = true
-    setTimeout(flushQueue, 0)
+    _.nextTick(flushQueue)
   }
 }

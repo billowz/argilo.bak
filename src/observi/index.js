@@ -41,10 +41,12 @@ function getObservi(obj, expr) {
 const observi = {
   Watcher,
   registerWatcher,
-  configuration,
   logger,
   proxy,
-  on(obj, expr, cb) {
+  config() {
+    return configuration.config.apply(configuration, arguments)
+  },
+  observe(obj, expr, cb) {
     if (!_.isFunc(cb))
       throw new Error('Invalid Observi Callback')
     let observi = getOrCreateObservi(proxy.obj(obj), expr)
@@ -52,7 +54,7 @@ const observi = {
     return observi.watcher.proxy
   },
 
-  un(obj, expr, cb) {
+  unobserve(obj, expr, cb) {
     if (!_.isFunc(cb))
       throw new Error('Invalid Observi Callback')
     let observi = getObservi(proxy.obj(obj), expr)
@@ -63,7 +65,7 @@ const observi = {
     return obj
   },
 
-  isListened(obj, expr, cb) {
+  isObserved(obj, expr, cb) {
     let observi = getObservi(proxy.obj(obj), expr)
     return observi && observi.isListened(cb)
   },

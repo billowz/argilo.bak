@@ -111,7 +111,7 @@ function _format(str, args) {
     } else {
       width = +width
     }
-    return isFinite(width) ? width < 0 ? 0 : width : 0
+    return isFinite(width) ? width < 0 ? undefined : width : undefined
   }
 
   // for index
@@ -123,14 +123,14 @@ function _format(str, args) {
     return args[i.slice(0, -1) - 1]
   }
 
-  str = str.replace(formatReg, function(match, i, flags, minWidth, precision, type) {
+  str = str.replace(formatReg, function(match, idx, flags, minWidth, precision, type) {
     if (type === '%') return '%'
 
-    let value = parseArg(i)
+    let value = parseArg(idx)
     minWidth = parseWidth(minWidth)
     precision = precision && parseWidth(precision.slice(1))
     if (!precision && precision !== 0)
-      precision = 'fFeE'.indexOf(type) == -1 ? (type == 'd') ? 0 : void(0) : 6
+      precision = 'fFeE'.indexOf(type) == -1 && (type == 'd') ? 0 : undefined
 
     let leftJustify = false,
       positivePrefix = '',
@@ -138,29 +138,30 @@ function _format(str, args) {
       prefixBaseX = false,
       thousandSeparation = false,
       prefix,
-      base
+      base,
+      c, i, j
 
-    if (flags)
-      each(flags, function(c) {
-        switch (c) {
-          case ' ':
-          case '+':
-            positivePrefix = c
-            break
-          case '-':
-            leftJustify = true
-            break
-          case '0':
-            zeroPad = true
-            break
-          case '#':
-            prefixBaseX = true
-            break
-          case ',':
-            thousandSeparation = true
-            break
-        }
-      })
+    for (i = 0, j = flags && flags.length; i < j; i++) {
+      c = flags.charAt(i)
+      switch (c) {
+        case ' ':
+        case '+':
+          positivePrefix = c
+          break
+        case '-':
+          leftJustify = true
+          break
+        case '0':
+          zeroPad = true
+          break
+        case '#':
+          prefixBaseX = true
+          break
+        case ',':
+          thousandSeparation = true
+          break
+      }
+    }
     switch (type) {
       case 'c':
         return String.fromCharCode(+value)
@@ -171,7 +172,7 @@ function _format(str, args) {
         if (precision && value.length > precision)
           value = value.slice(0, precision)
         if (value.length < minWidth)
-          value = pad(value, minWidth, zeroPad ? '0' : ' ', false)
+          value = pad(value, minWidth, zeroPad ? '0' : ' ', leftJustify)
         return value
       case 'd':
         value = parseInt(value)
@@ -209,19 +210,27 @@ function _format(str, args) {
             prefix = positivePrefix
           }
 
-          let method,
-            ltype = type.toLowerCase()
-
-          if ('p' != ltype) {
-            method = ['toExponential', 'toFixed', 'toPrecision']['efg'.indexOf(ltype)]
-          } else {
-            let sf = String(value).replace(/[eE].*|[^\d]/g, '')
-            sf = (number ? sf.replace(/^0+/, '') : sf).length
-            if (precision)
-              precision = Math.min(precision, sf)
-            method = (!precision || precision <= sf) ? 'toPrecision' : 'toExponential'
+          switch (type.toLowerCase()) {
+            case 'f':
+              number = precision === undefined ? number + '' : number.toFixed(precision)
+              break
+            case 'e':
+              number = number.toExponential(precision)
+              break
+            case 'g':
+              number = precision === undefined ? number + '' : number.toPrecision(precision)
+              break
+            case 'p':
+              if (precision !== undefined) {
+                let sf = String(value).replace(/[eE].*|[^\d]/g, '')
+                sf = (number ? sf.replace(/^0+/, '') : sf).length
+                precision = Math.min(precision, sf)
+                number = number[(!precision || precision <= sf) ? 'toPrecision' : 'toExponential'](precision)
+              } else {
+                number += ''
+              }
+              break
           }
-          number = number[method](precision)
 
           if (number.length < minWidth)
             number = pad(number, minWidth, '0', false)

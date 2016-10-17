@@ -20,22 +20,7 @@ registerWatcher('ES6Proxy', 10, function(config) {
     bindES6Proxy
   } = config
 
-  proxy.enable({
-    obj(obj) {
-      if (obj && hasOwn.call(obj, bindES6ProxySource))
-        return obj[bindES6ProxySource]
-      return obj
-    },
-    eq(o1, o2) {
-      return o1 === o2 || proxy.obj(o1) === proxy.obj(o2)
-    },
-    proxy(obj) {
-      if (obj && hasOwn.call(obj, bindES6Proxy))
-        return obj[bindES6Proxy] || obj
-      return obj
-    }
-  })
-  return _.dynamicClass({
+  let cls = _.dynamicClass({
     extend: Watcher,
     constructor() {
       this.super(arguments)
@@ -55,11 +40,6 @@ registerWatcher('ES6Proxy', 10, function(config) {
     },
     createProxy() {
       return new Proxy(this.obj, {
-        get: (obj, attr) => {
-          let val = obj[attr]
-          this.get(attr, val)
-          return val
-        },
         set: (obj, attr, value) => {
           let oldVal = obj[attr]
           obj[attr] = value
@@ -69,4 +49,20 @@ registerWatcher('ES6Proxy', 10, function(config) {
       })
     }
   })
+  proxy.enable({
+    obj(obj) {
+      if (obj && hasOwn.call(obj, bindES6ProxySource))
+        return obj[bindES6ProxySource]
+      return obj
+    },
+    eq(o1, o2) {
+      return o1 === o2 || proxy.obj(o1) === proxy.obj(o2)
+    },
+    proxy(obj) {
+      if (obj && hasOwn.call(obj, bindES6Proxy))
+        return obj[bindES6Proxy] || obj
+      return obj
+    }
+  })
+  return cls
 })
