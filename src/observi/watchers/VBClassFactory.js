@@ -27,22 +27,14 @@ const VBClassFactory = _.dynamicClass({
       return supported
     }
   },
-  constBind: '__vb_constructor__',
-  descBind: '__vb_description__',
   classNameGenerator: 0,
-  constructor(defProps, onProxyChange) {
+  constructor(defProps, constBind, descBind, onProxyChange) {
     this.classPool = {}
     this.defPropMap = {}
+    this.constBind = constBind
+    this.descBind = descBind
     this.onProxyChange = onProxyChange
     this.addDefProps(defProps)
-    this.initConstScript()
-  },
-  setConstBind(constBind) {
-    this.constBind = constBind
-    this.initConstScript()
-  },
-  setDescBind(descBind) {
-    this.descBind = descBind
     this.initConstScript()
   },
   addDefProps(defProps) {

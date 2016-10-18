@@ -3,7 +3,8 @@ import {
 } from './common'
 import {
   isFunc,
-  isString
+  isString,
+  isObject
 } from './is'
 import {
   each,
@@ -15,11 +16,13 @@ import {
 import {
   dynamicClass
 } from './class'
+import AbstractConfiguration from './AbstractConfiguration'
 import Logger from './Logger'
 
 const logger = Logger.logger
 
 export default dynamicClass({
+  extend: AbstractConfiguration,
   constructor(def, statusList, defaultStatus, checkStatus) {
     this.cfg = def || {}
     this.cfgStatus = {}
@@ -49,42 +52,42 @@ export default dynamicClass({
   checkStatus(s, cs, i, ci) {
     return i >= ci
   },
+  hasConfig(name) {
+    return hasOwnProp(this.cfg, name)
+  },
   config(name, val) {
-    if (!arguments.length) {
-      return create(this.cfg)
-    } else if (arguments.length == 1) {
-      if (isString(name)) {
-        return this.cfg[name]
-      } else if (isObject(name)) {
-        each(name, (val, name) => {
-          this.config(name, val)
-        })
-      }
-    } else if (isString(name)) {
-      if (hasOwnProp(this.cfg, name)) {
-        var {
-          statusIdx,
-          validator
-        } = this.cfgStatus[name]
+    if (isObject(name)) {
+      each(name, (val, name) => {
+        this.config(name, val)
+      })
+    } else if (hasOwnProp(this.cfg, name)) {
+      var {
+        statusIdx,
+        validator
+      } = this.cfgStatus[name]
 
-        if (statusIdx != -1 && !this.checkStatus(status, currentStatus, statusIdx, currentStatusIdx)) {
-          logger.warn('configuration[{}]: must use in status[{}]', name, status)
-          return
-        }
-        if (isFunc(validator) && validator(name, val, this) !== true) {
-          logger.warn('configuration[{}]: invalid value[{}]', name, val)
-          return
-        }
-        var oldVal = this.cfg[name]
-        this.cfg[name] = val
-        each(this.listens[name], cb => {
-          cb(name, val, oldVal, this)
-        })
+      if (statusIdx != -1 && !this.checkStatus(this.statusList[statusIdx], this.status, statusIdx, this.statusIdx)) {
+        logger.warn('configuration[%s]: must use in status[%s]', name, this.statusList[statusIdx])
+        return
       }
+      if (isFunc(validator) && validator(val, name, this) !== false) {
+        logger.warn('configuration[%s]: invalid value[%s]', name, val)
+        return
+      }
+      var oldVal = this.cfg[name]
+      this.cfg[name] = val
+      each(this.listens[name], cb => {
+        cb(name, val, oldVal, this)
+      })
     }
   },
   get(name) {
     return arguments.length ? this.cfg[name] : create(this.cfg)
+  },
+  each(cb) {
+    each(this.cfg, (val, name) => {
+      cb(val, name)
+    })
   },
   on(name, handler) {
     if (!isFunc(handler))
@@ -94,7 +97,7 @@ export default dynamicClass({
         this.on(name, handler)
       })
       return this
-    } else {
+    } else if (this.hasConfig(name)) {
       (this.listens[name] || (this.listens[name] = [])).push(handler)
     }
     return this
@@ -104,7 +107,7 @@ export default dynamicClass({
       each(name, (name) => {
         this.un(name, handler)
       })
-    } else {
+    } else if (this.hasConfig(name)) {
       var queue = this.listens[name],
         idx = queue ? indexOf(queue, handler) : -1
       if (idx != -1)

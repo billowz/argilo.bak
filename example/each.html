@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Argilo • Each </title>
+</head>
+
+<body>
+    <a href="../index.html">Back</a>
+</body>
+<script src="../dist/argilo.js"></script>
+<script type="text/javascript">
+argilo.ready(function() {
+    var tpl = argilo(document.getElementById('tpl/each.html').innerHTML)
+    argilo(document.getElementById('tpl/main.html').innerHTML).complie({
+        initCnt: 1000,
+        appendCnt: 1000,
+        array: null,
+        rtime: 0,
+        atime: 0,
+        dtime: 0,
+        utime: 0,
+        tpl: null,
+        render: function() {
+            function append(array, cnt) {
+                for (var i = 0; i < cnt; i++) {
+                    array.push({
+                        title: 'test - ' + i
+                    })
+                }
+            }
+
+            var now
+            if (this.tpl) {
+                now = new Date()
+                this.tpl.destroy()
+                this.dtime = new Date() - now
+                argilo.logger.info('destory use %d ms', this.dtime)
+            }
+
+            this.array = []
+
+            now = new Date()
+            append(this.array, this.initCnt)
+            this.tpl = tpl.complie(this)
+            this.tpl.appendTo(document.body)
+            this.rtime = new Date() - now
+            argilo.logger.info('render use %d ms', this.rtime)
+
+            now = new Date()
+            append(this.array, this.appendCnt)
+            if (this.appendCnt)
+                setTimeout(function() {
+                    this.atime = new Date() - now
+                    console.log('append use %d ms', this.atime)
+                }.bind(this), 16)
+            else
+                this.atime = 0
+        },
+        update: function(){
+            if(this.array){
+            now = new Date()
+                argilo.$each(this.array, function(v, i){
+                    v.title='updated - ' + i
+                })
+                setTimeout(function() {
+                    this.utime = new Date() - now
+                    console.log('update use %d ms', this.utime)
+                }.bind(this), 16)
+            }
+        }
+    }).appendTo(document.body)
+});
+</script>
+<script id="tpl/main.html" type="text/template">
+    <br/> Init Size:
+    <input type="text" ag-input="initCnt" ag-value="initCnt" />
+    <br/> Append Size:
+    <input type="text" ag-input="appendCnt" ag-value="appendCnt" />
+    <br/>
+    <button ag-onclick="render">Render</button>
+    <button ag-onclick="update">Update</button>
+    <div ag-if="rtime+atime+dtime">
+        render {initCnt} use {rtime} ms
+        <br/> append {appendCnt} use {atime} ms
+        <br/> destroy {array.length} use {dtime} ms
+    </div>
+    <div ag-if="utime">
+        update {array.length} use {utime} ms
+    </div>
+</script>
+<script id="tpl/each.html" type="text/template">
+    <div style="padding:10px">
+        <div ag-each="item, idx in array" ag-class="input">
+            <span ag-text="idx"></span>:::<span ag-text="item.title"></span>
+        </div>
+    </div>
+</script>
+
+</html>

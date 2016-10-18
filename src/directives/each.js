@@ -17,6 +17,7 @@ export default Directive.register('each', _.dynamicClass({
   constructor() {
     this.super(arguments)
     this.observeHandler = this.observeHandler.bind(this)
+    this.observeLenHandler = this.observeLenHandler.bind(this)
     let token = this.expr.match(eachReg)
     if (!token)
       throw Error(`Invalid Expression[${this.expr}] on Each Directive`)
@@ -112,15 +113,20 @@ export default Directive.register('each', _.dynamicClass({
   },
   bind() {
     this.observe(this.scopeExpr, this.observeHandler)
+    this.observe(this.scopeExpr + '.length', this.observeLenHandler)
     this.update(this.target())
   },
   unbind() {
     this.unobserve(this.scopeExpr, this.observeHandler)
+    this.unobserve(this.scopeExpr + '.length', this.observeLenHandler)
   },
   target() {
     return this.get(this.scopeExpr)
   },
   observeHandler(expr, target) {
     this.update(target)
+  },
+  observeLenHandler() {
+    this.update(this.target())
   }
 }))

@@ -11,8 +11,16 @@ import dom from '../dom'
 import logger from '../log'
 import configuration from '../configuration'
 
-configuration.register('directiveParser', new DirectiveParser(), [DirectiveParser])
-configuration.register('TextParser', TextParser, TextParser, true)
+configuration.register('directiveParser', new DirectiveParser(), 'init', (parser) => {
+  if (!(parser instanceof DirectiveParser))
+    throw new Error('Invalid Directive Parser: ' + parser)
+  return true
+})
+configuration.register('TextParser', TextParser, 'init', (parser) => {
+  if (parser !== TextParser && (!_.isFunc(parser) || !_.isExtendOf(parser, TextParser)))
+    throw new Error('Invalid Text Parser: ' + parser)
+  return true
+})
 
 const cfg = configuration.get()
 

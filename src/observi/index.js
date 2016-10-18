@@ -43,9 +43,7 @@ const observi = {
   registerWatcher,
   logger,
   proxy,
-  config() {
-    return configuration.config.apply(configuration, arguments)
-  },
+  configuration,
   observe(obj, expr, cb) {
     if (!_.isFunc(cb))
       throw new Error('Invalid Observi Callback')

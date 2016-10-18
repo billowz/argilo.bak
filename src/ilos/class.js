@@ -32,7 +32,7 @@ const emptyArray = []
 assign(Base.prototype, {
   super(args) {
     let method = arguments.callee.caller
-    method.$owner.superclass[method.$name].apply(this, args || emptyArray)
+    return method.$owner.superclass[method.$name].apply(this, args || emptyArray)
   },
   superclass() {
     let method = arguments.callee.caller

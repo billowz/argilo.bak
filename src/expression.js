@@ -2,7 +2,7 @@ import translate from './translate'
 import _ from 'ilos'
 import configuration from './configuration'
 
-const keywords = _.reverseConvert('tpl,observer,utility,window,document,Math,Date,this,true,false,null,undefined,Infinity,NaN,isNaN,isFinite,decodeURI,decodeURIComponent,encodeURI,encodeURIComponent,parseInt,parseFloat'.split(','), () => true),
+const keywords = _.reverseConvert('argilo,window,document,Math,Date,this,true,false,null,undefined,Infinity,NaN,isNaN,isFinite,decodeURI,decodeURIComponent,encodeURI,encodeURIComponent,parseInt,parseFloat'.split(','), () => true),
   wsReg = /\s/g,
   newlineReg = /\n/g,
   transformReg = /[\{,]\s*[\w\$_]+\s*:|('(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"|`(?:[^`\\]|\\.)*\$\{|\}(?:[^`\\"']|\\.)*`|`(?:[^`\\]|\\.)*`)|new |typeof |void |(\|\|)/g,
@@ -15,9 +15,16 @@ const keywords = _.reverseConvert('tpl,observer,utility,window,document,Math,Dat
   applyFuncReg = /\.call|\.apply$/,
   thisReg = /^this\./
 
-configuration.register('keywords', {})
+let userkeywords = {}
 
-const cfg = configuration.get()
+configuration.register('keywords', [], 'init', (val) => {
+  if (_.isString(val))
+    val = val.replace(/\\s+/g, '').split(',')
+  if (!_.isArray(val))
+    throw new Error('Invalid keywords: ' + val)
+  userkeywords = _.reverseConvert(val, () => true)
+  return true
+})
 
 let saved = []
 
@@ -59,7 +66,7 @@ function rewrite(raw, idx, str) {
     expr = userExpr.replace(thisReg, ''),
     prop = expr.match(propReg)[0]
 
-  if (expr == userExpr && (keywords[prop] || params[prop] || cfg.keywords[prop]))
+  if (expr == userExpr && (keywords[prop] || params[prop] || userkeywords[prop]))
     return raw
 
   let nextIdx = idx + raw.length,

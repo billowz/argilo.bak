@@ -4,19 +4,24 @@ import {
 } from '../watcherFactory'
 import proxy from '../proxy'
 import VBClassFactory from './VBClassFactory'
+import configuration from '../configuration'
 import _ from 'ilos'
+
+configuration.register('bindVBProxy', '__observi_vbproxy__', 'init')
+configuration.register('VBProxyConst', '__observi_vbproxy_const__', 'init')
+configuration.register('defaultProps', [], 'init')
 
 registerWatcher('VBScriptProxy', 40, function(config) {
   return VBClassFactory.isSupport()
 }, function(config) {
   let factory = new VBClassFactory([
     config.bindWatcher, config.bindObservi, config.bindProxy, _.LinkedList.LIST_KEY
-  ].concat(config.defaultProps || []), proxy.change)
+  ].concat(config.defaultProps || []), configuration.get('VBProxyConst'), configuration.get('bindVBProxy'), proxy.change)
 
   let cls = _.dynamicClass({
     extend: ArrayWatcher,
     watch(attr) {
-      if (this.super([attr])) return
+      if (this.super([attr]) || this.isArray) return
       let obj = this.obj,
         desc = this.desc || (this.desc = (factory.descriptor(obj) || factory.create(obj)))
       this.proxy = desc.defineProperty(attr, {

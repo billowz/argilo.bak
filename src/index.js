@@ -19,10 +19,7 @@ const core = _.assign({}, {
   Directive,
   directives,
   logger,
-  config() {
-    observi.config.apply(observi, arguments)
-    return configuration.config.apply(configuration, arguments)
-  }
+  configuration: new _.ConfigurationChain(configuration, observi.configuration)
 }, dom, util)
 
 function argilo(templ, cfg) {

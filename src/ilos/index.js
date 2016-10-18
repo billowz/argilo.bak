@@ -8,10 +8,12 @@ import * as cls from './class'
 import * as util from './util'
 import LinkedList from './LinkedList'
 import Configuration from './Configuration'
+import ConfigurationChain from './ConfigurationChain'
 import Logger from './Logger'
 
 export default obj.assign({
   LinkedList,
   Configuration,
+  ConfigurationChain,
   Logger
 }, common, is, coll, obj, string, cls, util)

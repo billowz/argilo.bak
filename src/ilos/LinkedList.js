@@ -86,15 +86,20 @@ export default dynamicClass({
     delete list[this._id]
   },
   push() {
-    let cnt = 0
-    each(arguments, (obj) => {
-      let list = this._listObj(obj) || (obj[LIST_KEY] = {})
+    let cnt = 0,
+      i = 0,
+      l = arguments.length,
+      obj, list
+
+    for (; i < l; i++) {
+      obj = arguments[i]
+      list = this._listObj(obj) || (obj[LIST_KEY] = {})
 
       if (!list[this._id]) {
         this._move((list[this._id] = this._newDesc(obj)), this._tail)
         cnt++
       }
-    })
+    }
     return cnt
   },
   pop() {
@@ -130,9 +135,9 @@ export default dynamicClass({
     if (!arguments.length)
       return this._tail && this._tail.obj
 
-    each(arguments, (obj) => {
-      this._move(this._getOrCreateDesc(obj), this._tail)
-    })
+    for (let i = 0, l = arguments.length; i < l; i++) {
+      this._move(this._getOrCreateDesc(arguments[i]), this._tail)
+    }
     return this
   },
   before(target) {
@@ -163,16 +168,19 @@ export default dynamicClass({
     return !!this._desc(obj)
   },
   remove() {
-    let cnt = 0
-    each(arguments, (obj) => {
-      let list = this._listObj(obj),
-        desc = list && list[this._id]
+    let cnt = 0,
+      i = 0,
+      l = arguments.length,
+      desc, list
+    for (; i < l; i++) {
+      list = this._listObj(arguments[i])
+      desc = list && list[this._id]
       if (desc) {
         this._unlink(desc)
         delete list[this._id]
         cnt++
       }
-    })
+    }
     return cnt
   },
   clean() {

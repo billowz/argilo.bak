@@ -56,5 +56,5 @@ const Binding = _.dynamicClass({
   },
   destroy() {}
 })
-configuration.register(Binding.commentCfg, true)
+configuration.register(Binding.commentCfg, true, 'init')
 export default Binding

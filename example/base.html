@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8">
-    <title>argilo.js • Basic </title>
+    <title>Argilo • Basic </title>
 </head>
 
 <body>
@@ -20,8 +20,7 @@ argilo.ready(function() {
         check2: 'CheckBox2 Selected',
         handler: function() {
             argilo.logger.info('event:', this, arguments);
-        },
-        eachArray: []
+        }
     }
     argilo.proxy.on(data, function(obj, proxy) {
         data = proxy || obj;
@@ -43,30 +42,9 @@ argilo.ready(function() {
             }
         }).appendTo(renderTo || document.body);
     }
-    var count = 2000;
-    for (var i = 0; i < count; i++) {
-        data.eachArray.push({
-            title: 'test-' + i
-        });
-    }
 
     renderTempl('tpl/input.html');
     renderTempl('tpl/checkbox.html');
-    renderTempl('tpl/each.html');
-    setTimeout(function() {
-        argilo.logger.info('render use:' + (new Date() - s) + 'ms')
-        s = new Date();
-        setTimeout(function() {
-            s = new Date();
-            for (var i = 0; i < count; i++) {
-                argilo.proxy(data.eachArray[i]).title = 'updated test---' + i;
-            }
-            setTimeout(function() {
-                argilo.logger.info('update each use:' + (new Date() - s)+'ms');
-            }, 0);
-        }, 1000)
-    }, 0)
-
 });
 </script>
 <script id="tpl/code.html" type="text/template">
@@ -106,13 +84,6 @@ argilo.ready(function() {
         <input type="CheckBox" id="check1" name="check" ag-value="check1" ag-input="input" />
         <label for="check2">Test CheckBox2</label>
         <input type="CheckBox" id="check2" name="check" ag-value="check2" ag-input="input" />
-    </div>
-</script>
-<script id="tpl/each.html" type="text/template">
-    <div style="padding:10px">
-        <div ag-each="item, idx in eachArray" ag-class="input">
-            <span ag-text="idx"></span>:::<span ag-text="item.title"></span>
-        </div>
     </div>
 </script>
 

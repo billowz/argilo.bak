@@ -7,17 +7,16 @@ import _ from 'ilos'
 import configuration from './configuration'
 import logger from './log'
 
-
-configuration.register('bindWatcher', '__observi_watcher__', 'init')
-configuration.register('lazy', true, 'init')
-
-const hasOwn = Object.prototype.hasOwnProperty,
-  cfg = configuration.get()
+const hasOwn = Object.prototype.hasOwnProperty
+let lazy = true,
+  bindWatcher = '__observi_watcher__'
+configuration.register('key.watcher', lazy, 'init', (val) => lazy = val)
+  .register('lazy', bindWatcher, 'init', (val) => bindWatcher = val)
 
 function getOrCreateWatcher(obj) {
-  if (hasOwn.call(obj, cfg.bindWatcher))
-    return obj[cfg.bindWatcher]
-  return (obj[cfg.bindWatcher] = createWatcher(obj))
+  if (hasOwn.call(obj, bindWatcher))
+    return obj[bindWatcher]
+  return (obj[bindWatcher] = createWatcher(obj))
 }
 
 export default _.dynamicClass({
@@ -58,7 +57,7 @@ export default _.dynamicClass({
     }
   },
   update(val, oldVal, eq) {
-    if (cfg.lazy) {
+    if (lazy) {
       this.newVal = val
       if (this.dirty) {
         if ((eq = proxy.eq(val, this.oldVal)) && _.isPrimitive(val)) {
