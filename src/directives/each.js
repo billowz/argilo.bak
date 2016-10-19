@@ -42,8 +42,6 @@ export default Directive.register('each', _.dynamicClass({
   update(data) {
     let domParser = this.domParser,
       parentScope = this.realScope(),
-      begin = this.begin,
-      end = this.end,
       indexExpr = this.indexExpr,
       used = this.used,
       version = this.version++,
@@ -64,38 +62,36 @@ export default Directive.register('each', _.dynamicClass({
         indexMap[index] = desc
         return desc
       }),
-      idles = [],
-      fragment = document.createDocumentFragment()
-
-    if (used)
+      idles = undefined,
+      before = this.begin
+    if (used) {
+      idles = []
       _.each(used, (desc) => {
         if (desc.version != version)
           idles.push(desc)
-        desc.tpl.remove(false)
       })
-
-    _.each(descs, (desc) => {
-      let newScope = false
+    }
+    _.each(descs, (desc, i) => {
+      let isNew = false
       if (!desc.scope) {
-        let idle = idles.pop()
-
+        let idle = idles && idles.pop()
         if (!idle) {
           desc.scope = this.createScope(parentScope, desc.data, desc.index)
           desc.tpl = domParser.complie(desc.scope)
-          newScope = true
+          isNew = true
         } else {
           desc.scope = idle.scope
           desc.tpl = idle.tpl
         }
       }
-      if (!newScope)
+      if (!isNew)
         this.initScope(desc.scope, desc.data, desc.index)
-      dom.append(fragment, desc.tpl.el)
-      if (newScope)
-        desc.tpl.bind()
+      desc.tpl.after(before)
+      before = desc.tpl.el
+      data[i] = observi.proxy(desc.data)
     })
-    dom.before(fragment, end)
-    _.each(idles, (idle) => idle.tpl.destroy())
+    if (idles)
+      _.each(idles, (idle) => idle.tpl.destroy())
   },
   createScope(parentScope, value, index) {
     let scope = _.create(parentScope)

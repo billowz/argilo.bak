@@ -14,7 +14,7 @@ export default _.dynamicClass({
     }
   },
   watch(attr) {
-    return this.isArray && attr != 'length'
+    return this.isArray && attr == 'length'
   },
   hookArray() {
     _.each(arrayHooks, this.hookArrayMethod, this)

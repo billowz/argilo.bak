@@ -3,7 +3,6 @@ import _ from 'ilos'
 import configuration from './configuration'
 import logger from './log'
 
-const cfg = configuration.get()
 
 let watchers = [],
   currentWatcher
@@ -24,6 +23,7 @@ export function registerWatcher(name, priority, validator, builder) {
 function initWatcher() {
   if (!watchers) return
   configuration.nextStatus()
+  let cfg = configuration.get()
   _.each(watchers, watcher => {
     let {
       validator,
