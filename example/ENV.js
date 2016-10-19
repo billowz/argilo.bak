@@ -1,13 +1,14 @@
-var ENV = (function() {
+var ENV = ENV || (function() {
+  var ENV = {
+    data: null,
+    rows: 10,
+    mutations: 50,
+    timeout: 0,
+    tpl: null
+  }
 
   function lpad(str, padding, toLength) {
     return padding.repeat((toLength - str.length) / padding.length).concat(str);
-  }
-
-  function mutations(value) {
-    if (value)
-      env.mutationsValue = value;
-    return env.mutationsValue;
   }
 
   function formatElapsed(value) {
@@ -127,24 +128,26 @@ var ENV = (function() {
 
   var counter = 0
 
-  function generate(keepIdentity) {
-    var oldData = env.data;
+  ENV.generate = function generate(keepIdentity) {
+    var data = ENV.data,
+      oldData = data,
+      rows = ENV.rows,
+      mutations = ENV.mutations;
 
-    if (!keepIdentity || !env.data) {
-      env.data = [];
-      oldData = env.data
-    }
-    if (env.data.length > ENV.rows * 2) {
-      env.data = env.data.slice(0, ENV.rows * 2)
+    if (!keepIdentity || !data)
+      oldData = data = ENV.data = [];
+
+    if (data.length > rows * 2) {
+      data = data.slice(0, rows * 2)
     } else {
-      for (var i = env.data.length / 2 + 1; i <= ENV.rows; i++) {
-        env.data.push({
+      for (var i = data.length / 2 + 1; i <= rows; i++) {
+        data.push({
           dbname: 'cluster' + i,
           query: "",
           formatElapsed: "",
           elapsedClassName: ""
         });
-        env.data.push({
+        data.push({
           dbname: 'cluster' + i + ' slave',
           query: "",
           formatElapsed: "",
@@ -152,43 +155,33 @@ var ENV = (function() {
         });
       }
     }
-    argilo.$each(env.data, function(row, i) {
+    argilo.$each(data, function(row, i) {
       if (!keepIdentity && oldData && oldData[i])
         row.lastSample = oldData[i].lastSample;
 
-      if (!row.lastSample || Math.random() < mutations()) {
+      if (!row.lastSample || Math.random() * 100 < mutations) {
         counter++;
         if (!keepIdentity)
           row.lastSample = null;
         generateRow(row, keepIdentity, counter);
       } else {
-        env.data[i] = oldData[i];
+        data[i] = oldData[i];
       }
     })
-    first = false;
-    return env.data
+    return data
   }
 
   var tpl =
     '<div style="display: flex;">' +
-    '  <label>mutations: {(mutationsValue * 100).toFixed(0)}%</label>' +
-    '  <input type="range" ag-onchange="change" style="margin-bottom: 10px; margin-top: 5px" />' +
+    '  <label>mutations: {mutations}%</label>' +
+    '  <input type="range" ag-input="mutations" ag-value="mutations" style="margin-bottom: 10px; margin-top: 5px"/>' +
     '</div>' +
     '<div><label>rows:</label><input type="text" ag-input="rows" ag-value="rows" style="margin-left:10px"/></div>'
-  var env = {
-    data: null,
-    mutationsValue: 0.5,
-    rows: 10,
-    generate: generate,
-    mutations: mutations,
-    timeout: 0,
-    change: function(scope, el) {
-      scope.mutationsValue = argilo.val(el) / 100
-    }
-  }
+
+  ENV.tpl = argilo(tpl).complie(ENV).bind();
   argilo.ready(function() {
-    argilo(tpl).complie(env).before(document.body.firstChild)
-    env = argilo.proxy(env)
+    ENV.tpl.before(document.body.firstChild)
   })
-  return env
+  ENV = argilo.proxy(ENV)
+  return ENV
 })()

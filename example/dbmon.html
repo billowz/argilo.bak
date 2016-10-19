@@ -4,8 +4,18 @@
 <head>
     <meta name="description" content="dbmon argilo" />
     <link href="./lib/bootstrap.min.css" rel="stylesheet" type="text/css" />
-    <link href="./styles.css" rel="stylesheet" type="text/css" />
     <title>Argilo • dbmon </title>
+    <style>
+    .Query {
+        position: relative;
+    }
+
+    .Query:hover .popover {
+        left: -100%;
+        width: 100%;
+        display: block;
+    }
+    </style>
 </head>
 
 <body>
@@ -13,11 +23,8 @@
 </body>
 <script src="../dist/argilo.js"></script>
 <script src="ENV.js"></script>
-<script src="../lib/monitor.js"></script>
+<script src="monitor.js"></script>
 <script>
-argilo.configuration.config({
-  enableES6Proxy: false
-})
 var app = {
     databases: []
 }
@@ -30,7 +37,7 @@ argilo.ready(function() {
 
     function loadSamples() {
         app.databases = ENV.generate(true);
-        Monitoring.renderRate.ping();
+        Monitor.ping();
         setTimeout(loadSamples, 0);
     }
     loadSamples()

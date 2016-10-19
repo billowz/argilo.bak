@@ -149,6 +149,18 @@ const EVENT_CHANGE = 'change',
         _.each(value, (val, key) => {
           dom.css(el, key, val)
         })
+      },
+      cleanup(value) {
+        let prevKeys = this.prevKeys
+        if (prevKeys) {
+          let i = prevKeys.length,
+            el = this.el
+          while (i--) {
+            let key = prevKeys[i]
+            if (!value || !_.hasOwnProp(value, key))
+              dom.css(el, key, '')
+          }
+        }
       }
     },
     show: {

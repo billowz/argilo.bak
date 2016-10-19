@@ -24,16 +24,16 @@ function test(name, obj, path, steps, done) {
 
     if (!steps[step + 1]) {
       logger.debug('test end')
-      observi.un(obj, path, handler)
-      expect(observi.isListened(obj, path, handler)).equal(false)
+      observi.unobserve(obj, path, handler)
+      expect(observi.isObserved(obj, path, handler)).equal(false)
       done()
     } else {
       setTimeout(update, 0)
     }
   }
-  obj = observi.on(obj, path, handler)
+  obj = observi.observe(obj, path, handler)
 
-  expect(observi.isListened(obj, path, handler)).equal(true)
+  expect(observi.isObserved(obj, path, handler)).equal(true)
 
 
   function update() {

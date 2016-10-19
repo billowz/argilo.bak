@@ -1,4 +1,7 @@
 import Binding from './Binding'
+import {
+  YieId
+} from '../util'
 import _ from 'ilos'
 
 export default _.dynamicClass({
@@ -20,7 +23,7 @@ export default _.dynamicClass({
       let directive = this.directives[idx],
         ret = directive.bind()
       this.bindedCount++;
-      (ret && ret instanceof _.YieId) ? ret.then(this._bind): this._bind()
+      (ret && ret instanceof YieId) ? ret.then(this._bind): this._bind()
     } else if (this.children) {
       _.each(this.children, (directive) => {
         directive.bind()
