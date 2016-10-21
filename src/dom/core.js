@@ -1,17 +1,22 @@
-import _ from 'ilos'
+import {
+  each,
+  map,
+  isString,
+  isArrayLike
+} from 'ilos'
 
 const textContent = typeof document.createElement('div').textContent == 'string' ? 'textContent' : 'innerText'
 
 function firstEl(el) {
-  return _.isArrayLike(el) ? el[0] : el
+  return isArrayLike(el) ? el[0] : el
 }
 
 function lastEl(el) {
-  return _.isArrayLike(el) ? el[el.length - 1] : el
+  return isArrayLike(el) ? el[el.length - 1] : el
 }
 
 function apply(coll, callback) {
-  _.isArrayLike(coll) ? _.each(coll, callback) : callback(coll)
+  isArrayLike(coll) ? each(coll, callback) : callback(coll)
 }
 
 let dom = {
@@ -29,7 +34,7 @@ let dom = {
     return false
   },
   query(selectors, all) {
-    if (_.isString(selectors))
+    if (isString(selectors))
       return all ? document.querySelectorAll(selectors) : document.querySelector(selectors)
     return selectors
   },
@@ -37,7 +42,7 @@ let dom = {
     function clone(el) {
       return el.cloneNode(deep !== false)
     }
-    return _.isArrayLike(el) ? _.map(el, clone) : clone(el)
+    return isArrayLike(el) ? map(el, clone) : clone(el)
   },
   parent(el) {
     return firstEl(el).parentNode

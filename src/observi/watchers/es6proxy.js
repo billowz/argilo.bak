@@ -2,9 +2,11 @@ import {
   registerWatcher
 } from '../watcherFactory'
 import Watcher from '../Watcher'
-import _ from 'ilos'
 import proxy from '../proxy'
 import configuration from '../configuration'
+import {
+  dynamicClass
+} from 'ilos'
 
 const hasOwn = Object.prototype.hasOwnProperty
 
@@ -20,7 +22,7 @@ registerWatcher('ES6Proxy', 10, function(config) {
     bindES6Proxy
   } = config
 
-  let cls = _.dynamicClass({
+  let cls = dynamicClass({
     extend: Watcher,
     constructor() {
       this.super(arguments)

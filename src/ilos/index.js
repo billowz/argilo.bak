@@ -1,19 +1,24 @@
 import './polyfill'
-import * as common from './common'
-import * as is from './is'
-import * as coll from './collection'
-import * as obj from './object'
-import * as string from './string'
-import * as cls from './class'
-import * as util from './util'
-import LinkedList from './LinkedList'
-import Configuration from './Configuration'
-import ConfigurationChain from './ConfigurationChain'
-import Logger from './Logger'
-
-export default obj.assign({
-  LinkedList,
-  Configuration,
-  ConfigurationChain,
-  Logger
-}, common, is, coll, obj, string, cls, util)
+export * from './common'
+export * from './is'
+export * from './collection'
+export * from './object'
+export * from './string'
+export * from './class'
+export * from './util'
+export {
+  default as LinkedList
+}
+from './LinkedList'
+export {
+  default as Configuration
+}
+from './Configuration'
+export {
+  default as ConfigurationChain
+}
+from './ConfigurationChain'
+export {
+  default as Logger
+}
+from './Logger'

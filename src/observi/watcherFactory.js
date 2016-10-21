@@ -1,8 +1,11 @@
 import Watcher from './Watcher'
-import _ from 'ilos'
 import configuration from './configuration'
 import logger from './log'
-
+import {
+  each,
+  isFunc,
+  isExtendOf
+} from 'ilos'
 
 let watchers = [],
   currentWatcher
@@ -24,7 +27,7 @@ function initWatcher() {
   if (!watchers) return
   configuration.nextStatus()
   let cfg = configuration.get()
-  _.each(watchers, watcher => {
+  each(watchers, watcher => {
     let {
       validator,
       builder,
@@ -32,10 +35,10 @@ function initWatcher() {
       priority
     } = watcher
 
-    if (!_.isFunc(validator) || validator(cfg)) {
+    if (!isFunc(validator) || validator(cfg)) {
       try {
         watcher = builder(cfg)
-        if (_.isFunc(watcher) && _.isExtendOf(watcher, Watcher)) {
+        if (isFunc(watcher) && isExtendOf(watcher, Watcher)) {
           currentWatcher = watcher
           logger.info('apply observi Watcher[%s], priority = %d', name, priority)
           return false

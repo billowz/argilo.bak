@@ -1,7 +1,10 @@
 import dom from './core'
-import _ from 'ilos'
+import {
+  assign,
+  each
+} from 'ilos'
 
-export default _.assign(dom, {
+export default assign(dom, {
   css(el, name, value) {
     let prop = /[_-]/.test(name) ? camelize(name) : name,
       hook
@@ -222,7 +225,7 @@ if (window.getComputedStyle) {
   }
 }
 
-_.each(['top', 'left'], function(name) {
+each(['top', 'left'], function(name) {
   cssHooks[name] = {
     get(el, name) {
       let val = cssDefaultGet(el, name);
@@ -231,7 +234,7 @@ _.each(['top', 'left'], function(name) {
   }
 })
 
-_.each(['Width', 'Height'], function(name) {
+each(['Width', 'Height'], function(name) {
   var method = name.toLowerCase(),
     clientProp = 'client' + name,
     scrollProp = 'scroll' + name,

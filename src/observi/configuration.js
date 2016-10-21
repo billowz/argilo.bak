@@ -1,3 +1,5 @@
-import _ from 'ilos'
+import {
+  Configuration
+} from 'ilos'
 
-export default new _.Configuration({}, ['init', 'runtime'])
+export default new Configuration({}, ['init', 'runtime'])

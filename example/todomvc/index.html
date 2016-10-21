@@ -20,7 +20,7 @@
 <script src="./index.js"></script>
 <script id="tpl/todo.html" type="text/template">
     <div class="header">
-        <h1>{title}</h1>
+        <h1>${title}</h1>
         <input class="new-todo" autofocus autocomplete="off" placeholder="What needs to be done?" ag-onkeydown="add | key 13">
     </div>
     <div class="main" ag-if="todos.length">
@@ -29,7 +29,7 @@
             <li class="todo" ag-each="todo, idx in displayTodos " ag-class="{completed: todo.completed, editing: todo === edited}">
                 <div class="view">
                     <input class="toggle" type="checkbox" ag-checked="todo.completed" ag-onchange="toggle(todo)">
-                    <label ag-ondblclick="edit(todo)">{idx}&nbsp; - &nbsp;{todo.title}</label>
+                    <label ag-ondblclick="edit(todo)">${idx}&nbsp; - &nbsp;${todo.title}</label>
                     <button class="destroy" ag-onclick="remove(todo)"></button>
                 </div>
                 <input class="edit" type="text" ag-input="todo.title" ag-focus="todo == edited" ag-onblur="update(todo)">
@@ -38,7 +38,7 @@
     </div>
     <div class="footer" ag-if="todos.length">
         <span class="todo-count">
-            {completedNum | unit 'item','%s %s'}&nbsp;left
+            ${completedNum | unit 'item','%s %s'}&nbsp;left
         </span>
         <ul class="filters">
             <li><a href="#" ag-onclick="vis('all')" ag-class="{selected: visibility == 'all'}">All</a></li>

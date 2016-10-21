@@ -1,33 +1,15 @@
-import Template from './template'
-import expression from './expression'
-import translate from './translate'
-import {
-  Directive
-} from './binding'
-import directives from './directives'
-import * as util from './util'
+import * as template from './template'
 import dom from './dom'
-import configuration from './configuration'
-import logger from './log'
-import _ from 'ilos'
-import observi from 'observi'
+import * as observi from 'observi'
+import * as _ from 'ilos'
 
-const core = _.assign({}, {
-  Template,
-  translate,
-  expression,
-  Directive,
-  directives,
-  logger,
-  configuration: new _.ConfigurationChain(configuration, observi.configuration)
-}, dom, util)
+const {
+  Template
+} = template, {
+  assignIf
+} = _
 
-function argilo(templ, cfg) {
+export default function argilo(templ, cfg) {
   return new Template(templ, cfg)
 }
-_.assignIf(argilo, {
-  argilo,
-  observi,
-  ilos: _
-}, core, _, observi.observi)
-export default argilo
+assignIf(argilo, template, observi, _, dom)

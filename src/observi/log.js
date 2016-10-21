@@ -1,3 +1,5 @@
-import _ from 'ilos'
+import {
+  Logger
+} from 'ilos'
 
-export default new _.Logger('observi', 'info')
+export default new Logger('observi', 'info')

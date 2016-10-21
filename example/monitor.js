@@ -85,7 +85,7 @@ var Monitor = Monitor || (function() {
         '<div ag-if="memoryEnable" ag-style="{width:memoryWidth}" style="position:fixed;right:0;bottom:0;opacity:0.9;cursor:pointer;">' +
         '  <div style="padding:0 0 3px 3px;text-align:left;background-color:#020;">' +
         '     <div style="color:#0f0;font-family:Helvetica,Arial,sans-serif;font-size:9px;font-weight:bold;line-height:15px;">' +
-        '         Mem:{heapSize}' +
+        '         Mem:${heapSize}' +
         '     </div>' +
         '     <div style="position:relative;width:100px;height:30px;overflow:hidden">' +
         '         <span ag-each="slot in slots" ag-style="{\'height\': slot.height, \'margin-top\':30-slot.height, \'background-color\': slot.color, \'width\':memorySlotWidth}" style="float:right;"></span>' +
@@ -96,7 +96,7 @@ var Monitor = Monitor || (function() {
         '<div ag-style="{width:rateWidth, right: memoryEnable ? memoryWidth : 0}" style="opacity:0.9;cursor:pointer;position:fixed;bottom:0px;">' +
         '   <div style="padding:0 0 3px 3px;text-align:left;background-color:#020;">' +
         '      <div style="color:#0f0;font-family:Helvetica,Arial,sans-serif;font-size:9px;font-weight:bold;line-height:15px">' +
-        '         Repaint rate: {rate}/sec' +
+        '         Repaint rate: ${rate}/sec' +
         '      </div>' +
         '   </div>' +
         '</div>';
@@ -110,7 +110,7 @@ var Monitor = Monitor || (function() {
     Monitor = argilo.proxy(Monitor)
 
     if (!Monitor.memoryEnable) {
-        argile.logger.warn('totalJSHeapSize === 0... performance.memory is only available in Chrome .')
+        argilo.logger.warn('totalJSHeapSize === 0... performance.memory is only available in Chrome .')
     } else {
         setInterval(Monitor.updateMomory.bind(Monitor), 1000);
     }

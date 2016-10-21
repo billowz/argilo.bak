@@ -1,4 +1,6 @@
-import _ from 'ilos'
+import {
+  nextTick
+} from 'ilos'
 
 const queue = []
 let waiting = false
@@ -16,6 +18,6 @@ export default function notify(observi) {
   queue.push(observi)
   if (!waiting) {
     waiting = true
-    _.nextTick(flushQueue)
+    nextTick(flushQueue)
   }
 }

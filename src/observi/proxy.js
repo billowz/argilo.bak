@@ -1,6 +1,11 @@
-import _ from 'ilos'
 import configuration from './configuration'
-
+import {
+  LinkedList,
+  policy as ilosPolicy,
+  emptyFunc,
+  assign,
+  isFunc
+} from 'ilos'
 
 configuration.register('bindProxy', '__observi_proxy__', 'init')
 
@@ -26,12 +31,12 @@ const core = {
       handlers.each(handler => handler(obj, p))
   },
   on(obj, handler, checkFirst) {
-    if (!_.isFunc(handler))
+    if (!isFunc(handler))
       throw TypeError(`Invalid Proxy Event Handler[${handler}`)
 
     let realObj = proxy.obj(obj),
       key = cfg.bindProxy,
-      handlers = hasOwn.call(realObj, key) ? realObj[key] : (realObj[key] = new _.LinkedList())
+      handlers = hasOwn.call(realObj, key) ? realObj[key] : (realObj[key] = new LinkedList())
 
     if (handlers.push(handler) == 1) {
       var p
@@ -46,7 +51,7 @@ const core = {
     let key = cfg.bindProxy,
       handlers = hasOwn.call(obj, key) ? obj[key] : undefined
 
-    if (handlers && _.isFunc(handler))
+    if (handlers && isFunc(handler))
       return handlers.remove(handler) == 1
     return false
   },
@@ -64,21 +69,21 @@ const core = {
       proxy.eq = policy.eq
       proxy.obj = policy.obj
       proxy.proxy = policy.proxy
-      _.policy('hasOwn', function(obj, prop) {
+      ilosPolicy('hasOwn', function(obj, prop) {
         return hasOwn.call(proxy.obj(obj), prop)
       })
-      _.policy('eq', proxy.eq)
+      ilosPolicy('eq', proxy.eq)
       enabled = true
     }
   },
   disable() {
     if (enabled === undefined) {
       enabled = false
-      proxy.change = proxy.on = proxy.un = proxy.clean = _.emptyFunc
+      proxy.change = proxy.on = proxy.un = proxy.clean = emptyFunc
     }
   }
 }
 export default function proxy(o) {
   return proxy.proxy(o)
 }
-_.assign(proxy, core)
+assign(proxy, core)

@@ -1,9 +1,14 @@
 import dom from './core'
-import _ from 'ilos'
+import {
+  LinkedList,
+  assign,
+  each,
+  isFunc
+} from 'ilos'
 
 const root = document.documentElement
 
-export default _.assign(dom, {
+export default assign(dom, {
   hasListen(el, type, cb) {
     return hasListen(el, type, cb)
   },
@@ -25,11 +30,11 @@ export default _.assign(dom, {
     if (document.createEvent) {
       hackEvent = document.createEvent('Events')
       hackEvent.initEvent(type, true, true, opts)
-      _.assign(hackEvent, opts)
+      assign(hackEvent, opts)
       el.dispatchEvent(hackEvent)
     } else if (dom.inDoc(el)) { //IE6-8触发事件必须保证在DOM树中,否则报'SCRIPT16389: 未指明的错误'
       hackEvent = document.createEventObject()
-      _.assign(hackEvent, opts)
+      assign(hackEvent, opts)
       el.fireEvent('on' + type, hackEvent)
     }
     return hackEvent
@@ -137,7 +142,7 @@ class Event {
 const listenKey = '__LISTEN__'
 
 function addListen(el, type, handler, once) {
-  if (!_.isFunc(handler))
+  if (!isFunc(handler))
     throw TypeError('Invalid Event Handler')
 
   let listens = el[listenKey],
@@ -148,7 +153,7 @@ function addListen(el, type, handler, once) {
     el[listenKey] = listens = {}
 
   if (!(handlers = listens[type])) {
-    listens[type] = handlers = new _.LinkedList()
+    listens[type] = handlers = new LinkedList()
     ret = true
   } else if (handlers.contains(handler)) {
     return false
@@ -211,7 +216,7 @@ const bind = dom.W3C ? function(el, type, fn, capture) {
   eventHookTypes = {},
   delegateEvents = {}
 
-_.each(canBubbleUpArray, (name) => {
+each(canBubbleUpArray, (name) => {
   canBubbleUp[name] = true
 })
 if (!dom.W3C) {
@@ -307,7 +312,7 @@ function dispatch(event) {
 
 //针对firefox, chrome修正mouseenter, mouseleave
 if (!('onmouseenter' in root)) {
-  _.each({
+  each({
     mouseenter: 'mouseover',
     mouseleave: 'mouseout'
   }, function(origType, fixType) {
@@ -321,7 +326,7 @@ if (!('onmouseenter' in root)) {
   })
 }
 //针对IE9+, w3c修正animationend
-_.each({
+each({
   AnimationEvent: 'animationend',
   WebKitAnimationEvent: 'webkitAnimationEnd'
 }, function(construct, fixType) {
@@ -402,6 +407,6 @@ if (document.onmousewheel === void 0) {
     }
   }
 }
-_.each(eventHooks, function(hook, type) {
+each(eventHooks, function(hook, type) {
   eventHookTypes[hook.type || type] = type
 })

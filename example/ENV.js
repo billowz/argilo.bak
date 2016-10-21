@@ -173,7 +173,7 @@ var ENV = ENV || (function() {
 
   var tpl =
     '<div style="display: flex;">' +
-    '  <label>mutations: {mutations}%</label>' +
+    '  <label>mutations: ${mutations}%</label>' +
     '  <input type="range" ag-input="mutations" ag-value="mutations" style="margin-bottom: 10px; margin-top: 5px"/>' +
     '</div>' +
     '<div><label>rows:</label><input type="text" ag-input="rows" ag-value="rows" style="margin-left:10px"/></div>'

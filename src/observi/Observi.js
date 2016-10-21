@@ -3,9 +3,16 @@ import {
 } from './watcherFactory'
 import notify from './notify'
 import proxy from './proxy'
-import _ from 'ilos'
 import configuration from './configuration'
 import logger from './log'
+import {
+  dynamicClass,
+  LinkedList,
+  map,
+  get,
+  isNil,
+  isPrimitive
+} from 'ilos'
 
 const hasOwn = Object.prototype.hasOwnProperty
 let lazy = true,
@@ -19,7 +26,7 @@ function getOrCreateWatcher(obj) {
   return (obj[bindWatcher] = createWatcher(obj))
 }
 
-export default _.dynamicClass({
+export default dynamicClass({
   constructor(obj, expr, path) {
     this.obj = obj
     this.expr = expr
@@ -28,7 +35,7 @@ export default _.dynamicClass({
     this.callbacks = this.createCallbacks()
     this.watch(obj, 0)
     this.watcher = this.watchers[0]
-    this.handlers = new _.LinkedList()
+    this.handlers = new LinkedList()
   },
   on(handler) {
     return this.handlers.push(handler)
@@ -43,7 +50,7 @@ export default _.dynamicClass({
     }
   },
   isListened(handler) {
-    return _.isNil(handler) ? !this.handlers.empty() : this.handlers.contains(handler)
+    return isNil(handler) ? !this.handlers.empty() : this.handlers.contains(handler)
   },
   fire(val, oldVal, eq) {
     var expr = this.expr,
@@ -60,7 +67,7 @@ export default _.dynamicClass({
     if (lazy) {
       this.newVal = val
       if (this.dirty) {
-        if ((eq = proxy.eq(val, this.oldVal)) && _.isPrimitive(val)) {
+        if ((eq = proxy.eq(val, this.oldVal)) && isPrimitive(val)) {
           this.dirty = false
           return
         }
@@ -76,7 +83,7 @@ export default _.dynamicClass({
     }
   },
   createCallbacks() {
-    return _.map(this.path, function(prop, i) {
+    return map(this.path, function(prop, i) {
       return this.createCallback(i)
     }, this)
   },
@@ -93,7 +100,7 @@ export default _.dynamicClass({
         if (oldVal) {
           oldVal = proxy.obj(oldVal)
           this.unwatch(oldVal, nextIdx)
-          oldVal = _.get(oldVal, rpath)
+          oldVal = get(oldVal, rpath)
         } else {
           oldVal = undefined
         }
@@ -112,11 +119,11 @@ export default _.dynamicClass({
           } else {
             this.watch(val, nextIdx)
           }
-          val = _.get(val, rpath)
+          val = get(val, rpath)
         } else {
           val = undefined
         }
-        if ((eq = proxy.eq(val, oldVal)) && _.isPrimitive(val))
+        if ((eq = proxy.eq(val, oldVal)) && isPrimitive(val))
           return
       }
       this.update(val, oldVal, eq)

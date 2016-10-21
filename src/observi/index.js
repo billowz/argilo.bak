@@ -1,12 +1,21 @@
-import Observi from './Observi'
 import proxy from './proxy'
+import Watcher from './Watcher'
+import Observi from './Observi'
 import configuration from './configuration'
 import {
   registerWatcher
 } from './watcherFactory'
-import Watcher from './Watcher'
 import './watchers'
-import _ from 'ilos'
+import {
+  each,
+  map,
+  filter,
+  aggregate,
+  keys,
+  values,
+  parseExpr,
+  isFunc,
+} from 'ilos'
 import logger from './log'
 
 configuration.register('bindObservis', '__observi__', 'init')
@@ -15,9 +24,15 @@ const cfg = configuration.get(),
   hasOwn = Object.prototype.hasOwnProperty,
   PATH_JOIN = '###'
 
+function hookArrayFunc(func, obj, callback, scope, own) {
+  return func(obj, proxy.isEnable() ? callback && function(v, k, s, o) {
+    return callback.call(this, proxy.proxy(v), k, s, o)
+  } : callback, scope, own)
+}
+
 function getOrCreateObservi(obj, expr) {
   let bindObservis = cfg.bindObservis,
-    path = _.parseExpr(expr),
+    path = parseExpr(expr),
     observis,
     key
   if (!path.length)
@@ -30,7 +45,7 @@ function getOrCreateObservi(obj, expr) {
 
 function getObservi(obj, expr) {
   let bindObservis = cfg.bindObservis,
-    path = _.parseExpr(expr),
+    path = parseExpr(expr),
     observis
   if (!path.length)
     throw new Error('Invalid Observi Expression: ' + expr)
@@ -38,82 +53,83 @@ function getObservi(obj, expr) {
   return observis && observis[path.join(PATH_JOIN)]
 }
 
-const observi = {
+function observe(obj, expr, cb) {
+  if (!isFunc(cb))
+    throw new Error('Invalid Observi Callback')
+  let observi = getOrCreateObservi(proxy.obj(obj), expr)
+  observi.on(cb)
+  return observi.watcher.proxy
+}
+
+function unobserve(obj, expr, cb) {
+  if (!isFunc(cb))
+    throw new Error('Invalid Observi Callback')
+  let observi = getObservi(proxy.obj(obj), expr)
+  if (observi) {
+    observi.un(cb)
+    return observi.watcher.proxy
+  }
+  return obj
+}
+
+function isObserved(obj, expr, cb) {
+  let observi = getObservi(proxy.obj(obj), expr)
+  return observi && observi.isListened(cb)
+}
+
+function eq(o1, o2) {
+  return proxy.eq(o1, o2)
+}
+
+function obj(o) {
+  return proxy.obj(o)
+}
+
+function $each(obj, callback, scope, own) {
+  return hookArrayFunc(each, obj, callback, scope, own)
+}
+
+function $map(obj, callback, scope, own) {
+  return hookArrayFunc(map, obj, callback, scope, own)
+}
+
+function $filter(obj, callback, scope, own) {
+  return hookArrayFunc(filter, obj, callback, scope, own)
+}
+
+function $aggregate(obj, callback, defVal, scope, own) {
+  return aggregate(obj, callback && proxy.isEnable() ? function(r, v, k, s, o) {
+    return callback.call(this, r, proxy.proxy(v), k, s, o)
+  } : callback, defVal, scope, own)
+}
+
+function $keys(obj, filter, scope, own) {
+  return keys(obj, filter && proxy.isEnable() ? function(v, k, s, o) {
+    return filter.call(this, proxy.proxy(v), k, s, o)
+  } : filter, scope, own)
+}
+
+function $values(obj, filter, scope, own) {
+  return values(obj, filter && proxy.isEnable() ? function(v, k, s, o) {
+    return filter.call(this, proxy.proxy(v), k, s, o)
+  } : filter, scope, own)
+}
+
+export {
   Watcher,
   registerWatcher,
   logger,
   proxy,
   configuration,
-  observe(obj, expr, cb) {
-    if (!_.isFunc(cb))
-      throw new Error('Invalid Observi Callback')
-    let observi = getOrCreateObservi(proxy.obj(obj), expr)
-    observi.on(cb)
-    return observi.watcher.proxy
-  },
-
-  unobserve(obj, expr, cb) {
-    if (!_.isFunc(cb))
-      throw new Error('Invalid Observi Callback')
-    let observi = getObservi(proxy.obj(obj), expr)
-    if (observi) {
-      observi.un(cb)
-      return observi.watcher.proxy
-    }
-    return obj
-  },
-
-  isObserved(obj, expr, cb) {
-    let observi = getObservi(proxy.obj(obj), expr)
-    return observi && observi.isListened(cb)
-  },
-
-  eq(o1, o2) {
-    return proxy.eq(o1, o2)
-  },
-
-  obj(o) {
-    return proxy.obj(o)
-  },
-
-  $each(obj, callback, scope, own) {
-    return hookArrayFunc(_.each, obj, callback, scope, own)
-  },
-
-  $map(obj, callback, scope, own) {
-    return hookArrayFunc(_.map, obj, callback, scope, own)
-  },
-
-  $filter(obj, callback, scope, own) {
-    return hookArrayFunc(_.filter, obj, callback, scope, own)
-  },
-
-  $aggregate(obj, callback, defVal, scope, own) {
-    return _.aggregate(obj, callback && proxy.isEnable() ? function(r, v, k, s, o) {
-      return callback.call(this, r, proxy.proxy(v), k, s, o)
-    } : callback, defVal, scope, own)
-  },
-
-  $keys(obj, filter, scope, own) {
-    return _.keys(obj, filter && proxy.isEnable() ? function(v, k, s, o) {
-      return filter.call(this, proxy.proxy(v), k, s, o)
-    } : filter, scope, own)
-  },
-
-  $values(obj, filter, scope, own) {
-    return _.values(obj, filter && proxy.isEnable() ? function(v, k, s, o) {
-      return filter.call(this, proxy.proxy(v), k, s, o)
-    } : filter, scope, own)
-  }
+  observe,
+  unobserve,
+  isObserved,
+  eq,
+  obj,
+  $each,
+  $map,
+  $filter,
+  $aggregate,
+  $keys,
+  $values
 }
-
-function hookArrayFunc(func, obj, callback, scope, own) {
-  return func(obj, proxy.isEnable() ? callback && function(v, k, s, o) {
-    return callback.call(this, proxy.proxy(v), k, s, o)
-  } : callback, scope, own)
-}
-
-export default _.assignIf(_.create(observi), {
-  observi: observi,
-  ilos: _
-}, _)

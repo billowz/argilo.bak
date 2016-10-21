@@ -1,35 +1,45 @@
-import _ from 'ilos'
-import DomParser from './DomParser'
-import DirectiveParser from './DirectiveParser'
-import TextParser from './TextParser'
-import configuration from '../configuration'
+import {
+  Directive
+} from './binding'
+import directives from './directives'
+import {
+  DomParser,
+  DirectiveParser,
+  TextParser,
+  expression
+} from './parser'
+import configuration from './configuration'
+import {
+  configuration as observiConfiguration
+} from 'observi'
+import {
+  dynamicClass,
+  hasOwnProp,
+  ConfigurationChain
+} from 'ilos'
 
+const config = new ConfigurationChain(configuration, observiConfiguration)
 
-let templateId = 0
-const templateCache = {}
 let inited = false
-
-export default _.dynamicClass({
-  statics: {
-    get(id) {
-      return templateCache[id]
-    },
-    DirectiveParser: DirectiveParser,
-    TextParser: TextParser
-  },
-  constructor(templ, cfg = {}) {
+const Template = dynamicClass({
+  constructor(template, clone) {
     if (!inited) {
       configuration.nextStatus()
       inited = true
     }
-    this.id = cfg.id || (templateId++)
-    if (_.hasOwnProp(templateCache, this.id)) {
-      throw new Error('Existing Template[' + this.id + ']')
-    }
-    this.parser = new DomParser(templ)
-    templateCache[this.id] = this
+    this.parser = new DomParser(template, clone)
   },
   complie(scope) {
     return this.parser.complie(scope)
   }
 })
+
+export {
+  Template,
+  Directive,
+  directives,
+  DirectiveParser,
+  TextParser,
+  expression,
+  config as configuration
+}

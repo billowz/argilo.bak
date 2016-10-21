@@ -5,7 +5,10 @@ import {
 import proxy from '../proxy'
 import VBClassFactory from './VBClassFactory'
 import configuration from '../configuration'
-import _ from 'ilos'
+import {
+  dynamicClass,
+  LinkedList
+} from 'ilos'
 
 configuration.register('bindVBProxy', '__observi_vbproxy__', 'init')
 configuration.register('VBProxyConst', '__observi_vbproxy_const__', 'init')
@@ -15,10 +18,10 @@ registerWatcher('VBScriptProxy', 40, function(config) {
   return VBClassFactory.isSupport()
 }, function(config) {
   let factory = new VBClassFactory([
-    config.bindWatcher, config.bindObservi, config.bindProxy, _.LinkedList.LIST_KEY
+    config.bindWatcher, config.bindObservi, config.bindProxy, LinkedList.LIST_KEY
   ].concat(config.defaultProps || []), configuration.get('VBProxyConst'), configuration.get('bindVBProxy'), proxy.change)
 
-  let cls = _.dynamicClass({
+  let cls = dynamicClass({
     extend: ArrayWatcher,
     watch(attr) {
       if (this.super([attr]) || this.isArray) return

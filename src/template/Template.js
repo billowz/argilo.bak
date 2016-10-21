@@ -1,12 +1,17 @@
-import _ from 'ilos'
-import observi from 'observi'
 import dom from '../dom'
+import {
+  proxy
+} from 'observi'
+import {
+  dynamicClass,
+  each
+} from 'ilos'
 
-export default _.dynamicClass({
+export default dynamicClass({
   constructor(scope) {
     this.scope = scope
     this.proxyHandler = this.proxyHandler.bind(this)
-    observi.proxy.on(scope, this.proxyHandler)
+    proxy.on(scope, this.proxyHandler)
   },
   proxyHandler(obj, proxy) {
     this.scope = proxy || obj
@@ -42,7 +47,7 @@ export default _.dynamicClass({
   },
   bind() {
     if (!this.binded) {
-      _.each(this.bindings, (bind) => {
+      each(this.bindings, (bind) => {
         bind.bind()
       })
       this.binded = true
@@ -51,7 +56,7 @@ export default _.dynamicClass({
   },
   unbind() {
     if (this.binded) {
-      _.each(this.bindings, (bind) => {
+      each(this.bindings, (bind) => {
         bind.unbind()
       })
       this.binded = false
@@ -59,9 +64,9 @@ export default _.dynamicClass({
     return this
   },
   destroy() {
-    observi.proxy.un(this.scope, this.proxyHandler)
+    proxy.un(this.scope, this.proxyHandler)
     if (this.binded)
-      _.each(this.bindings, (bind) => {
+      each(this.bindings, (bind) => {
         bind.unbind()
         bind.destroy()
       })

@@ -3,12 +3,14 @@ import {
   registerWatcher
 } from '../watcherFactory'
 import proxy from '../proxy'
-import _ from 'ilos'
+import {
+  dynamicClass
+} from 'ilos'
 
 registerWatcher('DefineGetterAndSetter', 30, function(config) {
   return '__defineGetter__' in {}
 }, function(config) {
-  let cls = _.dynamicClass({
+  let cls = dynamicClass({
     extend: ArrayWatcher,
     watch(attr) {
       if (this.super([attr])) return

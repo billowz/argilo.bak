@@ -1,5 +1,5 @@
-import observi from '../index'
-import _ from 'ilos'
+import * as observi from '../index'
+import * as _ from 'ilos'
 
 
 function test(name, obj, path, steps, done) {

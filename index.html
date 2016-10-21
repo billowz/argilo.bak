@@ -24,7 +24,7 @@ argilo.ready(function() {
     argilo.proxy.on(data, function(obj, proxy) {
         data = proxy || obj;
     });
-    argilo('<h3> Current Time: <span style="color:red">{time}</span></h3>')
+    argilo('<h3> Current Time: <span style="color:red">${time}</span></h3>')
         .complie(data).appendTo(document.body)
 
     function updateTime() {

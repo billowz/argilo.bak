@@ -1,4 +1,10 @@
-import _ from 'ilos'
+import {
+  dynamicClass,
+  each,
+  reverseConvert,
+  isFunc,
+  isArray
+} from 'ilos'
 import logger from '../log'
 
 const hasOwn = Object.prototype.hasOwnProperty,
@@ -6,7 +12,7 @@ const hasOwn = Object.prototype.hasOwnProperty,
   RESERVE_ARRAY_PROPS = 'concat,copyWithin,entries,every,fill,filter,find,findIndex,forEach,includes,indexOf,join,keys,lastIndexOf,map,pop,push,reduce,reduceRight,reverse,shift,slice,some,sort,splice,unshift,values'.split(',')
 
 let supported = undefined
-const VBClassFactory = _.dynamicClass({
+const VBClassFactory = dynamicClass({
   statics: {
     isSupport() {
       if (supported !== undefined)
@@ -41,7 +47,7 @@ const VBClassFactory = _.dynamicClass({
     let defPropMap = this.defPropMap,
       props = []
 
-    _.each(defProps || [], (prop) => {
+    each(defProps || [], (prop) => {
       defPropMap[prop] = true
     })
     for (let prop in defPropMap) {
@@ -55,8 +61,8 @@ const VBClassFactory = _.dynamicClass({
   initReserveProps() {
     this.reserveProps = RESERVE_PROPS.concat(this.defProps)
     this.reserveArrayProps = this.reserveProps.concat(RESERVE_ARRAY_PROPS)
-    this.reservePropMap = _.reverseConvert(this.reserveProps)
-    this.reserveArrayPropMap = _.reverseConvert(this.reserveArrayProps)
+    this.reservePropMap = reverseConvert(this.reserveProps)
+    this.reserveArrayPropMap = reverseConvert(this.reserveArrayProps)
   },
   initConstScript() {
     this.constScript = [
@@ -102,7 +108,7 @@ const VBClassFactory = _.dynamicClass({
   generateClass(className, props, funcMap) {
     let buffer = ['Class ', className, '\r\n', this.constScript, '\r\n']
 
-    _.each(props, (attr) => {
+    each(props, (attr) => {
       if (funcMap[attr]) {
         buffer.push('\tPublic [' + attr + ']\r\n')
       } else {
@@ -142,22 +148,22 @@ const VBClassFactory = _.dynamicClass({
       descBind = this.descBind
 
     function addProp(prop) {
-      if (_.isFunc(obj[prop])) {
+      if (isFunc(obj[prop])) {
         funcMap[prop] = true
         funcs.push(prop)
       }
       props.push(prop)
     }
 
-    if (_.isArray(obj)) {
+    if (isArray(obj)) {
       protoProps = this.reserveArrayProps
       protoPropMap = this.reserveArrayPropMap
     } else {
       protoProps = this.reserveProps
       protoPropMap = this.reservePropMap
     }
-    _.each(protoProps, addProp)
-    _.each(obj, (val, prop) => {
+    each(protoProps, addProp)
+    each(obj, (val, prop) => {
       if (prop !== descBind && !(prop in protoPropMap))
         addProp(prop)
     }, obj, false)
@@ -174,7 +180,7 @@ const VBClassFactory = _.dynamicClass({
     proxy = window[this.generateClassConstructor(props, funcMap, funcs)](desc)
     desc.proxy = proxy
 
-    _.each(funcs, (prop) => {
+    each(funcs, (prop) => {
       proxy[prop] = this.funcProxy(obj[prop], prop in protoPropMap ? obj : proxy)
     })
 
@@ -217,11 +223,11 @@ const VBClassFactory = _.dynamicClass({
   }
 })
 
-const ObjectDescriptor = _.dynamicClass({
+const ObjectDescriptor = dynamicClass({
   constructor(obj, props, classGenerator) {
     this.classGenerator = classGenerator
     this.obj = obj
-    this.defines = _.reverseConvert(props, () => false)
+    this.defines = reverseConvert(props, () => false)
     obj[classGenerator.descBind] = this
     this.accessorNR = 0
   },
@@ -238,7 +244,7 @@ const ObjectDescriptor = _.dynamicClass({
     if (!(attr in defines)) {
       if (!(attr in obj)) {
         obj[attr] = undefined
-      } else if (_.isFunc(obj[attr])) {
+      } else if (isFunc(obj[attr])) {
         logger.warn('defineProperty not support function [' + attr + ']')
       }
       this.classGenerator.create(this.obj, this)

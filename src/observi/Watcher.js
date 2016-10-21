@@ -1,8 +1,12 @@
-import _ from 'ilos'
 import proxy from './proxy'
+import {
+  dynamicClass,
+  LinkedList,
+  isPrimitive
+} from 'ilos'
 
 let interceptGetter = false
-export default _.dynamicClass({
+export default dynamicClass({
   static: {
     interceptGetter(cb) {
       interceptGetter = true
@@ -20,7 +24,7 @@ export default _.dynamicClass({
     queue = this.setters[attr]
     if (queue) {
       var eq = proxy.eq(val, oldVal)
-      if (!eq || !_.isPrimitive(val)) {
+      if (!eq || !isPrimitive(val)) {
         queue.each(cb => cb(attr, val, oldVal, this, eq))
       }
     }
@@ -34,7 +38,7 @@ export default _.dynamicClass({
   // 1. add callback to accessor callback queue
   // 2. watch property if not-watched
   accessor(accessors, attr, cb) {
-    let queue = accessors[attr] || (accessors[attr] = new _.LinkedList()),
+    let queue = accessors[attr] || (accessors[attr] = new LinkedList()),
       success = queue.push(cb) == 1
     if (success && !this.watched[attr]) {
       this.watch(attr)

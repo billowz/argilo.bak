@@ -3,7 +3,9 @@ import {
   registerWatcher
 } from '../watcherFactory'
 import proxy from '../proxy'
-import _ from 'ilos'
+import {
+  dynamicClass
+} from 'ilos'
 
 registerWatcher('ES5DefineProperty', 20, function(config) {
   if (Object.defineProperty) {
@@ -23,7 +25,7 @@ registerWatcher('ES5DefineProperty', 20, function(config) {
   }
   return false
 }, function(config) {
-  let cls = _.dynamicClass({
+  let cls = dynamicClass({
     extend: ArrayWatcher,
     watch(attr) {
       if (this.super([attr])) return

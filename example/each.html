@@ -82,12 +82,12 @@ argilo.ready(function() {
     <button ag-onclick="render">Render</button>
     <button ag-onclick="update">Update</button>
     <div ag-if="rtime+atime+dtime">
-        render {initCnt} use {rtime} ms
-        <br/> append {appendCnt} use {atime} ms
-        <br/> destroy {array.length} use {dtime} ms
+        render ${initCnt} use ${rtime} ms
+        <br/> append ${appendCnt} use ${atime} ms
+        <br/> destroy ${array.length} use ${dtime} ms
     </div>
     <div ag-if="utime">
-        update {array.length} use {utime} ms
+        update ${array.length} use ${utime} ms
     </div>
 </script>
 <script id="tpl/each.html" type="text/template">

@@ -1,14 +1,18 @@
 import Watcher from '../Watcher'
-import _ from 'ilos'
+import {
+  dynamicClass,
+  isArray,
+  each
+} from 'ilos'
 
 const arrayProto = Array.prototype,
   arrayHooks = 'fill,pop,push,reverse,shift,sort,splice,unshift'.split(',')
 
-export default _.dynamicClass({
+export default dynamicClass({
   extend: Watcher,
   constructor() {
     this.super(arguments)
-    this.isArray = _.isArray(this.obj)
+    this.isArray = isArray(this.obj)
     if (this.isArray) {
       this.hookArray()
     }
@@ -17,7 +21,7 @@ export default _.dynamicClass({
     return this.isArray && attr == 'length'
   },
   hookArray() {
-    _.each(arrayHooks, this.hookArrayMethod, this)
+    each(arrayHooks, this.hookArrayMethod, this)
   },
   hookArrayMethod(name) {
     let obj = this.obj,

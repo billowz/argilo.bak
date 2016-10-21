@@ -48,14 +48,14 @@ argilo.ready(function() {
     <table class="table table-striped lastest-data">
         <tbody>
             <tr ag-each="db in databases">
-                <td class="dbname">{db.dbname}</td>
+                <td class="dbname">${db.dbname}</td>
                 <td class="query-count">
-                    <span ag-class="db.lastSample.countClassName">{db.lastSample.nbQueries}</span>
+                    <span ag-class="db.lastSample.countClassName">${db.lastSample.nbQueries}</span>
                 </td>
                 <td ag-each="q,idx in db.lastSample.topFiveQueries " class="Query" ag-class="q.elapsedClassName">
-                    {q.formatElapsed}
+                    ${q.formatElapsed}
                     <div class="popover left">
-                        <div class="popover-content">{q.query}</div>
+                        <div class="popover-content">${q.query}</div>
                         <div class="arrow"></div>
                     </div>
                 </td>

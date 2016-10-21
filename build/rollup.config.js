@@ -27,6 +27,7 @@ module.exports = {
     })]
   },
   bundle: { // rollup bundle generate config, see https://github.com/rollup/rollup/wiki/JavaScript-API
+    exports: 'default',
     dest: pkg.dist,
     mini: true,
     gzip: true,

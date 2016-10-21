@@ -51,7 +51,7 @@ argilo.ready(function() {
     <div style="margin:0 10px">
         <a href="javascript:void 0;" type="button" ag-onclick="toggleSource">Source</a>
         <div ag-if="openSource">
-            {templateUrl}:{templateUrl}:
+            ${templateUrl}:${templateUrl}:
             <br/>
             <pre ag-text="template"></pre> javascript:
             <br/>
@@ -68,7 +68,7 @@ argilo.ready(function() {
         <label>Two Way: </label>
         <input ag-input="input" ag-onclick='handler' />
         <p ag-if="input">
-            Input: <strong>{input}</strong>
+            Input: <strong>${input}</strong>
         </p>
     </div>
 </script>

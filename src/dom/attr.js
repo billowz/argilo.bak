@@ -1,10 +1,13 @@
 import dom from './core'
-import _ from 'ilos'
+import {
+  assign,
+  trim
+} from 'ilos'
 
 const rfocusable = /^(?:input|select|textarea|button|object)$/i,
   rclickable = /^(?:a|area)$/i
 
-export default _.assign(dom, {
+export default assign(dom, {
   prop(el, name, value) {
     name = dom.propFix[name] || name
     let hook = dom.propHooks[name]
@@ -36,13 +39,13 @@ export default _.assign(dom, {
     } else {
       let cur = ` ${dom.prop(el, 'class')} `
       if (cur.indexOf(` ${cls} `) === -1)
-        dom.class(el, _.trim(cur + cls))
+        dom.class(el, trim(cur + cls))
     }
     return dom
   },
   removeClass(el, cls) {
     el.classList ? el.classList.remove(cls) :
-      dom.class(el, _.trim(` ${dom.prop(el, 'class')} `.replace(new RegExp(` ${cls} `, 'g'), '')))
+      dom.class(el, trim(` ${dom.prop(el, 'class')} `.replace(new RegExp(` ${cls} `, 'g'), '')))
     return dom
   },
   style(el, style) {
