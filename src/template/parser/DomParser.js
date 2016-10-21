@@ -1,0 +1,278 @@
+import TextParser from './TextParser'
+import DirectiveParser from './DirectiveParser'
+import Template from '../Template'
+import {
+  Directive,
+  DirectiveGroup,
+  Text
+} from '../binding'
+import dom from '../../dom'
+import logger from '../log'
+import configuration from '../configuration'
+import {
+  dynamicClass,
+  each,
+  map,
+  trim,
+  isString,
+  isFunc,
+  isExtendOf,
+  isArrayLike
+} from 'ilos'
+
+let directiveParser = new DirectiveParser(/^ag-/),
+  textParser = new TextParser('${', '}')
+
+configuration.register('directiveParser', directiveParser, 'init', (parser) => {
+  if (!(parser instanceof DirectiveParser))
+    throw new Error('Invalid Directive Parser: ' + parser)
+  directiveParser = parser
+  return true
+})
+
+configuration.register('textParser', textParser, 'init', (parser) => {
+  if (!(parser instanceof TextParser))
+    throw new Error('Invalid Text Parser: ' + parser)
+  textParser = parser
+  return true
+})
+
+function _clone(el) {
+  let elem = el.cloneNode(false)
+  if (el.nodeType == 1)
+    each(el.childNodes, c => {
+      elem.appendChild(_clone(c))
+    })
+  return elem
+}
+
+function clone(el) {
+  return isArrayLike(el) ? map(el, _clone) : _clone(el)
+}
+
+const TEXT = 1,
+  DIRECTIVE = 2,
+  DIRECTIVE_GROUP = 3
+
+const DomParser = dynamicClass({
+  constructor(el, cfg = {}) {
+    this.el = this.parseEl(el, cfg.clone)
+    this.directiveParser = cfg.directiveParser || directiveParser
+    this.textParser = cfg.textParser || textParser
+    this.parse()
+  },
+  complie(scope) {
+    let el = clone(this.el),
+      df = document.createDocumentFragment(),
+      tpl = new Template(scope)
+
+    dom.append(df, el)
+
+    tpl.el = el
+    tpl.bindings = this.parseBindings(this.bindings, scope, this.parseEls(el), tpl)
+    return tpl
+  },
+  parseBindings(descs, scope, els, tpl) {
+    return map(descs, (desc) => {
+      let type = desc.type,
+        cfg = {
+          el: els[desc.index],
+          scope: scope,
+          tpl: tpl
+        }
+
+      if (type === TEXT) {
+        cfg.expression = desc.expression
+        return new Text(cfg)
+      }
+
+      cfg.block = desc.block
+      cfg.children = desc.children ? this.parseBindings(desc.children || [], scope, els) : undefined
+
+      if (type === DIRECTIVE) {
+        cfg.expression = desc.expression
+        cfg.attr = desc.attr
+        cfg.domParser = desc.domParser
+        cfg.independent = desc.independent
+        cfg.group = undefined
+        return new desc.directive(cfg)
+      } else {
+        var group = new DirectiveGroup(cfg)
+        group._setDirectives(map(desc.directives, desc => {
+          return new desc.directive({
+            el: cfg.el,
+            scope: scope,
+            expression: desc.expression,
+            attr: desc.attr,
+            tpl: tpl,
+            group: group
+          })
+        }))
+        return group
+      }
+    })
+  },
+  parseEls(el) {
+    let index = 0,
+      elStatus = this.elStatus
+    return this.eachDom(el, [], (el, els) => {
+      els.push(el)
+      return elStatus[index++].marked && els
+    }, (el, els) => {
+      els.push(el)
+      index++
+    })
+  },
+  parseEl(el, clone) {
+    if (isString(el)) {
+      el = trim(el)
+      if (el.charAt(0) == '<' || el.length > 30) {
+        let templ = document.createElement('div')
+        dom.html(templ, el)
+        el = templ.childNodes
+      }
+      el = dom.query(el)
+    } else if (clone) {
+      el = dom.cloneNode(el)
+    }
+    return el
+  },
+  eachDom(el, data, elemHandler, textHandler) {
+    if (isArrayLike(el)) {
+      each(el, (el) => {
+        this._eachDom(el, data, elemHandler, textHandler)
+      })
+    } else {
+      this._eachDom(el, data, elemHandler, textHandler)
+    }
+    return data
+  },
+  _eachDom(el, data, elemHandler, textHandler) {
+    switch (el.nodeType) {
+      case 1:
+        if (data = elemHandler(el, data))
+          each(map(el.childNodes, (n) => n), (el) => {
+            this._eachDom(el, data, elemHandler, textHandler)
+          })
+        break
+      case 3:
+        textHandler(el, data)
+        break
+    }
+  },
+  parse() {
+    let elStatus = [],
+      index = 0,
+      textParser = this.textParser,
+      directiveParser = this.directiveParser
+
+    function markEl(el, marked) {
+      if (el) {
+        elStatus.push({
+          el: el,
+          marked: marked
+        })
+        index++
+      }
+      return el
+    }
+    this.elStatus = elStatus
+    this.bindings = this.eachDom(this.el, [], (el, bindings) => {
+      let directives = [],
+        block = false,
+        independent = false,
+        desc
+
+      each(el.attributes, (attr) => {
+        let name = attr.name,
+          directive
+
+        if (!directiveParser.isDirective(name))
+          return
+
+        if (!(directive = directiveParser.getDirective(name))) {
+          logger.warn(`Directive[${name}] is undefined`)
+          return
+        }
+        let desc = {
+          type: DIRECTIVE,
+          index: index,
+          expression: attr.value,
+          directive: directive,
+          attr: name,
+          block: Directive.isBlock(directive),
+          independent: Directive.isIndependent(directive)
+        }
+        if (desc.independent) {
+          desc.block = block = independent = true
+          directives = [desc]
+          return false
+        } else if (desc.block) {
+          block = true
+        }
+        directives.push(desc)
+      })
+
+      if (!directives.length) {
+        markEl(el, true)
+        return bindings
+      }
+
+      if (directives.length == 1) {
+        desc = directives[0]
+      } else {
+        desc = {
+          type: DIRECTIVE_GROUP,
+          index: index,
+          directives: directives.sort((a, b) => {
+            return (Directive.getPriority(b.directive) - Directive.getPriority(a.directive)) || 0
+          }),
+          block: block,
+          independent: independent
+        }
+      }
+      desc.children = !block && []
+
+      bindings.push(desc)
+      if (independent) {
+        let childEl = dom.cloneNode(el, false)
+        dom.removeAttr(childEl, directives[0].attr)
+        dom.append(childEl, map(el.childNodes, (n) => n))
+        desc.domParser = new DomParser(childEl, false)
+      }
+      markEl(el, !block)
+      return desc.children
+    }, (el, bindings) => {
+      let expr = dom.text(el),
+        tokens = textParser.tokens(expr),
+        pos = 0
+      each(tokens, token => {
+        if (pos < token.start)
+          markEl(this.insertNotBlankText(expr.slice(pos, token.start), el), false)
+        bindings.push({
+          type: TEXT,
+          index: index,
+          expression: token.token
+        })
+        markEl(this.insertText('binding', el), false)
+        pos = token.end
+      })
+      if (pos) {
+        markEl(this.insertNotBlankText(expr.slice(pos), el), false)
+        dom.remove(el)
+      } else {
+        markEl(el, false)
+      }
+    })
+
+  },
+  insertNotBlankText(content, before) {
+    return (content) ? this.insertText(content || '&nbsp;', before) : undefined
+  },
+  insertText(content, before) {
+    let el = document.createTextNode(content)
+    dom.before(el, before)
+    return el
+  }
+})
+export default DomParser
