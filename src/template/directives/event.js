@@ -1,5 +1,10 @@
 import {
-  Directive
+  Directive,
+  ContextKeyword,
+  ElementKeyword,
+  EventKeyword,
+  BindingKeyword,
+  expressionParser
 } from '../binding'
 import {
   expression
@@ -17,27 +22,27 @@ import {
   isObject
 } from 'ilos'
 
-const expressionArgs = ['$scope', '$el', '$event', '$tpl', '$binding']
+const expressionArgs = [ContextKeyword, ElementKeyword, EventKeyword, BindingKeyword]
 
 const EventDirective = dynamicClass({
   extend: Directive,
   constructor() {
     this.super(arguments)
     this.handler = this.handler.bind(this)
-    this.expression = expression(this.expr, expressionArgs, this.expressionScopeProvider)
+    this.expression = expression(this.expr, expressionArgs, expressionParser)
   },
   handler(e) {
     e.stopPropagation()
 
-    let scope = this.scope(),
+    let ctx = this.context(),
       exp = this.expression
 
-    if (exp.executeFilter(scope, [scope, this.el, e, this.tpl, this], e) !== false) {
-      let fn = exp.execute(scope, [scope, this.el, e, this.tpl, this])
+    if (exp.executeFilter(ctx, [ctx, this.el, e, this], e) !== false) {
+      let fn = exp.execute(ctx, [ctx, this.el, e, this])
       if (exp.isSimple()) {
         if (isFunc(fn)) {
-          scope = this.exprScope(exp.expr)
-          fn.call(scope, scope, this.el, e, this.tpl, this)
+          ctx = this.exprContext(exp.expr)
+          fn.call(ctx, ctx, this.el, e, this.tpl, this)
         } else {
           logger.warn('Invalid Event Handler:%s', this.expr, fn)
         }

@@ -9,7 +9,7 @@ const {
   assignIf
 } = _
 
-export default function argilo(templ, cfg) {
-  return new Template(templ, cfg)
+export default function argilo(cfg) {
+  return new Template(cfg)
 }
 assignIf(argilo, template, observi, _, dom)

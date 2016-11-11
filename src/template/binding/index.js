@@ -14,3 +14,5 @@ export {
   default as DirectiveGroup
 }
 from './DirectiveGroup'
+
+export * from './expression'

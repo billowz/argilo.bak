@@ -1,7 +1,6 @@
 import {
   Directive
 } from '../binding'
-import Template from '../template'
 import dom from '../../dom'
 import {
   proxy
@@ -30,7 +29,7 @@ export default Directive.register('each', dynamicClass({
     if (!token)
       throw Error(`Invalid Expression[${this.expr}] on Each Directive`)
 
-    this.scopeExpr = token[2]
+    this.dataExpr = token[2]
     this.indexExpr = token[4]
 
     let aliasToken = token[1].match(eachAliasReg)
@@ -49,7 +48,7 @@ export default Directive.register('each', dynamicClass({
   },
   update(data) {
     let domParser = this.domParser,
-      parentScope = this.realScope(),
+      ctx = this.realContext(),
       indexExpr = this.indexExpr,
       used = this.used,
       version = this.version++,
@@ -81,19 +80,19 @@ export default Directive.register('each', dynamicClass({
     }
     each(descs, (desc, i) => {
       let isNew = false
-      if (!desc.scope) {
+      if (!desc.context) {
         let idle = idles && idles.pop()
         if (!idle) {
-          desc.scope = this.createScope(parentScope, desc.data, desc.index)
-          desc.tpl = domParser.complie(desc.scope)
+          desc.context = this.createChildContext(ctx, desc.data, desc.index)
+          desc.tpl = domParser.complie(desc.context)
           isNew = true
         } else {
-          desc.scope = idle.scope
+          desc.context = idle.context
           desc.tpl = idle.tpl
         }
       }
       if (!isNew)
-        this.initScope(desc.scope, desc.data, desc.index)
+        this.updateChildContext(desc.context, desc.data, desc.index)
       desc.tpl.after(before)
       before = desc.tpl.el
       data[i] = proxy(desc.data)
@@ -101,31 +100,31 @@ export default Directive.register('each', dynamicClass({
     if (idles)
       each(idles, (idle) => idle.tpl.destroy())
   },
-  createScope(parentScope, value, index) {
-    let scope = create(parentScope)
-    scope.$parent = parentScope
-    scope.$eachContext = this
-    this.initScope(scope, value, index, true)
-    return scope
-  },
-  initScope(scope, value, index, isCreate) {
-    if (!isCreate)
-      scope = proxy(scope)
-    scope[this.valueAlias] = value
+  createChildContext(parent, value, index) {
+    let ctx = create(parent)
+    ctx[this.valueAlias] = value
     if (this.keyAlias)
-      scope[this.keyAlias] = index
+      ctx[this.keyAlias] = index
+    ctx.$parent = parent
+    return ctx
+  },
+  updateChildContext(ctx, value, index) {
+    ctx = proxy(ctx)
+    ctx[this.valueAlias] = value
+    if (this.keyAlias)
+      ctx[this.keyAlias] = index
   },
   bind() {
-    this.observe(this.scopeExpr, this.observeHandler)
-    this.observe(this.scopeExpr + '.length', this.observeLenHandler)
+    this.observe(this.dataExpr, this.observeHandler)
+    this.observe(this.dataExpr + '.length', this.observeLenHandler)
     this.update(this.target())
   },
   unbind() {
-    this.unobserve(this.scopeExpr, this.observeHandler)
-    this.unobserve(this.scopeExpr + '.length', this.observeLenHandler)
+    this.unobserve(this.dataExpr, this.observeHandler)
+    this.unobserve(this.dataExpr + '.length', this.observeLenHandler)
   },
   target() {
-    return this.get(this.scopeExpr)
+    return this.get(this.dataExpr)
   },
   observeHandler(expr, target) {
     this.update(target)

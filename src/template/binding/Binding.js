@@ -15,49 +15,45 @@ import {
 } from 'ilos'
 const Binding = dynamicClass({
   statics: {
-    commentCfg: 'generateComments'
+    comments: true
   },
   constructor(cfg) {
-    this._scope = obj(cfg.scope)
+    this.ctx = obj(cfg.context)
     this.el = cfg.el
-    this.tpl = cfg.tpl
   },
-  expressionScopeProvider(expr, realScope) {
-    return realScope ? `$binding.exprScope('${expr}')` : '$scope'
+  context() {
+    let ctx = this.ctx
+    return proxy(ctx) || ctx
   },
-  scope() {
-    let scope = this._scope
-    return proxy(scope) || scope
+  realContext() {
+    return this.ctx
   },
-  realScope() {
-    return this._scope
-  },
-  propScope(prop) {
-    let scope = this.realScope(),
+  propContext(prop) {
+    let ctx = this.ctx,
       parent
 
-    while ((parent = scope.$parent) && !hasOwnProp(scope, prop)) {
-      scope = parent
+    while ((parent = ctx.$parent) && !hasOwnProp(ctx, prop)) {
+      ctx = parent
     }
-    return proxy(scope) || scope
+    return proxy(ctx) || ctx
   },
-  exprScope(expr) {
-    return this.propScope(parseExpr(expr)[0])
+  exprContext(expr) {
+    return this.propContext(parseExpr(expr)[0])
   },
   observe(expr, callback) {
-    observe(this.exprScope(expr), expr, callback)
+    observe(this.exprContext(expr), expr, callback)
   },
   unobserve(expr, callback) {
-    unobserve(this.exprScope(expr), expr, callback)
+    unobserve(this.exprContext(expr), expr, callback)
   },
   get(expr) {
-    return get(this.realScope(), expr)
+    return get(this.realContext(), expr)
   },
   has(expr) {
-    return has(this.realScope(), expr)
+    return has(this.realContext(), expr)
   },
   set(expr, value) {
-    set(this.scope(), expr, value)
+    set(this.context(), expr, value)
   },
   bind() {
     throw new Error('abstract method')
@@ -67,5 +63,7 @@ const Binding = dynamicClass({
   },
   destroy() {}
 })
-configuration.register(Binding.commentCfg, true, 'init')
+configuration.register('comments', Binding.comments, 'init', (val) => {
+  Binding.comments = val
+})
 export default Binding

@@ -1,5 +1,9 @@
 import {
-  Directive
+  Directive,
+  ContextKeyword,
+  ElementKeyword,
+  BindingKeyword,
+  expressionParser
 } from '../binding'
 import {
   expression
@@ -24,41 +28,33 @@ import {
   isArray
 } from 'ilos'
 
-const expressionArgs = ['$scope', '$el', '$tpl', '$binding']
+const expressionArgs = [ContextKeyword, ElementKeyword, BindingKeyword]
 
 const SimpleDirective = dynamicClass({
   extend: Directive,
   constructor() {
     this.super(arguments)
     this.observeHandler = this.observeHandler.bind(this)
-    this.expression = expression(this.expr, expressionArgs, this.expressionScopeProvider)
+    this.expression = expression(this.expr, expressionArgs, expressionParser)
   },
   realValue() {
-    let scope = this.scope()
-    return this.expression.execute(scope, [scope, this.el, this.tpl, this])
+    let ctx = this.context()
+    return this.expression.execute(ctx, [ctx, this.el, this])
   },
   value() {
-    let scope = this.scope()
-    return this.expression.executeAll(scope, [scope, this.el, this.tpl, this])
+    let ctx = this.context()
+    return this.expression.executeAll(ctx, [ctx, this.el, this])
   },
-  listen() {
+  bind() {
     each(this.expression.identities, (ident) => {
       this.observe(ident, this.observeHandler)
     })
     this.update(this.value())
   },
-  unlisten() {
+  unbind() {
     each(this.expression.identities, (ident) => {
       this.unobserve(ident, this.observeHandler)
     })
-  },
-  bind() {
-    this.listen()
-    this.super(arguments)
-  },
-  unbind() {
-    this.super(arguments)
-    this.unlisten()
   },
   blankValue(val) {
     if (arguments.length == 0) val = this.value()
@@ -66,8 +62,8 @@ const SimpleDirective = dynamicClass({
   },
   observeHandler(expr, val) {
     if (this.expression.isSimple()) {
-      let scope = this.scope()
-      this.update(this.expression.executeFilter(scope, [scope, this.el, this.tpl, this], val))
+      let ctx = this.context()
+      this.update(this.expression.executeFilter(ctx, [ctx, this.el, this], val))
     } else {
       this.update(this.value())
     }
@@ -195,14 +191,12 @@ const EVENT_CHANGE = 'change',
     'if': {
       priority: 9,
       bind() {
+        this.super(arguments)
         this.yieId = new YieId()
-        this.listen()
         return this.yieId
       },
       unbind() {
-        if (!this.yieId)
-          this.unbindChildren()
-        this.unlisten()
+        this.super(arguments)
       },
       update(val) {
         if (!val) {
@@ -211,7 +205,6 @@ const EVENT_CHANGE = 'change',
           if (this.yieId) {
             this.yieId.done()
             this.yieId = undefined
-            this.bindChildren()
           }
           dom.css(this.el, 'display', '')
         }
@@ -270,8 +263,8 @@ const EVENT_CHANGE = 'change',
       },
 
       setValue(val) {
-        let scope = this.scope()
-        this.setRealValue(this.expression.restore(scope, [scope, this.el, this.tpl, this], val))
+        let ctx = this.context()
+        this.setRealValue(this.expression.restore(ctx, [ctx, this.el, this], val))
       },
 
       onChange(e) {

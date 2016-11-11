@@ -14,36 +14,32 @@ export default dynamicClass({
     this.children = cfg.children
     this.bindedCount = 0
     this.bindedChildren = false
-    this._bind = this._bind.bind(this)
-  },
-  _setDirectives(directives) {
     this.directives = directives
     this.directiveCount = directives.length
   },
-  _bind() {
+  bind() {
     let idx = this.bindedCount
     if (idx < this.directiveCount) {
       let directive = this.directives[idx],
         ret = directive.bind()
       this.bindedCount++;
-      (ret && ret instanceof YieId) ? ret.then(this._bind): this._bind()
-    } else if (this.children) {
-      each(this.children, (directive) => {
-        directive.bind()
+      (ret && ret instanceof YieId) ? ret.then(() => {
+        this.bind()
+      }): this.bind()
+    } else if (this.children && !this.bindedChildren) {
+      each(this.children, (child) => {
+        child.bind()
       })
       this.bindedChildren = true
     }
-  },
-  bind() {
-    this._bind()
   },
   unbind() {
     let directives = this.directives,
       i = this.bindedCount
 
     if (this.bindedChildren) {
-      each(this.children, (directive) => {
-        directive.unbind()
+      each(this.children, (child) => {
+        child.unbind()
       })
       this.bindedChildren = false
     }

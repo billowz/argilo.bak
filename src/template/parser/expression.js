@@ -10,18 +10,17 @@ import {
   isArray,
 } from 'ilos'
 
-const keywords = reverseConvert('argilo,window,document,Math,Date,this,true,false,null,undefined,Infinity,NaN,isNaN,isFinite,decodeURI,decodeURIComponent,encodeURI,encodeURIComponent,parseInt,parseFloat'.split(','), () => true),
+const keywords = reverseConvert('argilo,window,document,Math,Date,true,false,null,undefined,Infinity,NaN,isNaN,isFinite,decodeURI,decodeURIComponent,encodeURI,encodeURIComponent,parseInt,parseFloat'.split(','), () => true),
   wsReg = /\s/g,
   newlineReg = /\n/g,
   transformReg = /[\{,]\s*[\w\$_]+\s*:|('(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"|`(?:[^`\\]|\\.)*\$\{|\}(?:[^`\\"']|\\.)*`|`(?:[^`\\]|\\.)*`)|new |typeof |void |(\|\|)/g,
   restoreReg = /"(\d+)"/g,
-  identityReg = /[^\w$\.](?:(?:this\.)?[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)/g,
+  identityReg = /[^\w$\.][A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*/g,
   propReg = /^[A-Za-z_$][\w$]*/,
   simplePathReg = /^[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*|\['.*?'\]|\[".*?"\]|\[\d+\]|\[[A-Za-z_$][\w$]*\])*$/,
   literalValueReg = /^(?:true|false|null|undefined|Infinity|NaN)$/,
   exprReg = /\s*\|\s*(?:\|\s*)*/,
-  applyFuncReg = /\.call|\.apply$/,
-  thisReg = /^this\./
+  applyFuncReg = /\.call|\.apply$/
 
 let userkeywords = {}
 
@@ -47,66 +46,70 @@ function restore(str, i) {
 }
 
 let identities, params,
-  scopeProvider
+  expParser
 
-function defaultScopeProvider() {
-  return 'this'
+function defaultExpParser(expr, realScope, ident) {
+  return {
+    expr: expr,
+    identity: ident && expr
+  }
 }
 
-function initStatus(_params, _scopeProvider) {
+function initStatus(_params, _expParser) {
   identities = {}
-  scopeProvider = _scopeProvider || defaultScopeProvider
-  params = _params.__MAP__
-  if (!params)
-    params = _params.__MAP__ = reverseConvert(_params, () => true)
+  expParser = _expParser || defaultExpParser
 }
 
 function cleanStates() {
   identities = undefined
-  params = undefined
-  scopeProvider = undefined
+  expParser = undefined
   saved.length = 0
 }
 
 function rewrite(raw, idx, str) {
   let prefix = raw.charAt(0),
-    userExpr = raw.slice(1),
-    expr = userExpr.replace(thisReg, ''),
+    expr = raw.slice(1),
     prop = expr.match(propReg)[0]
 
-  if (expr == userExpr && (keywords[prop] || params[prop] || userkeywords[prop]))
+  if (keywords[prop] || userkeywords[prop])
     return raw
 
   let nextIdx = idx + raw.length,
     nextChar = str.charAt(nextIdx++),
     realScope = false,
-    ident = true
+    ident
 
-  switch (nextChar) {
-    case '(':
-      realScope = !applyFuncReg.test(expr)
-      ident = false
-      break
-    case '=':
-      realScope = str.charAt(nextIdx) != '='
-      break
-    case '/':
-    case '*':
-    case '+':
-    case '-':
-    case '%':
-    case '&':
-    case '&':
-      realScope = str.charAt(nextIdx) == '='
-      break
-    case '>':
-    case '<':
-      realScope = str.charAt(nextIdx) == nextChar && str.charAt(nextIdx + 1) == '='
-      break
+  if (nextChar == '(') {
+    realScope = !applyFuncReg.test(expr)
+    ident = false
+  } else {
+    switch (nextChar) {
+      case '=':
+        realScope = str.charAt(nextIdx) != '='
+        break
+      case '/':
+      case '*':
+      case '+':
+      case '-':
+      case '%':
+      case '&':
+      case '|':
+        realScope = str.charAt(nextIdx) == '='
+        break
+      case '>':
+      case '<':
+        realScope = str.charAt(nextIdx) == nextChar && str.charAt(nextIdx + 1) == '='
+        break
+    }
+    ident = !realScope
   }
-  if (!realScope && ident)
-    identities[expr] = true
-  return `${prefix}${scopeProvider(expr, realScope)}.${expr}`
+  var ret = expParser(expr, realScope, ident)
+  if (!ret || !ret.expr)
+    return raw
+  if (ident && ret.identity)
+    identities[ret.identity] = true
+  console.log(raw, ret)
+  return prefix + ret.expr
 }
 
 
@@ -190,10 +193,10 @@ const Expression = dynamicClass({
 
 const cache = {}
 
-export default function expression(expr, params, scopeProvider) {
+export default function expression(expr, params, expParser) {
   let rs = cache[expr]
   if (!rs) {
-    initStatus(params, scopeProvider)
+    initStatus(params, expParser)
     cache[expr] = rs = new Expression(expr, params)
     cleanStates()
   }

@@ -2,6 +2,12 @@ import Binding from './Binding'
 import {
   expression
 } from '../parser'
+import {
+  ContextKeyword,
+  ElementKeyword,
+  BindingKeyword,
+  expressionParser
+} from './expression'
 import dom from '../../dom'
 import configuration from '../configuration'
 import {
@@ -10,13 +16,13 @@ import {
   isNil
 } from 'ilos'
 
-const expressionArgs = ['$scope', '$el', '$tpl', '$binding']
+const expressionArgs = [ContextKeyword, ElementKeyword, BindingKeyword]
 
 export default dynamicClass({
   extend: Binding,
   constructor(cfg) {
     this.super(arguments)
-    this.expression = expression(cfg.expression, expressionArgs, this.expressionScopeProvider)
+    this.expr = expression(cfg.expression, expressionArgs, expressionParser)
     if (configuration.get(Binding.commentCfg)) {
       this.comment = document.createComment('Text Binding ' + cfg.expression)
       dom.before(this.comment, this.el)
@@ -24,24 +30,24 @@ export default dynamicClass({
     this.observeHandler = this.observeHandler.bind(this)
   },
   value() {
-    let scope = this.scope()
-    return this.expression.executeAll(scope, [scope, this.el, this.tpl, this])
+    let ctx = this.context()
+    return this.expr.executeAll(ctx, [ctx, this.el, this])
   },
   bind() {
-    each(this.expression.identities, (ident) => {
+    each(this.expr.identities, (ident) => {
       this.observe(ident, this.observeHandler)
     })
     this.update(this.value())
   },
   unbind() {
-    each(this.expression.identities, (ident) => {
+    each(this.expr.identities, (ident) => {
       this.unobserve(ident, this.observeHandler)
     })
   },
   observeHandler(attr, val) {
-    if (this.expression.isSimple()) {
-      var scope = this.scope()
-      this.update(this.expression.executeFilter(scope, [scope, this.el, this.tpl, this], val))
+    if (this.expr.isSimple()) {
+      var ctx = this.context()
+      this.update(this.expr.executeFilter(ctx, [ctx, this.el, this], val))
     } else {
       this.update(this.value())
     }

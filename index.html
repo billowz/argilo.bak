@@ -18,20 +18,31 @@
 <script src="dist/argilo.js"></script>
 <script>
 argilo.ready(function() {
-    var data = {
+    argilo({
+      template: '<h3> Current Time: <span style="color:red">${scope.time}</span></h3>',
+      collector: {
+        timeoutId: null,
+        created: function(){
+          this.updateTime = this.updateTime.bind(this)
+          return this
+        },
+        mounted: function(){
+          this.timeoutId = this.updateTime()
+        },
+        unmounted: function(){
+          if(this.timeoutId)
+            clearTimeout(this.timeoutId)
+        },
+        updateTime: function(){
+          this.scope.time = new Date().toLocaleString()
+          setTimeout(this.updateTime, 1000)
+        }
+      }
+    }).complie({
+      scope: {
         time: null
-    }
-    argilo.proxy.on(data, function(obj, proxy) {
-        data = proxy || obj;
-    });
-    argilo('<h3> Current Time: <span style="color:red">${time}</span></h3>')
-        .complie(data).appendTo(document.body)
-
-    function updateTime() {
-        data.time = new Date().toLocaleString();
-        setTimeout(updateTime, 1000);
-    }
-    updateTime();
+      }
+    }).appendTo(document.body).collector().created().updateTime()
 });
 </script>
 

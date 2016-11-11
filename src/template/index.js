@@ -3,7 +3,7 @@ import {
 } from './binding'
 import directives from './directives'
 import {
-  DomParser,
+  TemplateParser,
   DirectiveParser,
   TextParser,
   expression
@@ -15,22 +15,27 @@ import {
 import {
   dynamicClass,
   hasOwnProp,
-  ConfigurationChain
+  ConfigurationChain,
+  assignIf
 } from 'ilos'
 
 const config = new ConfigurationChain(configuration, observiConfiguration)
 
 let inited = false
 const Template = dynamicClass({
-  constructor(template, clone) {
+  constructor(cfg) {
     if (!inited) {
       configuration.nextStatus()
       inited = true
     }
-    this.parser = new DomParser(template, clone)
+    this.parser = new TemplateParser(cfg.template, cfg.clone)
+    this.collector = cfg.collector
   },
-  complie(scope) {
-    return this.parser.complie(scope)
+  complie(cfg) {
+    return this.parser.complie(assignIf({
+      scope: cfg.scope,
+      props: cfg.props
+    }, cfg.collector, this.collector))
   }
 })
 

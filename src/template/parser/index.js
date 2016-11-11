@@ -7,9 +7,9 @@ export {
 }
 from './TextParser'
 export {
-  default as DomParser
+  default as TemplateParser
 }
-from './DomParser'
+from './TemplateParser'
 export {
   default as expression
 }

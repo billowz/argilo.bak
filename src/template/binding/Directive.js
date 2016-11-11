@@ -20,31 +20,11 @@ const Directive = dynamicClass({
     this.super(arguments)
     this.expr = cfg.expression
     this.attr = cfg.attr
-    this.children = cfg.children
-    this.domParser = cfg.domParser
-    this.group = cfg.group
-    if (configuration.get(Binding.commentCfg)) {
+    this.templateParser = cfg.templateParser
+    if (Binding.comments) {
       this.comment = document.createComment(`Directive[${this.attr}]: ${this.expr}`)
       dom.before(this.comment, this.el)
     }
-  },
-  bindChildren() {
-    if (this.children)
-      each(this.children, (directive) => {
-        directive.bind()
-      })
-  },
-  bind() {
-    this.bindChildren()
-  },
-  unbindChildren() {
-    if (this.children)
-      each(this.children, (directive) => {
-        directive.unbind()
-      })
-  },
-  unbind() {
-    this.unbindChildren()
   },
   statics: {
     getPriority(directive) {
