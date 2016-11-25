@@ -25,29 +25,36 @@
 <script src="ENV.js"></script>
 <script src="monitor.js"></script>
 <script>
-var app = {
-    databases: []
-}
-argilo.proxy.on(app, function(obj, proxy) {
-    app = proxy || obj;
-})
 argilo.ready(function() {
-    argilo(argilo.html(document.getElementById('tpl/tpl.html')))
-        .complie(app).appendTo('#app');
+    argilo({
+        template: argilo.html(document.getElementById('tpl/tpl.html')),
+        collector: {
+            sampleTimeout: null,
+            created: function() {
+                this.loadSamples = this.loadSamples.bind(this)
+            },
+            binded: function() {
+                this.loadSamples()
+            },
+            loadSamples: function() {
+                this.scope.databases = ENV.generate(true);
+                Monitor.ping();
+                this.sampleTimeout = setTimeout(this.loadSamples, 0);
+            },
+            unmounted: function() {
+                if (this.sampleTimeout)
+                    clearTimeout(this.sampleTimeout)
+            }
+        }
+    }).complie().appendTo('#app');
 
-    function loadSamples() {
-        app.databases = ENV.generate(true);
-        Monitor.ping();
-        setTimeout(loadSamples, 0);
-    }
-    loadSamples()
 })
 </script>
 <script id="tpl/tpl.html" type="text/template">
     <a href="../index.html">Back</a>
     <table class="table table-striped lastest-data">
         <tbody>
-            <tr ag-each="db in databases">
+            <tr ag-each="db in scope.databases">
                 <td class="dbname">${db.dbname}</td>
                 <td class="query-count">
                     <span ag-class="db.lastSample.countClassName">${db.lastSample.nbQueries}</span>

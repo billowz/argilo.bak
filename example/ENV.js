@@ -3,8 +3,7 @@ var ENV = ENV || (function() {
     data: null,
     rows: 10,
     mutations: 50,
-    timeout: 0,
-    tpl: null
+    timeout: 0
   }
 
   function lpad(str, padding, toLength) {
@@ -173,15 +172,16 @@ var ENV = ENV || (function() {
 
   var tpl =
     '<div style="display: flex;">' +
-    '  <label>mutations: ${mutations}%</label>' +
-    '  <input type="range" ag-input="mutations" ag-value="mutations" style="margin-bottom: 10px; margin-top: 5px"/>' +
+    '  <label>mutations: ${scope.mutations}%</label>' +
+    '  <input type="range" ag-input="scope.mutations" ag-value="scope.mutations" style="margin-bottom: 10px; margin-top: 5px"/>' +
     '</div>' +
-    '<div><label>rows:</label><input type="text" ag-input="rows" ag-value="rows" style="margin-left:10px"/></div>'
+    '<div><label>rows:</label><input type="text" ag-input="scope.rows" ag-value="scope.rows" style="margin-left:10px"/></div>'
 
-  ENV.tpl = argilo(tpl).complie(ENV).bind();
-  argilo.ready(function() {
-    ENV.tpl.before(document.body.firstChild)
-  })
+  argilo({
+    template: tpl
+  }).complie({
+    scope: ENV
+  }).before(document.body.firstChild)
   ENV = argilo.proxy(ENV)
   return ENV
 })()

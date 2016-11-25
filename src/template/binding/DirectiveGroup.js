@@ -14,8 +14,8 @@ export default dynamicClass({
     this.children = cfg.children
     this.bindedCount = 0
     this.bindedChildren = false
-    this.directives = directives
-    this.directiveCount = directives.length
+    this.directives = cfg.directives
+    this.directiveCount = cfg.directives.length
   },
   bind() {
     let idx = this.bindedCount

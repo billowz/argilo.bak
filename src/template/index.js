@@ -8,6 +8,7 @@ import {
   TextParser,
   expression
 } from './parser'
+import Collector from './Collector'
 import configuration from './configuration'
 import {
   configuration as observiConfiguration
@@ -16,7 +17,10 @@ import {
   dynamicClass,
   hasOwnProp,
   ConfigurationChain,
-  assignIf
+  assignIf,
+  isObject,
+  isFunc,
+  isExtendOf
 } from 'ilos'
 
 const config = new ConfigurationChain(configuration, observiConfiguration)
@@ -28,18 +32,27 @@ const Template = dynamicClass({
       configuration.nextStatus()
       inited = true
     }
-    this.parser = new TemplateParser(cfg.template, cfg.clone)
-    this.collector = cfg.collector
+    this.templateParser = new TemplateParser(cfg.template, cfg.clone)
+    let Ct = cfg.collector
+    if (!Ct) {
+      Ct = Collector
+    } else if (isObject(Ct)) {
+      Ct.extend = Ct.extend || Collector
+      Ct = dynamicClass(Ct)
+    } else if (!isFunc(Ct)) {
+      Ct = null
+    }
+    if (!Ct || (Ct !== Collector && !isExtendOf(Ct, Collector)))
+      throw TypeError('Invalid Collector')
+    this.Collector = Ct
   },
-  complie(cfg) {
-    return this.parser.complie(assignIf({
-      scope: cfg.scope,
-      props: cfg.props
-    }, cfg.collector, this.collector))
+  complie(scope = {}, props = {}) {
+    return new this.Collector(this.Collector, this.templateParser, scope, props)
   }
 })
 
 export {
+  Collector,
   Template,
   Directive,
   directives,

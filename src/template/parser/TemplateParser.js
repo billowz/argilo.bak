@@ -1,6 +1,5 @@
 import TextParser from './TextParser'
 import DirectiveParser from './DirectiveParser'
-import Compontent from '../Compontent'
 import {
   Directive,
   DirectiveGroup,
@@ -129,7 +128,7 @@ function getTextParser(markEl, textParser) {
   }
 }
 
-function getDirectiveParser(markEl, directiveParser) {
+function getDirectiveParser(markEl, directiveParser, textParser) {
   return (el, bindings) => {
     let directives = [],
       block = false,
@@ -159,9 +158,13 @@ function getDirectiveParser(markEl, directiveParser) {
       }
       if (Directive.isIndependent(directive)) {
         var childEl = dom.cloneNode(el, false)
-        dom.removeAttr(childEl, directives[0].attr)
+        dom.removeAttr(childEl, name)
         dom.append(childEl, map(el.childNodes, (n) => n))
-        binding.params.templateParser = new TemplateParser(childEl, false)
+        binding.params.templateParser = new TemplateParser(childEl, {
+          directiveParser,
+          textParser,
+          clone: false
+        })
         independent = block = true
         directives = [binding]
         return false
@@ -177,9 +180,9 @@ function getDirectiveParser(markEl, directiveParser) {
     }
     binding = {
       constructor: DirectiveGroup,
-      index: index,
+      index: markEl.index,
       directives: directives.sort((a, b) => {
-        return (Directive.getPriority(b.directive) - Directive.getPriority(a.directive)) || 0
+        return (Directive.getPriority(b.constructor) - Directive.getPriority(a.constructor)) || 0
       }),
       children: !block && []
     }
@@ -204,7 +207,7 @@ function parse(el, directiveParser, textParser) {
   }
   markEl.index = 0
   return {
-    bindings: eachDom(el, [], getDirectiveParser(markEl, directiveParser), getTextParser(markEl, textParser)),
+    bindings: eachDom(el, [], getDirectiveParser(markEl, directiveParser, textParser), getTextParser(markEl, textParser)),
     elStatus: elStatus
   }
 }
@@ -231,30 +234,38 @@ const TemplateParser = dynamicClass({
     this.textParser = cfg.textParser || textParser
     assign(this, parse(this.el, this.directiveParser, this.textParser))
   },
-  complie(context) {
+  clone() {
     let templ = cloneTemplateEl(this.el, this.elStatus),
+      el = templ.el,
       elList = templ.list
-
-    if (!context.scope)
-      context.scope = {}
-    if (!context.props)
-      context.props = {}
 
     function create(bindings) {
       return map(bindings, binding => {
         let directives = binding.directives,
-          children = binding.children
-        return new binding.constructor(assign({
-          el: elList[binding.index],
-          context: context,
-          directives: directives && map(directives, directive => {
-            return new directive.constructor(directive.params)
-          }),
-          children: children && create(children)
-        }, binding.params || {}))
+          children = binding.children,
+          el = elList[binding.index],
+          desc = {
+            constructor: binding.constructor,
+            el: el,
+            params: binding.params
+          }
+        if (directives)
+          desc.directives = map(directives, directive => {
+            return {
+              constructor: directive.constructor,
+              el: el,
+              params: directive.params
+            }
+          })
+        if (children)
+          desc.children = create(children)
+        return desc
       })
     }
-    return new Compontent(templ.el, create(this.bindings), context)
+    return {
+      el: el,
+      bindings: create(this.bindings)
+    }
   }
 })
 export default TemplateParser

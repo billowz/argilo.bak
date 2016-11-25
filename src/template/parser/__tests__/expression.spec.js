@@ -446,7 +446,7 @@ describe('Expression Parser', () => {
   _.each(testCases, (testCase) => {
     it('parse expression: ' + testCase.exp, () => {
       let exp = expression(testCase.exp, ['$scope', '$testCase'], (expr, realScope) => {
-        return realScope ? '$scope' : 'this'
+        return (realScope ? '$scope.' : 'this.') + expr
       })
       logger.info(testCase.exp, '\n', exp.executor.toString())
       _.each(exp.filters, f => {

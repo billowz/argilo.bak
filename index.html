@@ -19,19 +19,17 @@
 <script>
 argilo.ready(function() {
     argilo({
-      template: '<h3> Current Time: <span style="color:red">${scope.time}</span></h3>',
+      template: '<h3> Current Time: <span style="color:red">${!#time ? "N/A":scope.time}</span></h3>',
       collector: {
         timeoutId: null,
         created: function(){
           this.updateTime = this.updateTime.bind(this)
-          return this
         },
         mounted: function(){
           this.timeoutId = this.updateTime()
         },
         unmounted: function(){
-          if(this.timeoutId)
-            clearTimeout(this.timeoutId)
+          clearTimeout(this.timeoutId)
         },
         updateTime: function(){
           this.scope.time = new Date().toLocaleString()
@@ -39,10 +37,8 @@ argilo.ready(function() {
         }
       }
     }).complie({
-      scope: {
         time: null
-      }
-    }).appendTo(document.body).collector().created().updateTime()
+    }).appendTo(document.body)
 });
 </script>
 

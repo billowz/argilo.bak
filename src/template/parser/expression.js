@@ -17,7 +17,7 @@ const keywords = reverseConvert('argilo,window,document,Math,Date,true,false,nul
   restoreReg = /"(\d+)"/g,
   identityReg = /[^\w$\.][A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*/g,
   propReg = /^[A-Za-z_$][\w$]*/,
-  simplePathReg = /^[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*|\['.*?'\]|\[".*?"\]|\[\d+\]|\[[A-Za-z_$][\w$]*\])*$/,
+  simplePathReg = /^[A-Za-z_$#@][\w$]*(?:\.[A-Za-z_$][\w$]*|\['.*?'\]|\[".*?"\]|\[\d+\]|\[[A-Za-z_$][\w$]*\])*$/,
   literalValueReg = /^(?:true|false|null|undefined|Infinity|NaN)$/,
   exprReg = /\s*\|\s*(?:\|\s*)*/,
   applyFuncReg = /\.call|\.apply$/
@@ -103,13 +103,13 @@ function rewrite(raw, idx, str) {
     }
     ident = !realScope
   }
-  var ret = expParser(expr, realScope, ident)
+  var ret = expParser(prefix, expr, realScope, ident)
   if (!ret || !ret.expr)
     return raw
   if (ident && ret.identity)
     identities[ret.identity] = true
   console.log(raw, ret)
-  return prefix + ret.expr
+  return ret.expr
 }
 
 

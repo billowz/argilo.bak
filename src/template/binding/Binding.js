@@ -19,7 +19,11 @@ const Binding = dynamicClass({
   },
   constructor(cfg) {
     this.ctx = obj(cfg.context)
+    if (!this.ctx) {
+      console.log('========')
+    }
     this.el = cfg.el
+    this.Collector = cfg.Collector
   },
   context() {
     let ctx = this.ctx
@@ -32,7 +36,7 @@ const Binding = dynamicClass({
     let ctx = this.ctx,
       parent
 
-    while ((parent = ctx.$parent) && !hasOwnProp(ctx, prop)) {
+    while ((parent = ctx.$parent) && !hasOwnProp(ctx, prop) && prop in parent) {
       ctx = parent
     }
     return proxy(ctx) || ctx

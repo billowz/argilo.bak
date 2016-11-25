@@ -47,7 +47,7 @@ export default Directive.register('each', dynamicClass({
     this.version = 1
   },
   update(data) {
-    let domParser = this.domParser,
+    let templateParser = this.templateParser,
       ctx = this.realContext(),
       indexExpr = this.indexExpr,
       used = this.used,
@@ -84,28 +84,25 @@ export default Directive.register('each', dynamicClass({
         let idle = idles && idles.pop()
         if (!idle) {
           desc.context = this.createChildContext(ctx, desc.data, desc.index)
-          desc.tpl = domParser.complie(desc.context)
           isNew = true
         } else {
           desc.context = idle.context
-          desc.tpl = idle.tpl
         }
       }
       if (!isNew)
         this.updateChildContext(desc.context, desc.data, desc.index)
-      desc.tpl.after(before)
-      before = desc.tpl.el
+      desc.context.after(before, true, isNew)
+      before = desc.context.el
       data[i] = proxy(desc.data)
     })
     if (idles)
-      each(idles, (idle) => idle.tpl.destroy())
+      each(idles, (idle) => idle.context.remove())
   },
   createChildContext(parent, value, index) {
-    let ctx = create(parent)
+    let ctx = parent.clone()
     ctx[this.valueAlias] = value
     if (this.keyAlias)
       ctx[this.keyAlias] = index
-    ctx.$parent = parent
     return ctx
   },
   updateChildContext(ctx, value, index) {

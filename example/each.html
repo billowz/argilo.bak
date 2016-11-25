@@ -12,65 +12,80 @@
 <script src="../dist/argilo.js"></script>
 <script type="text/javascript">
 argilo.ready(function() {
-    var tpl = argilo(document.getElementById('tpl/each.html').innerHTML)
-    argilo(document.getElementById('tpl/main.html').innerHTML).complie({
-        initCnt: 1000,
-        appendCnt: 1000,
-        array: null,
-        rtime: 0,
-        atime: 0,
-        dtime: 0,
-        utime: 0,
-        tpl: null,
-        render: function() {
-            function append(array, cnt) {
-                for (var i = 0; i < cnt; i++) {
-                    array.push({
+    var eachTpl = argilo({
+        template: document.getElementById('tpl/each.html').innerHTML
+    })
+
+    argilo({
+        template: document.getElementById('tpl/main.html').innerHTML,
+        collector: {
+            initCnt: 1000,
+            appendCnt: 1000,
+            rtime: 0,
+            atime: 0,
+            dtime: 0,
+            utime: 0,
+            eachTpl: null,
+            mounted: function() {
+                this.render()
+            },
+            resetTimes: function() {
+                this.rtime = 0
+                this.atime = 0
+                this.dtime = 0
+                this.utime = 0
+            },
+            render: function() {
+                this.resetTimes()
+                if (this.eachTpl)
+                    this.destory()
+                this.coll = []
+                var now = new Date()
+                for (var i = 0; i < this.initCnt; i++) {
+                    this.coll.push({
                         title: 'test - ' + i
                     })
                 }
-            }
-
-            var now
-            if (this.tpl) {
-                now = new Date()
-                this.tpl.destroy()
-                this.dtime = new Date() - now
-                argilo.logger.info('destory use %d ms', this.dtime)
-            }
-
-            this.array = []
-
-            now = new Date()
-            append(this.array, this.initCnt)
-            this.tpl = tpl.complie(this)
-            this.tpl.appendTo(document.body)
-            this.rtime = new Date() - now
-            argilo.logger.info('render use %d ms', this.rtime)
-
-            now = new Date()
-            append(this.array, this.appendCnt)
-            if (this.appendCnt)
-                setTimeout(function() {
-                    this.atime = new Date() - now
-                    console.log('append use %d ms', this.atime)
-                }.bind(this), 16)
-            else
-                this.atime = 0
-        },
-        update: function(){
-            if(this.array){
-            now = new Date()
-                argilo.$each(this.array, function(v, i){
-                    v.title='updated - ' + i
+                this.eachTpl = eachTpl.complie({
+                    scope: this
+                }).appendTo(document.body)
+                this.rtime = new Date() - now
+                argilo.logger.info('render use %d ms', this.rtime)
+            },
+            update: function() {
+                this.resetTimes()
+                var now = new Date()
+                argilo.$each(this.coll, function(v, i) {
+                    v.title = 'updated - ' + i
                 })
                 setTimeout(function() {
                     this.utime = new Date() - now
                     console.log('update use %d ms', this.utime)
-                }.bind(this), 16)
+                }.bind(this), 0)
+            },
+            append: function() {
+                this.resetTimes()
+                var now = new Date()
+                var coll = this.coll
+                for (var i = 0; i < this.appendCnt; i++) {
+                    coll.push({
+                        title: 'test - ' + i
+                    })
+                }
+                setTimeout(function() {
+                    this.atime = new Date() - now
+                    console.log('append use %d ms', this.atime)
+                }.bind(this), 0)
+            },
+            destory: function() {
+                this.resetTimes()
+                var now = new Date()
+                this.eachTpl.remove()
+                this.dtime = new Date() - now
+                argilo.logger.info('destory use %d ms', this.dtime)
             }
         }
-    }).appendTo(document.body)
+    }).complie({}).appendTo(document.body)
 });
 </script>
 <script id="tpl/main.html" type="text/template">
@@ -80,19 +95,25 @@ argilo.ready(function() {
     <input type="text" ag-input="appendCnt" ag-value="appendCnt" />
     <br/>
     <button ag-onclick="render">Render</button>
-    <button ag-onclick="update">Update</button>
-    <div ag-if="rtime+atime+dtime">
+    <button ag-onclick="append" ag-show="eachTpl">Append</button>
+    <button ag-onclick="update" ag-show="eachTpl">Update</button>
+    <button ag-onclick="destory" ag-show="eachTpl">Destory</button>
+    <div ag-if="rtime">
         render ${initCnt} use ${rtime} ms
-        <br/> append ${appendCnt} use ${atime} ms
-        <br/> destroy ${array.length} use ${dtime} ms
+    </div>
+    <div ag-if="atime">
+         append ${appendCnt} use ${atime} ms
+    </div>
+    <div ag-if="dtime">
+       destroy ${coll.length} use ${dtime} ms
     </div>
     <div ag-if="utime">
-        update ${array.length} use ${utime} ms
+        update ${coll.length} use ${utime} ms
     </div>
 </script>
 <script id="tpl/each.html" type="text/template">
     <div style="padding:10px">
-        <div ag-each="item, idx in array" ag-class="input">
+        <div ag-each="item, idx in scope.coll" ag-class="input">
             <span ag-text="idx"></span>:::<span ag-text="item.title"></span>
         </div>
     </div>
