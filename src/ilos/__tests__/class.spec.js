@@ -16,7 +16,7 @@ describe("class", () => {
         constructor(val, val2) {
           this.super([val])
           this.val2 = val2
-          expect(this.superclass()).to.equal(root.prototype)
+          expect(this.superclass()).to.equal(root)
         },
         value() {
           expect(this.super()).to.equal(this.val)
@@ -26,7 +26,7 @@ describe("class", () => {
       child = _.dynamicClass({
         extend: parent,
         constructor() {
-          expect(this.superclass()).to.equal(parent.prototype)
+          expect(this.superclass()).to.equal(parent)
           this.super(arguments)
         }
       }),

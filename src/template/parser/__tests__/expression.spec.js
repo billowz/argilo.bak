@@ -280,7 +280,7 @@ const testCases = [{
     },
     expected: 6.45
   }, {
-    exp: 'this["true"]',
+    exp: 'this.true',
     scope: {
       true: 1
     },
@@ -445,8 +445,12 @@ const testCases = [{
 describe('Expression Parser', () => {
   _.each(testCases, (testCase) => {
     it('parse expression: ' + testCase.exp, () => {
-      let exp = expression(testCase.exp, ['$scope', '$testCase'], (expr, realScope) => {
-        return (realScope ? '$scope.' : 'this.') + expr
+      let exp = expression(testCase.exp, ['$scope', '$testCase'], (prefix, expr, func, write) => {
+        expr = expr.replace(/^(this\.|\$scope\.)/, '')
+        return {
+          identity: !func && !write && expr,
+          expr: prefix + '$scope.' + expr
+        }
       })
       logger.info(testCase.exp, '\n', exp.executor.toString())
       _.each(exp.filters, f => {
