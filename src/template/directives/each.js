@@ -1,6 +1,13 @@
 import {
-  Directive
+  Directive,
+  ContextKeyword,
+  ElementKeyword,
+  BindingKeyword,
+  expressionParser
 } from '../binding'
+import {
+  expression
+} from '../parser'
 import dom from '../../dom'
 import {
   proxy
@@ -13,7 +20,8 @@ import {
   create
 } from 'ilos'
 
-const eachReg = /^\s*([\s\S]+)\s+in\s+([\S]+)(\s+track\s+by\s+([\S]+))?\s*$/,
+const expressionArgs = [ContextKeyword, ElementKeyword, BindingKeyword],
+  eachReg = /^\s*([\s\S]+)\s+in\s+([\S]+)(\s+track\s+by\s+([\S]+))?\s*$/,
   eachAliasReg = /^(\(\s*([^,\s]+)(\s*,\s*([\S]+))?\s*\))|([^,\s]+)(\s*,\s*([\S]+))?$/
 
 export default Directive.register('each', dynamicClass({
@@ -24,12 +32,11 @@ export default Directive.register('each', dynamicClass({
   constructor() {
     this.super(arguments)
     this.observeHandler = this.observeHandler.bind(this)
-    this.observeLenHandler = this.observeLenHandler.bind(this)
     let token = this.expr.match(eachReg)
     if (!token)
       throw Error(`Invalid Expression[${this.expr}] on Each Directive`)
 
-    this.dataExpr = token[2]
+    this.dataExpr = expression(token[2], expressionArgs, expressionParser)
     this.indexExpr = token[4]
 
     let aliasToken = token[1].match(eachAliasReg)
@@ -91,18 +98,24 @@ export default Directive.register('each', dynamicClass({
       }
       if (!isNew)
         this.updateChildContext(desc.context, desc.data, desc.index)
-      desc.context.after(before, true, isNew)
+      desc.context.after(before, true, false)
       before = desc.context.el
       data[i] = proxy(desc.data)
     })
     if (idles)
-      each(idles, (idle) => idle.context.remove())
+      each(idles, (idle) => idle.context.remove(true, false))
   },
   createChildContext(parent, value, index) {
-    let ctx = parent.clone()
-    ctx[this.valueAlias] = value
-    if (this.keyAlias)
-      ctx[this.keyAlias] = index
+    let ctx = parent.clone(this.templateParser),
+      va = this.valueAlias,
+      ka = this.keyAlias,
+      $watchs = ctx.$watchs
+    ctx[va] = value
+    $watchs[va] = true
+    if (ka) {
+      ctx[ka] = index
+      $watchs[ka] = true
+    }
     return ctx
   },
   updateChildContext(ctx, value, index) {
@@ -112,21 +125,27 @@ export default Directive.register('each', dynamicClass({
       ctx[this.keyAlias] = index
   },
   bind() {
-    this.observe(this.dataExpr, this.observeHandler)
-    this.observe(this.dataExpr + '.length', this.observeLenHandler)
+    each(this.dataExpr.identities, (ident) => {
+      this.observe(ident, this.observeHandler)
+    })
     this.update(this.target())
   },
   unbind() {
-    this.unobserve(this.dataExpr, this.observeHandler)
-    this.unobserve(this.dataExpr + '.length', this.observeLenHandler)
+    each(this.dataExpr.identities, (ident) => {
+      this.unobserve(ident, this.observeHandler)
+    })
   },
   target() {
-    return this.get(this.dataExpr)
+    let ctx = this.context()
+    return this.dataExpr.executeAll(ctx, [ctx, this.el, this])
   },
   observeHandler(expr, target) {
+    if (this.dataExpr.isSimple()) {
+      var ctx = this.context()
+      this.update(this.dataExpr.executeFilter(ctx, [ctx, this.el, this], target))
+    } else {
+      target = this.target()
+    }
     this.update(target)
-  },
-  observeLenHandler() {
-    this.update(this.target())
   }
 }))

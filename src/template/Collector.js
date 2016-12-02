@@ -9,7 +9,8 @@ import {
   isFunc,
   reverseConvert,
   assign,
-  create
+  create,
+  clone
 } from 'ilos'
 
 const handler = function() {}
@@ -43,13 +44,13 @@ function parseBindings(bindings, Collector, context) {
 
 function toDocument(collector, target, bind, fireEvent, fn) {
   fireEvent = fireEvent !== false
-  if (bind !== false)
-    collector.bind(fireEvent)
   if (fireEvent && collector.isMounted) {
     collector.unmouting()
     collector.unmounted()
   }
   fireEvent && collector.mouting()
+  if (bind !== false)
+    collector.bind(fireEvent)
   fn.call(collector, target)
   collector.isMounted = true
   fireEvent && collector.mounted()
@@ -62,10 +63,16 @@ export default dynamicClass({
       el,
       bindings
     } = templateParser.clone()
-    dom.append(document.createDocumentFragment(), el)
-    this.el = el
+    this.$watchs = {
+      props: true,
+      scope: true,
+      state: true
+    }
+    this.state = (this.state && clone(this.state)) || {}
     this.scope = proxy(scope)
     this.props = proxy(props)
+    dom.append(document.createDocumentFragment(), el)
+    this.el = el
     this.isMounted = this.isBinded = false
     this.bindings = parseBindings(bindings, Collector, this)
     this.Collector = Collector
@@ -80,8 +87,10 @@ export default dynamicClass({
     dom.append(document.createDocumentFragment(), el)
     clone.el = el
     clone.isMounted = clone.isBinded = false
-    clone.bindings = parseBindings(bindings, Collector, clone)
+    clone.bindings = parseBindings(bindings, this.Collector, clone)
     clone.$parent = this
+    clone.$watchs = assign({}, this.$watchs)
+    return clone
   },
   before(target, bind, fireEvent) {
     toDocument(this, target, bind, fireEvent, (target) => {

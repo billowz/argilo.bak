@@ -20,32 +20,36 @@
 <script src="./index.js"></script>
 <script id="tpl/todo.html" type="text/template">
     <div class="header">
-        <h1>${title}</h1>
-        <input class="new-todo" autofocus autocomplete="off" placeholder="What needs to be done?" ag-onkeydown="add | key 13">
+        <h1>${@title}</h1>
+        <input class="new-todo" autofocus autocomplete="off" placeholder="What needs to be done?" ag-onkeydown="addTodo | key 13">
     </div>
-    <div class="main" ag-if="todos.length">
-        <input class="toggle-all" type="checkbox" ag-checked="completedNum && completedNum == displayTodos.length" ag-onchange="toggleAll()">
+
+    <div class="main" ag-if="#todos.length">
+        <input class="toggle-all" type="checkbox"
+            ag-checked="state.completedNum && state.completedNum == #todos.length" ag-onchange="toggleAll()">
         <ul class="todo-list">
-            <li class="todo" ag-each="todo, idx in displayTodos " ag-class="{completed: todo.completed, editing: todo === edited}">
+            <li class="todo" ag-each="todo, idx in scope.todos " ag-class="{completed: todo.completed, editing: todo === state.edited}"
+              ag-if="display(@visibility,todo.completed)">
                 <div class="view">
                     <input class="toggle" type="checkbox" ag-checked="todo.completed" ag-onchange="toggle(todo)">
-                    <label ag-ondblclick="edit(todo)">${idx}&nbsp; - &nbsp;${todo.title}</label>
-                    <button class="destroy" ag-onclick="remove(todo)"></button>
+                    <label ag-ondblclick="editTodo(todo)">${idx}&nbsp; - &nbsp;${todo.title}</label>
+                    <button class="destroy" ag-onclick="removeTodo(todo)"></button>
                 </div>
-                <input class="edit" type="text" ag-input="todo.title" ag-focus="todo == edited" ag-onblur="update(todo)">
+                <input class="edit" type="text" ag-input="todo.title" ag-focus="todo == state.edited" ag-onblur="updateTodo(todo)">
             </li>
         </ul>
     </div>
-    <div class="footer" ag-if="todos.length">
+
+    <div class="footer" ag-if="#todos.length">
         <span class="todo-count">
-            ${completedNum | unit 'item','%s %s'}&nbsp;left
+            ${state.completedNum | unit 'item','%s %s'}&nbsp;left
         </span>
         <ul class="filters">
-            <li><a href="#" ag-onclick="vis('all')" ag-class="{selected: visibility == 'all'}">All</a></li>
-            <li><a href="#" ag-onclick="vis('active')" ag-class="{selected: visibility == 'active'}">Active</a></li>
-            <li><a href="#" ag-onclick="vis('completed')" ag-class="{selected: visibility == 'completed'}">Completed</a></li>
+            <li><a href="#" ag-onclick="@visibility = 'all'" ag-class="{selected: @visibility == 'all'}">All</a></li>
+            <li><a href="#" ag-onclick="@visibility = 'active'" ag-class="{selected: @visibility == 'active'}">Active</a></li>
+            <li><a href="#" ag-onclick="@visibility = 'completed'" ag-class="{selected: @visibility == 'completed'}">Completed</a></li>
         </ul>
-        <button class="clear-completed" ag-onclick="clear" ag-show="completedNum">
+        <button class="clear-completed" ag-onclick="clear" ag-show="state.completedNum">
             Clear completed
         </button>
     </div>

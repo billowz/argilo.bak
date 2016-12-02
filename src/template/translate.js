@@ -95,6 +95,7 @@ each(eventTranslates, (fn, name) => {
   })
 })
 
+const memunits = ['Bytes', 'KB', 'MB', 'GB', 'TB']
 let nomalTranslates = {
   json: {
     transform(value, indent) {
@@ -150,6 +151,14 @@ let nomalTranslates = {
     transform(value, fmt) {
       let args = [fmt, value].concat(Array.prototype.slice.call(arguments, 2))
       return format.apply(null, args)
+    }
+  },
+  memunit: {
+    transform(value, digit, na) {
+      if (!value) return na || ''
+      var precision = Math.pow(10, digit || 0),
+        i = Math.floor(Math.log(value) / Math.log(1024))
+      return Math.round(value * precision / Math.pow(1024, i)) / precision + ' ' + memunits[i]
     }
   }
 }

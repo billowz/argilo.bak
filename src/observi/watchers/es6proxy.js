@@ -1,7 +1,7 @@
 import {
   registerWatcher
 } from '../watcherFactory'
-import Watcher from '../Watcher'
+import ArrayWatcher from './ArrayWatcher'
 import proxy from '../proxy'
 import configuration from '../configuration'
 import {
@@ -23,12 +23,13 @@ registerWatcher('ES6Proxy', 10, function(config) {
   } = config
 
   let cls = dynamicClass({
-    extend: Watcher,
+    extend: ArrayWatcher,
     constructor() {
       this.super(arguments)
       this.binded = false
     },
     watch(attr) {
+      if (this.super([attr])) return
       if (!this.binded) {
         var obj = this.obj,
           _proxy = this.createProxy()

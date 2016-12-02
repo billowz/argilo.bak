@@ -8,107 +8,18 @@
 
 <body>
     <a href="../index.html">Back</a>
+    <br/>
 </body>
 <script src="../dist/argilo.js"></script>
-<script type="text/javascript">
-argilo.ready(function() {
-    var eachTpl = argilo({
-        template: document.getElementById('tpl/each.html').innerHTML
-    })
-
-    argilo({
-        template: document.getElementById('tpl/main.html').innerHTML,
-        collector: {
-            initCnt: 1000,
-            appendCnt: 1000,
-            rtime: 0,
-            atime: 0,
-            dtime: 0,
-            utime: 0,
-            eachTpl: null,
-            mounted: function() {
-                this.render()
-            },
-            resetTimes: function() {
-                this.rtime = 0
-                this.atime = 0
-                this.dtime = 0
-                this.utime = 0
-            },
-            render: function() {
-                this.resetTimes()
-                if (this.eachTpl)
-                    this.destory()
-                this.coll = []
-                var now = new Date()
-                for (var i = 0; i < this.initCnt; i++) {
-                    this.coll.push({
-                        title: 'test - ' + i
-                    })
-                }
-                this.eachTpl = eachTpl.complie({
-                    scope: this
-                }).appendTo(document.body)
-                this.rtime = new Date() - now
-                argilo.logger.info('render use %d ms', this.rtime)
-            },
-            update: function() {
-                this.resetTimes()
-                var now = new Date()
-                argilo.$each(this.coll, function(v, i) {
-                    v.title = 'updated - ' + i
-                })
-                setTimeout(function() {
-                    this.utime = new Date() - now
-                    console.log('update use %d ms', this.utime)
-                }.bind(this), 0)
-            },
-            append: function() {
-                this.resetTimes()
-                var now = new Date()
-                var coll = this.coll
-                for (var i = 0; i < this.appendCnt; i++) {
-                    coll.push({
-                        title: 'test - ' + i
-                    })
-                }
-                setTimeout(function() {
-                    this.atime = new Date() - now
-                    console.log('append use %d ms', this.atime)
-                }.bind(this), 0)
-            },
-            destory: function() {
-                this.resetTimes()
-                var now = new Date()
-                this.eachTpl.remove()
-                this.dtime = new Date() - now
-                argilo.logger.info('destory use %d ms', this.dtime)
-            }
-        }
-    }).complie({}).appendTo(document.body)
-});
-</script>
 <script id="tpl/main.html" type="text/template">
-    <br/> Init Size:
-    <input type="text" ag-input="initCnt" ag-value="initCnt" />
-    <br/> Append Size:
-    <input type="text" ag-input="appendCnt" ag-value="appendCnt" />
-    <br/>
-    <button ag-onclick="render">Render</button>
-    <button ag-onclick="append" ag-show="eachTpl">Append</button>
-    <button ag-onclick="update" ag-show="eachTpl">Update</button>
-    <button ag-onclick="destory" ag-show="eachTpl">Destory</button>
-    <div ag-if="rtime">
-        render ${initCnt} use ${rtime} ms
-    </div>
-    <div ag-if="atime">
-         append ${appendCnt} use ${atime} ms
-    </div>
-    <div ag-if="dtime">
-       destroy ${coll.length} use ${dtime} ms
-    </div>
-    <div ag-if="utime">
-        update ${coll.length} use ${utime} ms
+    <div>
+        Size:
+        <input type="text" ag-input="scope.size" ag-value="#size" />
+        <br/>
+        <button ag-onclick="render">Render</button>
+        <button ag-onclick="append">Append</button>
+        <button ag-onclick="update">Update</button>
+        <div ag-each="log in scope.logs" ag-text="log" />
     </div>
 </script>
 <script id="tpl/each.html" type="text/template">
@@ -119,4 +30,51 @@ argilo.ready(function() {
     </div>
 </script>
 
+<script type="text/javascript">
+argilo.ready(function() {
+    var each = argilo({
+            template: document.getElementById('tpl/each.html').innerHTML
+        }).compile({
+            coll: []
+        }),
+        collector = argilo({
+            template: document.getElementById('tpl/main.html').innerHTML,
+            collector: {
+                render: function() {
+                    var coll = [],
+                      d = new Date().toLocaleTimeString()
+                    for (var i = 0; i < this.scope.size; i++) {
+                        coll.push({
+                            title: 'render('+d+') - ' + i
+                        })
+                    }
+                    each.scope.coll = coll
+                },
+                append: function() {
+                    var coll = each.scope.coll,
+                      d = new Date().toLocaleTimeString()
+                    for (var i = 0; i < this.scope.size; i++) {
+                        coll.push({
+                            title: 'append('+d+') - ' + i
+                        })
+                    }
+                    each.scope.coll = coll
+                },
+                update: function() {
+                    var coll = each.scope.coll,
+                      d = new Date().toLocaleTimeString()
+                    for (var i = 0; i < this.scope.size && i<coll.length; i++) {
+                        coll[i].title = 'update('+d+') - ' + i
+                    }
+                    each.scope.coll = coll
+                }
+            }
+        }).compile({
+            logs: [],
+            size: 100
+        })
+    collector.appendTo(document.body)
+    each.appendTo(document.body)
+});
+</script>
 </html>

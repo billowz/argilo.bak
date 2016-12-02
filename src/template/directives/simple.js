@@ -191,8 +191,8 @@ const EVENT_CHANGE = 'change',
     'if': {
       priority: 9,
       bind() {
-        this.super(arguments)
         this.yieId = new YieId()
+        this.super(arguments)
         return this.yieId
       },
       unbind() {
@@ -202,10 +202,8 @@ const EVENT_CHANGE = 'change',
         if (!val) {
           dom.css(this.el, 'display', 'none')
         } else {
-          if (this.yieId) {
+          if (!this.yieId.doned)
             this.yieId.done()
-            this.yieId = undefined
-          }
           dom.css(this.el, 'display', '')
         }
       }

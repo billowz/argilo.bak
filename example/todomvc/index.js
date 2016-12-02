@@ -1,95 +1,84 @@
 argilo.ready(function() {
-  var todo = {
-    edited: null,
-    todos: [],
-    displayTodos: [],
-    completedNum: 0,
-    title: 'Todo MVC',
-    visibility: 'all',
-    filters: {
-      all: function(todos) {
-        return todos;
-      },
-      active: function(todos) {
-        return argilo.filter(todos, function(todo) {
-          return !todo.completed;
-        });
-      },
-      completed: function(todos) {
-        return argilo.filter(todos, function(todo) {
-          return todo.completed;
-        });
-      }
-    },
-    add: function(scope, el) {
-      var val = argilo.trim(argilo.val(el));
-      argilo.val(el, '');
-      if (!val) return;
-      /* this.todos.push({
-         title: val,
-         completed: false
-       })*/
-      this.todos = this.todos.concat([{
-        title: val,
-        completed: false
-      }]);
-      argilo.focus(el);
-      this.displayTodos = this.filters[this.visibility](this.todos)
-    },
-    edit: function(todo) {
-      this.edited = todo
-    },
-    update: function(todo, el) {
-      if (!argilo.trim(todo.title)) {
-        this.remove(todo);
-      }
-      this.edited = undefined
-    },
-    remove: function(todo) {
-      var idx = argilo.indexOf(this.todos, todo);
-      this.todos.splice(idx, 1);
-      if (todo.completed)
-        this.completedNum--;
-      this.displayTodos = this.filters[this.visibility](this.todos)
-    },
-    toggleAll: function() {
-      var done = this.completedNum != this.todos.length,
-        completedNum = this.completedNum;
-      argilo.$each(this.displayTodos, function(todo) {
-        var t = todo.completed
-        if (t !== done) {
-          todo.completed = done;
-          done ? completedNum++ : completedNum--
+  argilo({
+      template: document.getElementById('tpl/todo.html').innerHTML,
+      collector: {
+        state: {
+          completedNum: 0,
+          edited: undefined
+        },
+        created: function() {
+          var completedNum = 0
+          argilo.each(this.scope.todos, function(todo) {
+            if (todo.complated)
+              completedNum++
+          })
+          this.state.completedNum = completedNum
+        },
+        addTodo: function(scope, el) {
+          var val = argilo.trim(argilo.val(el));
+          argilo.val(el, '');
+          argilo.focus(el);
+          if (!val) return;
+          this.scope.todos.splice(0, 0, {
+            title: val,
+            completed: false
+          })
+        },
+        editTodo: function(todo) {
+          this.state.edited = todo
+        },
+        updateTodo: function(todo) {
+          if (!argilo.trim(todo.title))
+            this.removeTodo(todo)
+          this.state.edited = undefined
+        },
+        removeTodo: function(todo) {
+          var idx = argilo.indexOf(this.scope.todos, todo);
+          if (idx != -1) {
+            this.scope.todos.splice(idx, 1);
+            if (todo.completed)
+              this.state.completedNum--;
+            this.scope.todos = this.scope.todos
+          }
+        },
+        toggleAll: function() {
+          var completedNum = this.state.completedNum,
+            todos = this.scope.todos,
+            done = completedNum != todos.length
+          argilo.$each(todos, function(todo) {
+            if (todo.completed != done)
+              done ? completedNum++ : completedNum--;
+            todo.completed = done
+          })
+          this.state.completedNum = completedNum
+        },
+        toggle: function(todo) {
+          todo.completed = !todo.completed;
+          todo.completed ? this.state.completedNum++ : this.state.completedNum--;
+        },
+        clear: function() {
+          argilo.$each(this.scope.todos, function(todo) {
+            todo.completed = false;
+          })
+          this.state.completedNum = 0;
+        },
+        display: function(visibility, completed) {
+          console.log(visibility, completed)
+          switch (visibility) {
+            case 'all':
+              return true;
+            case 'active':
+              return !completed
+            case 'completed':
+              return completed
+          }
         }
-      })
-      this.completedNum = completedNum;
-      this.displayTodos = this.filters[this.visibility](this.todos)
-    },
-    toggle: function(todo) {
-      todo.completed = !todo.completed;
-      if (todo.completed) {
-        this.completedNum++;
-      } else {
-        this.completedNum--;
       }
-      this.displayTodos = this.filters[this.visibility](this.todos)
-    },
-    clear: function() {
-      argilo.$each(this.todos, function(todo) {
-        todo.completed = false;
-      })
-      this.completedNum = 0;
-      this.displayTodos = this.filters[this.visibility](this.todos)
-    },
-    vis: function(type) {
-      if (this.visibility !== type) {
-        this.visibility = type
-        this.displayTodos = this.filters[type](this.todos)
-      }
-    }
-  }
-
-  var todoTpl = argilo(document.getElementById('tpl/todo.html').innerHTML)
-    .complie(todo).appendTo('.todoapp')
-
+    })
+    .compile({
+      todos: []
+    }, {
+      title: 'Todo MVC',
+      visibility: 'all'
+    }).appendTo('.todoapp')
 })

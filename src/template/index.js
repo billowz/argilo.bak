@@ -46,7 +46,7 @@ const Template = dynamicClass({
       throw TypeError('Invalid Collector')
     this.Collector = Ct
   },
-  complie(scope = {}, props = {}) {
+  compile(scope = {}, props = {}) {
     return new this.Collector(this.Collector, this.templateParser, scope, props)
   }
 })

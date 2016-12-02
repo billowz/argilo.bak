@@ -1,5 +1,7 @@
 import {
   isNil,
+  isObject,
+  isArray,
   arrayType,
   stringType
 } from './is'
@@ -8,7 +10,9 @@ import {
   emptyFunc
 } from './common'
 import {
-  each
+  each,
+  eachArray,
+  eachObj
 } from './collection'
 
 const toStr = Object.prototype.toString,
@@ -153,4 +157,20 @@ export function set(obj, expr, value) {
   }
   _obj[prop] = value
   return obj
+}
+
+export function clone(obj, deep) {
+  var o = obj
+  if (isObject(obj)) {
+    o = {}
+    eachObj(obj, (value, key) => {
+      o[key] = clone(value)
+    }, obj, false)
+  } else if (isArray(obj)) {
+    o = []
+    eachArray(obj, (value, i) => {
+      o[i] = clone(value)
+    }, obj, false)
+  }
+  return o
 }

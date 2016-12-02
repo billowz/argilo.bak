@@ -19,9 +19,6 @@ const Binding = dynamicClass({
   },
   constructor(cfg) {
     this.ctx = obj(cfg.context)
-    if (!this.ctx) {
-      console.log('========')
-    }
     this.el = cfg.el
     this.Collector = cfg.Collector
   },

@@ -23,7 +23,7 @@ export default dynamicClass({
   constructor(cfg) {
     this.super(arguments)
     this.expr = expression(cfg.expression, expressionArgs, expressionParser)
-    if (configuration.get(Binding.commentCfg)) {
+    if (Binding.comments) {
       this.comment = document.createComment('Text Binding ' + cfg.expression)
       dom.before(this.comment, this.el)
     }

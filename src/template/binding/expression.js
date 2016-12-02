@@ -8,22 +8,27 @@ export const EventKeyword = '$event'
 export const BindingKeyword = '$binding'
 const ScopeKey = '#',
   PropsKey = '@'
-export function expressionParser(prefix, expr, realContext, ident) {
+
+export function expressionParser(prefix, expr, func, write) {
+  var path
   switch (prefix) {
     case ScopeKey:
       expr = `scope.${expr}`
       prefix = ''
+      path = parseExpr(expr)
       break
     case PropsKey:
       expr = `props.${expr}`
       prefix = ''
+      path = parseExpr(expr)
       break
     default:
       {
-        var path = parseExpr(expr)
+        path = parseExpr(expr)
         switch (path[0]) {
           case ElementKeyword:
           case EventKeyword:
+          case BindingKeyword:
             return null
           case 'this':
           case ContextKeyword:
@@ -34,7 +39,7 @@ export function expressionParser(prefix, expr, realContext, ident) {
       }
   }
   return {
-    identity: ident && expr,
-    expr: prefix + (realContext ? `$binding.exprContext('${path[0]}').${expr}` : `${ContextKeyword}.${expr}`)
+    identity: !func && !write && expr,
+    expr: prefix + ((func || write) ? `$binding.propContext('${path[0]}').${expr}` : `${ContextKeyword}.${expr}`)
   }
 }

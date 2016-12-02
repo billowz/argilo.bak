@@ -7,7 +7,7 @@ import {
   eq
 } from './common'
 
-function _eachObj(obj, callback, scope, own) {
+export function eachObj(obj, callback, scope, own) {
   let key,
     isOwn,
     i = 0
@@ -23,7 +23,7 @@ function _eachObj(obj, callback, scope, own) {
   return i
 }
 
-function _eachArray(obj, callback, scope) {
+export function eachArray(obj, callback, scope) {
   let i = 0,
     j = obj.length
 
@@ -37,9 +37,9 @@ function _eachArray(obj, callback, scope) {
 
 export function each(obj, callback, scope, own) {
   if (isArrayLike(obj)) {
-    return _eachArray(obj, callback, scope)
+    return eachArray(obj, callback, scope)
   } else if (!isNil(obj)) {
-    return _eachObj(obj, callback, scope, own)
+    return eachObj(obj, callback, scope, own)
   }
   return 0
 }
@@ -47,7 +47,7 @@ export function each(obj, callback, scope, own) {
 export function map(obj, callback, scope, own) {
   let isArray = isArrayLike(obj),
     ret = isArray ? [] : {},
-    each = isArray ? _eachArray : _eachObj
+    each = isArray ? eachArray : eachObj
 
   each(obj, function(val, key) {
     ret[key] = callback.apply(this, arguments)
@@ -58,7 +58,7 @@ export function map(obj, callback, scope, own) {
 export function filter(obj, callback, scope, own) {
   let isArray = isArrayLike(obj),
     ret = isArray ? [] : {},
-    each = isArray ? _eachArray : _eachObj
+    each = isArray ? eachArray : eachObj
 
   each(obj, function(val, key) {
     if (callback.apply(this, arguments))

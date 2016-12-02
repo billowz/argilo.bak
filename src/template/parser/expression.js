@@ -19,8 +19,7 @@ const keywords = reverseConvert('argilo,window,document,Math,Date,true,false,nul
   propReg = /^[A-Za-z_$][\w$]*/,
   simplePathReg = /^[A-Za-z_$#@][\w$]*(?:\.[A-Za-z_$][\w$]*|\['.*?'\]|\[".*?"\]|\[\d+\]|\[[A-Za-z_$][\w$]*\])*$/,
   literalValueReg = /^(?:true|false|null|undefined|Infinity|NaN)$/,
-  exprReg = /\s*\|\s*(?:\|\s*)*/,
-  applyFuncReg = /\.call|\.apply$/
+  exprReg = /\s*\|\s*(?:\|\s*)*/
 
 let userkeywords = {}
 
@@ -76,16 +75,13 @@ function rewrite(raw, idx, str) {
 
   let nextIdx = idx + raw.length,
     nextChar = str.charAt(nextIdx++),
-    realScope = false,
-    ident
+    func = nextChar == '(',
+    write = false
 
-  if (nextChar == '(') {
-    realScope = !applyFuncReg.test(expr)
-    ident = false
-  } else {
+  if (!func) {
     switch (nextChar) {
       case '=':
-        realScope = str.charAt(nextIdx) != '='
+        write = str.charAt(nextIdx) != '='
         break
       case '/':
       case '*':
@@ -94,22 +90,24 @@ function rewrite(raw, idx, str) {
       case '%':
       case '&':
       case '|':
-        realScope = str.charAt(nextIdx) == '='
+      case '~':
+      case '^':
+        write = str.charAt(nextIdx) == '='
         break
       case '>':
       case '<':
-        realScope = str.charAt(nextIdx) == nextChar && str.charAt(nextIdx + 1) == '='
+        write = str.charAt(nextIdx) == nextChar && str.charAt(nextIdx + 1) == '='
         break
     }
-    ident = !realScope
   }
-  var ret = expParser(prefix, expr, realScope, ident)
-  if (!ret || !ret.expr)
+  var ret = expParser(prefix, expr, func, write),
+    identity
+
+  if (!(expr = ret && ret.expr))
     return raw
-  if (ident && ret.identity)
-    identities[ret.identity] = true
-  console.log(raw, ret)
-  return ret.expr
+  if (identity = ret.identity)
+    identities[identity] = true
+  return expr
 }
 
 
@@ -192,15 +190,17 @@ const Expression = dynamicClass({
 })
 
 const cache = {}
+let parserId = 0
 
 export default function expression(expr, params, expParser) {
-  let rs = cache[expr]
-  if (!rs) {
+  let rs = cache[expr] || (cache[expr] = {}),
+    pid = expParser.id || (expParser.id = ++parserId),
+    exp = rs[pid]
+  if (!exp) {
     initStatus(params, expParser)
-    cache[expr] = rs = new Expression(expr, params)
+    exp = rs[pid] = new Expression(expr, params)
     cleanStates()
   }
-  return rs
+  return exp
 }
-
 expression.cache = cache

@@ -32,7 +32,7 @@ const emptyArray = []
 assign(Base.prototype, {
   super(args) {
     let method = arguments.callee.caller
-    return method.$owner.superclass[method.$name].apply(this, args || emptyArray)
+    return method.$owner.superclass.prototype[method.$name].apply(this, args || emptyArray)
   },
   superclass() {
     let method = arguments.callee.caller
@@ -44,6 +44,8 @@ assign(Base, {
   extend(overrides) {
     if (overrides) {
       var proto = this.prototype
+      this.assign(overrides.statics)
+      delete overrides.statics
       each(overrides, (member, name) => {
         if (isFunc(member)) {
           member.$owner = this
@@ -51,7 +53,6 @@ assign(Base, {
         }
         proto[name] = member
       })
-      this.assign(overrides.statics)
     }
     return this
   },
@@ -79,7 +80,7 @@ export function dynamicClass(overrides) {
 
   proto = create(superproto)
 
-  cls.superclass = superproto
+  cls.superclass = superclass
   cls.prototype = proto
   setPrototypeOf(cls, superclass)
 
