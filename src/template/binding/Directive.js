@@ -20,6 +20,7 @@ const Directive = dynamicClass({
     this.super(arguments)
     this.expr = cfg.expression
     this.attr = cfg.attr
+    this.params = cfg.params
     this.templateParser = cfg.templateParser
     if (Binding.comments) {
       this.comment = document.createComment(`Directive[${this.attr}]: ${this.expr}`)
@@ -35,6 +36,9 @@ const Directive = dynamicClass({
     },
     isIndependent(directive) {
       return directive.prototype.independent
+    },
+    getParams(directive) {
+      return directive.prototype.params
     },
     getDirective(name) {
       return directives[name.toLowerCase()]

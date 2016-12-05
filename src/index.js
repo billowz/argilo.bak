@@ -4,12 +4,12 @@ import * as observi from 'observi'
 import * as _ from 'ilos'
 
 const {
-  Template
+  Compontent
 } = template, {
   assignIf
 } = _
 
 export default function argilo(cfg) {
-  return new Template(cfg)
+  return new Compontent(cfg)
 }
 assignIf(argilo, template, observi, _, dom)

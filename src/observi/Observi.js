@@ -27,6 +27,9 @@ function getOrCreateWatcher(obj) {
 }
 
 export default dynamicClass({
+  statics: {
+    getOrCreateWatcher
+  },
   constructor(obj, expr, path) {
     this.obj = obj
     this.expr = expr

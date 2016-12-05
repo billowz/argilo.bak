@@ -18,7 +18,9 @@ import {
   isString,
   isFunc,
   isExtendOf,
-  isArrayLike
+  isArrayLike,
+  isArray,
+  reverseConvert
 } from 'ilos'
 
 let directiveParser = new DirectiveParser(/^ag-/),
@@ -138,7 +140,9 @@ function getDirectiveParser(markEl, directiveParser, textParser) {
     each(el.attributes, (attr) => {
       let name = attr.name,
         directive,
-        binding
+        binding,
+        params,
+        paramMap
 
       if (!directiveParser.isDirective(name))
         return
@@ -147,13 +151,16 @@ function getDirectiveParser(markEl, directiveParser, textParser) {
         logger.warn(`Directive[${name}] is undefined`)
         return
       }
-
+      params = Directive.getParams(directive)
       binding = {
         constructor: directive,
         index: markEl.index,
         params: {
           expression: attr.value,
-          attr: name
+          attr: name,
+          params: isArray(params) && reverseConvert(params, name => {
+            return el.getAttribute(name)
+          })
         }
       }
       if (Directive.isIndependent(directive)) {

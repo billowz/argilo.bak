@@ -57,17 +57,12 @@ function toDocument(collector, target, bind, fireEvent, fn) {
 }
 
 export default dynamicClass({
-  $parent: null,
+  $parent: undefined,
   constructor(Collector, templateParser, scope = {}, props = {}) {
     let {
       el,
       bindings
     } = templateParser.clone()
-    this.$watchs = {
-      props: true,
-      scope: true,
-      state: true
-    }
     this.state = (this.state && clone(this.state)) || {}
     this.scope = proxy(scope)
     this.props = proxy(props)
@@ -89,7 +84,6 @@ export default dynamicClass({
     clone.isMounted = clone.isBinded = false
     clone.bindings = parseBindings(bindings, this.Collector, clone)
     clone.$parent = this
-    clone.$watchs = assign({}, this.$watchs)
     return clone
   },
   before(target, bind, fireEvent) {

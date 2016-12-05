@@ -10,7 +10,8 @@ import {
 } from '../parser'
 import dom from '../../dom'
 import {
-  proxy
+  proxy,
+  createProxy
 } from 'observi'
 import {
   dynamicClass,
@@ -72,7 +73,7 @@ export default Directive.register('each', dynamicClass({
           index: index
         }
         desc.version = version
-        desc.data = proxy(item)
+        desc.data = item
         indexMap[index] = desc
         return desc
       }),
@@ -86,40 +87,35 @@ export default Directive.register('each', dynamicClass({
       })
     }
     each(descs, (desc, i) => {
-      let isNew = false
-      if (!desc.context) {
+      let isNew = false,
+        _ctx = desc.context
+
+      if (!_ctx) {
         let idle = idles && idles.pop()
         if (!idle) {
-          desc.context = this.createChildContext(ctx, desc.data, desc.index)
+          _ctx = desc.context = this.createChildContext(ctx, desc.data, desc.index)
           isNew = true
         } else {
-          desc.context = idle.context
+          _ctx = desc.context = idle.context
         }
       }
       if (!isNew)
-        this.updateChildContext(desc.context, desc.data, desc.index)
-      desc.context.after(before, true, false)
-      before = desc.context.el
+        this.updateChildContext(_ctx, desc.data, desc.index)
+      _ctx.after(before, true, false)
+      before = _ctx.el
       data[i] = proxy(desc.data)
     })
     if (idles)
       each(idles, (idle) => idle.context.remove(true, false))
   },
   createChildContext(parent, value, index) {
-    let ctx = parent.clone(this.templateParser),
-      va = this.valueAlias,
-      ka = this.keyAlias,
-      $watchs = ctx.$watchs
-    ctx[va] = value
-    $watchs[va] = true
-    if (ka) {
-      ctx[ka] = index
-      $watchs[ka] = true
-    }
-    return ctx
+    let ctx = parent.clone(this.templateParser)
+    ctx[this.valueAlias] = value
+    if (this.keyAlias)
+      ctx[this.keyAlias] = index
+    return createProxy(ctx)
   },
   updateChildContext(ctx, value, index) {
-    ctx = proxy(ctx)
     ctx[this.valueAlias] = value
     if (this.keyAlias)
       ctx[this.keyAlias] = index

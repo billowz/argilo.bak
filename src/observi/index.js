@@ -1,10 +1,26 @@
-import proxy from './proxy'
-import Watcher from './Watcher'
-import Observi from './Observi'
-import configuration from './configuration'
-import {
+export {
+  default as proxy
+}
+from './proxy'
+export {
+  default as Watcher
+}
+from './Watcher'
+export {
+  default as configuration
+}
+from './configuration'
+export {
   registerWatcher
-} from './watcherFactory'
+}
+from './watcherFactory'
+export {
+  default as logger
+}
+from './log'
+import proxy from './proxy'
+import configuration from './configuration'
+import Observi from './Observi'
 import './watchers'
 import {
   each,
@@ -16,7 +32,6 @@ import {
   parseExpr,
   isFunc,
 } from 'ilos'
-import logger from './log'
 
 configuration.register('bindObservis', '__observi__', 'init')
 
@@ -53,7 +68,16 @@ function getObservi(obj, expr) {
   return observis && observis[path.join(PATH_JOIN)]
 }
 
-function observe(obj, expr, cb) {
+export function createProxy(obj) {
+  if (proxy.isEnable()) {
+    var watcher = Observi.getOrCreateWatcher(obj)
+    watcher.init()
+    return watcher.proxy
+  }
+  return obj
+}
+
+export function observe(obj, expr, cb) {
   if (!isFunc(cb))
     throw new Error('Invalid Observi Callback')
   let observi = getOrCreateObservi(proxy.obj(obj), expr)
@@ -61,7 +85,7 @@ function observe(obj, expr, cb) {
   return observi.watcher.proxy
 }
 
-function unobserve(obj, expr, cb) {
+export function unobserve(obj, expr, cb) {
   if (!isFunc(cb))
     throw new Error('Invalid Observi Callback')
   let observi = getObservi(proxy.obj(obj), expr)
@@ -72,64 +96,45 @@ function unobserve(obj, expr, cb) {
   return obj
 }
 
-function isObserved(obj, expr, cb) {
+export function isObserved(obj, expr, cb) {
   let observi = getObservi(proxy.obj(obj), expr)
   return observi && observi.isListened(cb)
 }
 
-function eq(o1, o2) {
+export function eq(o1, o2) {
   return proxy.eq(o1, o2)
 }
 
-function obj(o) {
+export function obj(o) {
   return proxy.obj(o)
 }
 
-function $each(obj, callback, scope, own) {
+export function $each(obj, callback, scope, own) {
   return hookArrayFunc(each, obj, callback, scope, own)
 }
 
-function $map(obj, callback, scope, own) {
+export function $map(obj, callback, scope, own) {
   return hookArrayFunc(map, obj, callback, scope, own)
 }
 
-function $filter(obj, callback, scope, own) {
+export function $filter(obj, callback, scope, own) {
   return hookArrayFunc(filter, obj, callback, scope, own)
 }
 
-function $aggregate(obj, callback, defVal, scope, own) {
+export function $aggregate(obj, callback, defVal, scope, own) {
   return aggregate(obj, callback && proxy.isEnable() ? function(r, v, k, s, o) {
     return callback.call(this, r, proxy.proxy(v), k, s, o)
   } : callback, defVal, scope, own)
 }
 
-function $keys(obj, filter, scope, own) {
+export function $keys(obj, filter, scope, own) {
   return keys(obj, filter && proxy.isEnable() ? function(v, k, s, o) {
     return filter.call(this, proxy.proxy(v), k, s, o)
   } : filter, scope, own)
 }
 
-function $values(obj, filter, scope, own) {
+export function $values(obj, filter, scope, own) {
   return values(obj, filter && proxy.isEnable() ? function(v, k, s, o) {
     return filter.call(this, proxy.proxy(v), k, s, o)
   } : filter, scope, own)
-}
-
-export {
-  Watcher,
-  registerWatcher,
-  logger,
-  proxy,
-  configuration,
-  observe,
-  unobserve,
-  isObserved,
-  eq,
-  obj,
-  $each,
-  $map,
-  $filter,
-  $aggregate,
-  $keys,
-  $values
 }

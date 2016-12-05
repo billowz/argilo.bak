@@ -26,7 +26,7 @@ registerWatcher('VBScriptProxy', 40, function(config) {
     watch(attr) {
       if (this.super([attr]) || this.isArray) return
       let obj = this.obj,
-        desc = this.desc || (this.desc = (factory.descriptor(obj) || factory.create(obj)))
+        desc = this.init()
       this.proxy = desc.defineProperty(attr, {
         set: (val) => {
           let oldVal = obj[attr]
@@ -34,6 +34,15 @@ registerWatcher('VBScriptProxy', 40, function(config) {
           this.set(attr, val, oldVal)
         }
       })
+    },
+    init() {
+      let obj = this.obj,
+        desc = this.desc
+      if (!desc) {
+        desc = this.desc = (factory.descriptor(obj) || factory.create(obj))
+        this.proxy = desc.proxy
+      }
+      return desc
     }
   })
   proxy.enable({

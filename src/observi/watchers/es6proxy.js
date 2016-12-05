@@ -30,16 +30,7 @@ registerWatcher('ES6Proxy', 10, function(config) {
     },
     watch(attr) {
       if (this.super([attr])) return
-      if (!this.binded) {
-        var obj = this.obj,
-          _proxy = this.createProxy()
-        this.proxy = _proxy
-        obj[bindES6Proxy] = _proxy
-        obj[bindES6ProxySource] = obj
-        proxy.change(obj, _proxy)
-
-        this.binded = true
-      }
+      this.init()
     },
     createProxy() {
       return new Proxy(this.obj, {
@@ -50,6 +41,17 @@ registerWatcher('ES6Proxy', 10, function(config) {
           return true
         }
       })
+    },
+    init() {
+      if (!this.binded) {
+        var obj = this.obj,
+          _proxy = this.createProxy()
+        this.proxy = _proxy
+        obj[bindES6Proxy] = _proxy
+        obj[bindES6ProxySource] = obj
+        proxy.change(obj, _proxy)
+        this.binded = true
+      }
     }
   })
   proxy.enable({

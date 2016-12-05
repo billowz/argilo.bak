@@ -52,6 +52,9 @@ export default dynamicClass({
     let queue = accessors[attr]
     return queue ? queue.remove(cb) == 1 : false
   },
+  init() {
+
+  },
   // watch property, intercept getter and setter
   watch() {
     throw new Error('abstract function watch')
