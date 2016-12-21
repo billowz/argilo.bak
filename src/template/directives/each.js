@@ -14,7 +14,7 @@ import {
   createProxy
 } from 'observi'
 import {
-  dynamicClass,
+  createClass,
   each,
   map,
   get,
@@ -25,10 +25,10 @@ const expressionArgs = [ContextKeyword, ElementKeyword, BindingKeyword],
   eachReg = /^\s*([\s\S]+)\s+in\s+([\S]+)(\s+track\s+by\s+([\S]+))?\s*$/,
   eachAliasReg = /^(\(\s*([^,\s]+)(\s*,\s*([\S]+))?\s*\))|([^,\s]+)(\s*,\s*([\S]+))?$/
 
-export default Directive.register('each', dynamicClass({
+export default Directive.register('each', createClass({
   extend: Directive,
-  independent: true,
-  block: true,
+  type: 'template',
+  alone: true,
   priority: 10,
   constructor() {
     this.super(arguments)
@@ -56,7 +56,7 @@ export default Directive.register('each', dynamicClass({
   },
   update(data) {
     let templateParser = this.templateParser,
-      ctx = this.realContext(),
+      ctx = this.ctx,
       indexExpr = this.indexExpr,
       used = this.used,
       version = this.version++,

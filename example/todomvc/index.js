@@ -1,7 +1,7 @@
 argilo.ready(function() {
   argilo({
       template: document.getElementById('tpl/todo.html').innerHTML,
-      collector: {
+      controller: {
         state: {
           completedNum: 0,
           edited: undefined

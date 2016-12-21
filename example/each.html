@@ -9,72 +9,82 @@
 <body>
     <a href="../index.html">Back</a>
     <br/>
+
+    <script id="tpl/main.html" type="text/template">
+        <div>
+            Size:
+            <input type="text" ag-input="scope.size"  />
+            <br/>
+            <button ag-onclick="render" ag-ref="btn">Render</button>
+            <button ag-onclick="append" ag-ref="btn">Append</button>
+            <button ag-onclick="update" ag-ref="btn">Update</button>
+        </div>
+        <div ag-cmp="each" scope="{coll:state.coll}"  ag-ref="cmp">
+          <div ag-slot="namedHolder2">
+            <h1>Named Slot2</h1>
+          </div>
+          <h1>Default Slot</h1>
+          <input type="text" ag-input="scope.size"  />
+        </div>
+    </script>
+    <script id="tpl/each.html" type="text/template">
+        <div style="padding:10px">
+            <div ag-each="item, idx in scope.coll" ag-class="input">
+                <span ag-text="idx"></span>:::<span ag-text="item.title"></span>
+            </div>
+            <div ag-holder></div>
+            <div ag-holder="namedHolder"></div>
+            <div ag-holder="namedHolder2"></div>
+        </div>
+    </script>
 </body>
 <script src="../dist/argilo.js"></script>
-<script id="tpl/main.html" type="text/template">
-    <div>
-        Size:
-        <input type="text" ag-input="scope.size" ag-value="#size" />
-        <br/>
-        <button ag-onclick="render">Render</button>
-        <button ag-onclick="append">Append</button>
-        <button ag-onclick="update">Update</button>
-        <div ag-each="log in scope.logs" ag-text="log" />
-    </div>
-</script>
-<script id="tpl/each.html" type="text/template">
-    <div style="padding:10px">
-        <div ag-each="item, idx in scope.coll" ag-class="input">
-            <span ag-text="idx"></span>:::<span ag-text="item.title"></span>
-        </div>
-    </div>
-</script>
-
 <script type="text/javascript">
 argilo.ready(function() {
-    var each = argilo({
-            template: document.getElementById('tpl/each.html').innerHTML
-        }).compile({
-            coll: []
-        }),
-        collector = argilo({
-            template: document.getElementById('tpl/main.html').innerHTML,
-            collector: {
-                render: function() {
-                    var coll = [],
-                      d = new Date().toLocaleTimeString()
-                    for (var i = 0; i < this.scope.size; i++) {
-                        coll.push({
-                            title: 'render('+d+') - ' + i
-                        })
-                    }
-                    each.scope.coll = coll
-                },
-                append: function() {
-                    var coll = each.scope.coll,
-                      d = new Date().toLocaleTimeString()
-                    for (var i = 0; i < this.scope.size; i++) {
-                        coll.push({
-                            title: 'append('+d+') - ' + i
-                        })
-                    }
-                    each.scope.coll = coll
-                },
-                update: function() {
-                    var coll = each.scope.coll,
-                      d = new Date().toLocaleTimeString()
-                    for (var i = 0; i < this.scope.size && i<coll.length; i++) {
-                        coll[i].title = 'update('+d+') - ' + i
-                    }
-                    each.scope.coll = coll
+    argilo({
+        name: 'each',
+        template: document.getElementById('tpl/each.html')
+    })
+    argilo({
+        template: document.getElementById('tpl/main.html'),
+        state: {
+          coll: []
+        },
+        controller: {
+            created: function(){
+              console.log(this.refs)
+            },
+            render: function() {
+                var coll = [],
+                    d = new Date().getTime()
+                for (var i = 0; i < this.scope.size; i++) {
+                    coll.push({
+                        title: 'render(' + d + ') - ' + i
+                    })
+                }
+                this.state.coll = coll
+            },
+            append: function() {
+                var coll = this.state.coll,
+                    d = new Date().getTime()
+                for (var i = 0; i < this.scope.size; i++) {
+                    coll.push({
+                        title: 'append(' + d + ') - ' + i
+                    })
+                }
+            },
+            update: function() {
+                var coll = this.state.coll,
+                    d = new Date().getTime()
+                for (var i = 0; i < this.scope.size && i < coll.length; i++) {
+                    coll[i].title = 'update(' + d + ') - ' + i
                 }
             }
-        }).compile({
-            logs: [],
-            size: 100
-        })
-    collector.appendTo(document.body)
-    each.appendTo(document.body)
+        }
+    }).compile({
+        size: 100
+    }).appendTo(document.body)
 });
 </script>
+
 </html>

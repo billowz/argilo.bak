@@ -63,7 +63,7 @@ assign(Base, {
   }
 })
 
-export function dynamicClass(overrides) {
+export function createClass(overrides) {
   let cls = function DynamicClass() {
       this.constructor.apply(this, arguments)
     },

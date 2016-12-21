@@ -3,19 +3,43 @@ import {
   YieId
 } from '../util'
 import {
-  dynamicClass,
-  each
+  createClass,
+  each,
+  map,
+  assign
 } from 'ilos'
 
-export default dynamicClass({
-  extend: Binding,
+export default createClass({
   constructor(cfg) {
-    this.super(arguments)
+    let {
+      el,
+      context,
+      Collector
+    } = cfg,
+    directives = this.directives = []
+
+    this.el = el
     this.children = cfg.children
     this.bindedCount = 0
     this.bindedChildren = false
-    this.directives = cfg.directives
     this.directiveCount = cfg.directives.length
+    each(cfg.directives, directive => {
+      directives.push(new directive.constructor(assign({
+        el: this.el,
+        context,
+        Collector,
+        group: this
+      }, directive.params)))
+    })
+    this.el = undefined
+  },
+  updateEl(el, target) {
+    if (this.el)
+      this.el = el
+    each(this.directives, directive => {
+      if (target != directive)
+        directive.updateEl(el)
+    })
   },
   bind() {
     let idx = this.bindedCount

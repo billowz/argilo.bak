@@ -5,7 +5,7 @@ import {
   each
 } from './collection'
 import {
-  dynamicClass
+  createClass
 } from './class'
 import AbstractConfiguration from './AbstractConfiguration'
 
@@ -14,7 +14,7 @@ function check(cfg) {
     throw new Error('Invalid Configuration: ' + cfg)
   return cfg
 }
-export default dynamicClass({
+export default createClass({
   extend: AbstractConfiguration,
   constructor() {
     let cfgs = []

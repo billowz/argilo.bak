@@ -3,7 +3,7 @@ import * as _ from '../class'
 describe("class", () => {
 
   it('class', () => {
-    let root = _.dynamicClass({
+    let root = _.createClass({
         constructor(val) {
           this.val = val
         },
@@ -11,7 +11,7 @@ describe("class", () => {
           return this.val
         }
       }),
-      parent = _.dynamicClass({
+      parent = _.createClass({
         extend: root,
         constructor(val, val2) {
           this.super([val])
@@ -23,14 +23,14 @@ describe("class", () => {
           return this.val2
         }
       }),
-      child = _.dynamicClass({
+      child = _.createClass({
         extend: parent,
         constructor() {
           expect(this.superclass()).to.equal(parent)
           this.super(arguments)
         }
       }),
-      class4 = _.dynamicClass({
+      class4 = _.createClass({
         statics: {
           a: 1
         }

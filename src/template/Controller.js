@@ -3,7 +3,7 @@ import {
   proxy
 } from 'observi'
 import {
-  dynamicClass,
+  createClass,
   each,
   map,
   isFunc,
@@ -12,6 +12,7 @@ import {
   create,
   clone
 } from 'ilos'
+import logger from './log'
 
 const handler = function() {}
 
@@ -30,11 +31,10 @@ function parseBindings(bindings, Collector, context) {
 
     if (directives)
       params.directives = map(directives, directive => {
-        return new directive.constructor(assign({
-          el,
-          context,
-          Collector
-        }, directive.params))
+        return {
+          constructor: directive.constructor,
+          params: directive.params
+        }
       })
     if (children)
       params.children = parseBindings(children, Collector, context)
@@ -55,35 +55,57 @@ function toDocument(collector, target, bind, fireEvent, fn) {
   collector.isMounted = true
   fireEvent && collector.mounted()
 }
+const bindProps = [],
+  bindPropMap = {}
 
-export default dynamicClass({
+export const Controller = createClass({
   $parent: undefined,
-  constructor(Collector, templateParser, scope = {}, props = {}) {
+  statics: {
+    addProp(name, protoVal, init) {
+      if (bindPropMap[name])
+        logger.warn('Re-Bind Controller Property[%s]', name)
+      Controller.prototype[name] = protoVal
+      if (isFunc(init))
+        bindProps.push({
+          name: name,
+          init: init
+        })
+      bindPropMap[name] = true
+    }
+  },
+  constructor(Controller, templateParser, scope = {}, props = {}) {
     let {
       el,
       bindings
-    } = templateParser.clone()
+    } = templateParser.clone(),
+      frame = document.createDocumentFragment()
     this.state = (this.state && clone(this.state)) || {}
     this.scope = proxy(scope)
     this.props = proxy(props)
-    dom.append(document.createDocumentFragment(), el)
-    this.el = el
+    dom.append(frame, el)
     this.isMounted = this.isBinded = false
-    this.bindings = parseBindings(bindings, Collector, this)
-    this.Collector = Collector
+    this.Controller = Controller
+    each(bindProps, item => {
+      this[item.name] = item.init.call(this, this)
+    })
+    this.bindings = parseBindings(bindings, Controller, this)
+    this.el = map(frame.childNodes, el => el)
     this.created()
   },
-  clone(templateParser) {
+  clone(templateParser, init) {
     let clone = create(this),
       {
         el,
         bindings
-      } = templateParser.clone()
-    dom.append(document.createDocumentFragment(), el)
-    clone.el = el
+      } = templateParser.clone(),
+      frame = document.createDocumentFragment()
+    dom.append(frame, el)
     clone.isMounted = clone.isBinded = false
-    clone.bindings = parseBindings(bindings, this.Collector, clone)
     clone.$parent = this
+    clone.el = map(frame.childNodes, el => el)
+    if (init)
+      init(clone)
+    clone.bindings = parseBindings(bindings, this.Controller, clone)
     return clone
   },
   before(target, bind, fireEvent) {

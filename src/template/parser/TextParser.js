@@ -1,7 +1,7 @@
 import {
-  dynamicClass
+  createClass
 } from 'ilos'
-export default dynamicClass({
+export default createClass({
   constructor(prefix, suffix) {
     this.prefix = prefix
     this.suffix = suffix

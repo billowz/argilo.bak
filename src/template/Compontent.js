@@ -1,43 +1,47 @@
-import Collector from './Collector'
+import {
+  Controller
+} from './Controller'
 import {
   TemplateParser
 } from './parser'
 import configuration from './configuration'
 import {
-  createProxy
+  createProxy,
+  init as observiInit
 } from 'observi'
 import {
-  dynamicClass,
+  createClass,
   isObject,
   isString,
   isFunc,
-  isExtendOf
+  isExtendOf,
+  values
 } from 'ilos'
 import logger from './log'
 
-let inited = false
-const compontents = {}
-export const Compontent = dynamicClass({
+let inited = false,
+  compontents = {}
+export const Compontent = createClass({
   constructor(cfg) {
-    let Ct = cfg.collector,
+    let Ct = cfg.controller,
       name = cfg.name
-
     if (!inited) {
       configuration.nextStatus()
+      observiInit()
       inited = true
     }
     this.templateParser = new TemplateParser(cfg.template, cfg.clone)
     if (!Ct) {
-      Ct = Collector
+      Ct = Controller
     } else if (isObject(Ct)) {
-      Ct.extend = Ct.extend || Collector
-      Ct = dynamicClass(Ct)
+      Ct.extend = Ct.extend || Controller
+      Ct = createClass(Ct)
     } else if (!isFunc(Ct)) {
       Ct = null
     }
-    if (!Ct || (Ct !== Collector && !isExtendOf(Ct, Collector)))
-      throw TypeError('Invalid Collector')
-    this.Collector = Ct
+    if (!Ct || (Ct !== Controller && !isExtendOf(Ct, Controller)))
+      throw TypeError('Invalid Controller')
+    this.Controller = Ct
 
     if (name && isString(name)) {
       if (compontents[name]) {
@@ -49,10 +53,14 @@ export const Compontent = dynamicClass({
     }
   },
   compile(scope = {}, props = {}) {
-    return createProxy(new this.Collector(this.Collector, this.templateParser, scope, props))
+    return createProxy(new this.Controller(this.Controller, this.templateParser, scope, props))
   }
 })
 
 export function getCompontent(name) {
   return compontents[name]
+}
+
+export function getAllCompontents() {
+  return values(compontents)
 }

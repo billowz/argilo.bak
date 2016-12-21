@@ -1,12 +1,12 @@
 import proxy from './proxy'
 import {
-  dynamicClass,
+  createClass,
   LinkedList,
   isPrimitive
 } from 'ilos'
 
 let interceptGetter = false
-export default dynamicClass({
+export default createClass({
   static: {
     interceptGetter(cb) {
       interceptGetter = true

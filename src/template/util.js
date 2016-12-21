@@ -1,5 +1,5 @@
 import {
-  dynamicClass
+  createClass
 } from 'ilos'
 
 const regHump = /^[a-z]|[_-]+[a-zA-Z]/g
@@ -12,7 +12,7 @@ export function hump(str) {
   return str.replace(regHump, _hump)
 }
 
-export const YieId = dynamicClass({
+export const YieId = createClass({
   constructor() {
     this.doned = false
     this.thens = []

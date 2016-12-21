@@ -12,11 +12,8 @@ export {
   expression
 }
 from './parser'
-export {
-  default as Collector
-}
-from './Collector'
-export * from './compontent'
+export * from './Controller'
+export * from './Compontent'
 import configuration from './configuration'
 import {
   configuration as observiConfiguration

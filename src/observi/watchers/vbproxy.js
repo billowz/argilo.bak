@@ -6,7 +6,7 @@ import proxy from '../proxy'
 import VBClassFactory from './VBClassFactory'
 import configuration from '../configuration'
 import {
-  dynamicClass,
+  createClass,
   LinkedList
 } from 'ilos'
 
@@ -21,7 +21,7 @@ registerWatcher('VBScriptProxy', 40, function(config) {
     config.bindWatcher, config.bindObservi, config.bindProxy, LinkedList.LIST_KEY
   ].concat(config.defaultProps || []), configuration.get('VBProxyConst'), configuration.get('bindVBProxy'), proxy.change)
 
-  let cls = dynamicClass({
+  let cls = createClass({
     extend: ArrayWatcher,
     watch(attr) {
       if (this.super([attr]) || this.isArray) return

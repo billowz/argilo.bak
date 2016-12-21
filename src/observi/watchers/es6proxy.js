@@ -5,7 +5,7 @@ import ArrayWatcher from './ArrayWatcher'
 import proxy from '../proxy'
 import configuration from '../configuration'
 import {
-  dynamicClass
+  createClass
 } from 'ilos'
 
 const hasOwn = Object.prototype.hasOwnProperty
@@ -22,7 +22,7 @@ registerWatcher('ES6Proxy', 10, function(config) {
     bindES6Proxy
   } = config
 
-  let cls = dynamicClass({
+  let cls = createClass({
     extend: ArrayWatcher,
     constructor() {
       this.super(arguments)

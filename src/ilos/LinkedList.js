@@ -5,13 +5,13 @@ import {
   each
 } from './collection'
 import {
-  dynamicClass
+  createClass
 } from './class'
 
 const LIST_KEY = '__linked_list__'
 let IDGenerator = 1
 
-export default dynamicClass({
+export default createClass({
   statics: {
     LIST_KEY: LIST_KEY
   },

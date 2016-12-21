@@ -11,7 +11,8 @@ export {
 }
 from './configuration'
 export {
-  registerWatcher
+  registerWatcher,
+  initWatcher as init
 }
 from './watcherFactory'
 export {

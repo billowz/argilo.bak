@@ -11,14 +11,14 @@ import {
 import dom from '../../dom'
 import configuration from '../configuration'
 import {
-  dynamicClass,
+  createClass,
   each,
   isNil
 } from 'ilos'
 
 const expressionArgs = [ContextKeyword, ElementKeyword, BindingKeyword]
 
-export default dynamicClass({
+export default createClass({
   extend: Binding,
   constructor(cfg) {
     this.super(arguments)

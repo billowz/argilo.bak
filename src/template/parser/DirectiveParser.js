@@ -3,11 +3,11 @@ import {
 } from '../binding'
 import configuration from '../configuration'
 import {
-  dynamicClass,
+  createClass,
   isRegExp
 } from 'ilos'
 
-export default dynamicClass({
+export default createClass({
   constructor(reg) {
     this.reg = reg
   },

@@ -10,13 +10,13 @@ import {
   filter
 } from './collection'
 import {
-  dynamicClass
+  createClass
 } from './class'
 
 const logLevels = ['debug', 'info', 'warn', 'error'],
   tmpEl = document.createElement('div'),
   slice = Array.prototype.slice,
-  SimulationConsole = dynamicClass({
+  SimulationConsole = createClass({
     constructor() {
       tmpEl.innerHTML = `<div id="simulation_console"
     style="position:absolute; top:0; right:0; font-family:courier,monospace; background:#eee; font-size:10px; padding:10px; width:200px; height:200px;">
@@ -60,7 +60,7 @@ const logLevels = ['debug', 'info', 'warn', 'error'],
   })
 
 let console = window.console
-const Logger = dynamicClass({
+const Logger = createClass({
   statics: {
     enableSimulationConsole() {
       if (!console) {

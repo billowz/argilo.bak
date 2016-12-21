@@ -1,5 +1,5 @@
 import {
-  dynamicClass,
+  createClass,
   each,
   reverseConvert,
   isFunc,
@@ -12,7 +12,7 @@ const hasOwn = Object.prototype.hasOwnProperty,
   RESERVE_ARRAY_PROPS = 'concat,copyWithin,entries,every,fill,filter,find,findIndex,forEach,includes,indexOf,join,keys,lastIndexOf,map,pop,push,reduce,reduceRight,reverse,shift,slice,some,sort,splice,unshift,values'.split(',')
 
 let supported = undefined
-const VBClassFactory = dynamicClass({
+const VBClassFactory = createClass({
   statics: {
     isSupport() {
       if (supported !== undefined)
@@ -223,7 +223,7 @@ const VBClassFactory = dynamicClass({
   }
 })
 
-const ObjectDescriptor = dynamicClass({
+const ObjectDescriptor = createClass({
   constructor(obj, props, classGenerator) {
     this.classGenerator = classGenerator
     this.obj = obj

@@ -14,14 +14,14 @@ import {
   create
 } from './object'
 import {
-  dynamicClass
+  createClass
 } from './class'
 import AbstractConfiguration from './AbstractConfiguration'
 import Logger from './Logger'
 
 const logger = Logger.logger
 
-export default dynamicClass({
+export default createClass({
   extend: AbstractConfiguration,
   constructor(def, statusList, defaultStatus, checkStatus) {
     this.cfg = def || {}

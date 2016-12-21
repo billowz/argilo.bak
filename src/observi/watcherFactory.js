@@ -23,7 +23,7 @@ export function registerWatcher(name, priority, validator, builder) {
   logger.info('register observi Watcher[%s], priority = %d', name, priority)
 }
 
-function initWatcher() {
+export function initWatcher() {
   if (!watchers) return
   configuration.nextStatus()
   let cfg = configuration.get()

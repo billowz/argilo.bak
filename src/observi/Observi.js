@@ -6,12 +6,13 @@ import proxy from './proxy'
 import configuration from './configuration'
 import logger from './log'
 import {
-  dynamicClass,
+  createClass,
   LinkedList,
   map,
   get,
   isNil,
-  isPrimitive
+  isPrimitive,
+  isArray
 } from 'ilos'
 
 const hasOwn = Object.prototype.hasOwnProperty
@@ -26,7 +27,7 @@ function getOrCreateWatcher(obj) {
   return (obj[bindWatcher] = createWatcher(obj))
 }
 
-export default dynamicClass({
+export default createClass({
   statics: {
     getOrCreateWatcher
   },
@@ -36,6 +37,7 @@ export default dynamicClass({
     this.path = path
     this.watchers = Array(path.length)
     this.callbacks = this.createCallbacks()
+    this.arrayCallback = this.arrayCallback.bind(this)
     this.watch(obj, 0)
     this.watcher = this.watchers[0]
     this.handlers = new LinkedList()
@@ -111,14 +113,14 @@ export default dynamicClass({
         if (val) {
           if (proxy.isEnable()) { // reset value on up-level object
             val = proxy.obj(val)
-            var watcher = this.watch(val, nextIdx),
+            var w = this.watch(val, nextIdx),
               i = 0,
               obj = this.obj
             while (i < idx) { // find up-level object
               obj = proxy.obj(obj[path[i++]])
               if (!obj) return
             }
-            obj[path[idx]] = watcher.proxy
+            obj[path[idx]] = w.proxy
           } else {
             this.watch(val, nextIdx)
           }
@@ -132,6 +134,9 @@ export default dynamicClass({
       this.update(val, oldVal, eq)
     }
   },
+  arrayCallback(attr, val, oldVal, watcher) {
+    this.update(watcher.proxy, watcher.proxy, true)
+  },
   watch(obj, idx) {
     let path = this.path,
       attr = path[idx],
@@ -140,11 +145,15 @@ export default dynamicClass({
 
     watcher.setter(attr, this.callbacks[idx])
 
-    if (++idx < path.length && (val = obj[attr])) {
-      if (proxy.isEnable()) {
-        obj[attr] = this.watch(proxy.obj(val), idx).proxy
-      } else {
-        this.watch(val, idx)
+    if (val = obj[attr]) {
+      if (++idx < path.length) {
+        if (proxy.isEnable()) {
+          obj[attr] = this.watch(proxy.obj(val), idx).proxy
+        } else {
+          this.watch(val, idx)
+        }
+      } else if (isArray(val)) {
+        (this.arrayWatcher || (this.arrayWatcher = getOrCreateWatcher(val))).setter('length', this.arrayCallback)
       }
     }
     return watcher
@@ -158,9 +167,14 @@ export default dynamicClass({
 
       watcher.unsetter(attr, this.callbacks[idx])
       this.watchers[idx] = undefined
-
-      if (++idx < path.length && (val = obj[attr]))
-        this.unwatch(proxy.obj(val), idx)
+      if (val = obj[attr]) {
+        if (++idx < path.length) {
+          this.unwatch(proxy.obj(val), idx)
+        } else if (isArray(val) && this.arrayWatcher) {
+          this.arrayWatcher.unsetter('length', this.arrayCallback)
+          this.arrayWatcher = undefined
+        }
+      }
     }
     return watcher
   }

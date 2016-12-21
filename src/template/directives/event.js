@@ -15,7 +15,7 @@ import {
 import dom from '../../dom'
 import logger from '../log'
 import {
-  dynamicClass,
+  createClass,
   assign,
   convert,
   isFunc,
@@ -24,7 +24,7 @@ import {
 
 const expressionArgs = [ContextKeyword, ElementKeyword, EventKeyword, BindingKeyword]
 
-const EventDirective = dynamicClass({
+const EventDirective = createClass({
   extend: Directive,
   constructor() {
     this.super(arguments)
@@ -49,10 +49,17 @@ const EventDirective = dynamicClass({
       }
     }
   },
+  updateEl(el) {
+    dom.off(this.el, this.eventType, this.handler)
+    dom.on(el, this.eventType, this.handler)
+    this.el = el
+  },
   bind() {
     dom.on(this.el, this.eventType, this.handler)
+    this.binded = true
   },
   unbind() {
+    this.binded = false
     dom.off(this.el, this.eventType, this.handler)
   }
 })

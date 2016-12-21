@@ -7,39 +7,8 @@
 </head>
 
 <body>
-    <h3>Examples</h3>
-    <ul>
-        <li><a href="example/base.html">Base</a></li>
-        <li><a href="example/todomvc/index.html">TODO MVC</a></li>
-        <li><a href="example/dbmon.html">DBMON</a></li>
-        <li><a href="example/each.html">Each</a></li>
-    </ul>
 </body>
 <script src="dist/argilo.js"></script>
-<script>
-argilo.ready(function() {
-    argilo({
-      template: '<h3> Current Time: <span style="color:red">${!#time ? "N/A":scope.time}</span></h3>',
-      collector: {
-        timeoutId: null,
-        created: function(){
-          this.updateTime = this.updateTime.bind(this)
-        },
-        mounted: function(){
-          this.timeoutId = this.updateTime()
-        },
-        unmounted: function(){
-          clearTimeout(this.timeoutId)
-        },
-        updateTime: function(){
-          this.scope.time = new Date().toLocaleString()
-          setTimeout(this.updateTime, 1000)
-        }
-      }
-    }).compile({
-        time: null
-    }).appendTo(document.body)
-});
-</script>
+<script src="dist/argilo.doc.js"></script>
 
 </html>

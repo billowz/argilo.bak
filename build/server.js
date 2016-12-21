@@ -1,30 +1,13 @@
 var express = require('express'),
   fs = require('fs'),
   path = require('path'),
-  compile = require('./compile')
+  compile = require('./compile'),
+  root = path.join(__dirname, '../')
 
 
-function devServer(options) {
+function devServer(base, port, options) {
   var app = express(),
-    compileResult,
-    fileMap = {},
-    watchs = {},
-    isBuilding = false
-
-  function build(processor) {
-    if (isBuilding)
-      return;
-
-    isBuilding = true
-    processor((err) => {
-      if (err) {
-        console.error('build error', err)
-      } else {
-        console.error('build success at ' + new Date())
-      }
-      isBuilding = false
-    })
-  }
+    fileMap = {}
 
   function addContent(map, path, content) {
     if (path) {
@@ -33,61 +16,84 @@ function devServer(options) {
     }
   }
 
-  function rollup(done) {
-    console.log('rollup compile...')
-    compile.compile(options).then((rs) => {
-      var bundle = rs.bundle,
-        main = rs.main,
-        mini = rs.mini,
-        gzip = rs.gzip,
-        map = {},
-        _watchs = {}
-
-      options.rollup.cache = bundle
-
-      bundle.modules.forEach(m => {
-        var file = m.id
-
-        if (path.isAbsolute(file)) {
-          var w = watchs[file]
-          if (!w) {
-            console.log('watch file: ' + file)
-            w = fs.watch(file, (type) => {
-              console.log('file %s: %s', type, file)
-              build(rollup)
-            })
-          }
-          _watchs[file] = w
-        }
-      })
-      for (var _path in watchs) {
-        if (!_watchs[_path]) {
-          console.log('unwatch file: ' + _path)
-          watchs[_path].close()
-        }
-      }
-      watchs = _watchs
-
-      compileResult = rs
-
-      addContent(map, main.dest, main.code)
-      if (main.sourcemap)
-        addContent(map, main.sourcemapDest, JSON.stringify(main.sourcemap))
-      if (mini) {
-        addContent(map, mini.dest, mini.code)
-        if (mini.sourcemap)
-          addContent(map, mini.sourcemapDest, JSON.stringify(mini.sourcemap))
-        if (gzip)
-          addContent(map, gzip.dest, gzip.code)
-      }
-      fileMap = map
-      done()
-    }).catch(e => {
-      done(e)
-    })
+  function filepath(path) {
+    return path.replace(root, '').replace(/\\/g, '/')
   }
 
-  build(rollup)
+  function rollup(options, done) {
+    var watchs = {},
+      isBuilding = false
+
+    function build(processor) {
+      if (isBuilding)
+        return;
+
+      isBuilding = true
+      processor.apply(null, [(err) => {
+        isBuilding = false
+      }].concat(Array.prototype.slice.call(arguments, 1)))
+    }
+
+    function c(done) {
+      var start = new Date()
+      console.log(`rollup[${options.rollup.entry}]: compiling...`)
+      compile.compile(options).then(rs => {
+        var bundle = rs.bundle,
+          main = rs.main,
+          mini = rs.mini,
+          gzip = rs.gzip,
+          map = {},
+          _watchs = {}
+
+        options.rollup.cache = bundle
+
+        bundle.modules.forEach(m => {
+          var file = m.id
+
+          if (path.isAbsolute(file)) {
+            var w = watchs[file]
+            if (!w) {
+              console.log(`rollup[${options.rollup.entry}]: watch ${filepath(file)}`)
+              w = fs.watch(file, (function(file) {
+                return function(type) {
+                  console.log(`rollup[${options.rollup.entry}]: file[${filepath(file)}] ${type}`)
+                  build(c)
+                }
+              })(file))
+            }
+            _watchs[file] = w
+          }
+        })
+        for (var _path in watchs) {
+          if (!_watchs[_path]) {
+            console.log(`rollup[${options.rollup.entry}]: unwatch ${filepath(_path)}`)
+            watchs[_path].close()
+          }
+        }
+        watchs = _watchs
+
+        addContent(map, main.dest, main.code)
+        if (main.sourcemap)
+          addContent(map, main.sourcemapDest, JSON.stringify(main.sourcemap))
+        if (mini) {
+          addContent(map, mini.dest, mini.code)
+          if (mini.sourcemap)
+            addContent(map, mini.sourcemapDest, JSON.stringify(mini.sourcemap))
+          if (gzip)
+            addContent(map, gzip.dest, gzip.code)
+        }
+        Object.assign(fileMap, map)
+        fileMap = map
+        console.log(`rollup[${options.rollup.entry}]: compile use ${new Date() - start} ms`)
+        done()
+      }).catch(e => {
+        console.log(`rollup[${options.rollup.entry}]: compile failed: ${e}`)
+        done(e)
+      })
+    }
+    c(done || function() {})
+  }
+  options.forEach(opt => rollup(opt))
 
   app.use(function(req, res, next) {
     var content = fileMap[req.path]
@@ -97,10 +103,10 @@ function devServer(options) {
       next()
     }
   })
-  if (options.base)
-    app.use(express.static(options.base))
-  app.listen(options.port)
-  console.log('listen localhost:' + options.port)
+  if (base)
+    app.use(express.static(base))
+  app.listen(port)
+  console.log('listen localhost:' + port)
   return app
 }
 
@@ -108,7 +114,4 @@ function size(buf) {
   return (buf.length / 1024).toFixed(2) + 'kb'
 }
 
-devServer(Object.assign({}, require('./rollup.config'), {
-  base: path.join(__dirname, '../'),
-  port: 3000
-}))
+devServer(root, 3000, [require('./rollup.config'), require('./doc.rollup.config')])

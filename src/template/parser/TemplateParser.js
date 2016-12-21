@@ -9,7 +9,7 @@ import dom from '../../dom'
 import logger from '../log'
 import configuration from '../configuration'
 import {
-  dynamicClass,
+  createClass,
   each,
   map,
   assign,
@@ -88,17 +88,29 @@ function eachDom(el, data, elemHandler, textHandler) {
   return data
 }
 
-function parseTemplateEl(el) {
+function isStringTemplate(str) {
+  return str.charAt(0) == '<' || str.length > 30
+}
+
+function stringTemplate(str) {
+  let templ = document.createElement('div')
+  dom.html(templ, str)
+  return map(templ.childNodes, el => el)
+}
+
+function parseTemplateEl(el, clone) {
   if (isString(el)) {
     el = trim(el)
-    if (el.charAt(0) == '<' || el.length > 30) {
-      let templ = document.createElement('div')
-      dom.html(templ, el)
-      el = templ.childNodes
-    }
+    if (isStringTemplate(el))
+      return stringTemplate(el)
     el = dom.query(el)
-  } else if (clone) {
-    el = dom.cloneNode(el)
+  }
+  if (el) {
+    if (el.tagName == 'SCRIPT') {
+      el = stringTemplate(el.innerHTML)
+    } else if (clone) {
+      el = dom.cloneNode(el)
+    }
   }
   return el
 }
@@ -142,7 +154,8 @@ function getDirectiveParser(markEl, directiveParser, textParser) {
         directive,
         binding,
         params,
-        paramMap
+        paramMap,
+        _block = true
 
       if (!directiveParser.isDirective(name))
         return
@@ -163,20 +176,42 @@ function getDirectiveParser(markEl, directiveParser, textParser) {
           })
         }
       }
-      if (Directive.isIndependent(directive)) {
-        var childEl = dom.cloneNode(el, false)
-        dom.removeAttr(childEl, name)
-        dom.append(childEl, map(el.childNodes, (n) => n))
-        binding.params.templateParser = new TemplateParser(childEl, {
-          directiveParser,
-          textParser,
-          clone: false
-        })
-        independent = block = true
+
+      switch (Directive.getType(directive)) {
+        case 'template':
+          {
+            var templ = dom.cloneNode(el, false)
+            dom.removeAttr(templ, name)
+            dom.append(templ, map(el.childNodes, (n) => n))
+            binding.params.templateParser = new TemplateParser(templ, {
+              directiveParser,
+              textParser,
+              clone: false
+            })
+          }
+          break
+        case 'inline-template':
+          binding.params.templateParser = new TemplateParser(map(el.childNodes, (n) => n), {
+            directiveParser,
+            textParser,
+            clone: false
+          })
+          dom.html(el, '')
+          break
+        case 'block':
+          break
+        case 'empty-block':
+          dom.html(el, '')
+          break
+        default:
+          _block = false
+          break
+      }
+      if (_block)
+        block = _block
+      if (Directive.isAlone(directive)) {
         directives = [binding]
         return false
-      } else if (Directive.isBlock(directive)) {
-        block = true
       }
       directives.push(binding)
     })
@@ -234,9 +269,11 @@ function cloneTemplateEl(el, elStatus) {
   }
 }
 
-const TemplateParser = dynamicClass({
+const TemplateParser = createClass({
   constructor(el, cfg = {}) {
     this.el = parseTemplateEl(el, cfg.clone)
+    if (!this.el)
+      throw new Error(`Invalid Dom Template: ${el}`)
     this.directiveParser = cfg.directiveParser || directiveParser
     this.textParser = cfg.textParser || textParser
     assign(this, parse(this.el, this.directiveParser, this.textParser))

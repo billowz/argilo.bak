@@ -15,7 +15,7 @@ import {
 import dom from '../../dom'
 import logger from '../log'
 import {
-  dynamicClass,
+  createClass,
   each,
   indexOf,
   convert,
@@ -30,7 +30,7 @@ import {
 
 const expressionArgs = [ContextKeyword, ElementKeyword, BindingKeyword]
 
-const SimpleDirective = dynamicClass({
+const ExpressionDirective = createClass({
   extend: Directive,
   constructor() {
     this.super(arguments)
@@ -45,7 +45,13 @@ const SimpleDirective = dynamicClass({
     let ctx = this.context()
     return this.expression.executeAll(ctx, [ctx, this.el, this])
   },
+  updateEl() {
+    this.super(arguments)
+    if (this.binded)
+      this.update(this.value())
+  },
   bind() {
+    this.binded = true
     each(this.expression.identities, (ident) => {
       this.observe(ident, this.observeHandler)
     })
@@ -55,6 +61,7 @@ const SimpleDirective = dynamicClass({
     each(this.expression.identities, (ident) => {
       this.unobserve(ident, this.observeHandler)
     })
+    this.binded = false
   },
   blankValue(val) {
     if (arguments.length == 0) val = this.value()
@@ -81,15 +88,15 @@ const EVENT_CHANGE = 'change',
   TAG_TEXTAREA = 'TEXTAREA',
   RADIO = 'radio',
   CHECKBOX = 'checkbox',
-  directives = {
+  exprDirectives = {
     text: {
-      block: true,
+      type: 'block',
       update(val) {
         dom.text(this.el, this.blankValue(val))
       }
     },
     html: {
-      block: true,
+      type: 'block',
       update(val) {
         dom.html(this.el, this.blankValue(val))
       }
@@ -245,26 +252,26 @@ const EVENT_CHANGE = 'change',
             throw TypeError('Directive[input] not support ' + tag)
         }
       },
-
+      updateEl(el) {
+        dom.off(this.el, this.event, this.onChange)
+        dom.on(el, this.event, this.onChange)
+        this.el = el
+      },
       bind() {
         dom.on(this.el, this.event, this.onChange)
         this.super()
       },
-
       unbind() {
         this.super()
         dom.off(this.el, this.event, this.onChange)
       },
-
       setRealValue(val) {
         this.set(this.expression.expr, val)
       },
-
       setValue(val) {
         let ctx = this.context()
         this.setRealValue(this.expression.restore(ctx, [ctx, this.el, this], val))
       },
-
       onChange(e) {
         let val = this.elVal(),
           idx,
@@ -273,13 +280,11 @@ const EVENT_CHANGE = 'change',
           this.setValue(val)
         e.stopPropagation()
       },
-
       update(val) {
         let _val = this.blankValue(val)
         if (_val != this.val)
           this.elVal((this.val = _val))
       },
-
       elVal(val) {
         let tag = this.tag
 
@@ -317,11 +322,11 @@ const EVENT_CHANGE = 'change',
     }
   }
 
-export default assign(convert(directives, (opt, name) => {
+export default assign(convert(exprDirectives, (opt, name) => {
   return hump(name + 'Directive')
 }, (opt, name) => {
-  opt.extend = SimpleDirective
+  opt.extend = ExpressionDirective
   return Directive.register(name, opt)
 }), {
-  SimpleDirective
+  ExpressionDirective
 })

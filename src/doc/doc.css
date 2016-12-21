@@ -1,0 +1,19 @@
+.horizontal-box {
+    font-size:0;/* 所有浏览器 */
+    *word-spacing:-1px;/* IE6、7 */
+}
+@media screen and (-webkit-min-device-pixel-ratio:0){
+    /* firefox 中 letter-spacing 会导致脱离普通流的元素水平位移 */
+    .horizontal-box{
+        letter-spacing:-4px;/* Safari 等不支持字体大小为 0 的浏览器, N 根据父级字体调节*/
+    }
+}
+.horizontal-box .horizontal-item{
+    font-size: 12px;
+    letter-spacing: normal;
+    word-spacing: normal;
+    vertical-align:top;
+    display: inline-block;
+    *display: inline;
+    *zoom:1;
+}

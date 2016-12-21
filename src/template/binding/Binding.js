@@ -6,21 +6,30 @@ import {
   proxy
 } from 'observi'
 import {
-  dynamicClass,
+  createClass,
   hasOwnProp,
   parseExpr,
   get,
   set,
   has
 } from 'ilos'
-const Binding = dynamicClass({
+const Binding = createClass({
   statics: {
     comments: true
   },
   constructor(cfg) {
     this.ctx = obj(cfg.context)
     this.el = cfg.el
-    this.Collector = cfg.Collector
+    let r = this.ctx,
+      p
+    while (p = r.$parent) {
+      r = p
+    }
+    this.root = r
+  },
+  rootContext() {
+    let ctx = this.root
+    return proxy(ctx) || ctx
   },
   context() {
     let ctx = this.ctx
@@ -48,10 +57,10 @@ const Binding = dynamicClass({
     unobserve(this.exprContext(expr), expr, callback)
   },
   get(expr) {
-    return get(this.realContext(), expr)
+    return get(this.ctx, expr)
   },
   has(expr) {
-    return has(this.realContext(), expr)
+    return has(this.ctx, expr)
   },
   set(expr, value) {
     set(this.context(), expr, value)

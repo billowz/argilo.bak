@@ -1,5 +1,5 @@
 import {
-  dynamicClass
+  createClass
 } from './class'
 
 function fn(name) {
@@ -8,7 +8,7 @@ function fn(name) {
   }
 }
 
-export default dynamicClass({
+export default createClass({
   hasConfig: fn('hasConfig'),
   config: fn('config'),
   get: fn('get'),

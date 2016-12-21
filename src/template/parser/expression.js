@@ -1,7 +1,7 @@
 import translate from '../translate'
 import configuration from '../configuration'
 import {
-  dynamicClass,
+  createClass,
   each,
   map,
   keys,
@@ -141,7 +141,7 @@ export function isSimplePath(expr) {
   return simplePathReg.test(expr) && !literalValueReg.test(expr) && expr.slice(0, 5) !== 'Math.'
 }
 
-const Expression = dynamicClass({
+const Expression = createClass({
   constructor(fullExpr, params) {
     let exprs = fullExpr.replace(transformReg, transform).split(exprReg),
       expr = exprs.shift().replace(wsReg, ''),

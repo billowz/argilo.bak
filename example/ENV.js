@@ -125,7 +125,7 @@ var ENV = ENV || (function() {
       '  <input type="range" ag-input="state.mutations" ag-value="state.mutations" style="margin-bottom: 10px; margin-top: 5px"/>' +
       '</div>' +
       '<div><label>rows:</label><input type="text" ag-input="state.rows" ag-value="state.rows" style="margin-left:10px"/></div>',
-    collector: {
+    controller: {
       state: {
         data: null,
         rows: 50,

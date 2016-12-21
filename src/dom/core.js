@@ -1,5 +1,6 @@
 import {
   each,
+  eachArray,
   map,
   isString,
   isArrayLike
@@ -16,7 +17,7 @@ function lastEl(el) {
 }
 
 function apply(coll, callback) {
-  isArrayLike(coll) ? each(coll, callback) : callback(coll)
+  isArrayLike(coll) ? eachArray(coll, callback) : callback(coll)
 }
 
 let dom = {
@@ -80,7 +81,7 @@ let dom = {
     let parent = target.parentNode
 
     apply(el, parent.lastChild === target ? (el) => {
-      parent.insertBefore(el, target)
+      parent.appendChild(el)
     } : (() => {
       let next = target.nextSibling
       return (el) => {

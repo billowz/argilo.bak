@@ -35,7 +35,7 @@ var Monitor = Monitor || (function() {
     argilo.logger.warn('totalJSHeapSize === 0... performance.memory is only available in Chrome .')
   return argilo({
     template: '<div>' + frameRateDom + memoryDom + '</div>',
-    collector: {
+    controller: {
       state: {
         memoryEnable: perf.memory.totalJSHeapSize > 0,
         slots: [],

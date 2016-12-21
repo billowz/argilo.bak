@@ -1,6 +1,6 @@
 import Watcher from '../Watcher'
 import {
-  dynamicClass,
+  createClass,
   isArray,
   each
 } from 'ilos'
@@ -8,7 +8,7 @@ import {
 const arrayProto = Array.prototype,
   arrayHooks = 'fill,pop,push,reverse,shift,sort,splice,unshift'.split(',')
 
-export default dynamicClass({
+export default createClass({
   extend: Watcher,
   constructor() {
     this.super(arguments)
