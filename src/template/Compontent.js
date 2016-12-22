@@ -30,7 +30,7 @@ export const Compontent = createClass({
       observiInit()
       inited = true
     }
-    this.templateParser = new TemplateParser(cfg.template, cfg.clone)
+    this.templateParser = new TemplateParser(cfg.template, cfg)
     if (!Ct) {
       Ct = Controller
     } else if (isObject(Ct)) {

@@ -1,19 +1,63 @@
-.horizontal-box {
-    font-size:0;/* 所有浏览器 */
-    *word-spacing:-1px;/* IE6、7 */
+$font-size: 12px;
+$font-family: "Open Sans","Helvetica Neue",Helvetica,Arial,'Microsoft YaHei',sans-serif;
+
+body,ul,li{
+  margin:0;
+  padding: 0;
+  font-size: $font-size;
+  font-family: $font-family;
 }
-@media screen and (-webkit-min-device-pixel-ratio:0){
-    /* firefox 中 letter-spacing 会导致脱离普通流的元素水平位移 */
-    .horizontal-box{
-        letter-spacing:-4px;/* Safari 等不支持字体大小为 0 的浏览器, N 根据父级字体调节*/
-    }
+ul,li{
+    list-style: none;
 }
-.horizontal-box .horizontal-item{
-    font-size: 12px;
+
+.hbox-item {
+    font-size: $font-size;
+    font-family: $font-family;
     letter-spacing: normal;
     word-spacing: normal;
-    vertical-align:top;
+    vertical-align: top;
     display: inline-block;
     *display: inline;
-    *zoom:1;
+    *zoom: 1;
+}
+.hbox {
+    font-size: 0;
+    *word-spacing: -1px;
+}
+
+@media screen and (-webkit-min-device-pixel-ratio:0) {
+    /* firefox 中 letter-spacing 会导致脱离普通流的元素水平位移 */
+    .hbox {
+        letter-spacing: -4px;
+        /* Safari 等不支持字体大小为 0 的浏览器, N 根据父级字体调节*/
+    }
+}
+
+.vbox {
+    .vbox-item {
+        display: block;
+    }
+}
+
+.title{
+   width:200px; text-align:center; font-size:30px;
+}
+.menu{
+  vertical-align: bottom;
+  border-bottom:1px solid #ccc;
+  .node{
+    padding: 5px 10px; font-size:20px;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    cursor: pointer;
+  }
+  .node:hover{
+    background-color: #666;
+    color: #fff;
+  }
+  .node.active,.node.active:hover{
+    background-color: #aaa;
+    color: #fff;
+  }
 }

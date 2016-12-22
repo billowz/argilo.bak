@@ -83,7 +83,6 @@ function devServer(base, port, options) {
             addContent(map, gzip.dest, gzip.code)
         }
         Object.assign(fileMap, map)
-        fileMap = map
         console.log(`rollup[${options.rollup.entry}]: compile use ${new Date() - start} ms`)
         done()
       }).catch(e => {

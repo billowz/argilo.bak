@@ -1,1 +1,1 @@
-{"version":3,"file":null,"sources":["../argilo/src/doc/index.js"],"sourcesContent":["import argilo from 'argilo'\n\n\nexport default {\n  argilo: argilo\n}\n"],"names":[],"mappings":";;;;;;;;;;;;;;;AAGA,cAAe;AACb,EAAA,UAAQ;AADK,EAAA,CAAf;;;;"}
+{"version":3,"file":null,"sources":["../argilo/src/doc/index.js"],"sourcesContent":["import argilo from 'argilo'\nimport './doc.less'\n\nexport default {\n  argilo: argilo\n}\n"],"names":[],"mappings":";;;;;;;;;;;;;;;;;;;;;;;;;;;;AAGA,cAAe;AACb,EAAA,UAAQ;AADK,EAAA,CAAf;;;;"}

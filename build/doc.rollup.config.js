@@ -2,6 +2,13 @@ const babel = require('rollup-plugin-babel'),
   localResolve = require('rollup-plugin-local-resolve'),
   alias = require('rollup-plugin-alias'),
   path = require('path'),
+  postcss = require('rollup-plugin-postcss'),
+  // PostCSS plugins
+  simplevars = require('postcss-simple-vars'),
+  nested = require('postcss-nested'),
+  cssnext = require('postcss-cssnext'),
+  cssnano = require('cssnano'),
+  mixins = require('postcss-sassy-mixins'),
   pkg = require('../package.json'),
   banner = `/*
  * ${pkg.name}-document v${pkg.version} built in ${new Date().toUTCString()}
@@ -16,7 +23,18 @@ module.exports = {
   rollup: { // rollup config, see https://github.com/rollup/rollup/wiki/JavaScript-API
     entry: 'src/doc/index.js',
     external: Object.keys(pkg.dependencies || {}).concat([pkg.namespace]),
-    plugins: [localResolve(), babel({
+    plugins: [localResolve(), postcss({
+      extensions: ['.css'],
+      plugins: [
+        simplevars(),
+        nested(),
+        cssnext({
+          warnForDuplicates: false,
+        }),
+        cssnano(),
+        mixins()
+      ]
+    }), babel({
       runtimeHelpers: false,
       presets: ["es2015-loose-rollup"],
       plugins: [
