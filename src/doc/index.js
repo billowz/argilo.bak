@@ -1,11 +1,12 @@
 import argilo from 'argilo'
 import * as styles from './doc.css'
+import docs from './docs'
 
 
 argilo.configuration.config('textParser', new argilo.TextParser('{', '}'))
 
 argilo({
-  name: 'menu-node',
+  name: 'doc.menu.node',
   template: `
 <div class="menu hbox">
   <li ag-each="node in @menu" class="hbox-item node">{node.text}</li>
@@ -13,7 +14,7 @@ argilo({
 `
 })
 argilo({
-  name: 'menu',
+  name: 'doc.menu',
   template: `
 <div class="menu hbox">
   <li ag-each="node in @menu" class="hbox-item node">{node.text}</li>
@@ -21,18 +22,19 @@ argilo({
 `
 })
 const Doc = argilo({
-  name: 'Document',
+  name: 'doc.document',
   template: `<div class="vbox">
     <div class="hbox vbox-item" style="padding:10px 0">
       <div class="hbox-item title">
-        <span>Argilo</span>
+        <span>{title}</span>
       </div>
       <div class="hbox-item">
-        <div ag-cmp="menu" props="{menu: #menu}"></div>
+        <div ag-cmp="doc.menu" props="{menu: @menu}"></div>
       </div>
     </div>
 </div>`
 }).compile({
+  title: 'Agrilo',
   menu: [{
     text: 'Compontent'
   }, {
