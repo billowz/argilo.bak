@@ -15,9 +15,9 @@ function absolutify(p, cwd) {
 module.exports = function rollupPluginVirtualfile(options) {
   options = options || {};
   var files0 = options.files || {};
-  var allowRealFiles = options.allowRealFiles || false;
+  var allowRealFiles = options.allowRealFiles !== false;
   var allowExternalModules = options.allowExternalModules !== false;
-  var leaveIdsAlone = options.leaveIdsAlone || false;
+  var leaveIdsAlone = options.leaveIdsAlone !== false;
   var impliedExtensions = options.impliedExtensions || ['.js'];
 
   var cwd = options.cwd;
@@ -85,13 +85,29 @@ module.exports = function rollupPluginVirtualfile(options) {
 
   return {
     resolveId: resolveId,
+    setFile: function(f, content) {
+      if (leaveIdsAlone) {
+        files[f] = content
+      } else {
+        var p = path.normalize(f);
+        if (!isAbsolute(p)) {
+          p = absolutify(p, cwd);
+        }
+        files[p] = content;
+      }
+    },
+    removeFile: function(f) {
+      delete files[f]
+    },
     load: function(id) {
+      var f
       if (id in files) {
-        return files[id];
+        f = files[id];
       } else {
         id = resolveId(id);
-        return id && files[id];
+        f = id && files[id];
       }
+      return f
     }
   };
 }

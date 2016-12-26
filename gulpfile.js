@@ -3,8 +3,6 @@ var gulp = require('gulp'),
   gutil = require('gulp-util'),
   gfile = require('gulp-file'),
   gwatch = require('gulp-watch'),
-  sourcemaps = require('gulp-sourcemaps'),
-  gzip = require('gulp-gzip'),
   grollup = require('./plugins/gulp-rollup'),
   through2 = require('through2');
 
@@ -21,25 +19,51 @@ var simplevars = require('postcss-simple-vars'),
   cssnano = require('cssnano'),
   mixins = require('postcss-sassy-mixins')
 
+var pkg = require('./package.json')
+
+function banner() {
+  return `/*
+ * ${pkg.name} v${pkg.version} built in ${new Date().toUTCString()}
+ * Copyright (c) 2016 ${pkg.author}
+ * Released under the ${pkg.license} license
+ * support IE6+ and other browsers
+ * ${pkg.homepage}
+ */`
+}
+
+var docFiles = ['src/**/*.doc.js']
+
 function rollupConfig(mini) {
   return {
-    entry: [{
-      entry: './src/index.js',
-      dest: 'argilo' + (mini ? '.min.js' : '.js')
-    }, {
-      entry: './src/doc/index.js',
-      dest: 'argilo.doc' + (mini ? '.min.js' : '.js'),
-      module: 'argiloDoc',
-      plugins: ['resolve', 'css', 'babel', mini && 'uglify'],
-      globals: {
-        'argilo': 'argilo'
-      },
-      external: 'argilo'
-    }],
+    entry: [
+      /*{
+            entry: './src/index.js',
+            dest: 'argilo' + (mini ? '.min.js' : '.js'),
+            banner: banner()
+          }, */
+      {
+        entry: './src/doc/index.js',
+        dest: 'argilo.doc' + (mini ? '.min.js' : '.js'),
+        module: 'argiloDoc',
+        plugins: ['resolve', 'css', 'babel', mini && 'uglify'],
+        globals: {
+          'argilo': 'argilo'
+        },
+        sourceRoot: 'argiloDoc',
+        external: 'argilo',
+        banner: banner()
+      }
+    ],
     module: 'argilo',
     exports: 'default',
     format: 'umd',
     useStrict: false,
+    sourceMap: true,
+    gzip: mini,
+    watch: function(stream) {
+      stream.pipe(gulp.dest('./test'))
+    },
+    sourceRoot: 'argilo',
     plugins: ['resolve', 'alias', 'babel', mini && 'uglify'],
     pluginMap: {
       alias: ralias({
@@ -72,35 +96,61 @@ function rollupConfig(mini) {
   }
 }
 
-gulp.task('compile-all', ['generate-doc'], function() {
-  return gulp.run(['compile', 'compile-zip'])
-})
+function usetime(use) {
+  if (use > 1000) {
+    use = (use / 1000).toFixed(2) + ' s'
+  } else {
+    use = use + ' ms'
+  }
+  return gutil.colors.magenta(use)
+}
 
-gulp.task('compile', function() {
-  return gulp.src(['./src/**/*.js', './src/**/*.css'])
-    .pipe(sourcemaps.init())
+function streamTask(name, cb) {
+  var colorName = gutil.colors.cyan(name)
+
+  function task() {
+    var start = new Date()
+    gutil.log(`Executing Task '${colorName}'...`)
+    return new Promise(function(resolve, reject) {
+      var stream = cb()
+      stream.on('end', function() {
+        gutil.log(`Execute Task '${colorName}' use ${usetime(new Date() - start)}`)
+        resolve()
+      })
+      stream.on('error', function(err) {
+        gutil.log(gutil.colors.red(`Execute Task '${colorName}' failed:`), err)
+        reject(err)
+      })
+    })
+  }
+  gulp.task(name, task)
+  return task
+}
+
+var compile = streamTask('compile', function() {
+  return gulp.src(['./src/**/*.js'])
     .pipe(grollup(rollupConfig(false)))
-    .pipe(sourcemaps.write())
     .pipe(gulp.dest('./dist'))
 })
-
-gulp.task('compile-zip', function() {
+var zip = streamTask('compile-zip', function() {
   return gulp.src(['./src/**/*.js', './src/**/*.css'])
-    .pipe(sourcemaps.init())
     .pipe(grollup(rollupConfig(true)))
-    .pipe(gzip())
-    .pipe(sourcemaps.write())
     .pipe(gulp.dest('./dist'))
 })
 
-var docFiles = ['src/**/*.doc.js']
-gulp.task('generate-doc', function() {
-  gulp.src(docFiles).pipe(through2.obj(function(file, enc, cb) {
-    docGenerator.applyFile(file.path, file.contents.toString(), false, cb)
-  }, function(cb) {
-    docGenerator.generate()
-  }))
+var generateDoc = streamTask('generate-doc', function() {
+  return gulp.src(docFiles)
+    .pipe(through2.obj(function(file, enc, cb) {
+      docGenerator.applyFile(file.path, file.contents.toString(), false, cb)
+    }, function(flush) {
+      var self = this
+      docGenerator.generate(function() {
+        flush()
+        self.emit('end')
+      })
+    }))
 })
+
 gulp.task('watch-doc', ['generate-doc'], function() {
   return gwatch(docFiles, function(file) {
     if (file.contents) { // add or change
@@ -110,6 +160,13 @@ gulp.task('watch-doc', ['generate-doc'], function() {
     }
   })
 })
+
+gulp.task('compile-all', function() {
+  return generateDoc().then(function() {
+    return Promise.all([compile(), zip()])
+  })
+})
+
 
 var docGenerator = (function() {
   var timeout = null,
@@ -134,7 +191,7 @@ var docGenerator = (function() {
 
         gfile('docs.js', contents.join('\n\n'))
           .pipe(gulp.dest('src/doc/'))
-        gutil.log('Generate documents use ', gutil.colors.magenta((new Date() - start) + ' ms'))
+        gutil.log('Generate documents use ' + usetime(new Date() - start))
         if (cb) cb()
         timeout = null
       }, 50)

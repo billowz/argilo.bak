@@ -1,3 +1,10 @@
+/*
+ * argilo v0.0.1 built in Mon, 26 Dec 2016 10:41:53 GMT
+ * Copyright (c) 2016 Tao Zeng <tao.zeng.zt@gmail.com>
+ * Released under the MIT license
+ * support IE6+ and other browsers
+ * https://github.com/tao-zeng/argilo
+ */
 (function (global, factory) {
   typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('argilo')) :
   typeof define === 'function' && define.amd ? define('argiloDoc', ['argilo'], factory) :
@@ -59,4 +66,4 @@
   return Doc;
 
 }));
-//# sourceMappingURL=data:application/json;charset=utf8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiYXJnaWxvLmRvYy5qcyIsInNvdXJjZXMiOltdLCJzb3VyY2VzQ29udGVudCI6W10sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiI7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7OzsifQ==
+//# sourceMappingURL=argilo.doc.js.map
