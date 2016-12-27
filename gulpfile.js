@@ -1,23 +1,13 @@
-var gulp = require('gulp'),
-  path = require('path'),
+var path = require('path'),
+  gulp = require('gulp'),
   gutil = require('gulp-util'),
   gfile = require('gulp-file'),
   gwatch = require('gulp-watch'),
-  grollup = require('./plugins/gulp-rollup'),
-  through2 = require('through2');
+  connect = require('gulp-connect'),
+  through2 = require('through2'),
+  grollup = require('./plugins/gulp-rollup')
 
-var rbabel = require('rollup-plugin-babel'),
-  rlocalResolve = require('rollup-plugin-local-resolve'),
-  ralias = require('rollup-plugin-alias'),
-  rpostcss = require('rollup-plugin-postcss'),
-  ruglify = require('rollup-plugin-uglify');
-
-// PostCSS plugins
-var simplevars = require('postcss-simple-vars'),
-  nested = require('postcss-nested'),
-  cssnext = require('postcss-cssnext'),
-  cssnano = require('cssnano'),
-  mixins = require('postcss-sassy-mixins')
+var rollupPlugins = require('./rollup.plugins.config')
 
 var pkg = require('./package.json')
 
@@ -33,66 +23,34 @@ function banner() {
 
 var docFiles = ['src/**/*.doc.js']
 
-function rollupConfig(mini) {
+function rollupConfig(mini, watch) {
   return {
-    entry: [
-      /*{
-            entry: './src/index.js',
-            dest: 'argilo' + (mini ? '.min.js' : '.js'),
-            banner: banner()
-          }, */
-      {
-        entry: './src/doc/index.js',
-        dest: 'argilo.doc' + (mini ? '.min.js' : '.js'),
-        module: 'argiloDoc',
-        plugins: ['resolve', 'css', 'babel', mini && 'uglify'],
-        globals: {
-          'argilo': 'argilo'
-        },
-        sourceRoot: 'argiloDoc',
-        external: 'argilo',
-        banner: banner()
-      }
-    ],
+    entry: [{
+      entry: './src/index.js',
+      dest: 'argilo' + (mini ? '.min.js' : '.js'),
+      banner: banner()
+    }, {
+      entry: './src/doc/index.js',
+      dest: 'argilo.doc' + (mini ? '.min.js' : '.js'),
+      module: 'argiloDoc',
+      plugins: rollupPlugins.get(['resolve', 'css', 'babel', mini && 'uglify']),
+      globals: {
+        'argilo': 'argilo'
+      },
+      sourceRoot: '/argiloDoc',
+      external: 'argilo',
+      banner: banner()
+    }],
     module: 'argilo',
     exports: 'default',
     format: 'umd',
     useStrict: false,
     sourceMap: true,
+    sourceRoot: '/argilo',
     gzip: mini,
-    watch: function(stream) {
-      stream.pipe(gulp.dest('./test'))
-    },
-    sourceRoot: 'argilo',
-    plugins: ['resolve', 'alias', 'babel', mini && 'uglify'],
-    pluginMap: {
-      alias: ralias({
-        'ilos': path.resolve('src/ilos/index.js'),
-        'observi': path.resolve('src/observi/index.js')
-      }),
-      resolve: rlocalResolve(),
-      babel: rbabel({
-        runtimeHelpers: false,
-        presets: ["es2015-loose-rollup"],
-        plugins: [
-          "transform-es3-member-expression-literals",
-          "transform-es3-property-literals"
-        ]
-      }),
-      uglify: ruglify(),
-      css: rpostcss({
-        extensions: ['.css'],
-        plugins: [
-          simplevars(),
-          nested(),
-          cssnext({
-            warnForDuplicates: false,
-          }),
-          cssnano(),
-          mixins()
-        ]
-      })
-    }
+    watch: watch,
+    watchSrc: ['src/**/*.js'],
+    plugins: rollupPlugins.get(['resolve', 'alias', 'babel', mini && 'uglify'])
   }
 }
 
@@ -132,6 +90,7 @@ var compile = streamTask('compile', function() {
     .pipe(grollup(rollupConfig(false)))
     .pipe(gulp.dest('./dist'))
 })
+
 var zip = streamTask('compile-zip', function() {
   return gulp.src(['./src/**/*.js', './src/**/*.css'])
     .pipe(grollup(rollupConfig(true)))
@@ -150,20 +109,39 @@ var generateDoc = streamTask('generate-doc', function() {
       })
     }))
 })
-
-gulp.task('watch-doc', ['generate-doc'], function() {
-  return gwatch(docFiles, function(file) {
-    if (file.contents) { // add or change
-      docGenerator.applyFile(file.path, file.contents.toString(), true)
-    } else { //delete
-      docGenerator.removeFile(file.path, true)
-    }
-  })
-})
-
 gulp.task('compile-all', function() {
   return generateDoc().then(function() {
     return Promise.all([compile(), zip()])
+  })
+})
+
+gulp.task('build', ['compile-all'])
+
+gulp.task('watch', ['watch-doc'], function() {
+  return gulp.src(['./src/**/*.js', './src/**/*.css'])
+    .pipe(grollup(rollupConfig(false, function(stream) {
+      return stream.pipe(gulp.dest('./dist')).pipe(connect.reload())
+    })))
+    .pipe(gulp.dest('./dist'))
+})
+
+gulp.task('watch-doc', ['generate-doc'], function(done) {
+  gwatch(docFiles, function(file) {
+    if (file.event == 'unlink') {
+      docGenerator.removeFile(file.path, true)
+    } else if (file.event == 'add') {
+      docGenerator.applyFile(file.path, file.contents.toString(), true)
+    }
+  })
+  done()
+})
+
+gulp.task('server', ['watch'], function() {
+  connect.server({
+    name: 'Argilo',
+    root: ['.'],
+    port: 8000,
+    livereload: true
   })
 })
 

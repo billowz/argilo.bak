@@ -1,5 +1,5 @@
 /*
- * argilo v0.0.1 built in Mon, 26 Dec 2016 10:37:14 GMT
+ * argilo v0.0.1 built in Tue, 27 Dec 2016 05:57:46 GMT
  * Copyright (c) 2016 Tao Zeng <tao.zeng.zt@gmail.com>
  * Released under the MIT license
  * support IE6+ and other browsers
@@ -2720,7 +2720,6 @@ var observi = Object.freeze({
       if (arguments.length == 2) {
         var convert = value,
             num = void 0;
-
         if (name === 'background') name = 'backgroundColor';
         value = hook.get(el, name);
         return convert !== false && isFinite(num = parseFloat(value)) ? num : value;

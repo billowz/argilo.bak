@@ -12,6 +12,7 @@ function firstEl(el) {
   return isArrayLike(el) ? el[0] : el
 }
 
+
 function lastEl(el) {
   return isArrayLike(el) ? el[el.length - 1] : el
 }

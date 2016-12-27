@@ -14,7 +14,6 @@ export default assign(dom, {
     if (arguments.length == 2) {
       let convert = value,
         num;
-
       if (name === 'background')
         name = 'backgroundColor';
       value = hook.get(el, name);

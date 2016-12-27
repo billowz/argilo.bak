@@ -26,15 +26,15 @@ const Doc = argilo({
   template: `<div class="vbox">
     <div class="hbox vbox-item" style="padding:10px 0">
       <div class="hbox-item title">
-        <span>{title}</span>
+        <span>{@title}</span>
       </div>
       <div class="hbox-item">
         <div ag-cmp="doc.menu" props="{menu: @menu}"></div>
       </div>
     </div>
 </div>`
-}).compile({
-  title: 'Agrilo',
+}).compile(null, {
+  title: 'Argilo',
   menu: [{
     text: 'Compontent'
   }, {

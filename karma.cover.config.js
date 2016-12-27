@@ -1,5 +1,5 @@
-var baseCfg = require('./karma.config'),
-  istanbul = require('rollup-plugin-istanbul')
+var baseCfg = require('./karma.config')
+var rollupPlugins = require('./rollup.plugins.config')
 
 module.exports = function(config) {
   baseCfg(config)

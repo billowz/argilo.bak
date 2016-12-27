@@ -1,7 +1,4 @@
-var multiEntry = require('rollup-plugin-multi-entry'),
-  rollup = require('./rollup.config').rollup,
-  pkg = require('../package.json')
-
+var rollupPlugins = require('./rollup.plugins.config')
 module.exports = function(config) {
   config.set({
     browsers: ['PhantomJS'],
@@ -9,20 +6,20 @@ module.exports = function(config) {
     transports: ['websocket', 'polling', 'jsonp-polling'],
     frameworks: ['mocha', 'expect'],
     reporters: ['spec', 'istanbul'],
-    files: ['../src/**/*.spec.js'],
+    files: ['src/**/*.spec.js'],
     preprocessors: {
-      '../src/**/*.spec.js': ['rollup']
+      'src/**/*.spec.js': ['rollup']
     },
     rollupPreprocessor: {
       rollup: {
-        plugins: [multiEntry()].concat(rollup.plugins)
+        plugins: rollupPlugins.get(['multiEntry', 'resolve', 'alias', 'babel'])
       },
       bundle: {
-        sourceMap: false,
+        sourceMap: true,
         useStrict: false,
         format: 'iife',
-        moduleId: pkg.namespace,
-        moduleName: pkg.namespace,
+        moduleId: 'argilo',
+        moduleName: 'argilo'
       }
     },
     autoWatch: true,

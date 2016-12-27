@@ -14,7 +14,6 @@ module.exports = function(config) {
       tags: ['v' + pkg.version],
       'public': 'public'
     },
-    // mobile emulators are really slow
     captureTimeout: 300000,
     browserNoActivityTimeout: 300000
   })
