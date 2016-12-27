@@ -1,5 +1,5 @@
 /*
- * argilo v0.0.1 built in Tue, 27 Dec 2016 05:57:46 GMT
+ * argilo v0.0.1 built in Tue, 27 Dec 2016 06:19:02 GMT
  * Copyright (c) 2016 Tao Zeng <tao.zeng.zt@gmail.com>
  * Released under the MIT license
  * support IE6+ and other browsers
