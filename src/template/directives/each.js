@@ -56,7 +56,7 @@ export default Directive.register('each', createClass({
   },
   update(data) {
     let templateParser = this.templateParser,
-      ctx = this.ctx,
+      ctx = this.proxy,
       indexExpr = this.indexExpr,
       used = this.used,
       version = this.version++,
@@ -102,18 +102,18 @@ export default Directive.register('each', createClass({
       if (!isNew)
         this.updateChildContext(_ctx, desc.data, desc.index)
       _ctx.after(before, true, false)
-      before = _ctx.el
+      before = _ctx.$el
       data[i] = proxy(desc.data)
     })
     if (idles)
       each(idles, (idle) => idle.context.remove(true, false))
   },
   createChildContext(parent, value, index) {
-    let ctx = parent.clone(this.templateParser)
-    ctx[this.valueAlias] = value
-    if (this.keyAlias)
-      ctx[this.keyAlias] = index
-    return createProxy(ctx)
+    return parent.clone(this.templateParser, false, (ctx) => {
+      ctx[this.valueAlias] = value
+      if (this.keyAlias)
+        ctx[this.keyAlias] = index
+    })
   },
   updateChildContext(ctx, value, index) {
     ctx[this.valueAlias] = value
@@ -132,13 +132,11 @@ export default Directive.register('each', createClass({
     })
   },
   target() {
-    let ctx = this.context()
-    return this.dataExpr.executeAll(ctx, [ctx, this.el, this])
+    return this.dataExpr.executeAll(this.proxy, [this.proxy, this.el, this])
   },
   observeHandler(expr, target) {
     if (this.dataExpr.isSimple()) {
-      var ctx = this.context()
-      this.update(this.dataExpr.executeFilter(ctx, [ctx, this.el, this], target))
+      this.update(this.dataExpr.filter(this.proxy, [this.proxy, this.el, this], target))
     } else {
       target = this.target()
     }

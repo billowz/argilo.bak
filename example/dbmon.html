@@ -30,9 +30,7 @@ argilo.ready(function() {
         template: argilo.html(document.getElementById('tpl/tpl.html')),
         controller: {
             sampleTimeout: null,
-            state: {
-              databases: []
-            },
+            databases: undefined,
             created: function() {
                 this.loadSamples = this.loadSamples.bind(this)
             },
@@ -40,7 +38,7 @@ argilo.ready(function() {
                 this.sampleTimeout = setInterval(this.loadSamples, 0);
             },
             loadSamples: function() {
-                this.state.databases = ENV.generate();
+                this.databases = ENV.generate();
                 Monitor.ping();
             },
             unmounted: function() {
@@ -55,7 +53,7 @@ argilo.ready(function() {
     <a href="../index.html">Back</a>
     <table class="table table-striped lastest-data">
         <tbody>
-            <tr ag-each="db in state.databases">
+            <tr ag-each="db in databases">
                 <td class="dbname">${db.dbname}</td>
                 <td class="query-count">
                     <span ag-class="db.lastSample.countClassName">${db.lastSample.nbQueries}</span>

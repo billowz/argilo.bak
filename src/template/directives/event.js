@@ -34,15 +34,16 @@ const EventDirective = createClass({
   handler(e) {
     e.stopPropagation()
 
-    let ctx = this.context(),
-      exp = this.expression
+    let exp = this.expression,
+      proxy = this.proxy,
+      args = [proxy, this.el, e, this]
 
-    if (exp.executeFilter(ctx, [ctx, this.el, e, this], e) !== false) {
-      let fn = exp.execute(ctx, [ctx, this.el, e, this])
+    if (exp.filter(proxy, args, e) !== false) {
+      let fn = exp.execute(proxy, args)
       if (exp.isSimple()) {
         if (isFunc(fn)) {
-          ctx = this.exprContext(exp.expr)
-          fn.call(ctx, ctx, this.el, e, this.tpl, this)
+          proxy = this.findScope(exp.expr)
+          fn.apply(proxy, proxy, this.el, e, this)
         } else {
           logger.warn('Invalid Event Handler:%s', this.expr, fn)
         }

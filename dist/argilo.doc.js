@@ -1,5 +1,5 @@
 /*
- * argilo v0.0.1 built in Tue, 27 Dec 2016 06:19:02 GMT
+ * argilo v0.0.1 built in Tue, 27 Dec 2016 09:30:09 GMT
  * Copyright (c) 2016 Tao Zeng <tao.zeng.zt@gmail.com>
  * Released under the MIT license
  * support IE6+ and other browsers
@@ -33,18 +33,15 @@
 
   argilo.configuration.config('textParser', new argilo.TextParser('{', '}'));
 
-  argilo({
-    name: 'doc.menu.node',
-    template: '\n<div class="menu hbox">\n  <li ag-each="node in @menu" class="hbox-item node">{node.text}</li>\n<div>\n'
+  argilo('doc.menu.node', {
+    template: '\n<div class="menu hbox">\n  <li ag-each="node in menu" class="hbox-item node">{node.text}</li>\n<div>\n'
   });
-  argilo({
-    name: 'doc.menu',
-    template: '\n<div class="menu hbox">\n  <li ag-each="node in @menu" class="hbox-item node">{node.text}</li>\n<div>\n'
+  argilo('doc.menu', {
+    template: '\n<div class="menu hbox">\n  <li ag-each="node in menu" class="hbox-item node">{node.text} </li>\n<div>\n'
   });
-  var Doc = argilo({
-    name: 'doc.document',
-    template: '<div class="vbox">\n    <div class="hbox vbox-item" style="padding:10px 0">\n      <div class="hbox-item title">\n        <span>{@title}</span>\n      </div>\n      <div class="hbox-item">\n        <div ag-cmp="doc.menu" props="{menu: @menu}"></div>\n      </div>\n    </div>\n</div>'
-  }).compile(null, {
+  var Doc = argilo('doc.document', {
+    template: '<div class="vbox">\n    <div class="hbox vbox-item" style="padding:10px 0">\n      <div class="hbox-item title">\n        <span>{title}</span>\n      </div>\n      <div class="hbox-item">\n        <div ag-cmp="doc.menu" props="{menu: menu}"></div>\n      </div>\n    </div>\n</div>'
+  }).compile({
     title: 'Argilo',
     menu: [{
       text: 'Compontent'

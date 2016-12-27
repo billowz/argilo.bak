@@ -36,14 +36,13 @@ const ExpressionDirective = createClass({
     this.super(arguments)
     this.observeHandler = this.observeHandler.bind(this)
     this.expression = expression(this.expr, expressionArgs, expressionParser)
+    this.exprArgs = [this.proxy, this.el, this]
   },
   realValue() {
-    let ctx = this.context()
-    return this.expression.execute(ctx, [ctx, this.el, this])
+    return this.expression.execute(this.proxy, this.exprArgs)
   },
   value() {
-    let ctx = this.context()
-    return this.expression.executeAll(ctx, [ctx, this.el, this])
+    return this.expression.executeAll(this.proxy, this.exprArgs)
   },
   updateEl() {
     this.super(arguments)
@@ -69,8 +68,7 @@ const ExpressionDirective = createClass({
   },
   observeHandler(expr, val) {
     if (this.expression.isSimple()) {
-      let ctx = this.context()
-      this.update(this.expression.executeFilter(ctx, [ctx, this.el, this], val))
+      this.update(this.expression.filter(this.proxy, this.exprArgs, val))
     } else {
       this.update(this.value())
     }
@@ -269,8 +267,7 @@ const EVENT_CHANGE = 'change',
         this.set(this.expression.expr, val)
       },
       setValue(val) {
-        let ctx = this.context()
-        this.setRealValue(this.expression.restore(ctx, [ctx, this.el, this], val))
+        this.setRealValue(this.expression.restore(this.proxy, this.exprArgs, val))
       },
       onChange(e) {
         let val = this.elVal(),

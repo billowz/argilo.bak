@@ -19,7 +19,7 @@
             <button ag-onclick="append" ag-ref="btn">Append</button>
             <button ag-onclick="update" ag-ref="btn">Update</button>
         </div>
-        <div ag-cmp="each" scope="{coll:state.coll}"  ag-ref="cmp">
+        <div ag-cmp="each" props="{scope:{coll:state.coll}}"  ag-ref="cmp">
           <div ag-slot="namedHolder2">
             <h1>Named Slot2</h1>
           </div>
@@ -47,10 +47,10 @@ argilo.ready(function() {
     })
     argilo({
         template: document.getElementById('tpl/main.html'),
-        state: {
-          coll: []
-        },
         controller: {
+            state: {
+              coll: []
+            },
             created: function(){
               console.log(this.refs)
             },
@@ -82,7 +82,9 @@ argilo.ready(function() {
             }
         }
     }).compile({
-        size: 100
+        scope:{
+          size: 100
+        }
     }).appendTo(document.body)
 });
 </script>

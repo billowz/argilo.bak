@@ -156,7 +156,7 @@ const Expression = createClass({
     this.identities = keys(identities)
     this.simplePath = isSimplePath(this.expr)
   },
-  executeFilter(scope, params, data, transform) {
+  filter(scope, params, data, transform) {
     each(this.filters, filter => {
       if (transform === false && !translate.get(filter.name))
         return
@@ -176,13 +176,13 @@ const Expression = createClass({
     return data
   },
   restore(scope, params, data) {
-    return this.executeFilter(scope, params, data, false)
+    return this.filter(scope, params, data, false)
   },
   execute(scope, params) {
     return this.executor.apply(scope, params)
   },
   executeAll(scope, params) {
-    return this.executeFilter(scope, params, this.executor.apply(scope, params), true)
+    return this.filter(scope, params, this.executor.apply(scope, params), true)
   },
   isSimple() {
     return this.simplePath

@@ -1,6 +1,8 @@
 import dom from '../dom'
 import {
-  proxy
+  proxy,
+  obj,
+  createProxy
 } from 'observi'
 import {
   createClass,
@@ -44,7 +46,7 @@ function parseBindings(bindings, Collector, context) {
 
 function toDocument(collector, target, bind, fireEvent, fn) {
   fireEvent = fireEvent !== false
-  if (fireEvent && collector.isMounted) {
+  if (fireEvent && collector.$isMounted) {
     collector.unmouting()
     collector.unmounted()
   }
@@ -52,97 +54,119 @@ function toDocument(collector, target, bind, fireEvent, fn) {
   if (bind !== false)
     collector.bind(fireEvent)
   fn.call(collector, target)
-  collector.isMounted = true
+  collector.$isMounted = true
   fireEvent && collector.mounted()
 }
-const bindProps = [],
-  bindPropMap = {}
-
+const mixins = {}
 export const Controller = createClass({
-  $parent: undefined,
+  $parent: undefined, // parent collector(collector is clone from parent collector)
+  $props: undefined, // prop defines
   statics: {
-    addProp(name, protoVal, init) {
-      if (bindPropMap[name])
-        logger.warn('Re-Bind Controller Property[%s]', name)
-      Controller.prototype[name] = protoVal
-      if (isFunc(init))
-        bindProps.push({
-          name: name,
-          init: init
+    mixin(name, protoValue, valueConsumer) {
+      if (arguments.length == 1) {
+        each(name, (mixin, name) => {
+          Controller.mixin(name, mixin.proto, mixin.consumer)
         })
-      bindPropMap[name] = true
+      } else {
+        var proto = Controller.prototype
+        if (name in proto)
+          logger.warn('Re-mixin Controller Property[%s]', name)
+        proto[name] = protoValue
+        if (isFunc(valueConsumer))
+          mixins[name] = valueConsumer
+      }
+    },
+    newInstance(Class, templateParser, props) {
+
+
+      let frame = document.createDocumentFragment(),
+        inst = createProxy(new Class(Class, props)),
+        {
+          el,
+          bindings
+        } = templateParser.clone()
+      dom.append(frame, el)
+      inst.$bindings = parseBindings(bindings, Controller, inst)
+      inst.$el = map(frame.childNodes, el => el)
+      inst.created()
+      return inst
     }
   },
-  constructor(Controller, templateParser, scope = {}, props = {}) {
-    let {
-      el,
-      bindings
-    } = templateParser.clone(),
-      frame = document.createDocumentFragment()
-    this.state = (this.state && clone(this.state)) || {}
-    this.scope = proxy(scope)
-    this.props = proxy(props)
-    dom.append(frame, el)
-    this.isMounted = this.isBinded = false
-    this.Controller = Controller
-    each(bindProps, item => {
-      this[item.name] = item.init.call(this, this)
+  constructor(Controller, props = {}) {
+    this.$class = Controller
+    this.$isMounted = this.$isBinded = false
+    each(mixins, (consumer, name) => {
+      this[name] = consumer.call(this, this)
     })
-    this.bindings = parseBindings(bindings, Controller, this)
-    this.el = map(frame.childNodes, el => el)
-    this.created()
+    this.init(props)
+    this.$bindings = undefined
+    this.$el = undefined
   },
-  clone(templateParser, init) {
-    let clone = create(this),
+  init(props) {
+    each(props, (descriptor, name) => {
+      this[name] = props[name]
+    })
+  },
+  clone(templateParser, props, beforeParseBinding) {
+    let clone = create(obj(this)),
+      frame = document.createDocumentFragment(),
       {
         el,
         bindings
-      } = templateParser.clone(),
-      frame = document.createDocumentFragment()
+      } = templateParser.clone()
+
     dom.append(frame, el)
-    clone.isMounted = clone.isBinded = false
+    clone.$bindings = clone.$el = undefined
+    clone.$isMounted = clone.$isBinded = false
     clone.$parent = this
-    clone.el = map(frame.childNodes, el => el)
-    if (init)
-      init(clone)
-    clone.bindings = parseBindings(bindings, this.Controller, clone)
+
+    if (props)
+      each(props, (val, name) => {
+        clone[name] = val
+      })
+    if (isFunc(beforeParseBinding))
+      beforeParseBinding(clone)
+
+    clone = createProxy(clone)
+    clone.$bindings = parseBindings(bindings, this.$class, clone)
+    clone.$el = map(frame.childNodes, el => el)
     return clone
   },
   before(target, bind, fireEvent) {
     toDocument(this, target, bind, fireEvent, (target) => {
-      dom.before(this.el, dom.query(target))
+      dom.before(this.$el, dom.query(target))
     })
     return this
   },
   after(target, bind, fireEvent) {
     toDocument(this, target, bind, fireEvent, (target) => {
-      dom.after(this.el, dom.query(target))
+      dom.after(this.$el, dom.query(target))
     })
     return this
   },
   prependTo(target, bind, fireEvent) {
     toDocument(this, target, bind, fireEvent, (target) => {
-      dom.prepend(dom.query(target), this.el)
+      dom.prepend(dom.query(target), this.$el)
     })
     return this
   },
   appendTo(target, bind, fireEvent) {
     toDocument(this, target, bind, fireEvent, (target) => {
-      dom.append(dom.query(target), this.el)
+      dom.append(dom.query(target), this.$el)
     })
     return this
   },
   remove(unbind, fireEvent) {
     fireEvent = fireEvent !== false
-    let fireUnmount = fireEvent && this.isMounted,
+    let fireUnmount = fireEvent && this.$isMounted,
       needUnbind = unbind !== false,
-      fireRemove = fireEvent && (needUnbind ? fireUnmount || this.isBinded : fireUnmount && !this.isBinded)
+      fireRemove = fireEvent && (needUnbind ? fireUnmount || this.$isBinded : fireUnmount && !this.$isBinded)
     if (fireRemove)
       this.removing()
 
     if (fireUnmount) this.unmounting()
-    dom.remove(this.el)
-    this.isMounted = false
+    dom.remove(this.$el)
+    this.$isMounted = false
     if (fireUnmount) this.unmounted()
 
     if (needUnbind)
@@ -153,25 +177,25 @@ export const Controller = createClass({
     return this
   },
   bind(fireEvent) {
-    if (!this.isBinded) {
+    if (!this.$isBinded) {
       fireEvent = fireEvent !== false
       fireEvent && this.binding()
-      each(this.bindings, (bind) => {
+      each(this.$bindings, (bind) => {
         bind.bind()
       })
-      this.isBinded = true
+      this.$isBinded = true
       fireEvent && this.binded()
     }
     return this
   },
   unbind(fireEvent) {
-    if (this.isBinded) {
+    if (this.$isBinded) {
       fireEvent = fireEvent !== false
       fireEvent && this.unbinding()
-      each(this.bindings, (bind) => {
+      each(this.$bindings, (bind) => {
         bind.unbind()
       })
-      this.isBinded = false
+      this.$isBinded = false
       fireEvent && this.unbinded()
     }
     return this

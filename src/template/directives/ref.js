@@ -13,7 +13,7 @@ import {
   isArray
 } from 'ilos'
 
-Controller.addProp('refs', undefined, () => {
+Controller.mixin('refs', undefined, () => {
   return {}
 })
 export const RefrenceDirective = Directive.register('ref', {

@@ -18,43 +18,25 @@ const Binding = createClass({
     comments: true
   },
   constructor(cfg) {
+    this.proxy = cfg.context
     this.ctx = obj(cfg.context)
     this.el = cfg.el
-    let r = this.ctx,
-      p
-    while (p = r.$parent) {
-      r = p
-    }
-    this.root = r
   },
-  rootContext() {
-    let ctx = this.root
-    return proxy(ctx) || ctx
-  },
-  context() {
-    let ctx = this.ctx
-    return proxy(ctx) || ctx
-  },
-  realContext() {
-    return this.ctx
-  },
-  propContext(prop) {
-    let ctx = this.ctx,
+  findScope(expr, isProp) {
+    let prop = isProp ? expr : parseExpr(expr)[0],
+      ctx = this.proxy,
       parent
 
     while ((parent = ctx.$parent) && !hasOwnProp(ctx, prop) && prop in parent) {
       ctx = parent
     }
-    return proxy(ctx) || ctx
-  },
-  exprContext(expr) {
-    return this.propContext(parseExpr(expr)[0])
+    return ctx
   },
   observe(expr, callback) {
-    observe(this.exprContext(expr), expr, callback)
+    observe(this.findScope(expr), expr, callback)
   },
   unobserve(expr, callback) {
-    unobserve(this.exprContext(expr), expr, callback)
+    unobserve(this.findScope(expr), expr, callback)
   },
   get(expr) {
     return get(this.ctx, expr)
@@ -63,7 +45,7 @@ const Binding = createClass({
     return has(this.ctx, expr)
   },
   set(expr, value) {
-    set(this.context(), expr, value)
+    set(this.findScope(expr), expr, value)
   },
   bind() {
     throw new Error('abstract method')

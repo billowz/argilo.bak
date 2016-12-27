@@ -33,7 +33,6 @@ function build(stream, entry) {
   var start = new Date()
   return rollup.rollup(opt).then(function(bundle) {
     opt.cache = bundle
-    console.log(new Date() - start)
     var result = bundle.generate(opt),
       code = result.code,
       map = result.map
@@ -54,7 +53,6 @@ function build(stream, entry) {
     stream.push(file)
     if (gzip)
       stream.push(createFile(typeof gzip === 'string' ? gzip : dest + '.gz', zlib.gzipSync(code)))
-    console.log(new Date() - start)
     return Promise.resolve(bundle)
   })
 }
@@ -258,16 +256,23 @@ function GulpRollup(options) {
         var removes = [],
           adds = []
         for (var id in newWatchFiles) {
-          if (!watchFiles[id]) {
+          var desc = watchFiles[id]
+          if (!desc) {
             adds.push(id)
+          } else {
+            var ndesc = newWatchFiles[id]
+            for (var id in desc.entries) {
+              if (!entries[id])
+                ndesc.add(desc.entries[id])
+            }
           }
         }
         for (var id in watchFiles) {
           if (!newWatchFiles[id]) {
-            desc = watchFiles[id]
+            var desc = watchFiles[id]
             desc.remove(entryIds)
             if (desc.size) {
-              newWatchFiles[id] = watchFiles[id]
+              newWatchFiles[id] = desc
             } else {
               removes.push(id)
             }

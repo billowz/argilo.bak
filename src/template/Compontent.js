@@ -6,7 +6,6 @@ import {
 } from './parser'
 import configuration from './configuration'
 import {
-  createProxy,
   init as observiInit
 } from 'observi'
 import {
@@ -22,15 +21,14 @@ import logger from './log'
 let inited = false,
   compontents = {}
 export const Compontent = createClass({
-  constructor(cfg) {
-    let Ct = cfg.controller,
-      name = cfg.name
+  constructor(options) {
     if (!inited) {
       configuration.nextStatus()
       observiInit()
       inited = true
     }
-    this.templateParser = new TemplateParser(cfg.template, cfg)
+    this.templateParser = new TemplateParser(options.template, options)
+    let Ct = options.controller
     if (!Ct) {
       Ct = Controller
     } else if (isObject(Ct)) {
@@ -43,7 +41,8 @@ export const Compontent = createClass({
       throw TypeError('Invalid Controller')
     this.Controller = Ct
 
-    if (name && isString(name)) {
+    let name = options.name
+    if (isString(name)) {
       if (compontents[name]) {
         logger.warn('Re-Define Compontent[%s]', name)
       } else {
@@ -52,8 +51,8 @@ export const Compontent = createClass({
       compontents[name] = this
     }
   },
-  compile(scope = {}, props = {}) {
-    return createProxy(new this.Controller(this.Controller, this.templateParser, scope, props))
+  compile(props) {
+    return Controller.newInstance(this.Controller, this.templateParser, props)
   }
 })
 

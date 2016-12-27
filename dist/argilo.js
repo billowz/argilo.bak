@@ -1,5 +1,5 @@
 /*
- * argilo v0.0.1 built in Tue, 27 Dec 2016 06:19:02 GMT
+ * argilo v0.0.1 built in Tue, 27 Dec 2016 09:30:09 GMT
  * Copyright (c) 2016 Tao Zeng <tao.zeng.zt@gmail.com>
  * Released under the MIT license
  * support IE6+ and other browsers
@@ -1080,13 +1080,13 @@ var   slice$2 = Array.prototype.slice;
       this.bodyEl.innerHTML = '';
     }
   });
-  var console = window.console;
+  var console$1 = window.console;
   var Logger = createClass({
     statics: {
       enableSimulationConsole: function () {
-        if (!console) {
-          console = new SimulationConsole();
-          console.appendTo(document.body);
+        if (!console$1) {
+          console$1 = new SimulationConsole();
+          console$1.appendTo(document.body);
         }
       }
     },
@@ -1102,12 +1102,12 @@ var   slice$2 = Array.prototype.slice;
     },
     _print: function (level, args, trace) {
       try {
-        Function.apply.call(console[level] || console.log, console, args);
-        if (trace && console.trace) console.trace();
+        Function.apply.call(console$1[level] || console$1.log, console$1, args);
+        if (trace && console$1.trace) console$1.trace();
       } catch (e) {}
     },
     _log: function (level, args, trace) {
-      if (level < this.level || !console) return;
+      if (level < this.level || !console$1) return;
       args = this._parseArgs(level, args);
       this._print(level, args, trace);
     },
@@ -2359,43 +2359,25 @@ var observi = Object.freeze({
       comments: true
     },
     constructor: function (cfg) {
+      this.proxy = cfg.context;
       this.ctx = obj$1(cfg.context);
       this.el = cfg.el;
-      var r = this.ctx,
-          p = void 0;
-      while (p = r.$parent) {
-        r = p;
-      }
-      this.root = r;
     },
-    rootContext: function () {
-      var ctx = this.root;
-      return proxy$1(ctx) || ctx;
-    },
-    context: function () {
-      var ctx = this.ctx;
-      return proxy$1(ctx) || ctx;
-    },
-    realContext: function () {
-      return this.ctx;
-    },
-    propContext: function (prop) {
-      var ctx = this.ctx,
+    findScope: function (expr, isProp) {
+      var prop = isProp ? expr : parseExpr(expr)[0],
+          ctx = this.proxy,
           parent = void 0;
 
       while ((parent = ctx.$parent) && !hasOwnProp(ctx, prop) && prop in parent) {
         ctx = parent;
       }
-      return proxy$1(ctx) || ctx;
-    },
-    exprContext: function (expr) {
-      return this.propContext(parseExpr(expr)[0]);
+      return ctx;
     },
     observe: function (expr, callback) {
-      observe(this.exprContext(expr), expr, callback);
+      observe(this.findScope(expr), expr, callback);
     },
     unobserve: function (expr, callback) {
-      unobserve(this.exprContext(expr), expr, callback);
+      unobserve(this.findScope(expr), expr, callback);
     },
     get: function (expr) {
       return get(this.ctx, expr);
@@ -2404,7 +2386,7 @@ var observi = Object.freeze({
       return has(this.ctx, expr);
     },
     set: function (expr, value) {
-      set(this.context(), expr, value);
+      set(this.findScope(expr), expr, value);
     },
     bind: function () {
       throw new Error('abstract method');
@@ -2608,7 +2590,6 @@ var observi = Object.freeze({
     }
   };
 
-  //====================== Query =============================
   if (!document.querySelectorAll) {
     document.querySelectorAll = function querySelectorAll(selector) {
       var doc = document,
@@ -4100,7 +4081,7 @@ var   exprReg$1 = /\s*\|\s*(?:\|\s*)*/;
       this.identities = keys(identities);
       this.simplePath = isSimplePath(this.expr);
     },
-    executeFilter: function (scope, params, data, transform) {
+    filter: function (scope, params, data, transform) {
       each(this.filters, function (filter) {
         if (transform === false && !translate.get(filter.name)) return;
         var args = map(filter.argExecutors, function (executor) {
@@ -4118,13 +4099,13 @@ var   exprReg$1 = /\s*\|\s*(?:\|\s*)*/;
       return data;
     },
     restore: function (scope, params, data) {
-      return this.executeFilter(scope, params, data, false);
+      return this.filter(scope, params, data, false);
     },
     execute: function (scope, params) {
       return this.executor.apply(scope, params);
     },
     executeAll: function (scope, params) {
-      return this.executeFilter(scope, params, this.executor.apply(scope, params), true);
+      return this.filter(scope, params, this.executor.apply(scope, params), true);
     },
     isSimple: function () {
       return this.simplePath;
@@ -4147,44 +4128,26 @@ var   exprReg$1 = /\s*\|\s*(?:\|\s*)*/;
   }
   expression.cache = cache;
 
-  var ContextKeyword = '$context';
+  var ContextKeyword = '$this';
   var ElementKeyword = '$el';
   var EventKeyword = '$event';
   var BindingKeyword = '$binding';
-  var ScopeKey = '#';
-  var PropsKey = '@';
   function expressionParser(prefix, expr, func, write) {
-    var path;
-    switch (prefix) {
-      case ScopeKey:
-        expr = 'scope.' + expr;
-        prefix = '';
-        path = parseExpr(expr);
+    var path = parseExpr(expr);
+    switch (path[0]) {
+      case ElementKeyword:
+      case EventKeyword:
+      case BindingKeyword:
+        return null;
+      case 'this':
+      case ContextKeyword:
+        path.shift();
         break;
-      case PropsKey:
-        expr = 'props.' + expr;
-        prefix = '';
-        path = parseExpr(expr);
-        break;
-      default:
-        {
-          path = parseExpr(expr);
-          switch (path[0]) {
-            case ElementKeyword:
-            case EventKeyword:
-            case BindingKeyword:
-              return null;
-            case 'this':
-            case ContextKeyword:
-              path.shift();
-              break;
-          }
-          expr = path.join('.');
-        }
     }
+    expr = path.join('.');
     return {
       identity: !func && !write && expr,
-      expr: prefix + (func || write ? '$binding.propContext(\'' + path[0] + '\').' + expr : ContextKeyword + '.' + expr)
+      expr: prefix + (func || write ? '$binding.findScope(\'' + path[0] + '\', true).' + expr : ContextKeyword + '.' + expr)
     };
   }
 
@@ -4194,7 +4157,8 @@ var   exprReg$1 = /\s*\|\s*(?:\|\s*)*/;
     extend: Binding,
     constructor: function (cfg) {
       this['super'](arguments);
-      this.expr = expression(cfg.expression, expressionArgs, expressionParser);
+      this.expression = expression(cfg.expression, expressionArgs, expressionParser);
+      this.exprArgs = [this.proxy, this.el, this];
       if (Binding.comments) {
         this.comment = document.createComment('Text Binding ' + cfg.expression);
         dom.before(this.comment, this.el);
@@ -4202,13 +4166,12 @@ var   exprReg$1 = /\s*\|\s*(?:\|\s*)*/;
       this.observeHandler = this.observeHandler.bind(this);
     },
     value: function () {
-      var ctx = this.context();
-      return this.expr.executeAll(ctx, [ctx, this.el, this]);
+      return this.expression.executeAll(this.proxy, this.exprArgs);
     },
     bind: function () {
       var _this = this;
 
-      each(this.expr.identities, function (ident) {
+      each(this.expression.identities, function (ident) {
         _this.observe(ident, _this.observeHandler);
       });
       this.update(this.value());
@@ -4216,14 +4179,13 @@ var   exprReg$1 = /\s*\|\s*(?:\|\s*)*/;
     unbind: function () {
       var _this2 = this;
 
-      each(this.expr.identities, function (ident) {
+      each(this.expression.identities, function (ident) {
         _this2.unobserve(ident, _this2.observeHandler);
       });
     },
     observeHandler: function (attr, val) {
-      if (this.expr.isSimple()) {
-        var ctx = this.context();
-        this.update(this.expr.executeFilter(ctx, [ctx, this.el, this], val));
+      if (this.expression.isSimple()) {
+        this.update(this.expression.filter(this.proxy, this.exprArgs, val));
       } else {
         this.update(this.value());
       }
@@ -4431,7 +4393,7 @@ var   expressionArgs$1 = [ContextKeyword, ElementKeyword, BindingKeyword];
       var _this = this;
 
       var templateParser = this.templateParser,
-          ctx = this.ctx,
+          ctx = this.proxy,
           indexExpr = this.indexExpr,
           used = this.used,
           version = this.version++,
@@ -4475,7 +4437,7 @@ var   expressionArgs$1 = [ContextKeyword, ElementKeyword, BindingKeyword];
         }
         if (!isNew) _this.updateChildContext(_ctx, desc.data, desc.index);
         _ctx.after(before, true, false);
-        before = _ctx.el;
+        before = _ctx.$el;
         data[i] = proxy$1(desc.data);
       });
       if (idles) each(idles, function (idle) {
@@ -4483,38 +4445,38 @@ var   expressionArgs$1 = [ContextKeyword, ElementKeyword, BindingKeyword];
       });
     },
     createChildContext: function (parent, value, index) {
-      var ctx = parent.clone(this.templateParser);
-      ctx[this.valueAlias] = value;
-      if (this.keyAlias) ctx[this.keyAlias] = index;
-      return createProxy(ctx);
+      var _this2 = this;
+
+      return parent.clone(this.templateParser, false, function (ctx) {
+        ctx[_this2.valueAlias] = value;
+        if (_this2.keyAlias) ctx[_this2.keyAlias] = index;
+      });
     },
     updateChildContext: function (ctx, value, index) {
       ctx[this.valueAlias] = value;
       if (this.keyAlias) ctx[this.keyAlias] = index;
     },
     bind: function () {
-      var _this2 = this;
+      var _this3 = this;
 
       each(this.dataExpr.identities, function (ident) {
-        _this2.observe(ident, _this2.observeHandler);
+        _this3.observe(ident, _this3.observeHandler);
       });
       this.update(this.target());
     },
     unbind: function () {
-      var _this3 = this;
+      var _this4 = this;
 
       each(this.dataExpr.identities, function (ident) {
-        _this3.unobserve(ident, _this3.observeHandler);
+        _this4.unobserve(ident, _this4.observeHandler);
       });
     },
     target: function () {
-      var ctx = this.context();
-      return this.dataExpr.executeAll(ctx, [ctx, this.el, this]);
+      return this.dataExpr.executeAll(this.proxy, [this.proxy, this.el, this]);
     },
     observeHandler: function (expr, target) {
       if (this.dataExpr.isSimple()) {
-        var ctx = this.context();
-        this.update(this.dataExpr.executeFilter(ctx, [ctx, this.el, this], target));
+        this.update(this.dataExpr.filter(this.proxy, [this.proxy, this.el, this], target));
       } else {
         target = this.target();
       }
@@ -4534,15 +4496,16 @@ var   expressionArgs$1 = [ContextKeyword, ElementKeyword, BindingKeyword];
     handler: function (e) {
       e.stopPropagation();
 
-      var ctx = this.context(),
-          exp = this.expression;
+      var exp = this.expression,
+          proxy = this.proxy,
+          args = [proxy, this.el, e, this];
 
-      if (exp.executeFilter(ctx, [ctx, this.el, e, this], e) !== false) {
-        var fn = exp.execute(ctx, [ctx, this.el, e, this]);
+      if (exp.filter(proxy, args, e) !== false) {
+        var fn = exp.execute(proxy, args);
         if (exp.isSimple()) {
           if (isFunc(fn)) {
-            ctx = this.exprContext(exp.expr);
-            fn.call(ctx, ctx, this.el, e, this.tpl, this);
+            proxy = this.findScope(exp.expr);
+            fn.apply(proxy, proxy, this.el, e, this);
           } else {
             logger$2.warn('Invalid Event Handler:%s', this.expr, fn);
           }
@@ -4591,14 +4554,13 @@ var   expressionArgs$1 = [ContextKeyword, ElementKeyword, BindingKeyword];
       this['super'](arguments);
       this.observeHandler = this.observeHandler.bind(this);
       this.expression = expression(this.expr, expressionArgs$3, expressionParser);
+      this.exprArgs = [this.proxy, this.el, this];
     },
     realValue: function () {
-      var ctx = this.context();
-      return this.expression.execute(ctx, [ctx, this.el, this]);
+      return this.expression.execute(this.proxy, this.exprArgs);
     },
     value: function () {
-      var ctx = this.context();
-      return this.expression.executeAll(ctx, [ctx, this.el, this]);
+      return this.expression.executeAll(this.proxy, this.exprArgs);
     },
     updateEl: function () {
       this['super'](arguments);
@@ -4627,8 +4589,7 @@ var   expressionArgs$1 = [ContextKeyword, ElementKeyword, BindingKeyword];
     },
     observeHandler: function (expr, val) {
       if (this.expression.isSimple()) {
-        var ctx = this.context();
-        this.update(this.expression.executeFilter(ctx, [ctx, this.el, this], val));
+        this.update(this.expression.filter(this.proxy, this.exprArgs, val));
       } else {
         this.update(this.value());
       }
@@ -4823,8 +4784,7 @@ var   expressionArgs$1 = [ContextKeyword, ElementKeyword, BindingKeyword];
         this.set(this.expression.expr, val);
       },
       setValue: function (val) {
-        var ctx = this.context();
-        this.setRealValue(this.expression.restore(ctx, [ctx, this.el, this], val));
+        this.setRealValue(this.expression.restore(this.proxy, this.exprArgs, val));
       },
       onChange: function (e) {
         var val = this.elVal(),
@@ -4907,117 +4867,141 @@ var   expressionArgs$1 = [ContextKeyword, ElementKeyword, BindingKeyword];
 
   function toDocument(collector, target, bind, fireEvent, fn) {
     fireEvent = fireEvent !== false;
-    if (fireEvent && collector.isMounted) {
+    if (fireEvent && collector.$isMounted) {
       collector.unmouting();
       collector.unmounted();
     }
     fireEvent && collector.mouting();
     if (bind !== false) collector.bind(fireEvent);
     fn.call(collector, target);
-    collector.isMounted = true;
+    collector.$isMounted = true;
     fireEvent && collector.mounted();
   }
-  var bindProps = [];
-  var bindPropMap = {};
+  var mixins = {};
   var Controller = createClass({
-    $parent: undefined,
+    $parent: undefined, // parent collector(collector is clone from parent collector)
+    $props: undefined, // prop defines
     statics: {
-      addProp: function (name, protoVal, init) {
-        if (bindPropMap[name]) logger$2.warn('Re-Bind Controller Property[%s]', name);
-        Controller.prototype[name] = protoVal;
-        if (isFunc(init)) bindProps.push({
-          name: name,
-          init: init
+      mixin: function (name, protoValue, valueConsumer) {
+        if (arguments.length == 1) {
+          each(name, function (mixin, name) {
+            Controller.mixin(name, mixin.proto, mixin.consumer);
+          });
+        } else {
+          var proto = Controller.prototype;
+          if (name in proto) logger$2.warn('Re-mixin Controller Property[%s]', name);
+          proto[name] = protoValue;
+          if (isFunc(valueConsumer)) mixins[name] = valueConsumer;
+        }
+      },
+      newInstance: function (Class, templateParser, props) {
+        var frame = document.createDocumentFragment();
+        var inst = createProxy(new Class(Class, props));
+
+        var _templateParser$clone = templateParser.clone();
+
+        var el = _templateParser$clone.el;
+        var bindings = _templateParser$clone.bindings;
+
+        dom.append(frame, el);
+        inst.$bindings = parseBindings(bindings, Controller, inst);
+        inst.$el = map(frame.childNodes, function (el) {
+          return el;
         });
-        bindPropMap[name] = true;
+        inst.created();
+        return inst;
       }
     },
-    constructor: function (Controller, templateParser) {
+    constructor: function (Controller) {
       var _this = this;
 
-      var scope = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
-      var props = arguments.length <= 3 || arguments[3] === undefined ? {} : arguments[3];
+      var props = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
 
-      var _templateParser$clone = templateParser.clone();
-
-      var el = _templateParser$clone.el;
-      var bindings = _templateParser$clone.bindings;
-      var frame = document.createDocumentFragment();
-      this.state = this.state && clone(this.state) || {};
-      this.scope = proxy$1(scope);
-      this.props = proxy$1(props);
-      dom.append(frame, el);
-      this.isMounted = this.isBinded = false;
-      this.Controller = Controller;
-      each(bindProps, function (item) {
-        _this[item.name] = item.init.call(_this, _this);
+      this.$class = Controller;
+      this.$isMounted = this.$isBinded = false;
+      each(mixins, function (consumer, name) {
+        _this[name] = consumer.call(_this, _this);
       });
-      this.bindings = parseBindings(bindings, Controller, this);
-      this.el = map(frame.childNodes, function (el) {
-        return el;
-      });
-      this.created();
+      this.init(props);
+      this.$bindings = undefined;
+      this.$el = undefined;
     },
-    clone: function (templateParser, init) {
-      var clone = create(this);
+    init: function (props) {
+      var _this2 = this;
+
+      each(props, function (descriptor, name) {
+        _this2[name] = props[name];
+      });
+    },
+    clone: function (templateParser, props, beforeParseBinding) {
+      var clone = create(obj$1(this));
+      var frame = document.createDocumentFragment();
 
       var _templateParser$clone2 = templateParser.clone();
 
       var el = _templateParser$clone2.el;
       var bindings = _templateParser$clone2.bindings;
-      var frame = document.createDocumentFragment();
+
+
       dom.append(frame, el);
-      clone.isMounted = clone.isBinded = false;
+      clone.$bindings = clone.$el = undefined;
+      clone.$isMounted = clone.$isBinded = false;
       clone.$parent = this;
-      clone.el = map(frame.childNodes, function (el) {
+
+      if (props) each(props, function (val, name) {
+        clone[name] = val;
+      });
+      if (isFunc(beforeParseBinding)) beforeParseBinding(clone);
+
+      clone = createProxy(clone);
+      clone.$bindings = parseBindings(bindings, this.$class, clone);
+      clone.$el = map(frame.childNodes, function (el) {
         return el;
       });
-      if (init) init(clone);
-      clone.bindings = parseBindings(bindings, this.Controller, clone);
       return clone;
     },
     before: function (target, bind, fireEvent) {
-      var _this2 = this;
+      var _this3 = this;
 
       toDocument(this, target, bind, fireEvent, function (target) {
-        dom.before(_this2.el, dom.query(target));
+        dom.before(_this3.$el, dom.query(target));
       });
       return this;
     },
     after: function (target, bind, fireEvent) {
-      var _this3 = this;
+      var _this4 = this;
 
       toDocument(this, target, bind, fireEvent, function (target) {
-        dom.after(_this3.el, dom.query(target));
+        dom.after(_this4.$el, dom.query(target));
       });
       return this;
     },
     prependTo: function (target, bind, fireEvent) {
-      var _this4 = this;
+      var _this5 = this;
 
       toDocument(this, target, bind, fireEvent, function (target) {
-        dom.prepend(dom.query(target), _this4.el);
+        dom.prepend(dom.query(target), _this5.$el);
       });
       return this;
     },
     appendTo: function (target, bind, fireEvent) {
-      var _this5 = this;
+      var _this6 = this;
 
       toDocument(this, target, bind, fireEvent, function (target) {
-        dom.append(dom.query(target), _this5.el);
+        dom.append(dom.query(target), _this6.$el);
       });
       return this;
     },
     remove: function (unbind, fireEvent) {
       fireEvent = fireEvent !== false;
-      var fireUnmount = fireEvent && this.isMounted,
+      var fireUnmount = fireEvent && this.$isMounted,
           needUnbind = unbind !== false,
-          fireRemove = fireEvent && (needUnbind ? fireUnmount || this.isBinded : fireUnmount && !this.isBinded);
+          fireRemove = fireEvent && (needUnbind ? fireUnmount || this.$isBinded : fireUnmount && !this.$isBinded);
       if (fireRemove) this.removing();
 
       if (fireUnmount) this.unmounting();
-      dom.remove(this.el);
-      this.isMounted = false;
+      dom.remove(this.$el);
+      this.$isMounted = false;
       if (fireUnmount) this.unmounted();
 
       if (needUnbind) this.unbind(fireEvent);
@@ -5026,25 +5010,25 @@ var   expressionArgs$1 = [ContextKeyword, ElementKeyword, BindingKeyword];
       return this;
     },
     bind: function (fireEvent) {
-      if (!this.isBinded) {
+      if (!this.$isBinded) {
         fireEvent = fireEvent !== false;
         fireEvent && this.binding();
-        each(this.bindings, function (bind) {
+        each(this.$bindings, function (bind) {
           bind.bind();
         });
-        this.isBinded = true;
+        this.$isBinded = true;
         fireEvent && this.binded();
       }
       return this;
     },
     unbind: function (fireEvent) {
-      if (this.isBinded) {
+      if (this.$isBinded) {
         fireEvent = fireEvent !== false;
         fireEvent && this.unbinding();
-        each(this.bindings, function (bind) {
+        each(this.$bindings, function (bind) {
           bind.unbind();
         });
-        this.isBinded = false;
+        this.$isBinded = false;
         fireEvent && this.unbinded();
       }
       return this;
@@ -5066,15 +5050,14 @@ var   expressionArgs$1 = [ContextKeyword, ElementKeyword, BindingKeyword];
   var inited = false;
   var compontents = {};
   var Compontent$1 = createClass({
-    constructor: function (cfg) {
-      var Ct = cfg.controller,
-          name = cfg.name;
+    constructor: function (options) {
       if (!inited) {
         configuration.nextStatus();
         observiInit();
         inited = true;
       }
-      this.templateParser = new TemplateParser(cfg.template, cfg);
+      this.templateParser = new TemplateParser(options.template, options);
+      var Ct = options.controller;
       if (!Ct) {
         Ct = Controller;
       } else if (isObject(Ct)) {
@@ -5086,7 +5069,8 @@ var   expressionArgs$1 = [ContextKeyword, ElementKeyword, BindingKeyword];
       if (!Ct || Ct !== Controller && !isExtendOf(Ct, Controller)) throw TypeError('Invalid Controller');
       this.Controller = Ct;
 
-      if (name && isString(name)) {
+      var name = options.name;
+      if (isString(name)) {
         if (compontents[name]) {
           logger$2.warn('Re-Define Compontent[%s]', name);
         } else {
@@ -5095,11 +5079,8 @@ var   expressionArgs$1 = [ContextKeyword, ElementKeyword, BindingKeyword];
         compontents[name] = this;
       }
     },
-    compile: function () {
-      var scope = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
-      var props = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
-
-      return createProxy(new this.Controller(this.Controller, this.templateParser, scope, props));
+    compile: function (props) {
+      return Controller.newInstance(this.Controller, this.templateParser, props);
     }
   });
 
@@ -5112,39 +5093,40 @@ var   expressionArgs$1 = [ContextKeyword, ElementKeyword, BindingKeyword];
   }
 
   var expressionArgs$4 = [ContextKeyword, ElementKeyword, BindingKeyword];
-  Controller.addProp('cmps', undefined);
-  Controller.addProp('holders', undefined);
+  Controller.mixin('cmps', undefined);
+  Controller.mixin('holders', undefined);
+
   var CompontentDirective = Directive.register('cmp', {
-    params: ['scope', 'props'],
+    params: ['props'],
     type: 'inline-template',
     priority: 8,
     constructor: function () {
       this['super'](arguments);
-      this.scopeHandler = this.scopeHandler.bind(this);
       this.propsHandler = this.propsHandler.bind(this);
       this.compontent = getCompontent(this.expr);
       if (!this.compontent) throw new Error('Compontent[' + this.expr + '] is not defined');
-      this.initCmp();
-      this.initSlot();
-    },
-    initCmp: function () {
-      var _params = this.params;
-      var scope = _params.scope;
-      var props = _params.props;
-      var scopeExpr = this.scopeExpr = scope && expression(scope, expressionArgs$4, expressionParser);
-      var propsExpr = this.propsExpr = props && expression(props, expressionArgs$4, expressionParser);
-      var ct = this.controller = this.compontent.compile(this.executeExpr(scopeExpr), this.executeExpr(propsExpr));
-      var r = this.root;
+      var props = this.params.props;
+
+      this.propsExpr = props && expression(props, expressionArgs$4, expressionParser);
+      this.propsExprArgs = [this.proxy, this.el, this];
+      this.props = this.propsExpr && this.getProps();
+
+      var ct = this.controller = this.compontent.compile(this.props || {}),
+          $el = ct.$el;
       this.mask = document.createComment('Compontent[' + this.expr + ']');
       dom.replace(this.el, this.mask);
-      dom.after(ct.el, this.mask);
-      this.group.updateEl(isArrayLike(ct.el) ? ct.el[0] : ct.el, this);
+      dom.after($el, this.mask);
+      this.group.updateEl(isArrayLike($el) ? $el[0] : $el, this);
       this.el = undefined;
-      if (!r.cmps) {
+
+      var r = this.root = findRoot(this.ctx);
+      var cmps = r.cmps;
+      if (!cmps) {
         r.cmps = [ct];
       } else {
-        r.cmps.push(ct);
+        cmps.push(ct);
       }
+      this.initSlot();
     },
     initSlot: function () {
       var holders = this.controller.holders,
@@ -5152,60 +5134,48 @@ var   expressionArgs$1 = [ContextKeyword, ElementKeyword, BindingKeyword];
       if (holders) {
         defaultHolder = holders['default'];
         try {
-          this.slot = this.ctx.clone(this.templateParser, function (ctx) {
-            return ctx.holders = holders;
+          this.slot = this.proxy.clone(this.templateParser, {
+            holders: holders
           });
-          if (defaultHolder && !defaultHolder.bindSlot) defaultHolder.replace(this.slot.el);
+          if (defaultHolder && !defaultHolder.bindSlot) defaultHolder.replace(this.slot.$el);
         } catch (e) {
+          console.log(e);
           throw new Error('parse Compontent[' + this.expr + '] Slots failed: ' + e.message);
         }
       }
     },
-    executeExpr: function (expr) {
-      if (!expr) return null;
-      var ctx = this.context();
-      return expr.executeAll(ctx, [ctx, this.el, this]);
+    getProps: function () {
+      return this.propsExpr.executeAll(this.proxy, this.propsExprArgs);
     },
     bind: function () {
-      this.bindExpr(this.scopeExpr, this.scopeHandler);
-      this.bindExpr(this.propsExpr, this.propsHandler);
+      var _this = this;
+
+      if (this.propsExpr) each(this.propsExpr.identities, function (ident) {
+        _this.observe(ident, _this.propsHandler);
+      });
       this.controller.bind();
       if (this.slot) this.slot.bind();
     },
     unbind: function () {
-      this.unbindExpr(this.scopeExpr, this.scopeHandler);
-      this.unbindExpr(this.propsExpr, this.propsHandler);
+      var _this2 = this;
+
+      if (this.propsExpr) each(this.propsExpr.identities, function (ident) {
+        _this2.unobserve(ident, _this2.propsHandler);
+      });
       this.controller.unbind();
       if (this.slot) this.unslot.bind();
     },
-    bindExpr: function (expr, handler) {
-      var _this = this;
-
-      if (expr) each(expr.identities, function (ident) {
-        _this.observe(ident, handler);
+    propsHandler: function (expr, value) {
+      var oldProps = this.props,
+          props = this.propsExpr.isSimple() ? expr.filter(this.proxy, this.propsExprArgs, value) : this.getProps(),
+          ct = this.controller;
+      this.props = props;
+      each(oldProps, function (v, name) {
+        if (!(name in props)) props[name] = undefined;
       });
-    },
-    unbindExpr: function (expr, handler) {
-      var _this2 = this;
-
-      if (expr) each(expr.identities, function (ident) {
-        _this2.unobserve(ident, handler);
+      each(props, function (v, name) {
+        ct[name] = v;
       });
-    },
-    scopeHandler: function (expr, target) {
-      this.controller.scope = this.exprChangeValue(this.scopeExpr, target);
-    },
-    propsHandler: function () {
-      this.controller.props = this.exprChangeValue(this.propsExpr, target);
-    },
-    exprChangeValue: function (expr, value) {
-      if (expr.isSimple()) {
-        var ctx = this.context();
-        value = expr.executeFilter(ctx, [ctx, this.el, this], value);
-      } else {
-        value = this.executeExpr(expr);
-      }
-      return proxy$1(value);
     }
   });
 
@@ -5214,7 +5184,7 @@ var   expressionArgs$1 = [ContextKeyword, ElementKeyword, BindingKeyword];
     alone: true,
     constructor: function () {
       this['super'](arguments);
-      var r = this.root,
+      var r = this.root = findRoot(this.ctx),
           holders = r.holders || (r.holders = {}),
           name = this.name = this.expr || 'default';
       if (holders[name]) throw new Error('Multi-Defined Holder[' + name + ']');
@@ -5239,22 +5209,30 @@ var   expressionArgs$1 = [ContextKeyword, ElementKeyword, BindingKeyword];
           name = this.name = this.expr || 'default',
           holder = holders[name];
       if (holder) {
-        var collector = this.collector = this.ctx.clone(this.templateParser);
-        holder.replace(collector.el);
+        this.controller = this.proxy.clone(this.templateParser);
+        holder.replace(this.controller.$el);
         holder.bindSlot = true;
       } else {
         throw new Error('Holder[' + name + '] is undefined');
       }
     },
     bind: function () {
-      this.collector.bind();
+      this.controller.bind();
     },
     unbind: function () {
-      this.collector.unbind();
+      this.controller.unbind();
     }
   });
 
-  Controller.addProp('refs', undefined, function () {
+  function findRoot(ctx) {
+    var p = void 0;
+    while (p = ctx.$parent) {
+      ctx = p;
+    }
+    return ctx;
+  }
+
+  Controller.mixin('refs', undefined, function () {
     return {};
   });
   var RefrenceDirective = Directive.register('ref', {
@@ -5331,8 +5309,13 @@ var   expressionArgs$1 = [ContextKeyword, ElementKeyword, BindingKeyword];
   var Compontent = Compontent$1;var assignIf = assignIf$1;
 
 
-  function argilo(cfg) {
-    return new Compontent(cfg);
+  function argilo(name, options) {
+    if (arguments.length == 1) {
+      options = name;
+    } else {
+      options.name = name;
+    }
+    return new Compontent(options);
   }
   assignIf(argilo, template, observi, _, dom);
 

@@ -26,41 +26,42 @@ import {
 } from 'ilos'
 
 const expressionArgs = [ContextKeyword, ElementKeyword, BindingKeyword]
-Controller.addProp('cmps', undefined)
-Controller.addProp('holders', undefined)
+Controller.mixin('cmps', undefined)
+Controller.mixin('holders', undefined)
+
 export const CompontentDirective = Directive.register('cmp', {
-  params: ['scope', 'props'],
+  params: ['props'],
   type: 'inline-template',
   priority: 8,
   constructor() {
     this.super(arguments)
-    this.scopeHandler = this.scopeHandler.bind(this)
     this.propsHandler = this.propsHandler.bind(this)
     this.compontent = getCompontent(this.expr)
     if (!this.compontent)
       throw new Error(`Compontent[${this.expr}] is not defined`)
-    this.initCmp()
-    this.initSlot()
-  },
-  initCmp() {
     let {
-      scope,
       props
-    } = this.params,
-      scopeExpr = this.scopeExpr = scope && expression(scope, expressionArgs, expressionParser),
-      propsExpr = this.propsExpr = props && expression(props, expressionArgs, expressionParser),
-      ct = this.controller = this.compontent.compile(this.executeExpr(scopeExpr), this.executeExpr(propsExpr)),
-      r = this.root
+    } = this.params
+    this.propsExpr = props && expression(props, expressionArgs, expressionParser)
+    this.propsExprArgs = [this.proxy, this.el, this]
+    this.props = this.propsExpr && this.getProps()
+
+    let ct = this.controller = this.compontent.compile(this.props || {}),
+      $el = ct.$el
     this.mask = document.createComment(`Compontent[${this.expr}]`)
     dom.replace(this.el, this.mask)
-    dom.after(ct.el, this.mask)
-    this.group.updateEl(isArrayLike(ct.el) ? ct.el[0] : ct.el, this)
+    dom.after($el, this.mask)
+    this.group.updateEl(isArrayLike($el) ? $el[0] : $el, this)
     this.el = undefined
-    if (!r.cmps) {
+
+    let r = this.root = findRoot(this.ctx)
+    let cmps = r.cmps
+    if (!cmps) {
       r.cmps = [ct]
     } else {
-      r.cmps.push(ct)
+      cmps.push(ct)
     }
+    this.initSlot()
   },
   initSlot() {
     let holders = this.controller.holders,
@@ -68,59 +69,50 @@ export const CompontentDirective = Directive.register('cmp', {
     if (holders) {
       defaultHolder = holders['default']
       try {
-        this.slot = this.ctx.clone(this.templateParser, ctx => ctx.holders = holders)
+        this.slot = this.proxy.clone(this.templateParser, {
+          holders
+        })
         if (defaultHolder && !defaultHolder.bindSlot)
-          defaultHolder.replace(this.slot.el)
+          defaultHolder.replace(this.slot.$el)
       } catch (e) {
+        console.log(e)
         throw new Error(`parse Compontent[${this.expr}] Slots failed: ${e.message}`)
       }
     }
   },
-  executeExpr(expr) {
-    if (!expr) return null
-    let ctx = this.context()
-    return expr.executeAll(ctx, [ctx, this.el, this])
+  getProps() {
+    return this.propsExpr.executeAll(this.proxy, this.propsExprArgs)
   },
   bind() {
-    this.bindExpr(this.scopeExpr, this.scopeHandler)
-    this.bindExpr(this.propsExpr, this.propsHandler)
+    if (this.propsExpr)
+      each(this.propsExpr.identities, (ident) => {
+        this.observe(ident, this.propsHandler)
+      })
     this.controller.bind()
     if (this.slot)
       this.slot.bind()
   },
   unbind() {
-    this.unbindExpr(this.scopeExpr, this.scopeHandler)
-    this.unbindExpr(this.propsExpr, this.propsHandler)
+    if (this.propsExpr)
+      each(this.propsExpr.identities, (ident) => {
+        this.unobserve(ident, this.propsHandler)
+      })
     this.controller.unbind()
     if (this.slot)
       this.unslot.bind()
   },
-  bindExpr(expr, handler) {
-    if (expr)
-      each(expr.identities, (ident) => {
-        this.observe(ident, handler)
-      })
-  },
-  unbindExpr(expr, handler) {
-    if (expr)
-      each(expr.identities, (ident) => {
-        this.unobserve(ident, handler)
-      })
-  },
-  scopeHandler(expr, target) {
-    this.controller.scope = this.exprChangeValue(this.scopeExpr, target)
-  },
-  propsHandler() {
-    this.controller.props = this.exprChangeValue(this.propsExpr, target)
-  },
-  exprChangeValue(expr, value) {
-    if (expr.isSimple()) {
-      var ctx = this.context()
-      value = expr.executeFilter(ctx, [ctx, this.el, this], value)
-    } else {
-      value = this.executeExpr(expr)
-    }
-    return proxy(value)
+  propsHandler(expr, value) {
+    var oldProps = this.props,
+      props = this.propsExpr.isSimple() ? expr.filter(this.proxy, this.propsExprArgs, value) : this.getProps(),
+      ct = this.controller
+    this.props = props
+    each(oldProps, (v, name) => {
+      if (!(name in props))
+        props[name] = undefined
+    })
+    each(props, (v, name) => {
+      ct[name] = v
+    })
   }
 })
 
@@ -129,7 +121,7 @@ export const HolderDirective = Directive.register('holder', {
   alone: true,
   constructor() {
     this.super(arguments)
-    let r = this.root,
+    let r = this.root = findRoot(this.ctx),
       holders = r.holders || (r.holders = {}),
       name = this.name = this.expr || 'default'
     if (holders[name])
@@ -155,17 +147,25 @@ export const SlotDirective = Directive.register('slot', {
       name = this.name = this.expr || 'default',
       holder = holders[name]
     if (holder) {
-      var collector = this.collector = this.ctx.clone(this.templateParser)
-      holder.replace(collector.el)
+      this.controller = this.proxy.clone(this.templateParser)
+      holder.replace(this.controller.$el)
       holder.bindSlot = true
     } else {
       throw new Error(`Holder[${name}] is undefined`)
     }
   },
   bind() {
-    this.collector.bind()
+    this.controller.bind()
   },
   unbind() {
-    this.collector.unbind()
+    this.controller.unbind()
   }
 })
+
+function findRoot(ctx) {
+  let p
+  while (p = ctx.$parent) {
+    ctx = p
+  }
+  return ctx
+}

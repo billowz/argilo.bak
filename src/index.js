@@ -9,7 +9,12 @@ const {
   assignIf
 } = _
 
-export default function argilo(cfg) {
-  return new Compontent(cfg)
+export default function argilo(name, options) {
+  if (arguments.length == 1) {
+    options = name
+  } else {
+    options.name = name
+  }
+  return new Compontent(options)
 }
 assignIf(argilo, template, observi, _, dom)

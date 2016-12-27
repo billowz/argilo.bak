@@ -22,7 +22,8 @@ export default createClass({
   extend: Binding,
   constructor(cfg) {
     this.super(arguments)
-    this.expr = expression(cfg.expression, expressionArgs, expressionParser)
+    this.expression = expression(cfg.expression, expressionArgs, expressionParser)
+    this.exprArgs = [this.proxy, this.el, this]
     if (Binding.comments) {
       this.comment = document.createComment('Text Binding ' + cfg.expression)
       dom.before(this.comment, this.el)
@@ -30,24 +31,22 @@ export default createClass({
     this.observeHandler = this.observeHandler.bind(this)
   },
   value() {
-    let ctx = this.context()
-    return this.expr.executeAll(ctx, [ctx, this.el, this])
+    return this.expression.executeAll(this.proxy, this.exprArgs)
   },
   bind() {
-    each(this.expr.identities, (ident) => {
+    each(this.expression.identities, (ident) => {
       this.observe(ident, this.observeHandler)
     })
     this.update(this.value())
   },
   unbind() {
-    each(this.expr.identities, (ident) => {
+    each(this.expression.identities, (ident) => {
       this.unobserve(ident, this.observeHandler)
     })
   },
   observeHandler(attr, val) {
-    if (this.expr.isSimple()) {
-      var ctx = this.context()
-      this.update(this.expr.executeFilter(ctx, [ctx, this.el, this], val))
+    if (this.expression.isSimple()) {
+      this.update(this.expression.filter(this.proxy, this.exprArgs, val))
     } else {
       this.update(this.value())
     }
