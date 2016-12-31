@@ -1,9 +1,15 @@
 import {
   createWatcher
 } from './watcherFactory'
-import notify from './notify'
-import proxy from './proxy'
-import configuration from './configuration'
+import {
+  notify
+} from './notify'
+import {
+  proxy
+} from './proxy'
+import {
+  configuration
+} from './configuration'
 import logger from './log'
 import {
   createClass,
@@ -18,8 +24,8 @@ import {
 const hasOwn = Object.prototype.hasOwnProperty
 let lazy = true,
   bindWatcher = '__observi_watcher__'
-configuration.register('key.watcher', lazy, 'init', (val) => lazy = val)
-  .register('lazy', bindWatcher, 'init', (val) => bindWatcher = val)
+configuration.register('key.watcher', bindWatcher, 'init', (val) => (bindWatcher = val))
+  .register('lazy', lazy, 'init', (val) => lazy = val)
 
 function getOrCreateWatcher(obj) {
   if (hasOwn.call(obj, bindWatcher))
@@ -27,7 +33,7 @@ function getOrCreateWatcher(obj) {
   return (obj[bindWatcher] = createWatcher(obj))
 }
 
-export default createClass({
+export const Observi = createClass({
   statics: {
     getOrCreateWatcher
   },
@@ -130,6 +136,9 @@ export default createClass({
         }
         if ((eq = proxy.eq(val, oldVal)) && isPrimitive(val))
           return
+      } else {
+        this.unwatchArray()
+        this.watchArray(val)
       }
       this.update(val, oldVal, eq)
     }
@@ -152,8 +161,8 @@ export default createClass({
         } else {
           this.watch(val, idx)
         }
-      } else if (isArray(val)) {
-        (this.arrayWatcher || (this.arrayWatcher = getOrCreateWatcher(val))).setter('length', this.arrayCallback)
+      } else {
+        this.watchArray(val)
       }
     }
     return watcher
@@ -170,12 +179,21 @@ export default createClass({
       if (val = obj[attr]) {
         if (++idx < path.length) {
           this.unwatch(proxy.obj(val), idx)
-        } else if (isArray(val) && this.arrayWatcher) {
-          this.arrayWatcher.unsetter('length', this.arrayCallback)
-          this.arrayWatcher = undefined
+        } else {
+          this.unwatchArray()
         }
       }
     }
     return watcher
+  },
+  watchArray(val) {
+    if (isArray(val))
+      (this.arrayWatcher || (this.arrayWatcher = getOrCreateWatcher(val))).setter('length', this.arrayCallback)
+  },
+  unwatchArray() {
+    if (this.arrayWatcher) {
+      this.arrayWatcher.unsetter('length', this.arrayCallback)
+      this.arrayWatcher = undefined
+    }
   }
 })

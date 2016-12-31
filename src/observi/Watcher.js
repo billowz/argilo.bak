@@ -1,4 +1,6 @@
-import proxy from './proxy'
+import {
+  proxy
+} from './proxy'
 import {
   createClass,
   LinkedList,
@@ -6,7 +8,7 @@ import {
 } from 'ilos'
 
 let interceptGetter = false
-export default createClass({
+export const Watcher = createClass({
   static: {
     interceptGetter(cb) {
       interceptGetter = true

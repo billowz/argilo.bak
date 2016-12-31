@@ -7,15 +7,17 @@ import {
 import {
   createClass
 } from './class'
-import AbstractConfiguration from './AbstractConfiguration'
+import {
+  IConfiguration
+} from './IConfiguration'
 
 function check(cfg) {
-  if (!(cfg instanceof AbstractConfiguration))
+  if (!(cfg instanceof IConfiguration))
     throw new Error('Invalid Configuration: ' + cfg)
   return cfg
 }
-export default createClass({
-  extend: AbstractConfiguration,
+export const ConfigurationChain = createClass({
+  extend: IConfiguration,
   constructor() {
     let cfgs = []
     each(arguments, cfg => {

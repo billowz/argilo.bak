@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <title>Argilo - Observe</title>
+    <link href="../../lib/bootstrap.min.css" rel="stylesheet" />
+</head>
+
+<body>
+    <script src="../../dist/argilo.js"></script>
+    <script src="../../node_modules/lodash/lodash.js"></script>
+    <script src="../../node_modules/platform/platform.js"></script>
+    <script src="../../node_modules/benchmark/benchmark.js"></script>
+    <script id="templ" type="text/template">
+        <table class="table table-hover table-striped ">
+            <tbody>
+                <tr>
+                    <td class="col-md-6"> Test Name</td>
+                    <td class="col-md-6"> Ops(ops/sec) </td>
+                </tr>
+                <tr ag-each="row in results">
+                    <td class="col-md-6"> {row.name} (repeat {row.sampled})</td>
+                    <td class="col-md-6"> {row.ops} {'\xb1'+row.rme}%</td>
+                </tr>
+            </tbody>
+        </table>
+    </script>
+    <table class="table table-hover table-striped " id="test-templ" style="display:none">
+        <tbody>
+            <tr>
+                <td class="col-md-3"> Test Name </td>
+                <td class="col-md-1"> Mean(ms) </td>
+                <td class="col-md-1"> Min(ms) </td>
+                <td class="col-md-1"> Max(ms) </td>
+                <td class="col-md-1"> Memory Before </td>
+                <td class="col-md-1"> Memory After </td>
+                <td class="col-md-4"> Perfs </td>
+            </tr>
+        </tbody>
+    </table>
+    <script>
+    (function(Suite, argilo) {
+        var results = []
+        argilo.ready(function() {
+            var results = []
+            argilo({
+                template: '#templ'
+            }).compile({
+                results: results
+            }).appendTo(document.body)
+            var el = document.getElementById('test-templ')
+
+            setTimeout(function(){
+              new Suite()
+                  .add('dom:createElement', function() {
+                      create()
+                  })
+                  .add('dom:cloneNode(Deep)', function() {
+                      el.cloneNode(true)
+                  })
+                  .add('dom:cloneNode(Loop)', function() {
+                      clone(el)
+                  })
+                  .add('dom:loopNode', function() {
+                      eachNode(el)
+                  })
+                  .on('cycle', function(event) {
+                      var t = event.target,
+                          hz = t.hz
+                      results.push({
+                          name: t.name,
+                          ops: formatNumber(hz.toFixed(hz < 100 ? 2 : 0)),
+                          rme: t.stats.rme.toFixed(2),
+                          sampled: t.stats.sample.length
+                      })
+                      console.log(String(event.target), event.target);
+                  })
+                  .run()
+              }, 0)
+        })
+      function formatNumber(number) {
+            number = String(number).split('.');
+            return number[0].replace(/(?=(?:\d{3})+$)(?!\b)/g, ',') +
+              (number[1] ? '.' + number[1] : '');
+          }
+
+        function eachNode(el) {
+            if (el.nodeType == 1) {
+                var c = el.childNodes
+                for (var i = 0, j = c.length; i < j; i++)
+                    eachNode(c[i])
+            }
+        }
+
+        function clone(el) {
+            let elem = el.cloneNode(false)
+            if (el.nodeType == 1) {
+                var c = el.childNodes
+                for (var i = 0, j = c.length; i < j; i++)
+                    elem.appendChild(clone(c[i]))
+            }
+            return elem
+        }
+
+
+        function create() {
+            var table = document.createElement('table'),
+                tbody = document.createElement('tbody'),
+                tr = document.createElement('tr'),
+                tds = [],
+                data = [{
+                    c: 3,
+                    text: 'Test Name'
+                }, {
+                    c: 1,
+                    text: 'Mean(ms)'
+                }, {
+                    c: 1,
+                    text: 'Min(ms)'
+                }, {
+                    c: 1,
+                    text: 'Max(ms)'
+                }, {
+                    c: 1,
+                    text: 'Memory Before'
+                }, {
+                    c: 1,
+                    text: 'Memory After'
+                }, {
+                    c: 4,
+                    text: 'Perfs'
+                }]
+            argilo.attr(table, 'id', 'test-templ')
+            argilo.attr(table, 'class', 'table table-hover table-striped')
+            argilo.attr(table, 'style', 'display: none')
+
+            data.forEach(function(d) {
+                var td = document.createElement(td),
+                    text = document.createTextNode(d.text)
+                argilo.attr(td, 'class', 'col-md-' + d.c)
+                td.appendChild(text)
+                tds.push(td)
+                tr.appendChild(td)
+            })
+            tbody.appendChild(tr)
+            table.appendChild(tbody)
+        }
+    })(Benchmark.Suite, argilo)
+    </script>
+</body>
+
+</html>

@@ -1,4 +1,6 @@
-import Watcher from '../Watcher'
+import {
+  Watcher
+} from '../Watcher'
 import {
   createClass,
   isArray,
@@ -8,7 +10,7 @@ import {
 const arrayProto = Array.prototype,
   arrayHooks = 'fill,pop,push,reverse,shift,sort,splice,unshift'.split(',')
 
-export default createClass({
+export const ArrayWatcher = createClass({
   extend: Watcher,
   constructor() {
     this.super(arguments)

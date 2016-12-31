@@ -11,20 +11,75 @@ import {
 import dom from '../../dom'
 import {
   proxy,
-  createProxy
+  createProxy,
+  $each,
+  eq
 } from 'observi'
 import {
   createClass,
   each,
+  eachObj,
+  eachArray,
   map,
   get,
-  create
+  create,
+  isArrayLike,
+  isEmptyStr,
+  typestr,
+  numberType,
+  objectType,
+  emptyFn,
+  LinkedList
 } from 'ilos'
 
 const expressionArgs = [ContextKeyword, ElementKeyword, BindingKeyword],
   eachReg = /^\s*([\s\S]+)\s+in\s+([\S]+)(\s+track\s+by\s+([\S]+))?\s*$/,
   eachAliasReg = /^(\(\s*([^,\s]+)(\s*,\s*([\S]+))?\s*\))|([^,\s]+)(\s*,\s*([\S]+))?$/
 
+
+const Cache = createClass({
+  constructor() {
+    this.keymap = {}
+    this.queue = new LinkedList()
+  },
+  encache(data, prev) {
+    let index = data.index,
+      keymap = this.keymap
+    if (index in keymap)
+      throw new Error('EachDirective: index is not uniqued')
+    keymap[index] = data
+    if (prev) {
+      this.queue.after(prev, data)
+    } else {
+      this.queue.push(data)
+    }
+    return this
+  },
+  decacheByIndex(index) {
+    let keymap = this.keymap,
+      data = keymap[index]
+    if (data) {
+      delete keymap[index]
+      this.queue.remove(data)
+    }
+    return data
+  },
+  decache() {
+    let data = this.queue.pop()
+    if (data)
+      delete this.keymap[data.index]
+    return data
+  },
+  each(cb, scope) {
+    return this.queue.each(cb, scope)
+  },
+  size() {
+    return this.queue.size()
+  },
+  isEmpty() {
+    return this.queue.empty()
+  }
+})
 export default Directive.register('each', createClass({
   extend: Directive,
   type: 'template',
@@ -54,80 +109,194 @@ export default Directive.register('each', createClass({
     this.el = undefined
     this.version = 1
   },
-  update(data) {
-    let templateParser = this.templateParser,
-      ctx = this.proxy,
-      indexExpr = this.indexExpr,
-      used = this.used,
-      version = this.version++,
-      indexMap = this.used = {},
-      descs = map(data, (item, idx) => {
-        let index = indexExpr ? get(item, indexExpr) : idx, // read index of data item
-          reuse = used && used[index],
-          desc
-
-        if (reuse && reuse.version === version)
-          reuse = undefined
-
-        desc = reuse || {
-          index: index
-        }
-        desc.version = version
-        desc.data = item
-        indexMap[index] = desc
-        return desc
-      }),
-      idles = undefined,
-      before = this.begin
-    if (used) {
-      idles = []
-      each(used, (desc) => {
-        if (desc.version != version)
-          idles.push(desc)
-      })
+  convertData(data) {
+    let convert = false
+    if (data) {
+      var type = typestr(data)
+      if (isArrayLike(data, type)) {
+        data = data.length && data
+      } else if (type === numberType) {
+        var arr = new Array(data)
+        for (var i = 0; i < data; i++)
+          arr[i] = i
+        data = arr
+        convert = true
+      } else if (type === objectType) {
+        if ($eachObj(data, (v) => false) === false)
+          data = undefined
+      } else {
+        data = undefined
+      }
     }
-    each(descs, (desc, i) => {
-      let isNew = false,
-        _ctx = desc.context
+    return {
+      convert,
+      data
+    }
+  },
+  update(data) {
+    var start = performance.now()
+    let cache = this.cache,
+      before = this.begin,
+      convert = this.convertData(data)
 
-      if (!_ctx) {
-        let idle = idles && idles.pop()
-        if (!idle) {
-          _ctx = desc.context = this.createChildContext(ctx, desc.data, desc.index)
-          isNew = true
+    function debug(msg) {
+      console.log(msg)
+    }
+
+    if (!(data = convert.data)) {
+      this.cache = undefined
+      if (cache && !cache.isEmpty()) {
+        var parent = before.parentNode,
+          emptyDom = isEmptyDom(parent, before, this.end)
+        var s = performance.now()
+        if (emptyDom) {
+          parent.innerHTML = ''
+          dom.append(parent, [before, this.end])
+
+          debug(`remove views use ${performance.now()-s} ms, total-rows: ${cache.size()}`)
+          s = performance.now()
+
+          cache.each((desc, index) => {
+            desc.view.unbind(false)
+          })
+
+          debug(`unbind views use ${performance.now()-s} ms, total-rows: ${cache.size()}`)
         } else {
-          _ctx = desc.context = idle.context
+          cache.each((desc, index) => {
+            desc.view.remove(true, false)
+          })
+          debug(`remove & unbind views use ${performance.now()-s} ms, total-rows: ${cache.size()}`)
         }
       }
-      if (!isNew)
-        this.updateChildContext(_ctx, desc.data, desc.index)
-      _ctx.after(before, true, false)
-      before = _ctx.$el
-      data[i] = proxy(desc.data)
-    })
-    if (idles)
-      each(idles, (idle) => idle.context.remove(true, false))
+    } else {
+      var resetData = proxy.isEnable() && !convert.convert,
+        ncache = this.cache = new Cache(),
+        indexExpr = this.indexExpr
+      if (cache && !cache.isEmpty()) {
+        var ndescs = []
+        var s = performance.now()
+        $each(data, (item, key) => {
+          let index = indexExpr ? get(item, indexExpr) : key,
+            desc = cache.decacheByIndex(index)
+          if (desc) {
+            this.updateChild(desc.view, item, index)
+            if (resetData)
+              data[key] = proxy(item)
+          } else {
+            desc = {
+              item,
+              index,
+              key
+            }
+            ndescs.push(desc)
+          }
+          ncache.encache(desc)
+        })
+        debug(`parse datas use ${performance.now()-s} ms, total rows: ${ncache.size()}, matched rows: ${ncache.size()-ndescs.length}`)
+        s = performance.now()
+        var reused = 0
+        eachArray(ndescs, desc => {
+          let idle = cache.decache(),
+            {
+              index,
+              item,
+              key
+            } = desc
+          desc.item = desc.key = undefined
+          if (idle) {
+            reused++;
+            this.updateChild(idle.view, item, index)
+            desc.view = idle.view
+          } else {
+            desc.view = this.createChild(item, index)
+              .bind(false)
+          }
+          if (resetData)
+            data[key] = proxy(item)
+        })
+        debug(`create non-matched views use ${performance.now()-s} ms, re-used rows: ${reused}, created rows: ${ndescs.length-reused}`)
+        s = performance.now()
+
+        cache.each(desc => {
+          desc.view.remove(true, false)
+        })
+        debug(`clear cached views use ${performance.now()-s} ms, cache-rows: ${cache.size()}`)
+        s = performance.now()
+
+        var i = 0
+        ncache.each(desc => {
+          let view = desc.view,
+            el = view.$el
+          if (before.nextSibling !== el[0]) {
+            view.after(before, false, false)
+            i++
+          }
+          before = el[el.length - 1]
+        })
+        debug(`append views use ${performance.now()-s} ms, total rows: ${i}`)
+      } else {
+        var frame = document.createDocumentFragment()
+        var s = performance.now()
+        var rownum = $each(data, (item, key) => {
+          let index = indexExpr ? get(item, indexExpr) : key,
+            view = this.createChild(item, index)
+          ncache.encache({
+            index,
+            view
+          })
+          if (resetData)
+            data[key] = proxy(item)
+        })
+        debug(`created views use ${performance.now()-s} ms, total rows: ${rownum}`)
+        s = performance.now()
+
+        ncache.each(desc => {
+          desc.view.bind(false)
+        })
+
+        debug(`binded views use ${performance.now()-s} ms, total rows: ${rownum}`)
+        s = performance.now()
+
+        ncache.each(desc => {
+          desc.view.appendTo(frame, false, false)
+        })
+
+        dom.after(frame, before)
+        debug(`append views use ${performance.now()-s} ms, total rows: ${rownum}`)
+      }
+    }
+    debug(`diff use ${performance.now()-start} ms`)
+    start = performance.now()
+    setTimeout(function() {
+      debug(`render use ${performance.now()-start} ms\n\n`)
+    }, 0)
   },
-  createChildContext(parent, value, index) {
-    return parent.clone(this.templateParser, false, (ctx) => {
+  createChild(value, index) {
+    return this.proxy.clone(this.templateParser, false, (ctx) => {
       ctx[this.valueAlias] = value
       if (this.keyAlias)
         ctx[this.keyAlias] = index
     })
   },
-  updateChildContext(ctx, value, index) {
-    ctx[this.valueAlias] = value
-    if (this.keyAlias)
-      ctx[this.keyAlias] = index
+  updateChild(ctx, value, index) {
+    let {
+      keyAlias,
+      valueAlias
+    } = this
+    if (!eq(ctx[valueAlias], value))
+      ctx[valueAlias] = value
+
+    if (keyAlias && ctx[keyAlias] !== index)
+      ctx[keyAlias] = index
   },
   bind() {
-    each(this.dataExpr.identities, (ident) => {
+    eachArray(this.dataExpr.identities, (ident) => {
       this.observe(ident, this.observeHandler)
     })
     this.update(this.target())
   },
   unbind() {
-    each(this.dataExpr.identities, (ident) => {
+    eachArray(this.dataExpr.identities, (ident) => {
       this.unobserve(ident, this.observeHandler)
     })
   },
@@ -136,10 +305,37 @@ export default Directive.register('each', createClass({
   },
   observeHandler(expr, target) {
     if (this.dataExpr.isSimple()) {
-      this.update(this.dataExpr.filter(this.proxy, [this.proxy, this.el, this], target))
+      target = this.dataExpr.filter(this.proxy, [this.proxy, this.el, this], target)
     } else {
       target = this.target()
     }
     this.update(target)
   }
 }))
+
+function isEmptyDom(el, begin, end) {
+  var first = el.firstChild,
+    last = el.lastChild
+  while (first !== begin) {
+    if (!isEmptyNode(first))
+      return false
+    first = first.nextSibling
+  }
+  while (last !== end) {
+    if (!isEmptyNode(last))
+      return false
+    last = last.previousSibling
+  }
+  return true
+}
+
+function isEmptyNode(node) {
+  switch (node.nodeType) {
+    case document.ELEMENT_NODE:
+      return false
+    case document.TEXT_NODE:
+      if (!isEmptyStr(node.data))
+        return false
+  }
+  return true
+}

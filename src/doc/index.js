@@ -1,6 +1,6 @@
 import argilo from 'argilo'
 import * as styles from './doc.css'
-import docs from './docs'
+import docs from './document'
 
 
 argilo.configuration.config('textParser', new argilo.TextParser('{', '}'))

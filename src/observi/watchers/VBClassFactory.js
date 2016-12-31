@@ -12,7 +12,7 @@ const hasOwn = Object.prototype.hasOwnProperty,
   RESERVE_ARRAY_PROPS = 'concat,copyWithin,entries,every,fill,filter,find,findIndex,forEach,includes,indexOf,join,keys,lastIndexOf,map,pop,push,reduce,reduceRight,reverse,shift,slice,some,sort,splice,unshift,values'.split(',')
 
 let supported = undefined
-const VBClassFactory = createClass({
+export const VBClassFactory = createClass({
   statics: {
     isSupport() {
       if (supported !== undefined)
@@ -48,7 +48,8 @@ const VBClassFactory = createClass({
       props = []
 
     each(defProps || [], (prop) => {
-      defPropMap[prop] = true
+      if (prop !== this.constBind && prop !== this.descBind)
+        defPropMap[prop] = true
     })
     for (let prop in defPropMap) {
       if (hasOwn.call(defPropMap, prop))
@@ -282,4 +283,3 @@ const ObjectDescriptor = createClass({
     }
   }
 })
-export default VBClassFactory

@@ -11,7 +11,7 @@ import {
 const LIST_KEY = '__linked_list__'
 let IDGenerator = 1
 
-export default createClass({
+export const LinkedList = createClass({
   statics: {
     LIST_KEY: LIST_KEY
   },
@@ -23,7 +23,7 @@ export default createClass({
     this._version = 1
   },
   _listObj(obj) {
-    return hasOwnProp(obj, LIST_KEY) && obj[LIST_KEY]
+    return obj && hasOwnProp(obj, LIST_KEY) && obj[LIST_KEY]
   },
   _desc(obj) {
     let list = this._listObj(obj)
@@ -164,6 +164,12 @@ export default createClass({
     }
     return this
   },
+  prev(target) {
+    return this.before(target)
+  },
+  next(target) {
+    return this.after(target)
+  },
   contains(obj) {
     return !!this._desc(obj)
   },
@@ -202,16 +208,18 @@ export default createClass({
   },
   each(callback, scope) {
     let desc = this._header,
-      ver = this._version
+      ver = this._version,
+      i = 0
 
     while (desc) {
       if (desc.version < ver) {
         if (callback.call(scope || this, desc.obj, this) === false)
           return false
       }
+      i++;
       desc = desc.next
     }
-    return true
+    return i
   },
   map(callback, scope) {
     let rs = []

@@ -1,26 +1,33 @@
 import {
+  ArrayWatcher
+} from './ArrayWatcher'
+import {
   registerWatcher
 } from '../watcherFactory'
-import ArrayWatcher from './ArrayWatcher'
-import proxy from '../proxy'
-import configuration from '../configuration'
+import {
+  proxy
+} from '../proxy'
+import {
+  configuration
+} from '../configuration'
 import {
   createClass
 } from 'ilos'
 
 const hasOwn = Object.prototype.hasOwnProperty
+const disable = 'disableES6Proxy',
+  sourceKey = 'key.ES6ProxySource',
+  proxyKey = 'key.ES6Proxy'
 
-configuration.register('enableES6Proxy', true, 'init')
-configuration.register('bindES6ProxySource', '__observi_es6proxy_source__', 'init')
-configuration.register('bindES6Proxy', '__observi_es6proxy__', 'init')
+configuration.register(disable, false, 'init')
+  .register(sourceKey, '__observi_es6proxy_source__', 'init')
+  .register(proxyKey, '__observi_es6proxy__', 'init')
 
 registerWatcher('ES6Proxy', 10, function(config) {
-  return window.Proxy && config.enableES6Proxy !== false
+  return window.Proxy && !config[disable]
 }, function(config) {
-  let {
-    bindES6ProxySource,
-    bindES6Proxy
-  } = config
+  let bindES6ProxySource = config[sourceKey],
+    bindES6Proxy = config[proxyKey]
 
   let cls = createClass({
     extend: ArrayWatcher,

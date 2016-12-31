@@ -60,7 +60,7 @@ const logLevels = ['debug', 'info', 'warn', 'error'],
   })
 
 let console = window.console
-const Logger = createClass({
+export const Logger = createClass({
   statics: {
     enableSimulationConsole() {
       if (!console) {
@@ -128,7 +128,4 @@ const Logger = createClass({
     this._log(3, arguments)
   }
 })
-
-Logger.logger = new Logger('default', 'info')
-
-export default Logger
+export const logger = new Logger('default', 'info')

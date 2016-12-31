@@ -1,25 +1,36 @@
-import ArrayWatcher from './ArrayWatcher'
+import {
+  ArrayWatcher
+} from './ArrayWatcher'
 import {
   registerWatcher
 } from '../watcherFactory'
-import proxy from '../proxy'
-import VBClassFactory from './VBClassFactory'
-import configuration from '../configuration'
+import {
+  VBClassFactory
+} from './VBClassFactory'
+import {
+  proxy
+} from '../proxy'
+import {
+  configuration,
+  keys
+} from '../configuration'
 import {
   createClass,
   LinkedList
 } from 'ilos'
 
-configuration.register('bindVBProxy', '__observi_vbproxy__', 'init')
-configuration.register('VBProxyConst', '__observi_vbproxy_const__', 'init')
-configuration.register('defaultProps', [], 'init')
+const props = 'defaultProps',
+  proxyKey = 'key.VBProxy',
+  constKey = 'key.VBConstructor'
+
+configuration.register(props, [], 'init')
+  .register(proxyKey, '__observi_vbproxy__', 'init')
+  .register(constKey, '__observi_vb_constructor__', 'init')
 
 registerWatcher('VBScriptProxy', 40, function(config) {
   return VBClassFactory.isSupport()
 }, function(config) {
-  let factory = new VBClassFactory([
-    config.bindWatcher, config.bindObservi, config.bindProxy, LinkedList.LIST_KEY
-  ].concat(config.defaultProps || []), configuration.get('VBProxyConst'), configuration.get('bindVBProxy'), proxy.change)
+  let factory = new VBClassFactory(keys().concat(config[props]), config[constKey], config[proxyKey], proxy.change)
 
   let cls = createClass({
     extend: ArrayWatcher,

@@ -1,4 +1,6 @@
-import configuration from './configuration'
+import {
+  configuration
+} from './configuration'
 import {
   LinkedList,
   policy as ilosPolicy,
@@ -7,13 +9,12 @@ import {
   isFunc
 } from 'ilos'
 
-configuration.register('bindProxy', '__observi_proxy__', 'init')
+const hasOwn = Object.prototype.hasOwnProperty
 
-const hasOwn = Object.prototype.hasOwnProperty,
-  cfg = configuration.get()
+let bindProxy = '__observi_proxy__'
+configuration.register('key.proxy', bindProxy, 'init', val => (bindProxy = val))
 
 let enabled = undefined
-
 const core = {
   eq(o1, o2) {
     return o1 === o2
@@ -25,7 +26,7 @@ const core = {
     return o
   },
   change(obj, p) {
-    let key = cfg.bindProxy,
+    let key = bindProxy,
       handlers = hasOwn.call(obj, key) ? obj[key] : undefined
     if (handlers)
       handlers.each(handler => handler(obj, p))
@@ -35,7 +36,7 @@ const core = {
       throw TypeError(`Invalid Proxy Event Handler[${handler}`)
 
     let realObj = proxy.obj(obj),
-      key = cfg.bindProxy,
+      key = bindProxy,
       handlers = hasOwn.call(realObj, key) ? realObj[key] : (realObj[key] = new LinkedList())
 
     if (handlers.push(handler) == 1) {
@@ -48,7 +49,7 @@ const core = {
   },
   un(obj, handler) {
     obj = proxy.obj(obj)
-    let key = cfg.bindProxy,
+    let key = bindProxy,
       handlers = hasOwn.call(obj, key) ? obj[key] : undefined
 
     if (handlers && isFunc(handler))
@@ -56,7 +57,7 @@ const core = {
     return false
   },
   clean(obj) {
-    let key = cfg.bindProxy
+    let key = bindProxy
     obj = proxy.obj(obj)
     if (hasOwn.call(obj, key))
       obj[key] = undefined
@@ -83,7 +84,7 @@ const core = {
     }
   }
 }
-export default function proxy(o) {
+export function proxy(o) {
   return proxy.proxy(o)
 }
 assign(proxy, core)

@@ -5,7 +5,8 @@ var path = require('path'),
   gwatch = require('gulp-watch'),
   connect = require('gulp-connect'),
   through2 = require('through2'),
-  grollup = require('./plugins/gulp-rollup')
+  grollup = require('./plugins/gulp-rollup'),
+  generator = require('./plugins/gulp-code-generator')
 
 var rollupPlugins = require('./rollup.plugins.config')
 
@@ -37,7 +38,17 @@ function rollupConfig(mini, watch) {
       globals: {
         'argilo': 'argilo'
       },
-      sourceRoot: '/argiloDoc',
+      sourceRoot: '/argilo/doc',
+      external: 'argilo',
+      banner: banner()
+    }, {
+      entry: './src/perf/index.js',
+      dest: 'argilo.perf' + (mini ? '.min.js' : '.js'),
+      module: 'argiloPerf',
+      globals: {
+        'argilo': 'argilo'
+      },
+      sourceRoot: '/argilo/perf',
       external: 'argilo',
       banner: banner()
     }],
@@ -97,43 +108,51 @@ var zip = streamTask('compile-zip', function() {
     .pipe(gulp.dest('./dist'))
 })
 
-var generateDoc = streamTask('generate-doc', function() {
-  return gulp.src(docFiles)
-    .pipe(through2.obj(function(file, enc, cb) {
-      docGenerator.applyFile(file.path, file.contents.toString(), false, cb)
-    }, function(flush) {
-      var self = this
-      docGenerator.generate(function() {
-        flush()
-        self.emit('end')
-      })
-    }))
-})
-gulp.task('compile-all', function() {
-  return generateDoc().then(function() {
-    return Promise.all([compile(), zip()])
+function documentScript(watch) {
+  return generator({
+    src: 'src/**/*.doc.js',
+    template: `<% var i=0; each(function(file){%>export {default as doc<%=i++%>} from '<%=path.relative(output, file.path).replace(/\\\\/g, '/')%>'\n<%})%>`,
+    output: 'document.js',
+    watch: watch,
+    dest: 'src/doc/'
   })
+}
+
+function perfScript(watch) {
+  return generator({
+    src: 'src/**/*.perf.js',
+    template: `<% var i=0; each(function(file){%>
+import * as doc<%=i++%> from '<%=path.relative(output, file.path).replace(/\\\\/g, '/')%>'
+<%})%>
+
+export {
+  <%= Object.keys(files).map((k, i)=>'doc'+i).join('\\n\\t') %>
+}`,
+    output: 'perf.js',
+    watch: watch,
+    dest: 'src/perf'
+  })
+}
+
+var documentScriptTask = streamTask('generate-document', documentScript)
+var perfScriptTask = streamTask('generate-perf', perfScript)
+
+gulp.task('package', ['generate-document', 'generate-perf'], function() {
+  return Promise.all([compile(), zip()])
 })
+gulp.task('build', ['package'])
 
-gulp.task('build', ['compile-all'])
-
-gulp.task('watch', ['watch-doc'], function() {
+var watchSource = streamTask('watch-source', function() {
   return gulp.src(['./src/**/*.js', './src/**/*.css'])
     .pipe(grollup(rollupConfig(false, function(stream) {
       return stream.pipe(gulp.dest('./dist')).pipe(connect.reload())
     })))
     .pipe(gulp.dest('./dist'))
 })
-
-gulp.task('watch-doc', ['generate-doc'], function(done) {
-  gwatch(docFiles, function(file) {
-    if (file.event == 'unlink') {
-      docGenerator.removeFile(file.path, true)
-    } else if (file.event == 'add') {
-      docGenerator.applyFile(file.path, file.contents.toString(), true)
-    }
-  })
-  done()
+gulp.task('watch-document', documentScript.bind(null, true))
+gulp.task('watch-perf', perfScript.bind(null, true))
+gulp.task('watch', ['watch-document', 'watch-perf'], function() {
+  return watchSource()
 })
 
 gulp.task('server', ['watch'], function() {
@@ -141,61 +160,6 @@ gulp.task('server', ['watch'], function() {
     name: 'Argilo',
     root: ['.'],
     port: 8000,
-    livereload: true
+    livereload: false
   })
 })
-
-
-var docGenerator = (function() {
-  var timeout = null,
-    docs = {}
-
-  function parsePath(str) {
-    return path.relative(__dirname, str).replace(/\\/g, '/')
-  }
-
-  return {
-    generate: function(cb) {
-      var start = new Date()
-      if (timeout)
-        clearTimeout(timeout)
-      timeout = setTimeout(function() {
-        var paths = Object.keys(docs)
-        var contents = [paths.map(function(path, i) {
-          return 'import doc' + i + ' from "../../' + path + '"'
-        }).join('\n'), 'export default {\n' + paths.map(function(path, i) {
-          return '\tdoc' + i
-        }).join(',\n') + '\n}']
-
-        gfile('docs.js', contents.join('\n\n'))
-          .pipe(gulp.dest('src/doc/'))
-        gutil.log('Generate documents use ' + usetime(new Date() - start))
-        if (cb) cb()
-        timeout = null
-      }, 50)
-    },
-    applyFile: function(path, content, build, cb) {
-      path = parsePath(path)
-      docs[path] = {
-        path: path,
-        content: content
-      }
-      gutil.log('Apply document file ', gutil.colors.magenta(path))
-      if (build) {
-        this.generate(cb)
-      } else if (cb) {
-        cb()
-      }
-    },
-    removeFile: function(path, build, cb) {
-      path = parsePath(path)
-      delete docs[path]
-      gutil.log('Remove document file ', gutil.colors.magenta(path))
-      if (build) {
-        this.generate(cb)
-      } else if (cb) {
-        cb()
-      }
-    }
-  }
-})()

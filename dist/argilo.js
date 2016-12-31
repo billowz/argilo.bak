@@ -1,5 +1,5 @@
 /*
- * argilo v0.0.1 built in Tue, 27 Dec 2016 09:30:09 GMT
+ * argilo v0.0.1 built in Sat, 31 Dec 2016 04:40:22 GMT
  * Copyright (c) 2016 Tao Zeng <tao.zeng.zt@gmail.com>
  * Released under the MIT license
  * support IE6+ and other browsers
@@ -69,6 +69,10 @@
   var objectType = '[object Object]';
   var regexpType = '[object RegExp]';
   var nodeListType = '[object NodeList]';
+  function typestr(obj) {
+    return toStr.call(obj);
+  }
+
   function isDefine(obj) {
     return obj !== undefined;
   }
@@ -82,32 +86,31 @@
   }
 
   function isBool(obj) {
-    return toStr.call(obj) == boolType;
+    return typestr(obj) == boolType;
   }
 
   function isNumber(obj) {
-    return toStr.call(obj) == numberType;
+    return typestr(obj) == numberType;
   }
 
   function isDate(obj) {
-    return toStr.call(obj) == dateType;
+    return typestr(obj) == dateType;
   }
 
   function isString(obj) {
-    return toStr.call(obj) == stringType;
+    return typestr(obj) == stringType;
   }
 
   function isObject(obj) {
-    return toStr.call(obj) == objectType;
+    return typestr(obj) == objectType;
   }
 
   function isArray$1(obj) {
-    return toStr.call(obj) == arrayType;
+    return typestr(obj) == arrayType;
   }
 
-  function isArrayLike(obj) {
-    var type = toStr.call(obj);
-    switch (type) {
+  function isArrayLike(obj, type) {
+    switch (type || typestr(obj)) {
       case argsType:
       case arrayType:
       case stringType:
@@ -117,6 +120,31 @@
     if (obj) {
       var length = obj.length;
       return isNumber(length) && (length === 0 || length > 0 && hasOwnProp(obj, length - 1));
+    }
+    return false;
+  }
+
+  var emptyStrReg = /^\s*$/;
+  function isEmptyStr(str) {
+    return emptyStrReg.test(str);
+  }
+
+  function isEmptyObj(obj) {
+    for (var k in obj) {
+      return false;
+    }return true;
+  }
+
+  function isEmpty(obj, type) {
+    if (isNil(obj)) return true;
+    type = type || typestr(obj);
+    switch (type) {
+      case stringType:
+        return isEmptyStr(obj);
+      case objectType:
+        return isEmptyObj(obj);
+      default:
+        if (isArrayLike(obj, type)) return !obj.length;
     }
     return false;
   }
@@ -199,8 +227,8 @@
     return ret;
   }
 
-  function aggregate(obj, callback, defVal, scope, own) {
-    var ret = defVal;
+  function aggregate(obj, callback, val, scope, own) {
+    var ret = val;
 
     each(obj, function (val, key, obj, isOwn) {
       ret = callback.call(this, ret, val, key, obj, isOwn);
@@ -208,44 +236,56 @@
     return ret;
   }
 
-  function _indexOfArray(array, val) {
+  function _indexOfArray(array, cb, scope) {
     var i = 0,
         l = array.length;
 
     for (; i < l; i++) {
-      if (eq(array[i], val)) return i;
+      if (cb.call(scope || array, array[i], i, array, true)) return i;
     }
     return -1;
   }
 
-  function _lastIndexOfArray(array, val) {
+  function _lastIndexOfArray(array, cb, scope) {
     var i = array.length;
 
     while (i-- > 0) {
-      if (eq(array[i], val)) return i;
+      if (cb.call(scope || array, array[i], i, array, true)) return i;
     }
     return -1;
   }
 
-  function _indexOfObj(obj, val, own) {
-    var key = void 0;
+  function _indexOfObj(obj, cb, scope, own) {
+    var key = void 0,
+        isOwn = void 0;
 
     for (key in obj) {
-      if (own === false || hasOwnProp(obj, key)) {
-        if (eq(obj[key], val)) return key;
+      if ((isOwn = hasOwnProp(obj, key)) || own === false) {
+        if (cb.call(scope || obj, obj[key], key, obj, isOwn)) return key;
       }
     }
     return undefined;
   }
 
   function indexOf(obj, val, own) {
-    if (isArrayLike(obj)) return _indexOfArray(obj, val);
-    return _indexOfObj(obj, val, own);
+    var cmp = function (v) {
+      return eq(v, val);
+    };
+    if (isArrayLike(obj)) return _indexOfArray(obj, cmp);
+    return _indexOfObj(obj, cmp);
   }
 
   function lastIndexOf(obj, val, own) {
-    if (isArrayLike(obj)) return _lastIndexOfArray(obj, val);
-    return _indexOfObj(obj, val, own);
+    var cmp = function (v) {
+      return eq(v, val);
+    };
+    if (isArrayLike(obj)) return _lastIndexOfArray(obj, cmp);
+    return _indexOfObj(obj, cmp);
+  }
+
+  function findIndex(obj, cb, scope, own) {
+    if (isArrayLike(obj)) return _indexOfArray(obj, cb, scope);
+    return _indexOfObj(obj, cb, scope, own);
   }
 
   function convert(obj, keyGen, valGen, scope, own) {
@@ -730,14 +770,14 @@ var   slice$1 = Array.prototype.slice;
   });
 
   function createClass(overrides) {
-    var cls = function DynamicClass() {
-      this.constructor.apply(this, arguments);
-    },
-        superclass = overrides.extend,
+    var superclass = overrides.extend,
         superproto = void 0,
         proto = void 0;
 
-    assign(cls, Base);
+    function DynamicClass() {
+      this.constructor.apply(this, arguments);
+    }
+    assign(DynamicClass, Base);
 
     if (!isFunc(superclass) || superclass === Object) superclass = Base;
 
@@ -745,12 +785,12 @@ var   slice$1 = Array.prototype.slice;
 
     proto = create(superproto);
 
-    cls.superclass = superclass;
-    cls.prototype = proto;
-    setPrototypeOf(cls, superclass);
+    DynamicClass.superclass = superclass;
+    DynamicClass.prototype = proto;
+    setPrototypeOf(DynamicClass, superclass);
 
     delete overrides.extend;
-    return cls.extend(overrides);
+    return DynamicClass.extend(overrides);
   }
 
   function mixin(cls) {
@@ -813,7 +853,7 @@ var   slice$1 = Array.prototype.slice;
       this._version = 1;
     },
     _listObj: function (obj) {
-      return hasOwnProp(obj, LIST_KEY) && obj[LIST_KEY];
+      return obj && hasOwnProp(obj, LIST_KEY) && obj[LIST_KEY];
     },
     _desc: function (obj) {
       var list = this._listObj(obj);
@@ -950,6 +990,12 @@ var   slice$1 = Array.prototype.slice;
       }
       return this;
     },
+    prev: function (target) {
+      return this.before(target);
+    },
+    next: function (target) {
+      return this.after(target);
+    },
     contains: function (obj) {
       return !!this._desc(obj);
     },
@@ -989,15 +1035,17 @@ var   slice$1 = Array.prototype.slice;
     },
     each: function (callback, scope) {
       var desc = this._header,
-          ver = this._version;
+          ver = this._version,
+          i = 0;
 
       while (desc) {
         if (desc.version < ver) {
           if (callback.call(scope || this, desc.obj, this) === false) return false;
         }
+        i++;
         desc = desc.next;
       }
-      return true;
+      return i;
     },
     map: function (callback, scope) {
       var _this = this;
@@ -1032,7 +1080,7 @@ var   slice$1 = Array.prototype.slice;
     };
   }
 
-  var AbstractConfiguration = createClass({
+  var IConfiguration = createClass({
     hasConfig: fn('hasConfig'),
     config: fn('config'),
     get: fn('get'),
@@ -1149,39 +1197,39 @@ var   slice$2 = Array.prototype.slice;
       this._log(3, arguments);
     }
   });
-
-  Logger.logger = new Logger('default', 'info');
-
-  var logger = Logger.logger;
+  var logger = new Logger('default', 'info');
 
   var Configuration = createClass({
-    extend: AbstractConfiguration,
-    constructor: function (def, statusList, defaultStatus, checkStatus) {
-      this.cfg = def || {};
+    extend: IConfiguration,
+    constructor: function (statusList, onStatusChange) {
+      this.cfg = {};
       this.cfgStatus = {};
       this.listens = {};
-      statusList = statusList || [];
-      this.statusList = statusList;
-      this.statusCnt = statusList.length;
-      var idx = indexOf(statusList, defaultStatus);
-      if (idx == -1) idx = 0;
-      this.status = statusList[idx];
-      this.statusIdx = idx;
-      if (isFunc(checkStatus)) this.checkStatus = checkStatus;
+      this.statusList = statusList || [];
+      this.statusIdx = this.statusList.length ? 0 : -1;
+      this.onStatusChange = onStatusChange;
     },
     nextStatus: function () {
-      if (this.statusIdx < this.statusCnt) this.status = this.statusList[this.statusIdx++];
+      var idx = this.statusIdx;
+      if (idx != -1 && idx < this.statusList.length) {
+        this.statusIdx++;
+        if (isFunc(this.onStatusChange)) this.onStatusChange(this.statusList[this.statusIdx], this);
+      }
     },
-    register: function (name, defVal, status, validator) {
-      this.cfg[name] = defVal;
-      this.cfgStatus[name] = {
-        statusIdx: indexOf(this.statusList, status),
-        validator: validator
-      };
+    register: function (name, value, status, setter, scope) {
+      if (arguments.length == 1) {
+        each(name, function (opt, name) {
+          register(name, opt.value, opt.status, opt.setter);
+        });
+      } else {
+        this.cfg[name] = value;
+        this.cfgStatus[name] = {
+          statusIdx: indexOf(this.statusList, status),
+          setter: setter,
+          scope: scope
+        };
+      }
       return this;
-    },
-    checkStatus: function (s, cs, i, ci) {
-      return i >= ci;
     },
     hasConfig: function (name) {
       return hasOwnProp(this.cfg, name);
@@ -1196,17 +1244,15 @@ var   slice$2 = Array.prototype.slice;
       } else if (hasOwnProp(this.cfg, name)) {
         var _cfgStatus$name = this.cfgStatus[name];
         var statusIdx = _cfgStatus$name.statusIdx;
-        var validator = _cfgStatus$name.validator;
+        var setter = _cfgStatus$name.setter;
+        var scope = _cfgStatus$name.scope;
 
 
-        if (statusIdx != -1 && !this.checkStatus(this.statusList[statusIdx], this.status, statusIdx, this.statusIdx)) {
-          logger.warn('configuration[%s]: must use in status[%s]', name, this.statusList[statusIdx]);
+        if (statusIdx < this.statusIdx) {
+          logger.warn('configuration[%s]: must use before status[%s]', name, this.statusList[statusIdx]);
           return;
         }
-        if (isFunc(validator) && validator(val, name, this) !== false) {
-          logger.warn('configuration[%s]: invalid value[%s]', name, val);
-          return;
-        }
+        if (isFunc(setter)) val = setter.call(scope, val, name, this);
         var oldVal = this.cfg[name];
         this.cfg[name] = val;
         each(this.listens[name], function (cb) {
@@ -1253,11 +1299,11 @@ var   slice$2 = Array.prototype.slice;
   });
 
   function check(cfg) {
-    if (!(cfg instanceof AbstractConfiguration)) throw new Error('Invalid Configuration: ' + cfg);
+    if (!(cfg instanceof IConfiguration)) throw new Error('Invalid Configuration: ' + cfg);
     return cfg;
   }
   var ConfigurationChain = createClass({
-    extend: AbstractConfiguration,
+    extend: IConfiguration,
     constructor: function () {
       var cfgs = [];
       each(arguments, function (cfg) {
@@ -1310,10 +1356,6 @@ var   slice$2 = Array.prototype.slice;
 
 
   var _ = Object.freeze({
-  	LinkedList: LinkedList,
-  	Configuration: Configuration,
-  	ConfigurationChain: ConfigurationChain,
-  	Logger: Logger,
   	policy: ilosPolicy,
   	eq: eq,
   	hasOwnProp: hasOwnProp,
@@ -1328,6 +1370,7 @@ var   slice$2 = Array.prototype.slice;
   	objectType: objectType,
   	regexpType: regexpType,
   	nodeListType: nodeListType,
+  	typestr: typestr,
   	isDefine: isDefine,
   	isNull: isNull,
   	isNil: isNil,
@@ -1338,6 +1381,9 @@ var   slice$2 = Array.prototype.slice;
   	isObject: isObject,
   	isArray: isArray$1,
   	isArrayLike: isArrayLike,
+  	isEmptyStr: isEmptyStr,
+  	isEmptyObj: isEmptyObj,
+  	isEmpty: isEmpty,
   	isFunc: isFunc,
   	isRegExp: isRegExp,
   	isPrimitive: isPrimitive,
@@ -1349,6 +1395,7 @@ var   slice$2 = Array.prototype.slice;
   	aggregate: aggregate,
   	indexOf: indexOf,
   	lastIndexOf: lastIndexOf,
+  	findIndex: findIndex,
   	convert: convert,
   	reverseConvert: reverseConvert,
   	keys: keys,
@@ -1376,19 +1423,47 @@ var   slice$2 = Array.prototype.slice;
   	Base: Base,
   	createClass: createClass,
   	mixin: mixin,
-  	nextTick: nextTick
+  	nextTick: nextTick,
+  	LinkedList: LinkedList,
+  	IConfiguration: IConfiguration,
+  	Configuration: Configuration,
+  	ConfigurationChain: ConfigurationChain,
+  	Logger: Logger,
+  	logger: logger
   });
 
   var configuration = new Configuration({}, ['init', 'runtime']);
 
-  var configuration$1 = new Configuration({}, ['init', 'runtime']);
+  var keyReg = /^key\./;
+  var _keys = [];
+  var keymap = {};
+  var configuration$1 = new Configuration(['init', 'runtime'], function (status, configuration) {
+    if (status == 'runtime') {
+      configuration.each(function (val, name) {
+        if (keyReg.test(name)) {
+          _keys.push(val);
+          keymap[val] = true;
+        }
+      });
+    }
+  });
 
-  configuration$1.register('bindProxy', '__observi_proxy__', 'init');
+  function keys$1() {
+    return _keys;
+  }
 
-var   hasOwn$2 = Object.prototype.hasOwnProperty;
-var   cfg$1 = configuration$1.get();
+  function hasKey(name) {
+    return keymap[name];
+  }
+
+  var hasOwn$3 = Object.prototype.hasOwnProperty;
+
+  var bindProxy = '__observi_proxy__';
+  configuration$1.register('key.proxy', bindProxy, 'init', function (val) {
+    return bindProxy = val;
+  });
+
   var enabled = undefined;
-
   var core = {
     eq: function (o1, o2) {
       return o1 === o2;
@@ -1400,8 +1475,8 @@ var   cfg$1 = configuration$1.get();
       return o;
     },
     change: function (obj, p) {
-      var key = cfg$1.bindProxy,
-          handlers = hasOwn$2.call(obj, key) ? obj[key] : undefined;
+      var key = bindProxy,
+          handlers = hasOwn$3.call(obj, key) ? obj[key] : undefined;
       if (handlers) handlers.each(function (handler) {
         return handler(obj, p);
       });
@@ -1410,8 +1485,8 @@ var   cfg$1 = configuration$1.get();
       if (!isFunc(handler)) throw TypeError('Invalid Proxy Event Handler[' + handler);
 
       var realObj = proxy$1.obj(obj),
-          key = cfg$1.bindProxy,
-          handlers = hasOwn$2.call(realObj, key) ? realObj[key] : realObj[key] = new LinkedList();
+          key = bindProxy,
+          handlers = hasOwn$3.call(realObj, key) ? realObj[key] : realObj[key] = new LinkedList();
 
       if (handlers.push(handler) == 1) {
         var p;
@@ -1422,16 +1497,16 @@ var   cfg$1 = configuration$1.get();
     },
     un: function (obj, handler) {
       obj = proxy$1.obj(obj);
-      var key = cfg$1.bindProxy,
-          handlers = hasOwn$2.call(obj, key) ? obj[key] : undefined;
+      var key = bindProxy,
+          handlers = hasOwn$3.call(obj, key) ? obj[key] : undefined;
 
       if (handlers && isFunc(handler)) return handlers.remove(handler) == 1;
       return false;
     },
     clean: function (obj) {
-      var key = cfg$1.bindProxy;
+      var key = bindProxy;
       obj = proxy$1.obj(obj);
-      if (hasOwn$2.call(obj, key)) obj[key] = undefined;
+      if (hasOwn$3.call(obj, key)) obj[key] = undefined;
     },
     isEnable: function () {
       return enabled;
@@ -1442,7 +1517,7 @@ var   cfg$1 = configuration$1.get();
         proxy$1.obj = policy.obj;
         proxy$1.proxy = policy.proxy;
         ilosPolicy('hasOwn', function (obj, prop) {
-          return hasOwn$2.call(proxy$1.obj(obj), prop);
+          return hasOwn$3.call(proxy$1.obj(obj), prop);
         });
         ilosPolicy('eq', proxy$1.eq);
         enabled = true;
@@ -1521,6 +1596,38 @@ var   cfg$1 = configuration$1.get();
     }
   });
 
+  var arrayProto = Array.prototype;
+  var arrayHooks = 'fill,pop,push,reverse,shift,sort,splice,unshift'.split(',');
+  var ArrayWatcher = createClass({
+    extend: Watcher,
+    constructor: function () {
+      this['super'](arguments);
+      this.isArray = isArray$1(this.obj);
+      if (this.isArray) {
+        this.hookArray();
+      }
+    },
+    watch: function (attr) {
+      return this.isArray && attr == 'length';
+    },
+    hookArray: function () {
+      each(arrayHooks, this.hookArrayMethod, this);
+    },
+    hookArrayMethod: function (name) {
+      var obj = this.obj,
+          method = arrayProto[name],
+          len = obj.length,
+          self = this;
+
+      obj[name] = function () {
+        var len = obj.length,
+            ret = method.apply(obj, arguments);
+        self.set('length', obj.length, len);
+        return ret;
+      };
+    }
+  });
+
   var logger$1 = new Logger('observi', 'info');
 
   var watchers = [];
@@ -1576,6 +1683,440 @@ var   cfg$1 = configuration$1.get();
     return new Watcher(obj);
   }
 
+  var hasOwn$2 = Object.prototype.hasOwnProperty;
+  var disable = 'disableES6Proxy';
+  var sourceKey = 'key.ES6ProxySource';
+  var proxyKey = 'key.ES6Proxy';
+  configuration$1.register(disable, false, 'init').register(sourceKey, '__observi_es6proxy_source__', 'init').register(proxyKey, '__observi_es6proxy__', 'init');
+
+  registerWatcher('ES6Proxy', 10, function (config) {
+    return window.Proxy && !config[disable];
+  }, function (config) {
+    var bindES6ProxySource = config[sourceKey],
+        bindES6Proxy = config[proxyKey];
+
+    var cls = createClass({
+      extend: ArrayWatcher,
+      constructor: function () {
+        this['super'](arguments);
+        this.binded = false;
+      },
+      watch: function (attr) {
+        if (this['super']([attr])) return;
+        this.init();
+      },
+      createProxy: function () {
+        var _this = this;
+
+        return new Proxy(this.obj, {
+          set: function (obj, attr, value) {
+            var oldVal = obj[attr];
+            obj[attr] = value;
+            _this.set(attr, value, oldVal);
+            return true;
+          }
+        });
+      },
+      init: function () {
+        if (!this.binded) {
+          var obj = this.obj,
+              _proxy = this.createProxy();
+          this.proxy = _proxy;
+          obj[bindES6Proxy] = _proxy;
+          obj[bindES6ProxySource] = obj;
+          proxy$1.change(obj, _proxy);
+          this.binded = true;
+        }
+      }
+    });
+    proxy$1.enable({
+      obj: function (obj) {
+        if (obj && hasOwn$2.call(obj, bindES6ProxySource)) return obj[bindES6ProxySource];
+        return obj;
+      },
+      eq: function (o1, o2) {
+        return o1 === o2 || proxy$1.obj(o1) === proxy$1.obj(o2);
+      },
+      proxy: function (obj) {
+        if (obj && hasOwn$2.call(obj, bindES6Proxy)) return obj[bindES6Proxy] || obj;
+        return obj;
+      }
+    });
+    return cls;
+  });
+
+  registerWatcher('ES5DefineProperty', 20, function (config) {
+    if (Object.defineProperty) {
+      try {
+        var _ret = function () {
+          var val = void 0,
+              obj = {};
+          Object.defineProperty(obj, 'sentinel', {
+            get: function () {
+              return val;
+            },
+            set: function (value) {
+              val = value;
+            }
+          });
+          obj.sentinel = 1;
+          return {
+            v: obj.sentinel === val
+          };
+        }();
+
+        if (typeof _ret === "object") return _ret.v;
+      } catch (e) {}
+    }
+    return false;
+  }, function (config) {
+    var cls = createClass({
+      extend: ArrayWatcher,
+      watch: function (attr) {
+        var _this = this;
+
+        if (this['super']([attr])) return;
+
+        var value = this.obj[attr];
+        Object.defineProperty(this.obj, attr, {
+          enumerable: true,
+          configurable: true,
+          get: function () {
+            return value;
+          },
+          set: function (val) {
+            var oldVal = value;
+            value = val;
+            _this.set(attr, val, oldVal);
+          }
+        });
+      }
+    });
+    proxy$1.disable();
+    return cls;
+  });
+
+  registerWatcher('DefineGetterAndSetter', 30, function (config) {
+    return '__defineGetter__' in {};
+  }, function (config) {
+    var cls = createClass({
+      extend: ArrayWatcher,
+      watch: function (attr) {
+        var _this = this;
+
+        if (this['super']([attr])) return;
+
+        var value = this.obj[attr];
+        this.obj.__defineGetter__(attr, function () {
+          return value;
+        });
+        this.obj.__defineSetter__(attr, function (val) {
+          var oldVal = value;
+          value = val;
+          _this.set(attr, val, oldVal);
+        });
+      }
+    });
+    proxy$1.disable();
+    return cls;
+  });
+
+var   hasOwn$4 = Object.prototype.hasOwnProperty;
+  var RESERVE_PROPS = 'hasOwnProperty,isPrototypeOf,propertyIsEnumerable,toLocaleString,toString,valueOf'.split(',');
+  var RESERVE_ARRAY_PROPS = 'concat,copyWithin,entries,every,fill,filter,find,findIndex,forEach,includes,indexOf,join,keys,lastIndexOf,map,pop,push,reduce,reduceRight,reverse,shift,slice,some,sort,splice,unshift,values'.split(',');
+  var supported = undefined;
+  var VBClassFactory = createClass({
+    statics: {
+      isSupport: function () {
+        if (supported !== undefined) return supported;
+        supported = false;
+        if (window.VBArray) {
+          try {
+            window.execScript(['Function parseVB(code)', '\tExecuteGlobal(code)', 'End Function'].join('\n'), 'VBScript');
+            supported = true;
+          } catch (e) {
+            logger$1.error(e.message, e);
+          }
+        }
+        return supported;
+      }
+    },
+    classNameGenerator: 0,
+    constructor: function (defProps, constBind, descBind, onProxyChange) {
+      this.classPool = {};
+      this.defPropMap = {};
+      this.constBind = constBind;
+      this.descBind = descBind;
+      this.onProxyChange = onProxyChange;
+      this.addDefProps(defProps);
+      this.initConstScript();
+    },
+    addDefProps: function (defProps) {
+      var _this = this;
+
+      var defPropMap = this.defPropMap,
+          props = [];
+
+      each(defProps || [], function (prop) {
+        if (prop !== _this.constBind && prop !== _this.descBind) defPropMap[prop] = true;
+      });
+      for (var prop in defPropMap) {
+        if (hasOwn$4.call(defPropMap, prop)) props.push(prop);
+      }
+      this.defProps = props;
+      logger$1.info('VBProxy default props is: ', props.join(','));
+      this.initReserveProps();
+    },
+    initReserveProps: function () {
+      this.reserveProps = RESERVE_PROPS.concat(this.defProps);
+      this.reserveArrayProps = this.reserveProps.concat(RESERVE_ARRAY_PROPS);
+      this.reservePropMap = reverseConvert(this.reserveProps);
+      this.reserveArrayPropMap = reverseConvert(this.reserveArrayProps);
+    },
+    initConstScript: function () {
+      this.constScript = ['\tPublic [', this.descBind, ']\r\n', '\tPublic Default Function [', this.constBind, '](desc)\r\n', '\t\tset [', this.descBind, '] = desc\r\n', '\t\tSet [', this.constBind, '] = Me\r\n', '\tEnd Function\r\n'].join('');
+    },
+    generateClassName: function () {
+      return 'VBClass' + this.classNameGenerator++;
+    },
+    parseClassConstructorName: function (className) {
+      return className + 'Constructor';
+    },
+    generateSetter: function (attr) {
+      var descBind = this.descBind;
+
+      return ['\tPublic Property Get [', attr, ']\r\n', '\tOn Error Resume Next\r\n', '\t\tSet[', attr, '] = [', descBind, '].get("', attr, '")\r\n', '\tIf Err.Number <> 0 Then\r\n', '\t\t[', attr, '] = [', descBind, '].get("', attr, '")\r\n', '\tEnd If\r\n', '\tOn Error Goto 0\r\n', '\tEnd Property\r\n'];
+    },
+    generateGetter: function (attr) {
+      var descBind = this.descBind;
+
+      return ['\tPublic Property Let [', attr, '](val)\r\n', '\t\tCall [', descBind, '].set("', attr, '",val)\r\n', '\tEnd Property\r\n', '\tPublic Property Set [', attr, '](val)\r\n', '\t\tCall [', descBind, '].set("', attr, '",val)\r\n', '\tEnd Property\r\n'];
+    },
+    generateClass: function (className, props, funcMap) {
+      var _this2 = this;
+
+      var buffer = ['Class ', className, '\r\n', this.constScript, '\r\n'];
+
+      each(props, function (attr) {
+        if (funcMap[attr]) {
+          buffer.push('\tPublic [' + attr + ']\r\n');
+        } else {
+          buffer.push.apply(buffer, _this2.generateSetter(attr));
+          buffer.push.apply(buffer, _this2.generateGetter(attr));
+        }
+      });
+      buffer.push('End Class\r\n');
+      return buffer.join('');
+    },
+    generateClassConstructor: function (props, funcMap, funcArray) {
+      var key = [props.length, '[', props.join(','), ']', '[', funcArray.join(','), ']'].join(''),
+          classConstName = this.classPool[key];
+
+      if (classConstName) return classConstName;
+
+      var className = this.generateClassName();
+      classConstName = this.parseClassConstructorName(className);
+      parseVB(this.generateClass(className, props, funcMap));
+      parseVB(['Function ', classConstName, '(desc)\r\n', '\tDim o\r\n', '\tSet o = (New ', className, ')(desc)\r\n', '\tSet ', classConstName, ' = o\r\n', 'End Function'].join(''));
+      this.classPool[key] = classConstName;
+      return classConstName;
+    },
+    create: function (obj, desc) {
+      var _this3 = this;
+
+      var protoProps = void 0,
+          protoPropMap = void 0,
+          props = [],
+          funcs = [],
+          funcMap = {},
+          descBind = this.descBind;
+
+      function addProp(prop) {
+        if (isFunc(obj[prop])) {
+          funcMap[prop] = true;
+          funcs.push(prop);
+        }
+        props.push(prop);
+      }
+
+      if (isArray$1(obj)) {
+        protoProps = this.reserveArrayProps;
+        protoPropMap = this.reserveArrayPropMap;
+      } else {
+        protoProps = this.reserveProps;
+        protoPropMap = this.reservePropMap;
+      }
+      each(protoProps, addProp);
+      each(obj, function (val, prop) {
+        if (prop !== descBind && !(prop in protoPropMap)) addProp(prop);
+      }, obj, false);
+
+      if (!desc) {
+        desc = this.descriptor(obj);
+        if (desc) {
+          obj = desc.obj;
+        } else {
+          desc = new ObjectDescriptor(obj, props, this);
+        }
+      }
+
+      proxy = window[this.generateClassConstructor(props, funcMap, funcs)](desc);
+      desc.proxy = proxy;
+
+      each(funcs, function (prop) {
+        proxy[prop] = _this3.funcProxy(obj[prop], prop in protoPropMap ? obj : proxy);
+      });
+
+      this.onProxyChange(obj, proxy);
+      return desc;
+    },
+    funcProxy: function (fn, scope) {
+      return function () {
+        return fn.apply(this === window ? scope : this, arguments);
+      };
+    },
+    eq: function (o1, o2) {
+      var d1 = this.descriptor(o1),
+          d2 = this.descriptor(o2);
+
+      if (d1) o1 = d1.obj;
+      if (d2) o2 = d2.obj;
+      return o1 === o2;
+    },
+    obj: function (obj) {
+      var desc = this.descriptor(obj);
+
+      return desc ? desc.obj : obj;
+    },
+    proxy: function (obj) {
+      var desc = this.descriptor(obj);
+
+      return desc ? desc.proxy : undefined;
+    },
+    isProxy: function (obj) {
+      return hasOwn$4.call(obj, this.constBind);
+    },
+    descriptor: function (obj) {
+      var descBind = this.descBind;
+
+      return hasOwn$4.call(obj, descBind) ? obj[descBind] : undefined;
+    },
+    destroy: function (desc) {
+      this.onProxyChange(obj, undefined);
+    }
+  });
+
+  var ObjectDescriptor = createClass({
+    constructor: function (obj, props, classGenerator) {
+      this.classGenerator = classGenerator;
+      this.obj = obj;
+      this.defines = reverseConvert(props, function () {
+        return false;
+      });
+      obj[classGenerator.descBind] = this;
+      this.accessorNR = 0;
+    },
+    isAccessor: function (desc) {
+      return desc && (desc.get || desc.set);
+    },
+    hasAccessor: function () {
+      return !!this.accessorNR;
+    },
+    defineProperty: function (attr, desc) {
+      var defines = this.defines,
+          obj = this.obj;
+
+      if (!(attr in defines)) {
+        if (!(attr in obj)) {
+          obj[attr] = undefined;
+        } else if (isFunc(obj[attr])) {
+          logger$1.warn('defineProperty not support function [' + attr + ']');
+        }
+        this.classGenerator.create(this.obj, this);
+      }
+
+      if (!this.isAccessor(desc)) {
+        if (defines[attr]) {
+          defines[attr] = false;
+          this.accessorNR--;
+        }
+        obj[attr] = desc.value;
+      } else {
+        defines[attr] = desc;
+        this.accessorNR++;
+        if (desc.get) obj[attr] = desc.get();
+      }
+      return this.proxy;
+    },
+    getPropertyDefine: function (attr) {
+      return this.defines[attr] || undefined;
+    },
+    get: function (attr) {
+      var define = this.defines[attr];
+
+      return define && define.get ? define.get.call(this.proxy) : this.obj[attr];
+    },
+    set: function (attr, value) {
+      var define = this.defines[attr];
+
+      if (define && define.set) {
+        define.set.call(this.proxy, value);
+      } else {
+        this.obj[attr] = value;
+      }
+    }
+  });
+
+  var props = 'defaultProps';
+var   proxyKey$1 = 'key.VBProxy';
+  var constKey = 'key.VBConstructor';
+  configuration$1.register(props, [], 'init').register(proxyKey$1, '__observi_vbproxy__', 'init').register(constKey, '__observi_vb_constructor__', 'init');
+
+  registerWatcher('VBScriptProxy', 40, function (config) {
+    return VBClassFactory.isSupport();
+  }, function (config) {
+    var factory = new VBClassFactory(keys$1().concat(config[props]), config[constKey], config[proxyKey$1], proxy$1.change);
+
+    var cls = createClass({
+      extend: ArrayWatcher,
+      watch: function (attr) {
+        var _this = this;
+
+        if (this['super']([attr]) || this.isArray) return;
+        var obj = this.obj,
+            desc = this.init();
+        this.proxy = desc.defineProperty(attr, {
+          set: function (val) {
+            var oldVal = obj[attr];
+            obj[attr] = val;
+            _this.set(attr, val, oldVal);
+          }
+        });
+      },
+      init: function () {
+        var obj = this.obj,
+            desc = this.desc;
+        if (!desc) {
+          desc = this.desc = factory.descriptor(obj) || factory.create(obj);
+          this.proxy = desc.proxy;
+        }
+        return desc;
+      }
+    });
+    proxy$1.enable({
+      obj: function (obj) {
+        return obj && factory.obj(obj);
+      },
+      eq: function (o1, o2) {
+        return o1 === o2 || proxy$1.obj(o1) === proxy$1.obj(o2);
+      },
+      proxy: function (obj) {
+        return obj && (factory.proxy(obj) || obj);
+      }
+    });
+    return cls;
+  });
+
   var queue$1 = [];
   var waiting = false;
 
@@ -1596,17 +2137,17 @@ var   cfg$1 = configuration$1.get();
     }
   }
 
-  var hasOwn$3 = Object.prototype.hasOwnProperty;
+  var hasOwn$5 = Object.prototype.hasOwnProperty;
   var lazy = true;
   var bindWatcher = '__observi_watcher__';
-  configuration$1.register('key.watcher', lazy, 'init', function (val) {
-    return lazy = val;
-  }).register('lazy', bindWatcher, 'init', function (val) {
+  configuration$1.register('key.watcher', bindWatcher, 'init', function (val) {
     return bindWatcher = val;
+  }).register('lazy', lazy, 'init', function (val) {
+    return lazy = val;
   });
 
   function getOrCreateWatcher(obj) {
-    if (hasOwn$3.call(obj, bindWatcher)) return obj[bindWatcher];
+    if (hasOwn$5.call(obj, bindWatcher)) return obj[bindWatcher];
     return obj[bindWatcher] = createWatcher(obj);
   }
 
@@ -1718,6 +2259,9 @@ var   cfg$1 = configuration$1.get();
             val = undefined;
           }
           if ((eq = proxy$1.eq(val, oldVal)) && isPrimitive(val)) return;
+        } else {
+          _this.unwatchArray();
+          _this.watchArray(val);
         }
         _this.update(val, oldVal, eq);
       };
@@ -1740,8 +2284,8 @@ var   cfg$1 = configuration$1.get();
           } else {
             this.watch(val, idx);
           }
-        } else if (isArray$1(val)) {
-          (this.arrayWatcher || (this.arrayWatcher = getOrCreateWatcher(val))).setter('length', this.arrayCallback);
+        } else {
+          this.watchArray(val);
         }
       }
       return watcher;
@@ -1758,519 +2302,48 @@ var   cfg$1 = configuration$1.get();
         if (val = obj[attr]) {
           if (++idx < path.length) {
             this.unwatch(proxy$1.obj(val), idx);
-          } else if (isArray$1(val) && this.arrayWatcher) {
-            this.arrayWatcher.unsetter('length', this.arrayCallback);
-            this.arrayWatcher = undefined;
+          } else {
+            this.unwatchArray();
           }
         }
       }
       return watcher;
-    }
-  });
-
-  var arrayProto = Array.prototype;
-  var arrayHooks = 'fill,pop,push,reverse,shift,sort,splice,unshift'.split(',');
-  var ArrayWatcher = createClass({
-    extend: Watcher,
-    constructor: function () {
-      this['super'](arguments);
-      this.isArray = isArray$1(this.obj);
-      if (this.isArray) {
-        this.hookArray();
-      }
     },
-    watch: function (attr) {
-      return this.isArray && attr == 'length';
+    watchArray: function (val) {
+      if (isArray$1(val)) (this.arrayWatcher || (this.arrayWatcher = getOrCreateWatcher(val))).setter('length', this.arrayCallback);
     },
-    hookArray: function () {
-      each(arrayHooks, this.hookArrayMethod, this);
-    },
-    hookArrayMethod: function (name) {
-      var obj = this.obj,
-          method = arrayProto[name],
-          len = obj.length,
-          self = this;
-
-      obj[name] = function () {
-        var len = obj.length,
-            ret = method.apply(obj, arguments);
-        self.set('length', obj.length, len);
-        return ret;
-      };
-    }
-  });
-
-  var hasOwn$4 = Object.prototype.hasOwnProperty;
-
-  configuration$1.register('enableES6Proxy', true, 'init');
-  configuration$1.register('bindES6ProxySource', '__observi_es6proxy_source__', 'init');
-  configuration$1.register('bindES6Proxy', '__observi_es6proxy__', 'init');
-
-  registerWatcher('ES6Proxy', 10, function (config) {
-    return window.Proxy && config.enableES6Proxy !== false;
-  }, function (config) {
-    var bindES6ProxySource = config.bindES6ProxySource;
-    var bindES6Proxy = config.bindES6Proxy;
-
-
-    var cls = createClass({
-      extend: ArrayWatcher,
-      constructor: function () {
-        this['super'](arguments);
-        this.binded = false;
-      },
-      watch: function (attr) {
-        if (this['super']([attr])) return;
-        this.init();
-      },
-      createProxy: function () {
-        var _this = this;
-
-        return new Proxy(this.obj, {
-          set: function (obj, attr, value) {
-            var oldVal = obj[attr];
-            obj[attr] = value;
-            _this.set(attr, value, oldVal);
-            return true;
-          }
-        });
-      },
-      init: function () {
-        if (!this.binded) {
-          var obj = this.obj,
-              _proxy = this.createProxy();
-          this.proxy = _proxy;
-          obj[bindES6Proxy] = _proxy;
-          obj[bindES6ProxySource] = obj;
-          proxy$1.change(obj, _proxy);
-          this.binded = true;
-        }
-      }
-    });
-    proxy$1.enable({
-      obj: function (obj) {
-        if (obj && hasOwn$4.call(obj, bindES6ProxySource)) return obj[bindES6ProxySource];
-        return obj;
-      },
-      eq: function (o1, o2) {
-        return o1 === o2 || proxy$1.obj(o1) === proxy$1.obj(o2);
-      },
-      proxy: function (obj) {
-        if (obj && hasOwn$4.call(obj, bindES6Proxy)) return obj[bindES6Proxy] || obj;
-        return obj;
-      }
-    });
-    return cls;
-  });
-
-  registerWatcher('ES5DefineProperty', 20, function (config) {
-    if (Object.defineProperty) {
-      try {
-        var _ret = function () {
-          var val = void 0,
-              obj = {};
-          Object.defineProperty(obj, 'sentinel', {
-            get: function () {
-              return val;
-            },
-            set: function (value) {
-              val = value;
-            }
-          });
-          obj.sentinel = 1;
-          return {
-            v: obj.sentinel === val
-          };
-        }();
-
-        if (typeof _ret === "object") return _ret.v;
-      } catch (e) {}
-    }
-    return false;
-  }, function (config) {
-    var cls = createClass({
-      extend: ArrayWatcher,
-      watch: function (attr) {
-        var _this = this;
-
-        if (this['super']([attr])) return;
-
-        var value = this.obj[attr];
-        Object.defineProperty(this.obj, attr, {
-          enumerable: true,
-          configurable: true,
-          get: function () {
-            return value;
-          },
-          set: function (val) {
-            var oldVal = value;
-            value = val;
-            _this.set(attr, val, oldVal);
-          }
-        });
-      }
-    });
-    proxy$1.disable();
-    return cls;
-  });
-
-  registerWatcher('DefineGetterAndSetter', 30, function (config) {
-    return '__defineGetter__' in {};
-  }, function (config) {
-    var cls = createClass({
-      extend: ArrayWatcher,
-      watch: function (attr) {
-        var _this = this;
-
-        if (this['super']([attr])) return;
-
-        var value = this.obj[attr];
-        this.obj.__defineGetter__(attr, function () {
-          return value;
-        });
-        this.obj.__defineSetter__(attr, function (val) {
-          var oldVal = value;
-          value = val;
-          _this.set(attr, val, oldVal);
-        });
-      }
-    });
-    proxy$1.disable();
-    return cls;
-  });
-
-var   hasOwn$5 = Object.prototype.hasOwnProperty;
-  var RESERVE_PROPS = 'hasOwnProperty,isPrototypeOf,propertyIsEnumerable,toLocaleString,toString,valueOf'.split(',');
-  var RESERVE_ARRAY_PROPS = 'concat,copyWithin,entries,every,fill,filter,find,findIndex,forEach,includes,indexOf,join,keys,lastIndexOf,map,pop,push,reduce,reduceRight,reverse,shift,slice,some,sort,splice,unshift,values'.split(',');
-  var supported = undefined;
-  var VBClassFactory = createClass({
-    statics: {
-      isSupport: function () {
-        if (supported !== undefined) return supported;
-        supported = false;
-        if (window.VBArray) {
-          try {
-            window.execScript(['Function parseVB(code)', '\tExecuteGlobal(code)', 'End Function'].join('\n'), 'VBScript');
-            supported = true;
-          } catch (e) {
-            logger$1.error(e.message, e);
-          }
-        }
-        return supported;
-      }
-    },
-    classNameGenerator: 0,
-    constructor: function (defProps, constBind, descBind, onProxyChange) {
-      this.classPool = {};
-      this.defPropMap = {};
-      this.constBind = constBind;
-      this.descBind = descBind;
-      this.onProxyChange = onProxyChange;
-      this.addDefProps(defProps);
-      this.initConstScript();
-    },
-    addDefProps: function (defProps) {
-      var defPropMap = this.defPropMap,
-          props = [];
-
-      each(defProps || [], function (prop) {
-        defPropMap[prop] = true;
-      });
-      for (var prop in defPropMap) {
-        if (hasOwn$5.call(defPropMap, prop)) props.push(prop);
-      }
-      this.defProps = props;
-      logger$1.info('VBProxy default props is: ', props.join(','));
-      this.initReserveProps();
-    },
-    initReserveProps: function () {
-      this.reserveProps = RESERVE_PROPS.concat(this.defProps);
-      this.reserveArrayProps = this.reserveProps.concat(RESERVE_ARRAY_PROPS);
-      this.reservePropMap = reverseConvert(this.reserveProps);
-      this.reserveArrayPropMap = reverseConvert(this.reserveArrayProps);
-    },
-    initConstScript: function () {
-      this.constScript = ['\tPublic [', this.descBind, ']\r\n', '\tPublic Default Function [', this.constBind, '](desc)\r\n', '\t\tset [', this.descBind, '] = desc\r\n', '\t\tSet [', this.constBind, '] = Me\r\n', '\tEnd Function\r\n'].join('');
-    },
-    generateClassName: function () {
-      return 'VBClass' + this.classNameGenerator++;
-    },
-    parseClassConstructorName: function (className) {
-      return className + 'Constructor';
-    },
-    generateSetter: function (attr) {
-      var descBind = this.descBind;
-
-      return ['\tPublic Property Get [', attr, ']\r\n', '\tOn Error Resume Next\r\n', '\t\tSet[', attr, '] = [', descBind, '].get("', attr, '")\r\n', '\tIf Err.Number <> 0 Then\r\n', '\t\t[', attr, '] = [', descBind, '].get("', attr, '")\r\n', '\tEnd If\r\n', '\tOn Error Goto 0\r\n', '\tEnd Property\r\n'];
-    },
-    generateGetter: function (attr) {
-      var descBind = this.descBind;
-
-      return ['\tPublic Property Let [', attr, '](val)\r\n', '\t\tCall [', descBind, '].set("', attr, '",val)\r\n', '\tEnd Property\r\n', '\tPublic Property Set [', attr, '](val)\r\n', '\t\tCall [', descBind, '].set("', attr, '",val)\r\n', '\tEnd Property\r\n'];
-    },
-    generateClass: function (className, props, funcMap) {
-      var _this = this;
-
-      var buffer = ['Class ', className, '\r\n', this.constScript, '\r\n'];
-
-      each(props, function (attr) {
-        if (funcMap[attr]) {
-          buffer.push('\tPublic [' + attr + ']\r\n');
-        } else {
-          buffer.push.apply(buffer, _this.generateSetter(attr));
-          buffer.push.apply(buffer, _this.generateGetter(attr));
-        }
-      });
-      buffer.push('End Class\r\n');
-      return buffer.join('');
-    },
-    generateClassConstructor: function (props, funcMap, funcArray) {
-      var key = [props.length, '[', props.join(','), ']', '[', funcArray.join(','), ']'].join(''),
-          classConstName = this.classPool[key];
-
-      if (classConstName) return classConstName;
-
-      var className = this.generateClassName();
-      classConstName = this.parseClassConstructorName(className);
-      parseVB(this.generateClass(className, props, funcMap));
-      parseVB(['Function ', classConstName, '(desc)\r\n', '\tDim o\r\n', '\tSet o = (New ', className, ')(desc)\r\n', '\tSet ', classConstName, ' = o\r\n', 'End Function'].join(''));
-      this.classPool[key] = classConstName;
-      return classConstName;
-    },
-    create: function (obj, desc) {
-      var _this2 = this;
-
-      var protoProps = void 0,
-          protoPropMap = void 0,
-          props = [],
-          funcs = [],
-          funcMap = {},
-          descBind = this.descBind;
-
-      function addProp(prop) {
-        if (isFunc(obj[prop])) {
-          funcMap[prop] = true;
-          funcs.push(prop);
-        }
-        props.push(prop);
-      }
-
-      if (isArray$1(obj)) {
-        protoProps = this.reserveArrayProps;
-        protoPropMap = this.reserveArrayPropMap;
-      } else {
-        protoProps = this.reserveProps;
-        protoPropMap = this.reservePropMap;
-      }
-      each(protoProps, addProp);
-      each(obj, function (val, prop) {
-        if (prop !== descBind && !(prop in protoPropMap)) addProp(prop);
-      }, obj, false);
-
-      if (!desc) {
-        desc = this.descriptor(obj);
-        if (desc) {
-          obj = desc.obj;
-        } else {
-          desc = new ObjectDescriptor(obj, props, this);
-        }
-      }
-
-      proxy = window[this.generateClassConstructor(props, funcMap, funcs)](desc);
-      desc.proxy = proxy;
-
-      each(funcs, function (prop) {
-        proxy[prop] = _this2.funcProxy(obj[prop], prop in protoPropMap ? obj : proxy);
-      });
-
-      this.onProxyChange(obj, proxy);
-      return desc;
-    },
-    funcProxy: function (fn, scope) {
-      return function () {
-        return fn.apply(this === window ? scope : this, arguments);
-      };
-    },
-    eq: function (o1, o2) {
-      var d1 = this.descriptor(o1),
-          d2 = this.descriptor(o2);
-
-      if (d1) o1 = d1.obj;
-      if (d2) o2 = d2.obj;
-      return o1 === o2;
-    },
-    obj: function (obj) {
-      var desc = this.descriptor(obj);
-
-      return desc ? desc.obj : obj;
-    },
-    proxy: function (obj) {
-      var desc = this.descriptor(obj);
-
-      return desc ? desc.proxy : undefined;
-    },
-    isProxy: function (obj) {
-      return hasOwn$5.call(obj, this.constBind);
-    },
-    descriptor: function (obj) {
-      var descBind = this.descBind;
-
-      return hasOwn$5.call(obj, descBind) ? obj[descBind] : undefined;
-    },
-    destroy: function (desc) {
-      this.onProxyChange(obj, undefined);
-    }
-  });
-
-  var ObjectDescriptor = createClass({
-    constructor: function (obj, props, classGenerator) {
-      this.classGenerator = classGenerator;
-      this.obj = obj;
-      this.defines = reverseConvert(props, function () {
-        return false;
-      });
-      obj[classGenerator.descBind] = this;
-      this.accessorNR = 0;
-    },
-    isAccessor: function (desc) {
-      return desc && (desc.get || desc.set);
-    },
-    hasAccessor: function () {
-      return !!this.accessorNR;
-    },
-    defineProperty: function (attr, desc) {
-      var defines = this.defines,
-          obj = this.obj;
-
-      if (!(attr in defines)) {
-        if (!(attr in obj)) {
-          obj[attr] = undefined;
-        } else if (isFunc(obj[attr])) {
-          logger$1.warn('defineProperty not support function [' + attr + ']');
-        }
-        this.classGenerator.create(this.obj, this);
-      }
-
-      if (!this.isAccessor(desc)) {
-        if (defines[attr]) {
-          defines[attr] = false;
-          this.accessorNR--;
-        }
-        obj[attr] = desc.value;
-      } else {
-        defines[attr] = desc;
-        this.accessorNR++;
-        if (desc.get) obj[attr] = desc.get();
-      }
-      return this.proxy;
-    },
-    getPropertyDefine: function (attr) {
-      return this.defines[attr] || undefined;
-    },
-    get: function (attr) {
-      var define = this.defines[attr];
-
-      return define && define.get ? define.get.call(this.proxy) : this.obj[attr];
-    },
-    set: function (attr, value) {
-      var define = this.defines[attr];
-
-      if (define && define.set) {
-        define.set.call(this.proxy, value);
-      } else {
-        this.obj[attr] = value;
+    unwatchArray: function () {
+      if (this.arrayWatcher) {
+        this.arrayWatcher.unsetter('length', this.arrayCallback);
+        this.arrayWatcher = undefined;
       }
     }
   });
 
-  configuration$1.register('bindVBProxy', '__observi_vbproxy__', 'init');
-  configuration$1.register('VBProxyConst', '__observi_vbproxy_const__', 'init');
-  configuration$1.register('defaultProps', [], 'init');
-
-  registerWatcher('VBScriptProxy', 40, function (config) {
-    return VBClassFactory.isSupport();
-  }, function (config) {
-    var factory = new VBClassFactory([config.bindWatcher, config.bindObservi, config.bindProxy, LinkedList.LIST_KEY].concat(config.defaultProps || []), configuration$1.get('VBProxyConst'), configuration$1.get('bindVBProxy'), proxy$1.change);
-
-    var cls = createClass({
-      extend: ArrayWatcher,
-      watch: function (attr) {
-        var _this = this;
-
-        if (this['super']([attr]) || this.isArray) return;
-        var obj = this.obj,
-            desc = this.init();
-        this.proxy = desc.defineProperty(attr, {
-          set: function (val) {
-            var oldVal = obj[attr];
-            obj[attr] = val;
-            _this.set(attr, val, oldVal);
-          }
-        });
-      },
-      init: function () {
-        var obj = this.obj,
-            desc = this.desc;
-        if (!desc) {
-          desc = this.desc = factory.descriptor(obj) || factory.create(obj);
-          this.proxy = desc.proxy;
-        }
-        return desc;
-      }
-    });
-    proxy$1.enable({
-      obj: function (obj) {
-        return obj && factory.obj(obj);
-      },
-      eq: function (o1, o2) {
-        return o1 === o2 || proxy$1.obj(o1) === proxy$1.obj(o2);
-      },
-      proxy: function (obj) {
-        return obj && (factory.proxy(obj) || obj);
-      }
-    });
-    return cls;
-  });
-
-  configuration$1.register('bindObservis', '__observi__', 'init');
-
-  var cfg = configuration$1.get();
 var   hasOwn$1 = Object.prototype.hasOwnProperty;
-  var PATH_JOIN = '###';
-  function hookArrayFunc(func, obj, callback, scope, own) {
-    return func(obj, proxy$1.isEnable() ? callback && function (v, k, s, o) {
-      return callback.call(this, proxy$1.proxy(v), k, s, o);
-    } : callback, scope, own);
-  }
+  var PATH_JOIN = '.';
+  var bindObservi = '__observi__';
+  configuration$1.register('key.observi', bindObservi, 'init', function (val) {
+    return bindObservi = val;
+  });
 
   function getOrCreateObservi(obj, expr) {
-    var bindObservis = cfg.bindObservis,
-        path = parseExpr(expr),
+    var path = parseExpr(expr),
         observis = void 0,
         key = void 0;
     if (!path.length) throw new Error('Invalid Observi Expression: ' + expr);
     obj = proxy$1.obj(obj);
-    observis = hasOwn$1.call(obj, bindObservis) ? obj[bindObservis] : obj[bindObservis] = {};
+    observis = hasOwn$1.call(obj, bindObservi) ? obj[bindObservi] : obj[bindObservi] = {};
     key = path.join(PATH_JOIN);
     return observis[key] || (observis[key] = new Observi(obj, expr, path));
   }
 
   function getObservi(obj, expr) {
-    var bindObservis = cfg.bindObservis,
-        path = parseExpr(expr),
+    var path = parseExpr(expr),
         observis = void 0;
     if (!path.length) throw new Error('Invalid Observi Expression: ' + expr);
-    observis = hasOwn$1.call(obj, bindObservis) ? obj[bindObservis] : undefined;
+    observis = hasOwn$1.call(obj, bindObservi) ? obj[bindObservi] : undefined;
     return observis && observis[path.join(PATH_JOIN)];
-  }
-
-  function createProxy(obj) {
-    if (proxy$1.isEnable()) {
-      var watcher = Observi.getOrCreateWatcher(obj);
-      watcher.init();
-      return watcher.proxy;
-    }
-    return obj;
   }
 
   function observe(obj, expr, cb) {
@@ -2295,6 +2368,15 @@ var   hasOwn$1 = Object.prototype.hasOwnProperty;
     return observi && observi.isListened(cb);
   }
 
+  function createProxy(obj) {
+    if (proxy$1.isEnable()) {
+      var watcher = Observi.getOrCreateWatcher(obj);
+      watcher.init();
+      return watcher.proxy;
+    }
+    return obj;
+  }
+
   function eq$1(o1, o2) {
     return proxy$1.eq(o1, o2);
   }
@@ -2303,81 +2385,183 @@ var   hasOwn$1 = Object.prototype.hasOwnProperty;
     return proxy$1.obj(o);
   }
 
+  function $eachObj$1(obj, callback, scope, own) {
+    var key = void 0,
+        isOwn = void 0,
+        i = 0;
+
+    scope = scope || obj;
+    for (key in obj) {
+      if (!hasKey(key) && ((isOwn = hasOwnProp(obj, key)) || own === false)) {
+        if (callback.call(scope, proxy$1(obj[key]), key, obj, isOwn) === false) return false;
+        i++;
+      }
+    }
+    return i;
+  }
+
+  function $eachArray(obj, callback, scope) {
+    var i = 0,
+        j = obj.length;
+
+    scope = scope || obj;
+    for (; i < j; i++) {
+      if (callback.call(scope, proxy$1(obj[i]), i, obj, true) === false) return false;
+    }
+    return i;
+  }
+
   function $each(obj, callback, scope, own) {
-    return hookArrayFunc(each, obj, callback, scope, own);
+    if (isArrayLike(obj)) {
+      return $eachArray(obj, callback, scope);
+    } else if (!isNil(obj)) {
+      return $eachObj$1(obj, callback, scope, own);
+    }
+    return 0;
   }
 
   function $map(obj, callback, scope, own) {
-    return hookArrayFunc(map, obj, callback, scope, own);
+    var isArray = isArrayLike(obj),
+        ret = isArray ? [] : {},
+        each = isArray ? $eachArray : $eachObj$1;
+
+    each(obj, function (val, key) {
+      ret[key] = callback.apply(this, arguments);
+    }, scope, own);
+    return ret;
   }
 
   function $filter(obj, callback, scope, own) {
-    return hookArrayFunc(filter, obj, callback, scope, own);
+    var isArray = isArrayLike(obj),
+        ret = isArray ? [] : {},
+        each = isArray ? $eachArray : $eachObj$1;
+
+    each(obj, function (val, key) {
+      if (callback.apply(this, arguments)) isArray ? ret.push(val) : ret[key] = val;
+    });
+    return ret;
   }
 
-  function $aggregate(obj, callback, defVal, scope, own) {
-    return aggregate(obj, callback && proxy$1.isEnable() ? function (r, v, k, s, o) {
-      return callback.call(this, r, proxy$1.proxy(v), k, s, o);
-    } : callback, defVal, scope, own);
+  function $aggregate(obj, callback, val, scope, own) {
+    var ret = val;
+
+    $each(obj, function (val, key, obj, isOwn) {
+      ret = callback.call(this, ret, val, key, obj, isOwn);
+    }, scope, own);
+    return ret;
+  }
+
+  function $convert(obj, keyGen, valGen, scope, own) {
+    var o = {};
+
+    $each(obj, function (val, key) {
+      o[keyGen ? keyGen.apply(this, arguments) : key] = valGen ? valGen.apply(this, arguments) : val;
+    }, scope, own);
+    return o;
+  }
+
+  function $reverseConvert(obj, valGen, scope, own) {
+    var o = {};
+
+    $each(obj, function (val, key) {
+      o[val] = valGen ? valGen.apply(this, arguments) : key;
+    }, scope, own);
+    return o;
   }
 
   function $keys(obj, filter, scope, own) {
-    return keys(obj, filter && proxy$1.isEnable() ? function (v, k, s, o) {
-      return filter.call(this, proxy$1.proxy(v), k, s, o);
-    } : filter, scope, own);
+    var keys = [];
+
+    $each(obj, function (val, key) {
+      if (!filter || filter.apply(this, arguments)) keys.push(key);
+    }, scope, own);
+    return keys;
   }
 
   function $values(obj, filter, scope, own) {
-    return values(obj, filter && proxy$1.isEnable() ? function (v, k, s, o) {
-      return filter.call(this, proxy$1.proxy(v), k, s, o);
-    } : filter, scope, own);
+    var values = [];
+
+    $each(obj, function (val, key) {
+      if (!filter || filter.apply(this, arguments)) values.push(val);
+    }, scope, own);
+    return values;
+  }
+
+  function $assign(target) {
+    var source = void 0,
+        key = void 0,
+        i = 1,
+        l = arguments.length;
+
+    for (; i < l; i++) {
+      source = arguments[i];
+      for (key in source) {
+        if (!hasKey(key) && hasOwnProp(source, key)) target[key] = source[key];
+      }
+    }
+    return target;
+  }
+
+  function $assignIf(target) {
+    var source = void 0,
+        key = void 0,
+        i = 1,
+        l = arguments.length;
+
+    for (; i < l; i++) {
+      source = arguments[i];
+      for (key in source) {
+        if (!hasKey(key) && hasOwnProp(source, key) && !hasOwnProp(target, key)) target[key] = source[key];
+      }
+    }
+    return target;
   }
 
 var observi = Object.freeze({
-    createProxy: createProxy,
+    proxy: proxy$1,
+    configuration: configuration$1,
+    logger: logger$1,
     observe: observe,
     unobserve: unobserve,
     isObserved: isObserved,
+    createProxy: createProxy,
     eq: eq$1,
     obj: obj$1,
+    $eachObj: $eachObj$1,
+    $eachArray: $eachArray,
     $each: $each,
     $map: $map,
     $filter: $filter,
     $aggregate: $aggregate,
+    $convert: $convert,
+    $reverseConvert: $reverseConvert,
     $keys: $keys,
     $values: $values,
-    proxy: proxy$1,
-    Watcher: Watcher,
-    configuration: configuration$1,
+    $assign: $assign,
+    $assignIf: $assignIf,
     registerWatcher: registerWatcher,
     init: observiInit,
-    logger: logger$1
+    Watcher: Watcher
   });
 
   var Binding = createClass({
     statics: {
-      comments: true
+      comments: false
     },
     constructor: function (cfg) {
+      var ctx = this.ctx = obj$1(cfg.context);
       this.proxy = cfg.context;
-      this.ctx = obj$1(cfg.context);
       this.el = cfg.el;
+      this.propScopes = ctx.$parent ? {} : undefined;
     },
     findScope: function (expr, isProp) {
-      var prop = isProp ? expr : parseExpr(expr)[0],
-          ctx = this.proxy,
-          parent = void 0;
-
-      while ((parent = ctx.$parent) && !hasOwnProp(ctx, prop) && prop in parent) {
-        ctx = parent;
-      }
-      return ctx;
+      return this.proxy.__findScope(expr, isProp);
     },
     observe: function (expr, callback) {
-      observe(this.findScope(expr), expr, callback);
+      this.proxy.observe(expr, callback);
     },
     unobserve: function (expr, callback) {
-      unobserve(this.findScope(expr), expr, callback);
+      this.proxy.unobserve(expr, callback);
     },
     get: function (expr) {
       return get(this.ctx, expr);
@@ -3504,7 +3688,7 @@ var   root$2 = document.documentElement;
   var logger$2 = new Logger('template', 'debug');
 
   var directiveParser = new DirectiveParser(/^ag-/);
-  var textParser = new TextParser('${', '}');
+  var textParser = new TextParser('{', '}');
   configuration.register('directiveParser', directiveParser, 'init', function (parser) {
     if (!(parser instanceof DirectiveParser)) throw new Error('Invalid Directive Parser: ' + parser);
     directiveParser = parser;
@@ -3517,50 +3701,31 @@ var   root$2 = document.documentElement;
     return true;
   });
 
-  function _clone(el) {
-    var elem = el.cloneNode(false);
-    if (el.nodeType == 1) each(el.childNodes, function (c) {
-      elem.appendChild(_clone(c));
-    });
-    return elem;
-  }
-
-  function clone$1(el) {
-    return isArrayLike(el) ? map(el, _clone) : _clone(el);
-  }
-
-  function insertText(content, before) {
-    var el = document.createTextNode(content);
-    dom.before(el, before);
-    return el;
-  }
-
-  function insertNotBlankText(content, before) {
-    return content ? insertText(content || '&nbsp;', before) : undefined;
-  }
-
-  function _eachDom(el, data, elemHandler, textHandler) {
+  function _eachDom(el, data, elemHandler, textHandler, readonly) {
     switch (el.nodeType) {
-      case 1:
-        if (data = elemHandler(el, data)) each(map(el.childNodes, function (n) {
-          return n;
-        }), function (el) {
-          _eachDom(el, data, elemHandler, textHandler);
-        });
+      case Document.ELEMENT_NODE:
+        if (data = elemHandler(el, data)) {
+          var children = el.childNodes;
+          eachArray(readonly ? children : map(children, function (n) {
+            return n;
+          }), function (el) {
+            _eachDom(el, data, elemHandler, textHandler);
+          });
+        }
         break;
-      case 3:
+      case Document.TEXT_NODE:
         textHandler(el, data);
         break;
     }
   }
 
-  function eachDom(el, data, elemHandler, textHandler) {
+  function eachDom(el, data, elemHandler, textHandler, readonly) {
     if (isArrayLike(el)) {
-      each(el, function (el) {
-        _eachDom(el, data, elemHandler, textHandler);
+      eachArray(el, function (el) {
+        _eachDom(el, data, elemHandler, textHandler, readonly);
       });
     } else {
-      _eachDom(el, data, elemHandler, textHandler);
+      _eachDom(el, data, elemHandler, textHandler, readonly);
     }
     return data;
   }
@@ -3577,7 +3742,7 @@ var   root$2 = document.documentElement;
     });
   }
 
-  function parseTemplateEl(el, clone) {
+  function parseTemplateEl(el) {
     if (isString(el)) {
       el = trim(el);
       if (isStringTemplate(el)) return stringTemplate(el);
@@ -3586,207 +3751,224 @@ var   root$2 = document.documentElement;
     if (el) {
       if (el.tagName == 'SCRIPT') {
         el = stringTemplate(el.innerHTML);
-      } else if (clone) {
-        el = dom.cloneNode(el);
       }
     }
     return el;
   }
 
-  function getTextParser(markEl, textParser) {
-    return function (el, bindings) {
-      var expr = dom.text(el),
-          tokens = textParser.tokens(expr),
-          pos = 0;
-      each(tokens, function (token) {
-        if (pos < token.start) markEl(insertNotBlankText(expr.slice(pos, token.start), el), false);
-        bindings.push({
-          constructor: Text,
-          index: markEl.index,
-          params: {
-            expression: token.token
-          }
-        });
-        markEl(insertText('binding', el), false);
-        pos = token.end;
-      });
-      if (pos) {
-        markEl(insertNotBlankText(expr.slice(pos), el), false);
-        dom.remove(el);
-      } else {
-        markEl(el, false);
-      }
-    };
-  }
+  var Comment = createClass({
+    type: Document.COMMENT_NODE,
+    constructor: function (comment) {
+      this.comment = comment;
+    },
+    el: function () {}
+  });
 
-  function getDirectiveParser(markEl, directiveParser, textParser) {
-    return function (el, bindings) {
-      var directives = [],
-          block = false,
-          independent = false,
-          binding = void 0;
-
-      each(el.attributes, function (attr) {
-        var name = attr.name,
-            directive = void 0,
-            binding = void 0,
-            params = void 0,
-            paramMap = void 0,
-            _block = true;
-
-        if (!directiveParser.isDirective(name)) return;
-
-        if (!(directive = directiveParser.getDirective(name))) {
-          logger$2.warn('Directive[' + name + '] is undefined');
-          return;
-        }
-        params = Directive.getParams(directive);
-        binding = {
-          constructor: directive,
-          index: markEl.index,
-          params: {
-            expression: attr.value,
-            attr: name,
-            params: isArray$1(params) && reverseConvert(params, function (name) {
-              return el.getAttribute(name);
-            })
-          }
-        };
-
-        switch (Directive.getType(directive)) {
-          case 'template':
-            {
-              var templ = dom.cloneNode(el, false);
-              dom.removeAttr(templ, name);
-              dom.append(templ, map(el.childNodes, function (n) {
-                return n;
-              }));
-              binding.params.templateParser = new TemplateParser(templ, {
-                directiveParser: directiveParser,
-                textParser: textParser,
-                clone: false
-              });
-            }
-            break;
-          case 'inline-template':
-            binding.params.templateParser = new TemplateParser(map(el.childNodes, function (n) {
-              return n;
-            }), {
-              directiveParser: directiveParser,
-              textParser: textParser,
-              clone: false
-            });
-            dom.html(el, '');
-            break;
-          case 'block':
-            break;
-          case 'empty-block':
-            dom.html(el, '');
-            break;
-          default:
-            _block = false;
-            break;
-        }
-        if (_block) block = _block;
-        if (Directive.isAlone(directive)) {
-          directives = [binding];
-          return false;
-        }
-        directives.push(binding);
-      });
-
-      if (!directives.length) {
-        markEl(el, true);
-        return bindings;
-      }
-      binding = {
-        constructor: DirectiveGroup,
-        index: markEl.index,
-        directives: directives.sort(function (a, b) {
-          return Directive.getPriority(b.constructor) - Directive.getPriority(a.constructor) || 0;
-        }),
-        children: !block && []
-      };
-      bindings.push(binding);
-      markEl(el, !block);
-      return binding.children;
-    };
-  }
-
-  function parse(el, directiveParser, textParser) {
-    var elStatus = [];
-
-    function markEl(el, marked) {
-      if (el) {
-        elStatus.push({
-          el: el,
-          marked: marked
-        });
-        markEl.index++;
-      }
-      return el;
+  var TextNode = createClass({
+    type: Document.TEXT_NODE,
+    constructor: function (text, expr) {
+      this.text = text;
+      this.expr = expr;
+    },
+    el: function (pel, params) {
+      var expr = this.expr,
+          el = document.createTextNode(this.text);
+      pel.appendChild(el);
+      if (expr) return [new Text(assign({
+        expression: expr,
+        el: el
+      }, params))];
     }
-    markEl.index = 0;
+  });
+
+  var Element = createClass({
+    type: Document.ELEMENT_NODE,
+    constructor: function (nodeName, attrs, children, directives) {
+      this.nodeName = nodeName;
+      this.attrs = attrs;
+      if (isString(children)) {
+        this.html = children;
+      } else {
+        this.children = children || undefined;
+      }
+      this.directives = directives;
+    },
+    el: function (pel, params) {
+      var directives = this.directives,
+          children = this.children,
+          cbindings = [],
+          el = document.createElement(this.nodeName);
+
+      eachArray(this.attrs, function (attr) {
+        dom.attr(el, attr.name, attr.value);
+      });
+
+      pel.appendChild(el);
+
+      if (children && children.length) {
+        eachArray(children, function (c) {
+          var cbs = c.el(el, params);
+          if (cbs) cbindings = cbindings.concat(cbs);
+        });
+      }
+      if (directives && directives.length) {
+        directives = map(directives, function (d) {
+          return {
+            constructor: d.Class,
+            params: {
+              expression: d.expression,
+              attr: d.attr,
+              templateParser: d.templateParser
+            }
+          };
+        });
+        return new DirectiveGroup(assign({
+          el: el,
+          directives: directives,
+          children: cbindings
+        }, params));
+      }
+      return cbindings;
+    }
+  });
+
+  function addText(coll, text, expression) {
+    text = trim(text);
+    if (text || expression) {
+      coll.push(new TextNode(text, expression));
+    }
+  }
+
+  function readAttrs(el, directiveParser) {
+    var attrs = [],
+        directives = [];
+    eachArray(el.attributes, function (attr) {
+      var name = attr.name;
+      var value = attr.value;
+      var directive;
+      if (!directiveParser.isDirective(name)) {
+        attrs.push({
+          name: name,
+          value: value
+        });
+      } else if (directive = directiveParser.getDirective(name)) {
+        directives.push({
+          Class: directive,
+          expression: value,
+          attr: name
+        });
+      } else {
+        logger$2.warn('Directive[' + name + '] is undefined');
+      }
+    });
+    directives = directives.sort(function (a, b) {
+      return Directive.getPriority(b.Class) - Directive.getPriority(a.Class) || 0;
+    });
     return {
-      bindings: eachDom(el, [], getDirectiveParser(markEl, directiveParser, textParser), getTextParser(markEl, textParser)),
-      elStatus: elStatus
+      attrs: attrs,
+      directives: directives
     };
   }
 
-  function cloneTemplateEl(el, elStatus) {
-    var index = 0,
-        cloneEl = clone$1(el);
-    return {
-      el: cloneEl,
-      list: eachDom(cloneEl, [], function (el, els) {
-        els.push(el);
-        return elStatus[index++].marked && els;
-      }, function (el, els) {
-        els.push(el);
-        index++;
-      })
-    };
+  function createElement(el, attrs, directives) {
+    var hasEmptyBlock = false,
+        html = undefined;
+
+    eachArray(directives, function (directive) {
+      var Class = directive.Class,
+          emptyBlock = false,
+          htmlBlock = false;
+
+      switch (Directive.getType(Class)) {
+        case 'template':
+          dom.removeAttr(el, directive.attr);
+          dom.append(el, map(el.childNodes, function (n) {
+            return n;
+          }));
+          directive.templateParser = new TemplateParser(el, {
+            directiveParser: directiveParser,
+            textParser: textParser
+          });
+          emptyBlock = true;
+          break;
+        case 'inline-template':
+          directive.templateParser = new TemplateParser(map(el.childNodes, function (n) {
+            return n;
+          }), {
+            directiveParser: directiveParser,
+            textParser: textParser
+          });
+          emptyBlock = true;
+          break;
+        case 'block':
+          htmlBlock = dom.html(el);
+          break;
+        case 'empty-block':
+          emptyBlock = true;
+          break;
+      }
+
+      if (Directive.isAlone(Class)) {
+        directives = [directive];
+        hasEmptyBlock = emptyBlock;
+        html = htmlBlock;
+        return false;
+      }
+      if (emptyBlock) hasEmptyBlock = true;
+      if (htmlBlock) html = htmlBlock;
+    });
+    return new Element(el.nodeName, attrs, !hasEmptyBlock && (html || []), directives);
   }
 
   var TemplateParser = createClass({
     constructor: function (el) {
+      var _this = this;
+
       var cfg = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
 
-      this.el = parseTemplateEl(el, cfg.clone);
+      this.el = parseTemplateEl(el);
       if (!this.el) throw new Error('Invalid Dom Template: ' + el);
       this.directiveParser = cfg.directiveParser || directiveParser;
       this.textParser = cfg.textParser || textParser;
-      assign(this, parse(this.el, this.directiveParser, this.textParser));
-    },
-    clone: function () {
-      var templ = cloneTemplateEl(this.el, this.elStatus),
-          el = templ.el,
-          elList = templ.list;
 
-      function create(bindings) {
-        return map(bindings, function (binding) {
-          var directives = binding.directives,
-              children = binding.children,
-              el = elList[binding.index],
-              desc = {
-            constructor: binding.constructor,
-            el: el,
-            params: binding.params
-          };
-          if (directives) desc.directives = map(directives, function (directive) {
-            return {
-              constructor: directive.constructor,
-              el: el,
-              params: directive.params
-            };
+      this.dom = eachDom(this.el, [], function (el, coll) {
+        var _readAttrs = readAttrs(el, _this.directiveParser);
+
+        var attrs = _readAttrs.attrs;
+        var directives = _readAttrs.directives;
+        var elem = createElement(el, attrs, directives);
+        coll.push(elem);
+        return elem.children;
+      }, function (el, coll) {
+        var expr = dom.text(el),
+            tokens = _this.textParser.tokens(expr);
+
+        if (tokens.length) {
+          var pos = 0;
+          eachArray(tokens, function (token) {
+            if (pos < token.start) addText(coll, expr.slice(pos, token.start));
+            addText(coll, 'binding', token.token);
+            pos = token.end;
           });
-          if (children) desc.children = create(children);
-          return desc;
-        });
-      }
+          addText(coll, expr.slice(pos));
+        } else {
+          addText(coll, expr);
+        }
+      });
+    },
+    clone: function (params) {
+      var frame = document.createDocumentFragment(),
+          bindings = [];
+
+      eachArray(this.dom, function (node) {
+        var cbs = node.el(frame, params);
+        if (cbs) bindings = bindings.concat(cbs);
+      });
       return {
-        el: el,
-        bindings: create(this.bindings)
+        el: map(frame.childNodes, function (n) {
+          return n;
+        }),
+        bindings: bindings
       };
     }
   });
@@ -4362,6 +4544,47 @@ var   exprReg$1 = /\s*\|\s*(?:\|\s*)*/;
 var   expressionArgs$1 = [ContextKeyword, ElementKeyword, BindingKeyword];
   var eachReg = /^\s*([\s\S]+)\s+in\s+([\S]+)(\s+track\s+by\s+([\S]+))?\s*$/;
   var eachAliasReg = /^(\(\s*([^,\s]+)(\s*,\s*([\S]+))?\s*\))|([^,\s]+)(\s*,\s*([\S]+))?$/;
+  var Cache = createClass({
+    constructor: function () {
+      this.keymap = {};
+      this.queue = new LinkedList();
+    },
+    encache: function (data, prev) {
+      var index = data.index,
+          keymap = this.keymap;
+      if (index in keymap) throw new Error('EachDirective: index is not uniqued');
+      keymap[index] = data;
+      if (prev) {
+        this.queue.after(prev, data);
+      } else {
+        this.queue.push(data);
+      }
+      return this;
+    },
+    decacheByIndex: function (index) {
+      var keymap = this.keymap,
+          data = keymap[index];
+      if (data) {
+        delete keymap[index];
+        this.queue.remove(data);
+      }
+      return data;
+    },
+    decache: function () {
+      var data = this.queue.pop();
+      if (data) delete this.keymap[data.index];
+      return data;
+    },
+    each: function (cb, scope) {
+      return this.queue.each(cb, scope);
+    },
+    size: function () {
+      return this.queue.size();
+    },
+    isEmpty: function () {
+      return this.queue.empty();
+    }
+  });
   var EachDirective = Directive.register('each', createClass({
     extend: Directive,
     type: 'template',
@@ -4389,77 +4612,186 @@ var   expressionArgs$1 = [ContextKeyword, ElementKeyword, BindingKeyword];
       this.el = undefined;
       this.version = 1;
     },
+    convertData: function (data) {
+      var convert = false;
+      if (data) {
+        var type = typestr(data);
+        if (isArrayLike(data, type)) {
+          data = data.length && data;
+        } else if (type === numberType) {
+          var arr = new Array(data);
+          for (var i = 0; i < data; i++) {
+            arr[i] = i;
+          }data = arr;
+          convert = true;
+        } else if (type === objectType) {
+          if ($eachObj(data, function (v) {
+            return false;
+          }) === false) data = undefined;
+        } else {
+          data = undefined;
+        }
+      }
+      return {
+        convert: convert,
+        data: data
+      };
+    },
     update: function (data) {
       var _this = this;
 
-      var templateParser = this.templateParser,
-          ctx = this.proxy,
-          indexExpr = this.indexExpr,
-          used = this.used,
-          version = this.version++,
-          indexMap = this.used = {},
-          descs = map(data, function (item, idx) {
-        var index = indexExpr ? get(item, indexExpr) : idx,
-            // read index of data item
-        reuse = used && used[index],
-            desc = void 0;
+      var start = performance.now();
+      var cache = this.cache,
+          before = this.begin,
+          convert = this.convertData(data);
 
-        if (reuse && reuse.version === version) reuse = undefined;
-
-        desc = reuse || {
-          index: index
-        };
-        desc.version = version;
-        desc.data = item;
-        indexMap[index] = desc;
-        return desc;
-      }),
-          idles = undefined,
-          before = this.begin;
-      if (used) {
-        idles = [];
-        each(used, function (desc) {
-          if (desc.version != version) idles.push(desc);
-        });
+      function debug(msg) {
+        console.log(msg);
       }
-      each(descs, function (desc, i) {
-        var isNew = false,
-            _ctx = desc.context;
 
-        if (!_ctx) {
-          var idle = idles && idles.pop();
-          if (!idle) {
-            _ctx = desc.context = _this.createChildContext(ctx, desc.data, desc.index);
-            isNew = true;
+      if (!(data = convert.data)) {
+        this.cache = undefined;
+        if (cache && !cache.isEmpty()) {
+          var parent = before.parentNode,
+              emptyDom = isEmptyDom(parent, before, this.end);
+          var s = performance.now();
+          if (emptyDom) {
+            parent.innerHTML = '';
+            dom.append(parent, [before, this.end]);
+
+            debug('remove views use ' + (performance.now() - s) + ' ms, total-rows: ' + cache.size());
+            s = performance.now();
+
+            cache.each(function (desc, index) {
+              desc.view.unbind(false);
+            });
+
+            debug('unbind views use ' + (performance.now() - s) + ' ms, total-rows: ' + cache.size());
           } else {
-            _ctx = desc.context = idle.context;
+            cache.each(function (desc, index) {
+              desc.view.remove(true, false);
+            });
+            debug('remove & unbind views use ' + (performance.now() - s) + ' ms, total-rows: ' + cache.size());
           }
         }
-        if (!isNew) _this.updateChildContext(_ctx, desc.data, desc.index);
-        _ctx.after(before, true, false);
-        before = _ctx.$el;
-        data[i] = proxy$1(desc.data);
-      });
-      if (idles) each(idles, function (idle) {
-        return idle.context.remove(true, false);
-      });
+      } else {
+        var resetData = proxy$1.isEnable() && !convert.convert,
+            ncache = this.cache = new Cache(),
+            indexExpr = this.indexExpr;
+        if (cache && !cache.isEmpty()) {
+          var ndescs = [];
+          var s = performance.now();
+          $each(data, function (item, key) {
+            var index = indexExpr ? get(item, indexExpr) : key,
+                desc = cache.decacheByIndex(index);
+            if (desc) {
+              _this.updateChild(desc.view, item, index);
+              if (resetData) data[key] = proxy$1(item);
+            } else {
+              desc = {
+                item: item,
+                index: index,
+                key: key
+              };
+              ndescs.push(desc);
+            }
+            ncache.encache(desc);
+          });
+          debug('parse datas use ' + (performance.now() - s) + ' ms, total rows: ' + ncache.size() + ', matched rows: ' + (ncache.size() - ndescs.length));
+          s = performance.now();
+          var reused = 0;
+          eachArray(ndescs, function (desc) {
+            var idle = cache.decache();
+            var index = desc.index;
+            var item = desc.item;
+            var key = desc.key;
+
+            desc.item = desc.key = undefined;
+            if (idle) {
+              reused++;
+              _this.updateChild(idle.view, item, index);
+              desc.view = idle.view;
+            } else {
+              desc.view = _this.createChild(item, index).bind(false);
+            }
+            if (resetData) data[key] = proxy$1(item);
+          });
+          debug('create non-matched views use ' + (performance.now() - s) + ' ms, re-used rows: ' + reused + ', created rows: ' + (ndescs.length - reused));
+          s = performance.now();
+
+          cache.each(function (desc) {
+            desc.view.remove(true, false);
+          });
+          debug('clear cached views use ' + (performance.now() - s) + ' ms, cache-rows: ' + cache.size());
+          s = performance.now();
+
+          var i = 0;
+          ncache.each(function (desc) {
+            var view = desc.view,
+                el = view.$el;
+            if (before.nextSibling !== el[0]) {
+              view.after(before, false, false);
+              i++;
+            }
+            before = el[el.length - 1];
+          });
+          debug('append views use ' + (performance.now() - s) + ' ms, total rows: ' + i);
+        } else {
+          var frame = document.createDocumentFragment();
+          var s = performance.now();
+          var rownum = $each(data, function (item, key) {
+            var index = indexExpr ? get(item, indexExpr) : key,
+                view = _this.createChild(item, index);
+            ncache.encache({
+              index: index,
+              view: view
+            });
+            if (resetData) data[key] = proxy$1(item);
+          });
+          debug('created views use ' + (performance.now() - s) + ' ms, total rows: ' + rownum);
+          s = performance.now();
+
+          ncache.each(function (desc) {
+            desc.view.bind(false);
+          });
+
+          debug('binded views use ' + (performance.now() - s) + ' ms, total rows: ' + rownum);
+          s = performance.now();
+
+          ncache.each(function (desc) {
+            desc.view.appendTo(frame, false, false);
+          });
+
+          dom.after(frame, before);
+          debug('append views use ' + (performance.now() - s) + ' ms, total rows: ' + rownum);
+        }
+      }
+      debug('diff use ' + (performance.now() - start) + ' ms');
+      start = performance.now();
+      setTimeout(function () {
+        debug('render use ' + (performance.now() - start) + ' ms\n\n');
+      }, 0);
     },
-    createChildContext: function (parent, value, index) {
+    createChild: function (value, index) {
       var _this2 = this;
 
-      return parent.clone(this.templateParser, false, function (ctx) {
+      return this.proxy.clone(this.templateParser, false, function (ctx) {
         ctx[_this2.valueAlias] = value;
         if (_this2.keyAlias) ctx[_this2.keyAlias] = index;
       });
     },
-    updateChildContext: function (ctx, value, index) {
-      ctx[this.valueAlias] = value;
-      if (this.keyAlias) ctx[this.keyAlias] = index;
+    updateChild: function (ctx, value, index) {
+      var keyAlias = this.keyAlias;
+      var valueAlias = this.valueAlias;
+
+      if (!eq$1(ctx[valueAlias], value)) ctx[valueAlias] = value;
+
+      if (keyAlias && ctx[keyAlias] !== index) ctx[keyAlias] = index;
     },
     bind: function () {
       var _this3 = this;
 
-      each(this.dataExpr.identities, function (ident) {
+      eachArray(this.dataExpr.identities, function (ident) {
         _this3.observe(ident, _this3.observeHandler);
       });
       this.update(this.target());
@@ -4467,7 +4799,7 @@ var   expressionArgs$1 = [ContextKeyword, ElementKeyword, BindingKeyword];
     unbind: function () {
       var _this4 = this;
 
-      each(this.dataExpr.identities, function (ident) {
+      eachArray(this.dataExpr.identities, function (ident) {
         _this4.unobserve(ident, _this4.observeHandler);
       });
     },
@@ -4476,13 +4808,37 @@ var   expressionArgs$1 = [ContextKeyword, ElementKeyword, BindingKeyword];
     },
     observeHandler: function (expr, target) {
       if (this.dataExpr.isSimple()) {
-        this.update(this.dataExpr.filter(this.proxy, [this.proxy, this.el, this], target));
+        target = this.dataExpr.filter(this.proxy, [this.proxy, this.el, this], target);
       } else {
         target = this.target();
       }
       this.update(target);
     }
   }));
+
+  function isEmptyDom(el, begin, end) {
+    var first = el.firstChild,
+        last = el.lastChild;
+    while (first !== begin) {
+      if (!isEmptyNode(first)) return false;
+      first = first.nextSibling;
+    }
+    while (last !== end) {
+      if (!isEmptyNode(last)) return false;
+      last = last.previousSibling;
+    }
+    return true;
+  }
+
+  function isEmptyNode(node) {
+    switch (node.nodeType) {
+      case document.ELEMENT_NODE:
+        return false;
+      case document.TEXT_NODE:
+        if (!isEmptyStr(node.data)) return false;
+    }
+    return true;
+  }
 
   var expressionArgs$2 = [ContextKeyword, ElementKeyword, EventKeyword, BindingKeyword];
 
@@ -4843,28 +5199,6 @@ var   expressionArgs$1 = [ContextKeyword, ElementKeyword, BindingKeyword];
 
   var handler = function () {};
 
-  function parseBindings(bindings, Collector, context) {
-    return map(bindings, function (binding) {
-      var el = binding.el;
-      var directives = binding.directives;
-      var children = binding.children;
-      var params = assign({
-        el: el,
-        context: context,
-        Collector: Collector
-      }, binding.params);
-
-      if (directives) params.directives = map(directives, function (directive) {
-        return {
-          constructor: directive.constructor,
-          params: directive.params
-        };
-      });
-      if (children) params.children = parseBindings(children, Collector, context);
-      return new binding.constructor(params);
-    });
-  }
-
   function toDocument(collector, target, bind, fireEvent, fn) {
     fireEvent = fireEvent !== false;
     if (fireEvent && collector.$isMounted) {
@@ -4881,6 +5215,7 @@ var   expressionArgs$1 = [ContextKeyword, ElementKeyword, BindingKeyword];
   var Controller = createClass({
     $parent: undefined, // parent collector(collector is clone from parent collector)
     $props: undefined, // prop defines
+    $scopeCache: undefined,
     statics: {
       mixin: function (name, protoValue, valueConsumer) {
         if (arguments.length == 1) {
@@ -4895,19 +5230,18 @@ var   expressionArgs$1 = [ContextKeyword, ElementKeyword, BindingKeyword];
         }
       },
       newInstance: function (Class, templateParser, props) {
-        var frame = document.createDocumentFragment();
         var inst = createProxy(new Class(Class, props));
 
-        var _templateParser$clone = templateParser.clone();
+        var _templateParser$clone = templateParser.clone({
+          context: inst,
+          Collector: Class
+        });
 
         var el = _templateParser$clone.el;
         var bindings = _templateParser$clone.bindings;
 
-        dom.append(frame, el);
-        inst.$bindings = parseBindings(bindings, Controller, inst);
-        inst.$el = map(frame.childNodes, function (el) {
-          return el;
-        });
+        inst.$bindings = bindings;
+        inst.$el = el;
         inst.created();
         return inst;
       }
@@ -4935,30 +5269,57 @@ var   expressionArgs$1 = [ContextKeyword, ElementKeyword, BindingKeyword];
     },
     clone: function (templateParser, props, beforeParseBinding) {
       var clone = create(obj$1(this));
-      var frame = document.createDocumentFragment();
 
-      var _templateParser$clone2 = templateParser.clone();
-
-      var el = _templateParser$clone2.el;
-      var bindings = _templateParser$clone2.bindings;
-
-
-      dom.append(frame, el);
+      // init props
       clone.$bindings = clone.$el = undefined;
       clone.$isMounted = clone.$isBinded = false;
       clone.$parent = this;
-
       if (props) each(props, function (val, name) {
         clone[name] = val;
       });
       if (isFunc(beforeParseBinding)) beforeParseBinding(clone);
 
+      // create proxy
       clone = createProxy(clone);
-      clone.$bindings = parseBindings(bindings, this.$class, clone);
-      clone.$el = map(frame.childNodes, function (el) {
-        return el;
+
+      var _templateParser$clone2 = templateParser.clone({
+        context: clone,
+        Collector: this.$class
       });
+
+      var el = _templateParser$clone2.el;
+      var bindings = _templateParser$clone2.bindings;
+
+
+      clone.$bindings = bindings;
+      clone.$el = el;
       return clone;
+    },
+    __findScope: function (expr, isProp) {
+      if (!this.$parent) return this;
+
+      var cache = this.$scopeCache,
+          prop = isProp ? expr : parseExpr(expr)[0],
+          ctx = void 0;
+
+      if (!cache) {
+        cache = this.$scopeCache = {};
+      } else if (ctx = cache[prop]) {
+        return ctx;
+      }
+      ctx = this;
+      var parent = void 0;
+      while ((parent = ctx.$parent) && !hasOwnProp(ctx, prop) && prop in parent) {
+        ctx = parent;
+      }
+      cache[prop] = ctx;
+      return ctx;
+    },
+    observe: function (expr, callback) {
+      observe(this.__findScope(expr), expr, callback);
+    },
+    unobserve: function (expr, callback) {
+      unobserve(this.__findScope(expr), expr, callback);
     },
     before: function (target, bind, fireEvent) {
       var _this3 = this;

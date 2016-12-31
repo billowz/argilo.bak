@@ -1,5 +1,9 @@
-import Watcher from './Watcher'
-import configuration from './configuration'
+import {
+  Watcher
+} from './Watcher'
+import {
+  configuration
+} from './configuration'
 import logger from './log'
 import {
   each,

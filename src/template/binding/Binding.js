@@ -15,28 +15,22 @@ import {
 } from 'ilos'
 const Binding = createClass({
   statics: {
-    comments: true
+    comments: false
   },
   constructor(cfg) {
+    let ctx = this.ctx = obj(cfg.context)
     this.proxy = cfg.context
-    this.ctx = obj(cfg.context)
     this.el = cfg.el
+    this.propScopes = ctx.$parent ? {} : undefined
   },
   findScope(expr, isProp) {
-    let prop = isProp ? expr : parseExpr(expr)[0],
-      ctx = this.proxy,
-      parent
-
-    while ((parent = ctx.$parent) && !hasOwnProp(ctx, prop) && prop in parent) {
-      ctx = parent
-    }
-    return ctx
+    return this.proxy.__findScope(expr, isProp)
   },
   observe(expr, callback) {
-    observe(this.findScope(expr), expr, callback)
+    this.proxy.observe(expr, callback)
   },
   unobserve(expr, callback) {
-    unobserve(this.findScope(expr), expr, callback)
+    this.proxy.unobserve(expr, callback)
   },
   get(expr) {
     return get(this.ctx, expr)

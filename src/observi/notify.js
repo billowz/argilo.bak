@@ -14,7 +14,7 @@ function flushQueue() {
   waiting = false
 }
 
-export default function notify(observi) {
+export function notify(observi) {
   queue.push(observi)
   if (!waiting) {
     waiting = true

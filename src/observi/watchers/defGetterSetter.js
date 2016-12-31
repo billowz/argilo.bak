@@ -1,8 +1,12 @@
-import ArrayWatcher from './ArrayWatcher'
+import {
+  ArrayWatcher
+} from './ArrayWatcher'
 import {
   registerWatcher
 } from '../watcherFactory'
-import proxy from '../proxy'
+import {
+  proxy
+} from '../proxy'
 import {
   createClass
 } from 'ilos'

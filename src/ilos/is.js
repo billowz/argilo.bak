@@ -15,6 +15,10 @@ export const argsType = '[object Arguments]',
   regexpType = '[object RegExp]',
   nodeListType = '[object NodeList]'
 
+export function typestr(obj) {
+  return toStr.call(obj)
+}
+
 export function isDefine(obj) {
   return obj !== undefined
 }
@@ -28,32 +32,31 @@ export function isNil(obj) {
 }
 
 export function isBool(obj) {
-  return toStr.call(obj) == boolType
+  return typestr(obj) == boolType
 }
 
 export function isNumber(obj) {
-  return toStr.call(obj) == numberType
+  return typestr(obj) == numberType
 }
 
 export function isDate(obj) {
-  return toStr.call(obj) == dateType
+  return typestr(obj) == dateType
 }
 
 export function isString(obj) {
-  return toStr.call(obj) == stringType
+  return typestr(obj) == stringType
 }
 
 export function isObject(obj) {
-  return toStr.call(obj) == objectType
+  return typestr(obj) == objectType
 }
 
 export function isArray(obj) {
-  return toStr.call(obj) == arrayType
+  return typestr(obj) == arrayType
 }
 
-export function isArrayLike(obj) {
-  let type = toStr.call(obj)
-  switch (type) {
+export function isArrayLike(obj, type) {
+  switch (type || typestr(obj)) {
     case argsType:
     case arrayType:
     case stringType:
@@ -66,6 +69,34 @@ export function isArrayLike(obj) {
   }
   return false
 }
+
+let emptyStrReg = /^\s*$/
+export function isEmptyStr(str) {
+  return emptyStrReg.test(str)
+}
+
+export function isEmptyObj(obj) {
+  for (var k in obj)
+    return false
+  return true
+}
+
+export function isEmpty(obj, type) {
+  if (isNil(obj))
+    return true
+  type = type || typestr(obj)
+  switch (type) {
+    case stringType:
+      return isEmptyStr(obj)
+    case objectType:
+      return isEmptyObj(obj)
+    default:
+      if (isArrayLike(obj, type))
+        return !obj.length
+  }
+  return false
+}
+
 
 export function isFunc(obj) {
   return toStr.call(obj) == funcType

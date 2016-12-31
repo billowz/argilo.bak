@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <title>Argilo</title>
+    <link href="../../lib/bootstrap.min.css" rel="stylesheet" />
+    <style>
+    body {
+        padding: 10px 0 0 0;
+        margin: 0;
+        overflow-y: scroll;
+    }
+
+    #duration {
+        padding-top: 0px;
+    }
+
+    .jumbotron {
+        padding-top: 10px;
+        padding-bottom: 10px;
+    }
+
+    .test-data a {
+        display: block;
+    }
+
+    .preloadicon {
+        position: absolute;
+        top: -20px;
+        left: -20px;
+    }
+
+    .col-sm-6.smallpad {
+        padding: 5px;
+    }
+
+    a span {
+        transition: all 5s;
+    }
+
+    a:active span {
+        transform: scale(4.0, 4.0);
+    }
+    </style>
+</head>
+
+<body>
+    <div id='main'>
+    </div>
+    <script id="templ" type="text/template">
+        <div class="container">
+            <div class="jumbotron">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h1>Argilo.js</h1>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="row">
+                            <div class="col-sm-6 smallpad">
+                                <button type="button" class="btn btn-primary btn-block" id="run" ag-onclick="run">Create 1,000 rows (run)</button>
+                            </div>
+                            <div class="col-sm-6 smallpad">
+                                <button type="button" class="btn btn-primary btn-block" id="runlots" ag-onclick="runLots">Create 10,000 rows (runLots)</button>
+                            </div>
+                            <div class="col-sm-6 smallpad">
+                                <button type="button" class="btn btn-primary btn-block" id="add" ag-onclick="add">Append 1,000 rows (add)</button>
+                            </div>
+                            <div class="col-sm-6 smallpad">
+                                <button type="button" class="btn btn-primary btn-block" id="update" ag-onclick="update">Update every 10th row (update)</button>
+                            </div>
+                            <div class="col-sm-6 smallpad">
+                                <button type="button" class="btn btn-primary btn-block" id="clear" ag-onclick="clear">Clear (clear)</button>
+                            </div>
+                            <div class="col-sm-6 smallpad">
+                                <button type="button" class="btn btn-primary btn-block" id="swaprows" ag-onclick="swapRows">Swap Rows (swapRows)</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <table class="table table-hover table-striped test-data" >
+                <tbody>
+                    <tr ag-each="item in rows track by id" ag-class="{'danger': item.id == selected}">
+                        <td class="col-md-1">{item.id}</td>
+                        <td class="col-md-4">
+                            <a ag-onclick="select(item.id)">{item.label}</a>
+                        </td>
+                        <td class="col-md-1">
+                            <a>
+                                <span class="glyphicon glyphicon-remove" aria-hidden="true" ag-onclick="delete(item.id)"></span>
+                            </a>
+                        </td>
+                        <td class="col-md-6"></td>
+                    </tr>
+                </tbody>
+            </table>
+            <span class="preloadicon glyphicon glyphicon-remove" aria-hidden="true"></span>
+        </div>
+    </script>
+    <script src="../../dist/argilo.js"></script>
+    <script src='main.js'></script>
+</body>
+
+</html>

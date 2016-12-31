@@ -2,7 +2,9 @@ import dom from '../dom'
 import {
   proxy,
   obj,
-  createProxy
+  createProxy,
+  observe,
+  unobserve
 } from 'observi'
 import {
   createClass,
@@ -12,7 +14,9 @@ import {
   reverseConvert,
   assign,
   create,
-  clone
+  clone,
+  parseExpr,
+  hasOwnProp
 } from 'ilos'
 import logger from './log'
 
@@ -61,6 +65,7 @@ const mixins = {}
 export const Controller = createClass({
   $parent: undefined, // parent collector(collector is clone from parent collector)
   $props: undefined, // prop defines
+  $scopeCache: undefined,
   statics: {
     mixin(name, protoValue, valueConsumer) {
       if (arguments.length == 1) {
@@ -77,17 +82,16 @@ export const Controller = createClass({
       }
     },
     newInstance(Class, templateParser, props) {
-
-
-      let frame = document.createDocumentFragment(),
-        inst = createProxy(new Class(Class, props)),
+      let inst = createProxy(new Class(Class, props)),
         {
           el,
           bindings
-        } = templateParser.clone()
-      dom.append(frame, el)
-      inst.$bindings = parseBindings(bindings, Controller, inst)
-      inst.$el = map(frame.childNodes, el => el)
+        } = templateParser.clone({
+          context: inst,
+          Collector: Class
+        })
+      inst.$bindings = bindings
+      inst.$el = el
       inst.created()
       return inst
     }
@@ -108,18 +112,12 @@ export const Controller = createClass({
     })
   },
   clone(templateParser, props, beforeParseBinding) {
-    let clone = create(obj(this)),
-      frame = document.createDocumentFragment(),
-      {
-        el,
-        bindings
-      } = templateParser.clone()
+    let clone = create(obj(this))
 
-    dom.append(frame, el)
+    // init props
     clone.$bindings = clone.$el = undefined
     clone.$isMounted = clone.$isBinded = false
     clone.$parent = this
-
     if (props)
       each(props, (val, name) => {
         clone[name] = val
@@ -127,10 +125,47 @@ export const Controller = createClass({
     if (isFunc(beforeParseBinding))
       beforeParseBinding(clone)
 
+    // create proxy
     clone = createProxy(clone)
-    clone.$bindings = parseBindings(bindings, this.$class, clone)
-    clone.$el = map(frame.childNodes, el => el)
+
+    let {
+      el,
+      bindings
+    } = templateParser.clone({
+      context: clone,
+      Collector: this.$class
+    })
+
+    clone.$bindings = bindings
+    clone.$el = el
     return clone
+  },
+  __findScope(expr, isProp) {
+    if (!this.$parent)
+      return this
+
+    let cache = this.$scopeCache,
+      prop = isProp ? expr : parseExpr(expr)[0],
+      ctx
+
+    if (!cache) {
+      cache = this.$scopeCache = {}
+    } else if (ctx = cache[prop]) {
+      return ctx
+    }
+    ctx = this
+    let parent
+    while ((parent = ctx.$parent) && !hasOwnProp(ctx, prop) && prop in parent) {
+      ctx = parent
+    }
+    cache[prop] = ctx
+    return ctx
+  },
+  observe(expr, callback) {
+    observe(this.__findScope(expr), expr, callback)
+  },
+  unobserve(expr, callback) {
+    unobserve(this.__findScope(expr), expr, callback)
   },
   before(target, bind, fireEvent) {
     toDocument(this, target, bind, fireEvent, (target) => {

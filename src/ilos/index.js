@@ -6,19 +6,8 @@ export * from './object'
 export * from './string'
 export * from './class'
 export * from './util'
-export {
-  default as LinkedList
-}
-from './LinkedList'
-export {
-  default as Configuration
-}
-from './Configuration'
-export {
-  default as ConfigurationChain
-}
-from './ConfigurationChain'
-export {
-  default as Logger
-}
-from './Logger'
+export * from './LinkedList'
+export * from './IConfiguration'
+export * from './Configuration'
+export * from './ConfigurationChain'
+export * from './Logger'

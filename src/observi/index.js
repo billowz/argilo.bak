@@ -1,81 +1,59 @@
-export {
-  default as proxy
-}
-from './proxy'
-export {
-  default as Watcher
-}
-from './Watcher'
-export {
-  default as configuration
-}
-from './configuration'
+import './watchers'
+import {
+  proxy
+} from './proxy'
+import {
+  configuration,
+  hasKey
+} from './configuration'
+import logger from './log'
+import {
+  Observi
+} from './Observi'
+import {
+  parseExpr,
+  isFunc,
+  isArrayLike,
+  isNil,
+  hasOwnProp
+} from 'ilos'
+
+export * from './Watcher'
 export {
   registerWatcher,
   initWatcher as init
 }
 from './watcherFactory'
 export {
-  default as logger
+  proxy,
+  configuration,
+  logger
 }
-from './log'
-import proxy from './proxy'
-import configuration from './configuration'
-import Observi from './Observi'
-import './watchers'
-import {
-  each,
-  map,
-  filter,
-  aggregate,
-  keys,
-  values,
-  parseExpr,
-  isFunc,
-} from 'ilos'
 
-configuration.register('bindObservis', '__observi__', 'init')
-
-const cfg = configuration.get(),
-  hasOwn = Object.prototype.hasOwnProperty,
-  PATH_JOIN = '###'
-
-function hookArrayFunc(func, obj, callback, scope, own) {
-  return func(obj, proxy.isEnable() ? callback && function(v, k, s, o) {
-    return callback.call(this, proxy.proxy(v), k, s, o)
-  } : callback, scope, own)
-}
+const hasOwn = Object.prototype.hasOwnProperty,
+  PATH_JOIN = '.'
+let bindObservi = '__observi__'
+configuration.register('key.observi', bindObservi, 'init', (val) => (bindObservi = val))
 
 function getOrCreateObservi(obj, expr) {
-  let bindObservis = cfg.bindObservis,
-    path = parseExpr(expr),
+  let path = parseExpr(expr),
     observis,
     key
   if (!path.length)
     throw new Error('Invalid Observi Expression: ' + expr)
   obj = proxy.obj(obj)
-  observis = hasOwn.call(obj, bindObservis) ? obj[bindObservis] : (obj[bindObservis] = {})
+  observis = hasOwn.call(obj, bindObservi) ? obj[bindObservi] : (obj[bindObservi] = {})
   key = path.join(PATH_JOIN)
   return observis[key] || (observis[key] = new Observi(obj, expr, path))
 }
 
 function getObservi(obj, expr) {
-  let bindObservis = cfg.bindObservis,
-    path = parseExpr(expr),
+  let path = parseExpr(expr),
     observis
   if (!path.length)
     throw new Error('Invalid Observi Expression: ' + expr)
-  observis = hasOwn.call(obj, bindObservis) ? obj[bindObservis] : undefined
+  observis = hasOwn.call(obj, bindObservi) ? obj[bindObservi] : undefined
   return observis && observis[path.join(PATH_JOIN)]
-}
-
-export function createProxy(obj) {
-  if (proxy.isEnable()) {
-    var watcher = Observi.getOrCreateWatcher(obj)
-    watcher.init()
-    return watcher.proxy
-  }
-  return obj
 }
 
 export function observe(obj, expr, cb) {
@@ -102,6 +80,15 @@ export function isObserved(obj, expr, cb) {
   return observi && observi.isListened(cb)
 }
 
+export function createProxy(obj) {
+  if (proxy.isEnable()) {
+    var watcher = Observi.getOrCreateWatcher(obj)
+    watcher.init()
+    return watcher.proxy
+  }
+  return obj
+}
+
 export function eq(o1, o2) {
   return proxy.eq(o1, o2)
 }
@@ -110,32 +97,142 @@ export function obj(o) {
   return proxy.obj(o)
 }
 
+export function $eachObj(obj, callback, scope, own) {
+  let key,
+    isOwn,
+    i = 0
+
+  scope = scope || obj
+  for (key in obj) {
+    if (!hasKey(key) && ((isOwn = hasOwnProp(obj, key)) || own === false)) {
+      if (callback.call(scope, proxy(obj[key]), key, obj, isOwn) === false)
+        return false
+      i++
+    }
+  }
+  return i
+}
+
+export function $eachArray(obj, callback, scope) {
+  let i = 0,
+    j = obj.length
+
+  scope = scope || obj
+  for (; i < j; i++) {
+    if (callback.call(scope, proxy(obj[i]), i, obj, true) === false)
+      return false
+  }
+  return i
+}
+
 export function $each(obj, callback, scope, own) {
-  return hookArrayFunc(each, obj, callback, scope, own)
+  if (isArrayLike(obj)) {
+    return $eachArray(obj, callback, scope)
+  } else if (!isNil(obj)) {
+    return $eachObj(obj, callback, scope, own)
+  }
+  return 0
 }
 
 export function $map(obj, callback, scope, own) {
-  return hookArrayFunc(map, obj, callback, scope, own)
+  let isArray = isArrayLike(obj),
+    ret = isArray ? [] : {},
+    each = isArray ? $eachArray : $eachObj
+
+  each(obj, function(val, key) {
+    ret[key] = callback.apply(this, arguments)
+  }, scope, own)
+  return ret
 }
 
 export function $filter(obj, callback, scope, own) {
-  return hookArrayFunc(filter, obj, callback, scope, own)
+  let isArray = isArrayLike(obj),
+    ret = isArray ? [] : {},
+    each = isArray ? $eachArray : $eachObj
+
+  each(obj, function(val, key) {
+    if (callback.apply(this, arguments))
+      isArray ? ret.push(val) : ret[key] = val
+  })
+  return ret
 }
 
-export function $aggregate(obj, callback, defVal, scope, own) {
-  return aggregate(obj, callback && proxy.isEnable() ? function(r, v, k, s, o) {
-    return callback.call(this, r, proxy.proxy(v), k, s, o)
-  } : callback, defVal, scope, own)
+export function $aggregate(obj, callback, val, scope, own) {
+  let ret = val
+
+  $each(obj, function(val, key, obj, isOwn) {
+    ret = callback.call(this, ret, val, key, obj, isOwn)
+  }, scope, own)
+  return ret
 }
+
+export function $convert(obj, keyGen, valGen, scope, own) {
+  let o = {}
+
+  $each(obj, function(val, key) {
+    o[keyGen ? keyGen.apply(this, arguments) : key] = valGen ? valGen.apply(this, arguments) : val
+  }, scope, own)
+  return o
+}
+
+export function $reverseConvert(obj, valGen, scope, own) {
+  let o = {}
+
+  $each(obj, function(val, key) {
+    o[val] = valGen ? valGen.apply(this, arguments) : key
+  }, scope, own)
+  return o
+}
+
 
 export function $keys(obj, filter, scope, own) {
-  return keys(obj, filter && proxy.isEnable() ? function(v, k, s, o) {
-    return filter.call(this, proxy.proxy(v), k, s, o)
-  } : filter, scope, own)
+  let keys = []
+
+  $each(obj, function(val, key) {
+    if (!filter || filter.apply(this, arguments))
+      keys.push(key)
+  }, scope, own)
+  return keys
 }
 
 export function $values(obj, filter, scope, own) {
-  return values(obj, filter && proxy.isEnable() ? function(v, k, s, o) {
-    return filter.call(this, proxy.proxy(v), k, s, o)
-  } : filter, scope, own)
+  let values = []
+
+  $each(obj, function(val, key) {
+    if (!filter || filter.apply(this, arguments))
+      values.push(val)
+  }, scope, own)
+  return values
+}
+
+export function $assign(target) {
+  let source,
+    key,
+    i = 1,
+    l = arguments.length
+
+  for (; i < l; i++) {
+    source = arguments[i]
+    for (key in source) {
+      if (!hasKey(key) && hasOwnProp(source, key))
+        target[key] = source[key]
+    }
+  }
+  return target
+}
+
+export function $assignIf(target) {
+  let source,
+    key,
+    i = 1,
+    l = arguments.length
+
+  for (; i < l; i++) {
+    source = arguments[i]
+    for (key in source) {
+      if (!hasKey(key) && hasOwnProp(source, key) && !hasOwnProp(target, key))
+        target[key] = source[key]
+    }
+  }
+  return target
 }

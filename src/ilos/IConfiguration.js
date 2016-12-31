@@ -8,7 +8,7 @@ function fn(name) {
   }
 }
 
-export default createClass({
+export const IConfiguration = createClass({
   hasConfig: fn('hasConfig'),
   config: fn('config'),
   get: fn('get'),

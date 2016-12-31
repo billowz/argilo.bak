@@ -206,7 +206,7 @@ function GulpRollup(options) {
     var rebuilding = false,
       needRebuild = false
 
-    function checkRebuild() {
+    function checkRebuild(watcher) {
       if (needRebuild) {
         var es = needRebuild
         needRebuild = false
@@ -299,10 +299,12 @@ function GulpRollup(options) {
         var s = watch(stream, done)
         if (s) s.on('end', done)
         stream.end()
+        stream.destroy()
       }).catch(function(err) {
         if (printErr)
           gutil.log(`Rebuild entries[${entryColorNames}] failed:\n`, err)
         stream.end()
+        stream.destroy()
         rebuilding = false
         checkRebuild(watcher)
         throw err

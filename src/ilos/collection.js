@@ -67,8 +67,8 @@ export function filter(obj, callback, scope, own) {
   return ret
 }
 
-export function aggregate(obj, callback, defVal, scope, own) {
-  let ret = defVal
+export function aggregate(obj, callback, val, scope, own) {
+  let ret = val
 
   each(obj, function(val, key, obj, isOwn) {
     ret = callback.call(this, ret, val, key, obj, isOwn)
@@ -76,33 +76,33 @@ export function aggregate(obj, callback, defVal, scope, own) {
   return ret
 }
 
-function _indexOfArray(array, val) {
+function _indexOfArray(array, cb, scope) {
   let i = 0,
     l = array.length
 
   for (; i < l; i++) {
-    if (eq(array[i], val))
+    if (cb.call(scope || array, array[i], i, array, true))
       return i
   }
   return -1
 }
 
-function _lastIndexOfArray(array, val) {
+function _lastIndexOfArray(array, cb, scope) {
   let i = array.length
 
   while (i-- > 0) {
-    if (eq(array[i], val))
+    if (cb.call(scope || array, array[i], i, array, true))
       return i
   }
   return -1
 }
 
-function _indexOfObj(obj, val, own) {
-  let key
+function _indexOfObj(obj, cb, scope, own) {
+  let key, isOwn
 
   for (key in obj) {
-    if (own === false || hasOwnProp(obj, key)) {
-      if (eq(obj[key], val))
+    if ((isOwn = hasOwnProp(obj, key)) || own === false) {
+      if (cb.call(scope || obj, obj[key], key, obj, isOwn))
         return key
     }
   }
@@ -110,15 +110,23 @@ function _indexOfObj(obj, val, own) {
 }
 
 export function indexOf(obj, val, own) {
+  var cmp = (v) => eq(v, val)
   if (isArrayLike(obj))
-    return _indexOfArray(obj, val)
-  return _indexOfObj(obj, val, own)
+    return _indexOfArray(obj, cmp)
+  return _indexOfObj(obj, cmp)
 }
 
 export function lastIndexOf(obj, val, own) {
+  var cmp = (v) => eq(v, val)
   if (isArrayLike(obj))
-    return _lastIndexOfArray(obj, val)
-  return _indexOfObj(obj, val, own)
+    return _lastIndexOfArray(obj, cmp)
+  return _indexOfObj(obj, cmp)
+}
+
+export function findIndex(obj, cb, scope, own) {
+  if (isArrayLike(obj))
+    return _indexOfArray(obj, cb, scope)
+  return _indexOfObj(obj, cb, scope, own)
 }
 
 export function convert(obj, keyGen, valGen, scope, own) {

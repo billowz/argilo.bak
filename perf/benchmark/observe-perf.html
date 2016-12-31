@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <title>Argilo - Observe</title>
+    <link href="../../lib/bootstrap.min.css" rel="stylesheet" />
+</head>
+
+<body>
+    <script src="../../dist/argilo.js"></script>
+    <script id="templ" type="text/template">
+        <table class="table table-hover table-striped ">
+            <tbody>
+                <tr>
+                    <td class="col-md-3"> Test Name</td>
+                    <td class="col-md-1"> Mean(ms) </td>
+                    <td class="col-md-1"> Min(ms) </td>
+                    <td class="col-md-1"> Max(ms) </td>
+                    <td class="col-md-1"> Memory Before </td>
+                    <td class="col-md-1"> Memory After </td>
+                    <td class="col-md-4"> Perfs </td>
+                </tr>
+                <tr ag-each="row in results">
+                    <td class="col-md-3"> ${row.name} (repeat ${row.repeat})</td>
+                    <td class="col-md-1"> ${row.mean} </td>
+                    <td class="col-md-1"> ${row.min} </td>
+                    <td class="col-md-1"> ${row.max} </td>
+                    <td class="col-md-1"> ${row.beforeMemory| memunit 0,"N/A"}</td>
+                    <td class="col-md-1"> ${row.memory| memunit 0,"N/A"}</td>
+                    <td class="col-md-4"> ${row.perfs.join(', ')} </td>
+                </tr>
+            </tbody>
+        </table>
+    </script>
+    <script>
+    (function(argilo) {
+
+        var rownum = 10000,
+            repeat = 10,
+            preheat = 0,
+            results = []
+        argilo({
+            template: '#templ'
+        }).compile({
+            results: results
+        }).appendTo(document.body)
+
+        function run(name, runner, before, after, cycle, end) {
+          return function(){
+            var memory = performance.memory.totalJSHeapSize
+            var start, stop, perfs = []
+            for (var i = 0; i < repeat; i++) {
+                before && before()
+                start = performance.now()
+                runner()
+                stop = performance.now()
+                perfs[i] = stop - start
+                after && after()
+                cycle && cycle(perfs[i])
+            }
+            var total = 0,
+                min, max
+            for (var i = preheat; i < repeat; i++) {
+                var v = perfs[i]
+                total += v
+                if (min === undefined || v < min)
+                    min = v
+                if (max === undefined || v > max)
+                    max = v
+            }
+            var mean = (total / (repeat - preheat)).toFixed(2)
+            min = min.toFixed(2)
+            max = max.toFixed(2)
+            end && end(perfs)
+            console.log('performance[' + name + ']: mean = ' + mean + ', min = ' + min + ', max = ' + max)
+            results.push({
+                name: name,
+                min: min,
+                max: max,
+                mean: mean,
+                repeat: repeat - preheat,
+                perfs: perfs.slice(preheat).map(function(v) {
+                    return v.toFixed(2)
+                }),
+                beforeMemory: memory,
+                memory: performance.memory.totalJSHeapSize
+            })
+          }
+        }
+
+        function testObserve(keys) {
+            var data
+            var cbs = []
+            for(var i=0; i<keys.length; i++)
+              cbs.push(function(){})
+           return run('observe(' + keys.join(' & ') + ')', function() {
+                observe(data, keys, cbs)
+            }, function() {
+                data = buildData(rownum)
+            }, function() {
+                unobserve(data, keys, cbs)
+            })
+        }
+
+        function testUnobserve(keys) {
+            var data
+            var cbs = []
+            for(var i=0; i<keys.length; i++)
+              cbs.push(function(){})
+            return run('unobserve(' + keys.join(' & ') + ')', function() {
+                unobserve(data, keys, cbs)
+            }, function() {
+                data = buildData(rownum)
+                observe(data, keys, cbs)
+            })
+        }
+
+
+        function observe(data, keys, cbs) {
+            var k = keys.length
+            for (var i = 0, l = data.length; i < l; i++) {
+                for (var j = 0; j < k; j++)
+                    argilo.observe(data[i], keys[j], cbs[j])
+            }
+        }
+
+        function unobserve(data, keys, cbs) {
+            var k = keys.length
+            for (var i = 0, l = data.length; i < l; i++) {
+                for (var j = 0; j < k; j++)
+                    argilo.unobserve(data[i], keys[j], cbs[j])
+            }
+        }
+
+        var id = 0
+
+        function _random(max) {
+            return Math.round(Math.random() * 1000) % max;
+        }
+
+        function buildData(count) {
+            var adjectives = ["pretty", "large", "big", "small", "tall", "short", "long", "handsome", "plain", "quaint", "clean", "elegant", "easy", "angry", "crazy", "helpful", "mushy", "odd", "unsightly", "adorable", "important", "inexpensive", "cheap", "expensive", "fancy"];
+            var colours = ["red", "yellow", "blue", "green", "pink", "brown", "purple", "brown", "white", "black", "orange"];
+            var nouns = ["table", "chair", "house", "bbq", "desk", "car", "pony", "cookie", "sandwich", "burger", "pizza", "mouse", "keyboard"];
+            var data = [];
+            count = count || 1000
+            for (var i = 0; i < count; i++)
+                data.push({
+                    item: {
+                        id: id++,
+                        label: adjectives[_random(adjectives.length)] + " " + colours[_random(colours.length)] + " " + nouns[_random(nouns.length)]
+                    }
+                });
+            return data;
+        }
+
+        var tests = [
+          testObserve(['item.id']),
+          testObserve(['item.label']),
+          testObserve(['item.id', 'item.label']),
+          testObserve(['item.id', 'item.id', 'item.id','item.label']),
+          testUnobserve(['item.id']),
+          testUnobserve(['item.label']),
+          testUnobserve(['item.id', 'item.label']),
+          testUnobserve(['item.id', 'item.id', 'item.id','item.label'])
+        ]
+
+        var current = 0
+        function execute(){
+          tests[current++]()
+          if(current < tests.length)
+            setTimeout(execute, 0)
+        }
+        setTimeout(execute, 0)
+    })(argilo)
+    </script>
+</body>
+
+</html>

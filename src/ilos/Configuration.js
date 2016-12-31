@@ -16,41 +16,46 @@ import {
 import {
   createClass
 } from './class'
-import AbstractConfiguration from './AbstractConfiguration'
-import Logger from './Logger'
+import {
+  IConfiguration
+} from './IConfiguration'
+import {
+  logger
+} from './Logger'
 
-const logger = Logger.logger
 
-export default createClass({
-  extend: AbstractConfiguration,
-  constructor(def, statusList, defaultStatus, checkStatus) {
-    this.cfg = def || {}
+export const Configuration = createClass({
+  extend: IConfiguration,
+  constructor(statusList, onStatusChange) {
+    this.cfg = {}
     this.cfgStatus = {}
     this.listens = {}
-    statusList = statusList || []
-    this.statusList = statusList
-    this.statusCnt = statusList.length
-    let idx = indexOf(statusList, defaultStatus)
-    if (idx == -1) idx = 0
-    this.status = statusList[idx]
-    this.statusIdx = idx
-    if (isFunc(checkStatus))
-      this.checkStatus = checkStatus
+    this.statusList = statusList || []
+    this.statusIdx = this.statusList.length ? 0 : -1
+    this.onStatusChange = onStatusChange
   },
   nextStatus() {
-    if (this.statusIdx < this.statusCnt)
-      this.status = this.statusList[this.statusIdx++]
+    let idx = this.statusIdx
+    if (idx != -1 && idx < this.statusList.length) {
+      this.statusIdx++;
+      if (isFunc(this.onStatusChange))
+        this.onStatusChange(this.statusList[this.statusIdx], this)
+    }
   },
-  register(name, defVal, status, validator) {
-    this.cfg[name] = defVal
-    this.cfgStatus[name] = {
-      statusIdx: indexOf(this.statusList, status),
-      validator: validator
+  register(name, value, status, setter, scope) {
+    if (arguments.length == 1) {
+      each(name, (opt, name) => {
+        register(name, opt.value, opt.status, opt.setter)
+      })
+    } else {
+      this.cfg[name] = value
+      this.cfgStatus[name] = {
+        statusIdx: indexOf(this.statusList, status),
+        setter: setter,
+        scope: scope
+      }
     }
     return this
-  },
-  checkStatus(s, cs, i, ci) {
-    return i >= ci
   },
   hasConfig(name) {
     return hasOwnProp(this.cfg, name)
@@ -63,17 +68,16 @@ export default createClass({
     } else if (hasOwnProp(this.cfg, name)) {
       var {
         statusIdx,
-        validator
+        setter,
+        scope
       } = this.cfgStatus[name]
 
-      if (statusIdx != -1 && !this.checkStatus(this.statusList[statusIdx], this.status, statusIdx, this.statusIdx)) {
-        logger.warn('configuration[%s]: must use in status[%s]', name, this.statusList[statusIdx])
+      if (statusIdx < this.statusIdx) {
+        logger.warn('configuration[%s]: must use before status[%s]', name, this.statusList[statusIdx])
         return
       }
-      if (isFunc(validator) && validator(val, name, this) !== false) {
-        logger.warn('configuration[%s]: invalid value[%s]', name, val)
-        return
-      }
+      if (isFunc(setter))
+        val = setter.call(scope, val, name, this)
       var oldVal = this.cfg[name]
       this.cfg[name] = val
       each(this.listens[name], cb => {

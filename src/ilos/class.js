@@ -64,14 +64,14 @@ assign(Base, {
 })
 
 export function createClass(overrides) {
-  let cls = function DynamicClass() {
-      this.constructor.apply(this, arguments)
-    },
-    superclass = overrides.extend,
+  let superclass = overrides.extend,
     superproto,
     proto
 
-  assign(cls, Base)
+  function DynamicClass() {
+    this.constructor.apply(this, arguments)
+  }
+  assign(DynamicClass, Base)
 
   if (!isFunc(superclass) || superclass === Object)
     superclass = Base
@@ -80,12 +80,12 @@ export function createClass(overrides) {
 
   proto = create(superproto)
 
-  cls.superclass = superclass
-  cls.prototype = proto
-  setPrototypeOf(cls, superclass)
+  DynamicClass.superclass = superclass
+  DynamicClass.prototype = proto
+  setPrototypeOf(DynamicClass, superclass)
 
   delete overrides.extend
-  return cls.extend(overrides)
+  return DynamicClass.extend(overrides)
 }
 
 export function mixin(cls) {
