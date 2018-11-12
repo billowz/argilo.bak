@@ -1,0 +1,15 @@
+{
+	"presets": [
+		["@babel/preset-env", {
+			"modules": false,
+			"loose": true,
+			"debug": false
+		}]
+	],
+	"plugins": [
+		"@babel/plugin-transform-flow-strip-types",
+		"transform-es3-member-expression-literals",
+		"transform-es3-property-literals",
+		"@babel/plugin-external-helpers"
+	]
+}

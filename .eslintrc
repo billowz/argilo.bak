@@ -1,0 +1,16 @@
+{
+	"root": true,
+	"env": {
+		"browser": true,
+		"node": true
+	},
+	"extends": ["plugin:flowtype/recommended", "plugin:prettier/recommended"],
+	"plugins": ["flowtype"],
+	"parser": "babel-eslint",
+	"rules": {},
+	"settings": {
+		"flowtype": {
+			"onlyFilesWithFlowAnnotation": true
+		}
+	}
+}

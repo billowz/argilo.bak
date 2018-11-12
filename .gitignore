@@ -1,0 +1,10 @@
+/node_modules
+/coverage
+/benchmark
+/code-analysis.
+/*.log
+/package-lock.json
+/shrinkwrap.yaml
+/index.html
+/docs
+/code-analysis.html

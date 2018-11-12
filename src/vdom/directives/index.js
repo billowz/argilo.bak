@@ -1,0 +1,5 @@
+export { default as ExpressionDirective } from './ExpressionDirective'
+export { default as EventDirective } from './EventDirective'
+export { default as DomDirective } from './DomDirective'
+import './eventDirectives'
+import './directives'

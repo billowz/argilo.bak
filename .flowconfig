@@ -1,0 +1,15 @@
+[ignore]
+<PROJECT_ROOT>/node_modules/.*
+<PROJECT_ROOT>/dist/.*
+<PROJECT_ROOT>/coverage/.*
+<PROJECT_ROOT>/docs/.*
+<PROJECT_ROOT>/[^/]\.js
+[include]
+
+[libs]
+
+[lints]
+
+[options]
+
+[strict]
