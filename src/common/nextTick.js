@@ -1,8 +1,10 @@
-/*
- * @author tao.zeng (tao.zeng.zt@gmail.com)
- * @created 2018-08-20 17:59:58
- * @Last Modified by:   tao.zeng (tao.zeng.zt@gmail.com)
- * @Last Modified time: 2018-08-20 17:59:58
+// @flow
+/**
+ * String format
+ * @module common
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
+ * @modified Fri Nov 16 2018 19:19:19 GMT+0800 (China Standard Time)
  */
 import { assert } from 'devlevel'
 import FnList from './FnList'
@@ -27,7 +29,7 @@ if (typeof MutationObserver === 'function') {
 		observer = new MutationObserver(flush),
 		textNode = document.createTextNode(counter)
 	observer.observe(textNode, {
-		characterData: true,
+		characterData: true
 	})
 	next = function() {
 		textNode.data = counter = counter ? 0 : 1

@@ -1,12 +1,21 @@
-/*
- *
- * @author tao.zeng (tao.zeng.zt@gmail.com)
- * @created 2018-08-20 17:54:34
- * @Last Modified by: tao.zeng (tao.zeng.zt@gmail.com)
- * @Last Modified time: 2018-09-01 12:47:27
+/**
+ * @module vdom
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Tue Nov 06 2018 10:06:22 GMT+0800 (China Standard Time)
+ * @modified Sat Nov 17 2018 09:27:59 GMT+0800 (China Standard Time)
  */
 import createHook from './util/hook'
-import { SET_ATTRIBUTE, GET_ATTRIBUTE, REMOVE_ATTRIBUTE, CHECKED, SELECTED, DISABLED, READ_ONLY, TAB_INDEX, HTML_FOR } from './util/util'
+import {
+	SET_ATTRIBUTE,
+	GET_ATTRIBUTE,
+	REMOVE_ATTRIBUTE,
+	CHECKED,
+	SELECTED,
+	DISABLED,
+	READ_ONLY,
+	TAB_INDEX,
+	HTML_FOR
+} from './util/util'
 import { $eachObj } from '../observer'
 import { create, applyNoScope, isStr } from '../helper'
 
@@ -23,15 +32,19 @@ const { hookMember, memberHook, addHook } = createHook(
 		},
 		set(el, name, value) {
 			el[name] = value
-		},
+		}
 	},
 	{
 		tabIndex: {
 			get(el, name) {
 				let attributeNode = el[GET_ATTRIBUTENODE]('tabindex')
-				return attributeNode && attributeNode.specified ? parseInt(attributeNode.value, 10) : rfocusable.test(el.nodeName) || (rclickable.test(el.nodeName) && el.href) ? 0 : undefined
-			},
-		},
+				return attributeNode && attributeNode.specified
+					? parseInt(attributeNode.value, 10)
+					: rfocusable.test(el.nodeName) || (rclickable.test(el.nodeName) && el.href)
+					? 0
+					: undefined
+			}
+		}
 	},
 	{
 		tabindex: TAB_INDEX,
@@ -45,7 +58,7 @@ const { hookMember, memberHook, addHook } = createHook(
 		colspan: 'colSpan',
 		usemap: 'useMap',
 		frameborder: 'frameBorder',
-		contenteditable: 'contentEditable',
+		contenteditable: 'contentEditable'
 	},
 	NAME
 )
@@ -87,7 +100,7 @@ export default {
 	disabled: propAccessor(DISABLED),
 	readonly: propAccessor(READ_ONLY),
 	tabindex: propAccessor(TAB_INDEX),
-	for: propAccessor(HTML_FOR),
+	for: propAccessor(HTML_FOR)
 }
 
 export function addDomPropHook() {

@@ -4,12 +4,12 @@
  * @module helper/string
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 13:57:32 GMT+0800 (China Standard Time)
- * @modified Sat Nov 10 2018 15:44:30 GMT+0800 (China Standard Time)
+ * @modified Thu Nov 15 2018 14:08:32 GMT+0800 (China Standard Time)
  */
 
 import { isNil } from './is'
 
-const trimReg = /(^\s+)|(\s+$)/g
+const TRIM_REG = /(^\s+)|(\s+$)/g
 
 /**
  * string.trim
@@ -17,20 +17,22 @@ const trimReg = /(^\s+)|(\s+$)/g
  * @returns {string}
  */
 export function trim(str: string): string {
-	return str.replace(trimReg, '')
+	return str.replace(TRIM_REG, '')
 }
-const firstLetterReg = /^[a-zA-Z]/
 
-function upperHandler(m) {
-	return m.toUpperCase()
-}
+const FIRST_LOWER_LETTER_REG = /^[a-z]/
+
 /**
  * upper first char
  * @param  {string} str
  * @returns {string}
  */
 export function upperFirst(str: string): string {
-	return str.replace(firstLetterReg, upperHandler)
+	return str.replace(FIRST_LOWER_LETTER_REG, upperHandler)
+}
+
+function upperHandler(m) {
+	return m.toUpperCase()
 }
 
 /**
@@ -49,6 +51,7 @@ export function strval(obj: any): string {
 
 /**
  * get char code
+ * > string.charCodeAt
  * @param  {string} str
  * @param  {number} offset?
  * @returns {number}
@@ -58,14 +61,24 @@ export function charCode(str: string, offset?: number): number {
 }
 
 /**
+ * get char by char code
+ * > String.fromCharCode
+ * @param  {number} code
+ * @returns {string}
+ */
+export function char(code: number): string {
+	return String.fromCharCode(code)
+}
+
+/**
  * generate char codes in constom range
- * @param  {string} start
- * @param  {string} end
+ * @param  {string} startChar
+ * @param  {string} endChar
  * @returns {Array<number>}
  */
-export function genCharCodes(start: string, end: string): Array<number> {
-	start = charCode(start)
-	end = charCode(end)
+export function genCharCodes(startChar: string, endChar: string): Array<number> {
+	const start = charCode(startChar),
+		end = charCode(endChar)
 	const codes = new Array(end - start + 1)
 	for (let i = start; i <= end; i++) codes[i - start] = start
 	return codes

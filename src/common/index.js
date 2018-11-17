@@ -1,11 +1,11 @@
-/*
- * Common Utils
- *
- * @author tao.zeng (tao.zeng.zt@gmail.com)
- * @created 2018-08-20 17:59:38
- * @Last Modified by: tao.zeng (tao.zeng.zt@gmail.com)
- * @Last Modified time: 2018-11-07 09:16:18
+/**
+ * common utilities
+ * @module common
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Tue Nov 06 2018 10:06:22 GMT+0800 (China Standard Time)
+ * @modified Sat Nov 17 2018 09:26:30 GMT+0800 (China Standard Time)
  */
+
 
 export { default as List } from './List'
 export { default as FnList } from './FnList'

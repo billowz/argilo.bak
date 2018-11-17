@@ -48,7 +48,7 @@ suite('observer (diff object)', function() {
 
 suite('observer: $hasOwnProp', function() {
 	const obj = {
-		a: 1,
+		a: 1
 	}
 	const p = observer({ a: 1 }).proxy
 	benchmark('observer.$hasOwnProp', function() {
@@ -141,13 +141,13 @@ function objBuilder(path, sameObj, fn) {
 					tmp[path[i]] = []
 					return {
 						obj,
-						fn,
+						fn
 					}
 			  }
 			: function() {
 					return {
 						obj: [],
-						fn,
+						fn
 					}
 			  }
 	} else {
@@ -161,7 +161,7 @@ function objBuilder(path, sameObj, fn) {
 			tmp[path[i]] = 1
 			return {
 				obj,
-				fn,
+				fn
 			}
 		}
 	}
@@ -216,7 +216,7 @@ function watchBench(attrNum) {
 				},
 				set: (source, attr, value, proxy) => {
 					source[attr] = value
-				},
+				}
 			})
 		})
 
@@ -238,7 +238,7 @@ function watchBench(attrNum) {
 			},
 			set(newValue) {
 				value = newValue
-			},
+			}
 		})
 	}
 

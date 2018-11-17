@@ -1,5 +1,20 @@
 import { assert, error } from 'devlevel'
-import { inherit, isObj, isFn, isStr, isNum, isInt, isArray, isBool, isReg, applyNoScope, reEscape, regStickySupport, makeMap, assign } from '../helper'
+import {
+	inherit,
+	isObj,
+	isFn,
+	isStr,
+	isNum,
+	isInt,
+	isArray,
+	isBool,
+	isReg,
+	applyNoScope,
+	reEscape,
+	regStickySupport,
+	makeMap,
+	assign
+} from '../helper'
 import { pad, escapeString } from './format'
 
 // ================================================
@@ -93,7 +108,7 @@ inherit(Stream, {
 		const { orgbuff } = this
 		let line = 1
 		return ` 0: ${orgbuff.replace(LINE_REG, () => `\n${pad(line++, 2)}: `)}`
-	},
+	}
 })
 
 // ================================================
@@ -122,7 +137,7 @@ export const MatchResult = inherit(
 		setLen(len) {
 			const { data } = this
 			if (data.length > len) data.length = len
-		},
+		}
 	}
 )
 
@@ -131,11 +146,11 @@ export const MatchResult = inherit(
  */
 export function UNATTACH() {}
 export const UNCAPTURABLE = {
-		capturable: false,
+		capturable: false
 	},
 	UNATTACH_CAPTURABLE = {
 		attach: UNATTACH,
-		capturable: false,
+		capturable: false
 	}
 
 function defaultErrorMsg(err) {
@@ -215,7 +230,7 @@ inherit(Rule, {
 	getStart() {
 		return []
 	},
-	test: defaultRuleTest,
+	test: defaultRuleTest
 })
 
 // ================================================
@@ -258,7 +273,7 @@ export const MatchRule = inherit(
 		},
 		getStart() {
 			return this.start
-		},
+		}
 	}
 )
 
@@ -300,7 +315,7 @@ export const CharMatchRule = inherit(
 		type: 'Character',
 		match: function charMatch(stream, result) {
 			return this.comsume(stream, String.fromCharCode(stream.nextCode()), 1, result)
-		},
+		}
 	}
 )
 
@@ -342,7 +357,10 @@ export const RegMatchRule = inherit(
 		// When the y flag is used with a pattern, ^ always matches only at the
 		// beginning of the input, or (if multiline is true) at the beginning of a
 		// line.
-		regexp = new RegExp(sticky ? pattern : `^(?:${pattern})`, (ignoreCase ? 'i' : '') + (regexp.multiline ? 'm' : '') + (sticky ? 'y' : ''))
+		regexp = new RegExp(
+			sticky ? pattern : `^(?:${pattern})`,
+			(ignoreCase ? 'i' : '') + (regexp.multiline ? 'm' : '') + (sticky ? 'y' : '')
+		)
 
 		MatchRule.call(this, name, startCodes, ignoreCase, option)
 
@@ -354,7 +372,7 @@ export const RegMatchRule = inherit(
 	},
 	MatchRule,
 	{
-		type: 'RegExp',
+		type: 'RegExp'
 	}
 )
 
@@ -446,7 +464,7 @@ export const StrMatchRule = inherit(
 	},
 	RegMatchRule,
 	{
-		type: 'String',
+		type: 'String'
 	}
 )
 
@@ -653,7 +671,11 @@ export const ComplexRule = inherit(
 					msg = []
 				do {
 					pos = stream.position(err[0])
-					msg.unshift(`[${pad(pos[0], 2)}:${pad(pos[1], 2)}] - ${err[4].toString()}: ${err[1]} on "${escapeString(buff.substr(err[0], 20))}"`)
+					msg.unshift(
+						`[${pad(pos[0], 2)}:${pad(pos[1], 2)}] - ${err[4].toString()}: ${err[1]} on "${escapeString(
+							buff.substr(err[0], 20)
+						)}"`
+					)
 					err = err[3]
 				} while (err)
 
@@ -710,13 +732,13 @@ export const ComplexRule = inherit(
 			map = assign(
 				{
 					level: 0,
-					push: idStackPush,
+					push: idStackPush
 				},
 				map
 			)
 			if (id) map.push(id)
 			return map
-		},
+		}
 	}
 )
 
@@ -809,7 +831,7 @@ export const AndRule = inherit(
 				}
 			}
 			return this.commit(stream, rs.data, result)
-		},
+		}
 	}
 )
 
@@ -825,7 +847,7 @@ export const OrRule = inherit(
 			const starts = [], // all distinct start codes
 				rStarts = [], // start codes per rule
 				index = [
-					[], // rules witch have unkown start code
+					[] // rules witch have unkown start code
 				]
 
 			let i, j, k, codes
@@ -913,7 +935,7 @@ export const OrRule = inherit(
 				rs.empty()
 			}
 			return this.exit(stream, this.EXPECT, upErr)
-		},
+		}
 	}
 )
 
@@ -936,7 +958,7 @@ function createRepeatRule(defType, Parent, match) {
 				Parent.prototype.__init.call(this, rules, len)
 				if (!this.min) this.test = defaultRuleTest
 			},
-			match,
+			match
 		}
 	)
 }

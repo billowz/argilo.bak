@@ -7,19 +7,19 @@ const transformCases = [
 		name: 'plural',
 		exp: 'a|plural',
 		scope: {
-			a: 'test',
+			a: 'test'
 		},
 		value: 'test',
-		transformValue: 'tests',
+		transformValue: 'tests'
 	},
 	{
 		name: 'singular',
 		exp: 'a|singular',
 		scope: {
-			a: 'tests',
+			a: 'tests'
 		},
 		value: 'tests',
-		transformValue: 'test',
+		transformValue: 'test'
 	},
 	{
 		name: 'format',
@@ -27,105 +27,105 @@ const transformCases = [
 		scope: {
 			a: 'tests',
 			b: 123,
-			c: 1231.123,
+			c: 1231.123
 		},
 		value: 'tests',
-		transformValue: '1231.12, 00123, tests',
+		transformValue: '1231.12, 00123, tests'
 	},
 	{
 		name: 'json',
 		exp: 'json|json',
 		scope: {
-			json: { a: 1 },
+			json: { a: 1 }
 		},
 		value: { a: 1 },
-		transformValue: '{"a":1}',
+		transformValue: '{"a":1}'
 	},
 	{
 		name: 'json with idents',
 		exp: 'json | json 2',
 		scope: {
 			json: {
-				a: 1,
-			},
+				a: 1
+			}
 		},
 		value: { a: 1 },
-		transformValue: '{\n  "a": 1\n}',
+		transformValue: '{\n  "a": 1\n}'
 	},
 	{
 		name: 'trim',
 		exp: 'str|trim',
 		scope: {
-			str: '   test   ',
+			str: '   test   '
 		},
 		value: '   test   ',
 		transformValue: 'test',
-		restore: 'test',
+		restore: 'test'
 	},
 	{
 		name: 'capitalize',
 		exp: 'str|capitalize',
 		scope: {
-			str: 'test',
+			str: 'test'
 		},
 		value: 'test',
-		transformValue: 'Test',
+		transformValue: 'Test'
 	},
 	{
 		name: 'uppercase',
 		exp: 'str|uppercase',
 		scope: {
-			str: 'aaAa',
+			str: 'aaAa'
 		},
 		value: 'aaAa',
-		transformValue: 'AAAA',
+		transformValue: 'AAAA'
 	},
 	{
 		name: 'lowercase',
 		exp: 'str|lowercase',
 		scope: {
-			str: 'AAaA',
+			str: 'AAaA'
 		},
 		value: 'AAaA',
-		transformValue: 'aaaa',
+		transformValue: 'aaaa'
 	},
 	{
 		name: 'unit',
 		exp: 'str| unit "item","%s %s"',
 		scope: {
-			str: 1123,
+			str: 1123
 		},
 		value: 1123,
-		transformValue: '1123 items',
+		transformValue: '1123 items'
 	},
 	{
 		name: 'bytes',
 		exp: 'v| bytes 2',
 		scope: {
-			v: 1.5 * (1024 * 1024 * 1024),
+			v: 1.5 * (1024 * 1024 * 1024)
 		},
 		value: 1.5 * (1024 * 1024 * 1024),
 		transformValue: '1.5 GB',
-		restore: 1.5 * (1024 * 1024 * 1024),
+		restore: 1.5 * (1024 * 1024 * 1024)
 	},
 	{
 		name: 'unit',
 		exp: 'v| unit "apply"',
 		scope: {
-			v: 2,
+			v: 2
 		},
 		value: 2,
-		transformValue: '2 applies',
+		transformValue: '2 applies'
 	},
 	{
 		name: 'unit with format',
 		exp: 'v| unit "apply", "%2$s (%1$d)"',
 		scope: {
-			v: 2,
+			v: 2
 		},
 		value: 2,
-		transformValue: 'applies (2)',
-	},
+		transformValue: 'applies (2)'
+	}
 ]
 
 describe('Transform Expression', () => {
@@ -137,8 +137,8 @@ describe('Transform Expression', () => {
 							path = parsePath(path)
 							path.pop()
 							return get(this, path)
-						},
-					},
+						}
+					}
 				}),
 				args = [testCase.el],
 				value = 'value' in testCase ? testCase.value : testCase.transformValue,

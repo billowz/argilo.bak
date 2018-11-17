@@ -1,13 +1,13 @@
-/*
- * @author tao.zeng (tao.zeng.zt@gmail.com)
- * @created 2018-08-29 12:36:28
- * @Last Modified by: tao.zeng (tao.zeng.zt@gmail.com)
- * @Last Modified time: 2018-09-15 19:14:23
+/**
+ * @module vnode
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Tue Nov 06 2018 10:06:22 GMT+0800 (China Standard Time)
+ * @modified Sat Nov 17 2018 09:32:23 GMT+0800 (China Standard Time)
  */
 import { assert } from 'devlevel'
 import VNode, { VIRT_ELEMENT } from './VNode'
 import { inherit, fnName } from '../helper'
-import { PROTOTYPE } from '../helper/constants'
+import { PROTOTYPE } from '../helper/consts'
 
 export default inherit(
 	function VElement(comp, option) {
@@ -27,7 +27,12 @@ export default inherit(
 					for (var i = 0, g, D; i < l; i++) {
 						g = directives[i]
 						D = g.Directive
-						assert(this[D[PROTOTYPE].$nodeKey], `Can not bind directive[${g.dname}: ${fnName(D)}] on ${fnName(this.constructor)}, require ${D[PROTOTYPE].$nodeName}`)
+						assert(
+							this[D[PROTOTYPE].$nodeKey],
+							`Can not bind directive[${g.dname}: ${fnName(D)}] on ${fnName(this.constructor)}, require ${
+								D[PROTOTYPE].$nodeName
+							}`
+						)
 					}
 				})
 				if (!l) option.directives = null
@@ -55,6 +60,6 @@ export default inherit(
 				var i = directives.length
 				while (i--) directives[i].unbind()
 			}
-		},
+		}
 	}
 )

@@ -10,7 +10,7 @@ function createTestObjs(size) {
 				return function() {
 					return i
 				}
-			})(i),
+			})(i)
 		}
 	return objs
 }

@@ -1,11 +1,13 @@
-/*
- * @author tao.zeng (tao.zeng.zt@gmail.com)
- * @created 2018-08-29 12:32:14
- * @Last Modified by:   tao.zeng (tao.zeng.zt@gmail.com)
- * @Last Modified time: 2018-08-29 12:32:14
+// @flow
+/**
+ *
+ * @module observer
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
+ * @modified Fri Nov 16 2018 19:16:26 GMT+0800 (China Standard Time)
  */
 import { create, defProp, defPropSupport } from '../helper'
-import { PROTOTYPE } from '../helper/constants'
+import { PROTOTYPE } from '../helper/consts'
 
 export default function() {
 	let defineProperty,
@@ -24,7 +26,7 @@ export default function() {
 					let oldValue = value
 					value = newValue
 					observer.__write(attr, newValue, oldValue)
-				},
+				}
 			})
 		}
 	} else if ('__defineGetter__' in {}) {
@@ -56,8 +58,8 @@ export default function() {
 						defineProperty(this, attr)
 						defined[attr] = true
 					}
-				},
-			},
+				}
+			}
 		}
 	}
 }

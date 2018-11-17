@@ -1,17 +1,24 @@
-/*
+// @flow
+/**
  * Double Linked List
- *
- * @author tao.zeng (tao.zeng.zt@gmail.com)
- * @created 2018-07-23 16:07:38
- * @Last Modified by: tao.zeng (tao.zeng.zt@gmail.com)
- * @Last Modified time: 2018-09-06 14:21:28
+ * @module common/List
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
+ * @modified Sat Nov 17 2018 13:16:10 GMT+0800 (China Standard Time)
  */
+
 import { assert } from 'devlevel'
-import { inherit, defPropValue } from '../helper'
+import { inherit, bind, defPropValue } from '../helper'
 
 export const DEFAULT_BINDING = '__list__'
 
-export default function List(binding) {
+export type ListElement = Object | Array<any> | Function
+
+type ListNode = [ListElement, ?ListNode, ?ListNode, ?IList]
+
+interface IList {}
+
+export default function List(binding?: string) {
 	this.binding = binding || DEFAULT_BINDING
 }
 
@@ -19,49 +26,49 @@ defPropValue(List, 'binding', DEFAULT_BINDING)
 
 inherit(List, {
 	length: 0,
-	has(obj) {
-		const node = obj[this.binding]
+	has(obj: ListElement): boolean {
+		const node: ?ListNode = obj[this.binding]
 		return node ? node[0] === obj && node[3] === this : false
 	},
-	add(obj) {
+	add(obj: ListElement) {
 		return __insert(this, obj, this.tail)
 	},
-	addFirst(obj) {
+	addFirst(obj: ListElement) {
 		return __insert(this, obj)
 	},
-	insertAfter(obj, target) {
+	insertAfter(obj: ListElement, target?: ?ListElement) {
 		return __insert(this, obj, target && __getNode(this, target))
 	},
-	insertBefore(obj, target) {
+	insertBefore(obj: ListElement, target?: ?ListElement) {
 		return __insert(this, obj, target && __getNode(this, target)[1])
 	},
-	addAll(objs) {
+	addAll(objs: Array<ListElement>) {
 		return __insertAll(this, objs, this.tail)
 	},
-	addFirstAll(objs) {
+	addFirstAll(objs: Array<ListElement>) {
 		return __insertAll(this, objs)
 	},
-	insertAfterAll(objs, target) {
+	insertAfterAll(objs: Array<ListElement>, target?: ?ListElement) {
 		return __insertAll(this, objs, target && __getNode(this, target))
 	},
-	insertBeforeAll(objs, target) {
+	insertBeforeAll(objs: Array<ListElement>, target?: ?ListElement) {
 		return __insertAll(this, objs, target && __getNode(this, target)[1])
 	},
-	prev(obj) {
+	prev(obj: ListElement): ListElement {
 		return __siblingObj(this, obj, 1)
 	},
-	next(obj) {
+	next(obj: ListElement): ListElement {
 		return __siblingObj(this, obj, 2)
 	},
-	first() {
-		const node = this.head
+	first(): ListElement {
+		const node: ?ListNode = this.head
 		return node && node[0]
 	},
-	last() {
-		const node = this.tail
+	last(): ListElement {
+		const node: ?ListNode = this.tail
 		return node && node[0]
 	},
-	remove(obj) {
+	remove(obj: ListElement) {
 		const node = __getNode(this, obj)
 		if (this.scaning) {
 			const { lazyRemoves } = this
@@ -77,10 +84,10 @@ inherit(List, {
 		}
 		return --this.length
 	},
-	each(cb, scope) {
+	each(cb, scope?: any) {
 		assert(!this.scaning, 'Recursive calls are not allowed.')
 		this.scaning = true
-		if (scope) cb = cb.bind(scope)
+		cb = bind(cb, scope)
 		let node = this.head
 		while (node) {
 			if (node[3] === this && cb(node[0]) === false) break
@@ -146,10 +153,10 @@ inherit(List, {
 			i && __doInsert(newlist, newhead, newtail, i)
 		}
 		return newlist
-	},
+	}
 })
 
-function __doInsert(list, nodeHead, nodeTail, len, prev) {
+function __doInsert(list: IList, nodeHead: ListNode, nodeTail: ListNode, len: number, prev: ?ListNode) {
 	let next
 	nodeHead[1] = prev
 	if (prev) {
@@ -192,9 +199,9 @@ function __insertAll(list, objs, prev) {
 	return __doInsert(list, head, tail, l, prev)
 }
 
-function __initNode(list, obj) {
+function __initNode(list: IList, obj: ListElement): ListNode {
 	const { binding } = list
-	let node = obj[binding]
+	let node: ?ListNode = obj[binding]
 	if (node && node[0] === obj) {
 		assert(!node[3] || node[3] === list, 'Double add List, Object is still in other List')
 	} else {
@@ -203,8 +210,8 @@ function __initNode(list, obj) {
 	return node
 }
 
-function __getNode(list, obj) {
-	const node = obj[list.binding]
+function __getNode(list: IList, obj: ListElement): ListNode {
+	const node: ?ListNode = obj[list.binding]
 	if (node && node[0] === obj) {
 		assert(node[3] === list, 'Object is not in this List')
 		return node
@@ -212,7 +219,7 @@ function __getNode(list, obj) {
 	assert(0, 'Object is not in List')
 }
 
-function __siblingObj(list, obj, key) {
+function __siblingObj(list: IList, obj: ListElement, key) {
 	const node = __getNode(list, obj)
 	let sibling = node[key]
 	if (sibling) {

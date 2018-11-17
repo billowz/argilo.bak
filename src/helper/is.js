@@ -4,10 +4,10 @@
  * @module helper/is
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 13:57:32 GMT+0800 (China Standard Time)
- * @modified Sat Nov 10 2018 17:15:46 GMT+0800 (China Standard Time)
+ * @modified Thu Nov 15 2018 19:02:35 GMT+0800 (China Standard Time)
  */
 
-import { CONSTRUCTOR, global } from './constants'
+import { CONSTRUCTOR, global } from './consts'
 
 const BOOL = 'boolean',
 	FN = 'function',
@@ -63,10 +63,10 @@ export function isFn(fn: any): boolean {
 
 /**
  * is child instance of Type
- * @param {Object|Array} o
+ * @param {any} o
  * @param {Function} Type
  */
-export function is(o: Object | Array, Type: Function): boolean {
+export function is(o: any, Type: Function): boolean {
 	if (o === undefined || o === null) return false
 	const c = o[CONSTRUCTOR]
 	if (Type[CONSTRUCTOR] === Array) {
@@ -214,15 +214,13 @@ export function isInstOf(obj: any, Cls: Function): boolean {
 
 /**
  * is primitive type
+ * - null
+ * - undefined
  * - boolean
- * - Boolean
  * - number
- * - Number
  * - string
- * - String
  * - Function
- * @param  {any} obj
- * @param  {Function} cls
+ * @param  {any} o
  * @returns {boolean}
  */
 export function isPrimitive(o: any): boolean {

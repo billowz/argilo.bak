@@ -53,7 +53,7 @@ export default inherit(
 		 */
 		getStart() {
 			return this.start
-		},
+		}
 	}
 )
 /**

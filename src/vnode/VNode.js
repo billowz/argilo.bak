@@ -1,8 +1,8 @@
-/*
- * @author tao.zeng (tao.zeng.zt@gmail.com)
- * @created 2018-08-29 12:35:58
- * @Last Modified by: tao.zeng (tao.zeng.zt@gmail.com)
- * @Last Modified time: 2018-10-20 13:09:21
+/**
+ * @module vnode
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Tue Nov 06 2018 10:06:22 GMT+0800 (China Standard Time)
+ * @modified Sat Nov 17 2018 09:32:31 GMT+0800 (China Standard Time)
  */
 import { assert } from 'devlevel'
 import { inherit } from '../helper'
@@ -69,6 +69,6 @@ export default inherit(
 				this[PARENT] = undefined
 			}
 			return this
-		},
+		}
 	}
 )

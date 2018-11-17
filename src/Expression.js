@@ -1,7 +1,8 @@
 import { create, createFn, makeMap, apply, trim, STOP, inherit } from './helper'
 
 export const keywords = makeMap(
-	'argilo,Math,Date,true,false,null,undefined,Infinity,NaN,isNaN,isFinite,parseInt,parseFloat,' + (window ? 'window,document,decodeURI,decodeURIComponent,encodeURI,encodeURIComponent' : 'global')
+	'argilo,Math,Date,true,false,null,undefined,Infinity,NaN,isNaN,isFinite,parseInt,parseFloat,' +
+		(window ? 'window,document,decodeURI,decodeURIComponent,encodeURI,encodeURIComponent' : 'global')
 )
 
 const wsReg = /\s/g,
@@ -123,7 +124,7 @@ function identityHandler(match, i, str) {
 function makeExecutor(code, params) {
 	const body = 'return' + restore((' ' + code.replace(wsReg, '')).replace(identityReg, identityHandler))
 	try {
-		return createFn(params, body)
+		return createFn(body, params)
 	} catch (e) {
 		console.error(code, body)
 		throw e
@@ -229,7 +230,7 @@ inherit(Expression, {
 			filter = filters[i]
 			if (cb(filter[0], new FilterParams(filter[1], scope, args)) === false) return false
 		}
-	},
+	}
 })
 
 function FilterParams(params, scope, args) {
@@ -256,5 +257,5 @@ inherit(FilterParams, {
 		return function() {
 			return i < len ? apply(params[i++], scope, args) : STOP
 		}
-	},
+	}
 })

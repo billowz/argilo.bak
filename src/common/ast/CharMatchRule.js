@@ -41,7 +41,7 @@ export default inherit(
 		 */
 		match: function charMatch(stream, resultSet) {
 			return this.comsume(stream, String.fromCharCode(stream.nextCode()), 1, resultSet)
-		},
+		}
 	}
 )
 /**

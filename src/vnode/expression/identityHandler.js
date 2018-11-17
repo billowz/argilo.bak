@@ -1,10 +1,9 @@
-/*
+/**
  * VNode Expression Identity Handler
- *
- * @author tao.zeng (tao.zeng.zt@gmail.com)
- * @created 2018-08-20 17:58:05
- * @Last Modified by: tao.zeng (tao.zeng.zt@gmail.com)
- * @Last Modified time: 2018-09-04 16:15:24
+ * @module vnode/expression
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Tue Nov 06 2018 10:06:22 GMT+0800 (China Standard Time)
+ * @modified Sat Nov 17 2018 09:31:05 GMT+0800 (China Standard Time)
  */
 import { IDENTITY_OPT_GET, IDENTITY_OPT_CALL } from '../../Expression'
 import { formatPath } from '../../common'

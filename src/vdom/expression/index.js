@@ -1,10 +1,10 @@
-/*
+/**
  * Dom Expression
  *
- * @author tao.zeng (tao.zeng.zt@gmail.com)
- * @created 2018-08-20 18:32:15
- * @Last Modified by: tao.zeng (tao.zeng.zt@gmail.com)
- * @Last Modified time: 2018-08-20 18:35:02
+ * @module vdom/expression
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Tue Nov 06 2018 10:06:22 GMT+0800 (China Standard Time)
+ * @modified Sat Nov 17 2018 09:30:00 GMT+0800 (China Standard Time)
  */
 export * from './EventExpression'
 export * from './eventFilters'

@@ -1,6 +1,15 @@
 import { VIRT_NODE } from '../vnode/VNode'
-import { PARENT_NODE, APPEND_CHILD, REMOVE_CHILD, REPLACE_CHILD, query, prependChild, insertAfter, insertBefore } from './util/util'
-import { PROTOTYPE } from '../helper/constants'
+import {
+	PARENT_NODE,
+	APPEND_CHILD,
+	REMOVE_CHILD,
+	REPLACE_CHILD,
+	query,
+	prependChild,
+	insertAfter,
+	insertBefore
+} from './util/util'
+import { PROTOTYPE } from '../helper/consts'
 
 export default function(VNode) {
 	const remove = VNode[PROTOTYPE].remove
@@ -52,6 +61,6 @@ export default function(VNode) {
 				pEl = el[PARENT_NODE]
 			pEl && pEl[REMOVE_CHILD](el)
 			return remove.call(this)
-		},
+		}
 	}
 }

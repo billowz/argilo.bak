@@ -25,7 +25,7 @@ function createTestObjs(size) {
 	for (; i < size; i++)
 		objs[i] = {
 			fn,
-			scope: undefined,
+			scope: undefined
 		}
 	return objs
 }
@@ -215,7 +215,7 @@ function addArray(array, fn, scope) {
 	if (i === -1) {
 		array.push({
 			fn,
-			scope,
+			scope
 		})
 	}
 }

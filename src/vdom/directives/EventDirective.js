@@ -50,6 +50,6 @@ export default inherit(
 			} else {
 				node.un(type, handler, this)
 			}
-		},
+		}
 	}
 )

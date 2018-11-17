@@ -21,7 +21,7 @@ describe('Observer', () => {
 		expect(
 			$hasOwnProp(
 				{
-					a: 1,
+					a: 1
 				},
 				'a'
 			)
@@ -30,7 +30,7 @@ describe('Observer', () => {
 		expect(
 			$hasOwnProp(
 				observer({
-					a: 1,
+					a: 1
 				}).proxy,
 				'a'
 			)
@@ -46,8 +46,8 @@ describe('Observer', () => {
 	it('get & set', () => {
 		let o = {
 			a: {
-				b: [1, 2, 3],
-			},
+				b: [1, 2, 3]
+			}
 		}
 		expect(get(o, 'a.b[0]')).to.equal(1)
 		expect(get(o, 'a.b[1]')).to.equal(2)
@@ -65,44 +65,44 @@ describe('Observer', () => {
 			{},
 			[
 				{
-					a: 1,
+					a: 1
 				},
 				{
-					a: 1,
+					a: 1
 				},
 				{
-					a: 'a',
+					a: 'a'
 				},
 				{
-					a: undefined,
+					a: undefined
 				},
 				{
-					a: null,
+					a: null
 				},
 				{
-					a: false,
+					a: false
 				},
 				{
-					a: new Date(),
+					a: new Date()
 				},
 				{
-					a: arr,
+					a: arr
 				},
 				{
-					a: arr,
+					a: arr
 				},
 				{
-					a: arr2,
+					a: arr2
 				},
 				{
-					a: obj,
+					a: obj
 				},
 				{
-					a: obj,
+					a: obj
 				},
 				{
-					a: undefined,
-				},
+					a: undefined
+				}
 			],
 			done,
 			this.test.title
@@ -117,21 +117,21 @@ describe('Observer', () => {
 					change: arr,
 					setter(o) {
 						o.push(1)
-					},
+					}
 				},
 				{
 					length: 2,
 					setter(o) {
 						o.push(2)
-					},
+					}
 				},
 				{
 					change: arr,
 					length: 4,
 					setter(o) {
 						o.splice(0, 0, 3, 4)
-					},
-				},
+					}
+				}
 			],
 			done,
 			this.test.title
@@ -144,119 +144,119 @@ describe('Observer', () => {
 			{},
 			[
 				{
-					'a.b': 1,
+					'a.b': 1
 				},
 				{
-					'a.b': 'a',
+					'a.b': 'a'
 				},
 				{
-					'a.b': undefined,
-				},
-				{
-					'a.b': undefined,
-					setter(obj) {
-						obj.a = undefined
-					},
-				},
-				{
-					'a.b': null,
+					'a.b': undefined
 				},
 				{
 					'a.b': undefined,
 					setter(obj) {
 						obj.a = undefined
-					},
+					}
 				},
 				{
-					'a.b': false,
+					'a.b': null
 				},
 				{
-					'a.b': new Date(),
+					'a.b': undefined,
+					setter(obj) {
+						obj.a = undefined
+					}
 				},
 				{
-					'a.b': arr,
+					'a.b': false
 				},
 				{
-					'a.b': arr,
+					'a.b': new Date()
+				},
+				{
+					'a.b': arr
+				},
+				{
+					'a.b': arr
 				},
 				{
 					'a.b.length': 1,
 					'a.b.change': arr,
 					setter(o) {
 						o.a.b.push(1)
-					},
+					}
 				},
 				{
 					'a.b': obj,
 					'a.b.length': undefined,
 					setter(o) {
 						o.a.b = obj
-					},
+					}
 				},
 				{
-					'a.b': obj,
+					'a.b': obj
 				},
 				{
 					'a.b': arr,
 					setter(o) {
 						o.a = {
-							b: arr,
+							b: arr
 						}
-					},
+					}
 				},
 				{
 					'a.b': obj,
 					setter(o) {
 						o.a = {
-							b: obj,
+							b: obj
 						}
-					},
+					}
 				},
 				{
-					'a.b.c': 1,
+					'a.b.c': 1
 				},
 				{
 					'a.b.c': 4,
 					setter(o) {
 						o.a = {
 							b: {
-								c: 2,
-							},
+								c: 2
+							}
 						}
 						o.a.b = {
-							c: 3,
+							c: 3
 						}
 						o.a.b.c = 4
-					},
+					}
 				},
 				{
 					'a.b.c': 7,
 					setter(o) {
 						o.a.b.c = 5
 						o.a.b = {
-							c: 6,
+							c: 6
 						}
 						o.a = {
 							b: {
-								c: 7,
-							},
+								c: 7
+							}
 						}
-					},
+					}
 				},
 				{
 					'a.b.c': 7,
 					setter(o) {
 						o.a.b.c = 8
 						o.a.b = {
-							c: 9,
+							c: 9
 						}
 						o.a = {
 							b: {
-								c: 7,
-							},
+								c: 7
+							}
 						}
-					},
-				},
+					}
+				}
 			],
 			done,
 			this.test.title
@@ -324,7 +324,7 @@ function runCase(obj, changes, done, title) {
 					before: before,
 					after: after,
 					event: !(before === after && isPrimitive(after)),
-					complete: 0,
+					complete: 0
 				}
 			desc.cb = callback.bind(null, desc)
 			descs.push(desc)
@@ -342,7 +342,7 @@ function runCase(obj, changes, done, title) {
 			if (!hasOwnProp(listens, path))
 				listens[path] = {
 					nr: 0,
-					called: 0,
+					called: 0
 				}
 			listens[path].nr++
 		})
@@ -355,9 +355,25 @@ function runCase(obj, changes, done, title) {
 			for (var i = 0; i < descs.length; i++) {
 				var desc = descs[i]
 				if (descs.length > 1) {
-					info('%s - Step[%d][%d/%d]: change path[%s]: "%s" => "%s"', title, step, i + 1, descs.length, desc.path, desc.before, desc.after)
+					info(
+						'%s - Step[%d][%d/%d]: change path[%s]: "%s" => "%s"',
+						title,
+						step,
+						i + 1,
+						descs.length,
+						desc.path,
+						desc.before,
+						desc.after
+					)
 				} else {
-					info('%s - Step[%d]: change path[%s]: "%s" => "%s"', title, step, desc.path, desc.before, desc.after)
+					info(
+						'%s - Step[%d]: change path[%s]: "%s" => "%s"',
+						title,
+						step,
+						desc.path,
+						desc.before,
+						desc.after
+					)
 				}
 				setValue(obj, desc.path, desc.after)
 			}
@@ -374,18 +390,41 @@ function runCase(obj, changes, done, title) {
 								timeout = setTimeout(timeoutCheckor(step, 0, true), recheck)
 								return
 							}
-							exception(`${title} - Step[${step}]: not watched change event on path[${desc.path}]: "${desc.before}" => "${desc.after}"`)
+							exception(
+								`${title} - Step[${step}]: not watched change event on path[${desc.path}]: "${
+									desc.before
+								}" => "${desc.after}"`
+							)
 						}
-						assert(desc.complete === 1, `${title} - Step[${step}]: multi watched change event on path[${desc.path}]: "${desc.before}" => "${desc.after}"`)
+						assert(
+							desc.complete === 1,
+							`${title} - Step[${step}]: multi watched change event on path[${desc.path}]: "${
+								desc.before
+							}" => "${desc.after}"`
+						)
 					} else if (!desc.complete) {
 						desc.complete = true
-						info('%s - %cStep[%d]: non-event change path[%s]: "%s"', title, 'color:blue;', step, desc.path, desc.after)
+						info(
+							'%s - %cStep[%d]: non-event change path[%s]: "%s"',
+							title,
+							'color:blue;',
+							step,
+							desc.path,
+							desc.after
+						)
 					}
 				}
 				// clean callback
 				for (let i = 0, desc; i < descs.length; i++) {
 					desc = descs[i]
-					debug('%s - Step[%d]: unobserve path[%s]: "%s" => "%s"', title, step, desc.path, desc.before, desc.after)
+					debug(
+						'%s - Step[%d]: unobserve path[%s]: "%s" => "%s"',
+						title,
+						step,
+						desc.path,
+						desc.before,
+						desc.after
+					)
 					unobserve(obj, desc.path, desc.cb)
 					expect(isObserved(obj, desc.path, desc.cb)).equal(false)
 
@@ -421,7 +460,10 @@ function runCase(obj, changes, done, title) {
 		path = formatPath(path)
 		if (listens[path]) {
 			++listens[path].called
-			assert(listens[path].called === listens[path].nr, `${title} - Step[${step}]: multi watched change event on path[${path}]: "${oldVal}" => "${val}"`)
+			assert(
+				listens[path].called === listens[path].nr,
+				`${title} - Step[${step}]: multi watched change event on path[${path}]: "${oldVal}" => "${val}"`
+			)
 		} else {
 			warn('%s - %cStep[%d]: non-watched path[%s]: "%s" => "%s"', title, 'color:red;', step, path, oldVal, val)
 		}

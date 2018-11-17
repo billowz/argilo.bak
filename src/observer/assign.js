@@ -1,32 +1,61 @@
-/*
- * @author tao.zeng (tao.zeng.zt@gmail.com)
- * @created 2018-08-29 12:32:23
- * @Last Modified by:   tao.zeng (tao.zeng.zt@gmail.com)
- * @Last Modified time: 2018-08-29 12:32:23
+// @flow
+/**
+ *
+ * @module observer/assign
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Thu Jul 26 2018 10:05:53 GMT+0800 (China Standard Time)
+ * @modified Fri Nov 16 2018 19:14:40 GMT+0800 (China Standard Time)
  */
-import { __assign } from '../helper/assign'
+
 import { proxy, $hasOwnProp } from './observer'
+import { doAssign } from '../helper/assign'
 
-export function $assign(obj) {
-	return __assign(obj, arguments, 1, __assignFilter)
+/**
+ * assign properties
+ * > Object.assign shim
+ * @see {assign}
+ * @param  {Object} 			[target]	target object
+ * @param  {Array<?Object>} 	...args 	override objects
+ * @returns {Object} target object
+ */
+export function $assign(target: ?Object | ?Function, ...objs: Array<?Object>): Object {
+	return doAssign(target, arguments, defaultAssignFilter, 1)
 }
 
-export function $assignIf(obj) {
-	return __assign(obj, arguments, 1, __assignIfFilter)
+/**
+ * assign un-exist properties
+ * @see {assignIf}
+ * @param  {Object} 			[target]	target object
+ * @param  {Array<?Object>} 	...args 	override objects
+ * @returns {Object} target object
+ */
+export function $assignIf(target: ?Object | ?Function, ...objs: Array<?Object>): Object {
+	return doAssign(target, arguments, assignIfFilter, 1)
 }
 
-export function $assignBy(obj, filter) {
-	return __assign(obj, arguments, 2, __assignUserFilter, filter)
+/**
+ * default assign filter
+ * - property is owner in override
+ * @see {AssignFilter}
+ * @param  {string} prop
+ * @param  {Object} target
+ * @param  {Object} override
+ * @returns {boolean}
+ */
+export function $defaultAssignFilter(prop: string, target: Object, override: Object): boolean {
+	return $hasOwnProp(override, prop)
 }
 
-function __assignUserFilter(prop, dist, source, cb) {
-	return $hasOwnProp(source, prop) && cb(prop, dist, source)
-}
-
-function __assignIfFilter(prop, dist, source) {
-	return $hasOwnProp(source, prop) && !$hasOwnProp(dist, prop)
-}
-
-function __assignFilter(prop, dist, source) {
-	return $hasOwnProp(source, prop)
+/**
+ * assign if filter
+ * - property is owner in override
+ * - property not in target object
+ * @see {AssignFilter}
+ * @param  {string} prop
+ * @param  {Object} target
+ * @param  {Object} override
+ * @returns {boolean}
+ */
+export function $assignIfFilter(prop: string, target: Object, override: Object): boolean {
+	return $hasOwnProp(override, prop) && !(prop in target)
 }

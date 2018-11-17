@@ -52,6 +52,6 @@ export const AndRule = inherit(
 				}
 			}
 			return this.commit(stream, rs.data, result)
-		},
+		}
 	}
 )

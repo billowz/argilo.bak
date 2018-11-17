@@ -1,15 +1,21 @@
 // @flow
 /**
- * @author  tao.zeng (tao.zeng.zt@gmail.com)
- * @created 2018-11-06 14:44:43
- * @Last Modified by: Tao Zeng (tao.zeng.zt@qq.com)
- * @Last Modified time: 2018-11-09 13:52:01
+ * @module common/ast
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Tue Nov 06 2018 10:06:22 GMT+0800 (China Standard Time)
+ * @modified Sat Nov 17 2018 09:42:22 GMT+0800 (China Standard Time)
  */
+import { assert } from 'devlevel'
 import { inherit } from '../../helper'
 
-export const OPTION_ATTACH = 'attach',
+import typeof { default as Stream } from './Stream'
+
+export const OPTION_ATTACH = 'finish',
 	OPTION_ERROR = 'error',
 	OPTION_CAPTURABLE = 'capturable'
+
+interface IRule {}
+export type MatchError = [number, string, boolean, MatchError, IRule] & interface { $err: true }
 
 let idGen = 0
 
@@ -46,7 +52,7 @@ export default inherit(
 		option: {
 			capturable: boolean,
 			finish: Function,
-			error: Function,
+			error: Function
 		}
 	) {
 		this.id = idGen++
@@ -81,8 +87,14 @@ export default inherit(
 		},
 
 		error(stream: Stream, err, capturable, srcErr) {
-			err = [stream.orgOffset(), this.msg(err, stream, this), capturable && srcErr ? srcErr[2] : capturable, srcErr, this]
-			err.$err = true
+			err = [
+				stream.orgOffset(),
+				this.msg(err, stream, this),
+				capturable && srcErr ? srcErr[2] : capturable,
+				srcErr,
+				this
+			]
+			//err.$err = true
 			return err
 		},
 		success(stream, data, result) {
@@ -142,7 +154,7 @@ export default inherit(
 		 */
 		tostring() {
 			return this.name || this.expr
-		},
+		}
 	}
 )
 
@@ -177,7 +189,7 @@ export const MatchResultSet = inherit(
 		 * append datas
 		 * @param {Array} datas
 		 */
-		addAll(datas: Array) {
+		addAll(datas: Array<any>) {
 			const { data } = this
 			const len = data.length
 			let i = datas.length
@@ -197,6 +209,6 @@ export const MatchResultSet = inherit(
 		setLen(len) {
 			const { data } = this
 			if (data.length > len) data.length = len
-		},
+		}
 	}
 )

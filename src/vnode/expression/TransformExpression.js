@@ -1,10 +1,9 @@
-/*
- * Transform Expression
- *
- * @author tao.zeng (tao.zeng.zt@gmail.com)
- * @created 2018-08-20 16:46:41
- * @Last Modified by: Tao Zeng (tao.zeng.zt@qq.com)
- * @Last Modified time: 2018-11-07 15:59:34
+/**
+ * VNode Transform of Expression
+ * @module vnode/expression
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Tue Nov 06 2018 10:06:22 GMT+0800 (China Standard Time)
+ * @modified Sat Nov 17 2018 09:31:46 GMT+0800 (China Standard Time)
  */
 import { assert } from 'devlevel'
 import { Expression } from '../../Expression'
@@ -65,10 +64,20 @@ inherit(TransformExpression, Expression, {
 
 		assert(transform, `Transform[${name}] is undefined`)
 
-		assert(isFn(transform) || isFn(transform.transform), `Invalid Transform[${name}].transform handler on ${localTransforms && localTransforms[name] ? 'Local' : 'Global'} Transforms`)
+		assert(
+			isFn(transform) || isFn(transform.transform),
+			`Invalid Transform[${name}].transform handler on ${
+				localTransforms && localTransforms[name] ? 'Local' : 'Global'
+			} Transforms`
+		)
 
-		assert(!transform.restore || isFn(transform.transform), `Invalid Transform[${name}].restore handler on ${localTransforms && localTransforms[name] ? 'Local' : 'Global'} Transforms`)
+		assert(
+			!transform.restore || isFn(transform.transform),
+			`Invalid Transform[${name}].restore handler on ${
+				localTransforms && localTransforms[name] ? 'Local' : 'Global'
+			} Transforms`
+		)
 
 		return transform
-	},
+	}
 })

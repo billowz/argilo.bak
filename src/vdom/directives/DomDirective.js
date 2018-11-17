@@ -9,6 +9,6 @@ export default inherit(
 	Directive,
 	{
 		$nodeKey: '$htmlElement',
-		$nodeName: 'HTML Virtual Element',
+		$nodeName: 'HTML Virtual Element'
 	}
 )

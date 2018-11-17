@@ -10,7 +10,7 @@ export const OrRule = inherit(
 			const starts = [], // all distinct start codes
 				rStarts = [], // start codes per rule
 				index = [
-					[], // rules witch have unkown start code
+					[] // rules witch have unkown start code
 				]
 
 			let i, j, k, codes
@@ -98,6 +98,6 @@ export const OrRule = inherit(
 				rs.empty()
 			}
 			return this.exit(stream, this.EXPECT, upErr)
-		},
+		}
 	}
 )

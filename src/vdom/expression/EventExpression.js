@@ -1,10 +1,10 @@
-/*
+/**
  * Dom Event Expression
  *
- * @author tao.zeng (tao.zeng.zt@gmail.com)
- * @created 2018-08-20 16:46:41
- * @Last Modified by: tao.zeng (tao.zeng.zt@gmail.com)
- * @Last Modified time: 2018-09-04 17:04:17
+ * @module vdom/expression
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Tue Nov 06 2018 10:06:22 GMT+0800 (China Standard Time)
+ * @modified Sat Nov 17 2018 09:29:29 GMT+0800 (China Standard Time)
  */
 import { assert } from 'devlevel'
 import { Expression } from '../../Expression'
@@ -43,7 +43,10 @@ inherit(EventExpression, Expression, {
 
 		assert(filter, `EventFilter[${name}] is undefined`)
 
-		assert(isFn(filter), `Invalid EventFilter[${name}] on ${localFilters && localFilters[name] ? 'Local' : 'Global'} EventFilters`)
+		assert(
+			isFn(filter),
+			`Invalid EventFilter[${name}] on ${localFilters && localFilters[name] ? 'Local' : 'Global'} EventFilters`
+		)
 		return filter
-	},
+	}
 })

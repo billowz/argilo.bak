@@ -21,7 +21,7 @@ export default function(normal, __hooks, defKey, recive) {
 		},
 		hookRevice(key) {
 			return revices[key]
-		},
+		}
 	}
 
 	function addHook(key, hook) {
@@ -35,7 +35,7 @@ export default function(normal, __hooks, defKey, recive) {
 	function doAdd(key, hook) {
 		if (!isObj(hook)) {
 			hook = {
-				[defKey]: hook,
+				[defKey]: hook
 			}
 		}
 		if (revices && hook[recive]) revices[hook[recive]] = key

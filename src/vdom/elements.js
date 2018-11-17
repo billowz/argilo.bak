@@ -1,4 +1,4 @@
-/*
+/**
  *
  * Void elements:
  *      area, base, br, col, embed, hr, img, input, link, meta, param, source, track, wbr
@@ -50,10 +50,10 @@
  *      https://www.w3.org/TR/html5/syntax.html#writing-html-documents
  *      https://developer.mozilla.org/my/docs/Web/HTML/Element
  *
- * @author tao.zeng (tao.zeng.zt@gmail.com)
- * @created 2018-08-25 18:55:34
- * @Last Modified by: tao.zeng (tao.zeng.zt@gmail.com)
- * @Last Modified time: 2018-08-27 14:29:35
+ * @module vdom
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Tue Nov 06 2018 10:06:22 GMT+0800 (China Standard Time)
+ * @modified Sat Nov 17 2018 09:28:41 GMT+0800 (China Standard Time)
  */
 import { registerVElement } from '../vnode'
 import Element from './Element'
@@ -87,7 +87,7 @@ function register(Element, tags) {
 			createClass({
 				extend: Element,
 				name: Element.name,
-				tagName: tags[i],
+				tagName: tags[i]
 			})
 		)
 	}

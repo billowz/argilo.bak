@@ -1,14 +1,16 @@
-/*
- * @author tao.zeng (tao.zeng.zt@gmail.com)
- * @created 2018-08-20 19:53:22
- * @Last Modified by: tao.zeng (tao.zeng.zt@gmail.com)
- * @Last Modified time: 2018-09-05 15:29:52
+
+/**
+ * @module vdom/directive
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Tue Nov 06 2018 10:06:22 GMT+0800 (China Standard Time)
+ * @modified Sat Nov 17 2018 09:27:16 GMT+0800 (China Standard Time)
  */
+
 import { assert } from 'devlevel'
 import ExpressionDirective from './ExpressionDirective'
 import { registerDirective } from '../../vnode'
 import { isStr, upperFirst, isObj, assignBy, create, isArray, eachObj, isArrayLike } from '../../helper'
-import { PROTOTYPE } from '../../helper/constants'
+import { PROTOTYPE } from '../../helper/consts'
 import { STOP_PROPAGATION } from '../util/util'
 
 const DISPLAY = 'display',
@@ -19,51 +21,51 @@ eachObj(
 		text: {
 			update(value) {
 				this.node.text(this.blankValue(value))
-			},
+			}
 		},
 		// ================ html =================
 		html: {
 			update(value) {
 				this.node.html(this.blankValue(value))
-			},
+			}
 		},
 		// ================ show =================
 		show: {
 			update(value) {
 				this.node.css(DISPLAY, value ? '' : NONE)
-			},
+			}
 		},
 		// ================ hide =================
 		hide: {
 			update(value) {
 				this.node.css(DISPLAY, value ? NONE : '')
-			},
+			}
 		},
 		// ================ focus =================
 		focus: {
 			update(value) {
 				if (value) this.node.focus()
-			},
+			}
 		},
 		// ================ value (input/textarea/select/option) =================
 		value: {
 			update(value) {
 				this.node.value(this.blankValue(value))
-			},
+			}
 		},
 		// ================ checked (radio/checkbox) =================
 		checked: {
 			update(value) {
 				const node = this.node
 				node.checked(boolVal(node.value(), value))
-			},
+			}
 		},
 		// ================ selected (option) =================
 		selected: {
 			update(value) {
 				const node = this.node
 				node.selected(boolVal(node.value(), value))
-			},
+			}
 		},
 		// ================ class =================
 		class: {
@@ -83,7 +85,7 @@ eachObj(
 				}
 				this.cache = cache
 				this.node.margeClass(cache)
-			},
+			}
 		},
 		// =================== style =======================
 		style: {
@@ -111,8 +113,8 @@ eachObj(
 				if (ncsses) {
 					for (var name in ncsses) css(el, name, ncsses[name])
 				}
-			},
-		},
+			}
+		}
 	},
 	(directive, name) => {
 		__register(name, directive)
@@ -200,7 +202,7 @@ __register('input', {
 	unbind() {
 		this.node.un(this.event, this.onChange, this)
 		unbind.call(this)
-	},
+	}
 })
 
 function boolVal(elValue, value) {

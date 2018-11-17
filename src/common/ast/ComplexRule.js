@@ -48,7 +48,11 @@ export const ComplexRule = inherit(
 					msg = []
 				do {
 					pos = stream.position(err[0])
-					msg.unshift(`[${pad(pos[0], 2)}:${pad(pos[1], 2)}] - ${err[4].toString()}: ${err[1]} on "${escapeString(buff.substr(err[0], 20))}"`)
+					msg.unshift(
+						`[${pad(pos[0], 2)}:${pad(pos[1], 2)}] - ${err[4].toString()}: ${err[1]} on "${escapeString(
+							buff.substr(err[0], 20)
+						)}"`
+					)
 					err = err[3]
 				} while (err)
 
@@ -105,13 +109,13 @@ export const ComplexRule = inherit(
 			map = assign(
 				{
 					level: 0,
-					push: idStackPush,
+					push: idStackPush
 				},
 				map
 			)
 			if (id) map.push(id)
 			return map
-		},
+		}
 	}
 )
 

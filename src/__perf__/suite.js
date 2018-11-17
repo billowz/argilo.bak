@@ -50,7 +50,7 @@ const workbench = argilo({
 					status: 'idle',
 					hz: 0,
 					rme: 0,
-					sampled: 0,
+					sampled: 0
 				}
 				desc.results.push(result)
 				suite.add(
@@ -76,11 +76,12 @@ const workbench = argilo({
 										status: 'complete',
 										hz: formatNumber(hz.toFixed(hz < 100 ? 2 : 0)),
 										rme: stats.rme.toFixed(2),
-										sampled: stats.sample.length,
+										sampled: stats.sample.length
 									})
 								}
-								if (benchOptions && benchOptions.onComplete) benchOptions.onComplete.apply(this, arguments)
-							},
+								if (benchOptions && benchOptions.onComplete)
+									benchOptions.onComplete.apply(this, arguments)
+							}
 						},
 						benchOptions
 					)
@@ -89,7 +90,7 @@ const workbench = argilo({
 			desc.runner()
 			window.benchmark = undefined
 			desc.benchmark.run({
-				async: true,
+				async: true
 			})
 		},
 		add(name, runner, options) {
@@ -98,7 +99,7 @@ const workbench = argilo({
 				runner,
 				benchmark: undefined,
 				suiteOptions: options,
-				results: undefined,
+				results: undefined
 			}
 			if (!this.suiteMap[name]) {
 				this.suiteMap[name] = desc
@@ -106,8 +107,8 @@ const workbench = argilo({
 			} else {
 				error(`same name benchmark suite "${name}"`)
 			}
-		},
-	},
+		}
+	}
 }).compile()
 
 window.suite = function(name, runner, options) {

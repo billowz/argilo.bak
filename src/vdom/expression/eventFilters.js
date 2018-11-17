@@ -1,10 +1,10 @@
-/*
+/**
  * Dom Event Filters
  *
- * @author tao.zeng (tao.zeng.zt@gmail.com)
- * @created 2018-08-20 18:15:02
- * @Last Modified by: tao.zeng (tao.zeng.zt@gmail.com)
- * @Last Modified time: 2018-09-05 15:30:40
+ * @module vdom/expression
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Tue Nov 06 2018 10:06:22 GMT+0800 (China Standard Time)
+ * @modified Sat Nov 17 2018 09:29:44 GMT+0800 (China Standard Time)
  */
 import { assert } from 'devlevel'
 import { eventFilters } from './EventExpression'
@@ -20,7 +20,7 @@ export const keyCodes = {
 	up: 38,
 	left: 37,
 	right: 39,
-	down: 40,
+	down: 40
 }
 
 eventFilters.key = function(e, param) {

@@ -1,8 +1,10 @@
-/*
- * @author tao.zeng (tao.zeng.zt@gmail.com)
- * @created 2018-08-29 12:35:04
- * @Last Modified by:   tao.zeng (tao.zeng.zt@gmail.com)
- * @Last Modified time: 2018-08-29 12:35:04
+// @flow
+/**
+ *
+ * @module observer
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
+ * @modified Fri Nov 16 2018 19:16:21 GMT+0800 (China Standard Time)
  */
 import { error } from 'devlevel'
 import { global, create, hasOwnProp } from '../helper'
@@ -12,7 +14,10 @@ export default function(defaultPropMap) {
 		!(function() {
 			if (global && global.VBArray) {
 				try {
-					global.execScript(['Function parseVB(code)', '\tExecuteGlobal(code)', 'End Function'].join('\n'), 'VBScript')
+					global.execScript(
+						['Function parseVB(code)', '\tExecuteGlobal(code)', 'End Function'].join('\n'),
+						'VBScript'
+					)
 					return true
 				} catch (e) {
 					error(e.message, e)
@@ -40,7 +45,7 @@ export default function(defaultPropMap) {
 			'\t\tSet [',
 			constructorProp,
 			'] = Me\r\n',
-			'\tEnd Function\r\n\n',
+			'\tEnd Function\r\n\n'
 		].join('')
 
 	let classNameGenerator = 1
@@ -117,7 +122,21 @@ export default function(defaultPropMap) {
 			var className = 'VBClass' + classNameGenerator++
 			providerName = className + 'Provider'
 			parseVB(parseVBClass(className, props))
-			parseVB(['Function ', providerName, '(desc)\r\n', '\tDim o\r\n', '\tSet o = (New ', className, ')(desc)\r\n', '\tSet ', providerName, ' = o\r\n', 'End Function'].join(''))
+			parseVB(
+				[
+					'Function ',
+					providerName,
+					'(desc)\r\n',
+					'\tDim o\r\n',
+					'\tSet o = (New ',
+					className,
+					')(desc)\r\n',
+					'\tSet ',
+					providerName,
+					' = o\r\n',
+					'End Function'
+				].join('')
+			)
 			classPool[classKey] = providerName
 		}
 		return providerName
@@ -194,7 +213,7 @@ export default function(defaultPropMap) {
 			doRead(attr) {
 				let { source, proxy, funcs } = this
 				return funcs[attr] || source[attr]
-			},
-		},
+			}
+		}
 	}
 }

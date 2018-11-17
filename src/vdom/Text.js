@@ -5,7 +5,7 @@ import { inherit } from '../helper'
 const TextMixin = {
 	update(text) {
 		this.el.data = text
-	},
+	}
 }
 
 export const HTMLText = registerVText(

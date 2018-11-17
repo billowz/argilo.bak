@@ -8,6 +8,6 @@ export default inherit(
 	},
 	Compontent,
 	{
-		$htmlComp: true,
+		$htmlComp: true
 	}
 )

@@ -27,30 +27,48 @@ const EXPR_KEYS = match(EXPR_KEY_WORDS.split(''), UNATTACH),
 					ExprObject, // match by {
 					ExprArray, // match by ]
 					EXPR_KEYS, // consume start char when EXPR_STR | ExprObject | ExprArray match failed
-					new RegExp(`[^${reEscape(EXPR_KEY_WORDS + '}')}]+`), // consume chars which before start codes of EXPR_STR | ExprObject | ExprArray and "}"
+					new RegExp(`[^${reEscape(EXPR_KEY_WORDS + '}')}]+`) // consume chars which before start codes of EXPR_STR | ExprObject | ExprArray and "}"
 				],
 				UNATTACH
 			),
-			'}',
+			'}'
 		],
 		UNATTACH
 	),
-	ExprArray = and('ExprArray', () => ['[', anyOne('ArrayBody', [EXPR_STR, ExprObject, ExprArray, EXPR_KEYS, new RegExp(`[^${reEscape(EXPR_KEY_WORDS + ']')}]+`)], UNATTACH), ']']),
+	ExprArray = and('ExprArray', () => [
+		'[',
+		anyOne(
+			'ArrayBody',
+			[EXPR_STR, ExprObject, ExprArray, EXPR_KEYS, new RegExp(`[^${reEscape(EXPR_KEY_WORDS + ']')}]+`)],
+			UNATTACH
+		),
+		']'
+	]),
 	Expr = and(
 		'Expr',
 		[
 			['ExprStart', EXPR_START, attachOffset],
 			anyOne(
 				'ExprBody',
-				[EXPR_STR, ExprObject, ExprArray, match((EXPR_KEY_WORDS + EXPR_START[0]).split(''), UNATTACH), new RegExp(`[^${reEscape(EXPR_KEY_WORDS + EXPR_START[0] + EXPR_END[0])}]+`)],
+				[
+					EXPR_STR,
+					ExprObject,
+					ExprArray,
+					match((EXPR_KEY_WORDS + EXPR_START[0]).split(''), UNATTACH),
+					new RegExp(`[^${reEscape(EXPR_KEY_WORDS + EXPR_START[0] + EXPR_END[0])}]+`)
+				],
 				UNATTACH
 			),
-			['ExprEnd', EXPR_END, attachOffset],
+			['ExprEnd', EXPR_END, attachOffset]
 		],
 		(d, rs, stream) => {
 			const content_start = d[0],
 				expr_end = d[1]
-			rs.add([stream.orgbuff.substring(content_start, expr_end - EXPR_END_LEN), content_start - EXPR_START_LEN, expr_end])
+			rs.add([
+				stream.orgbuff.substring(content_start, expr_end - EXPR_END_LEN),
+				content_start - EXPR_START_LEN,
+				expr_end
+			])
 		}
 	)
 
@@ -62,9 +80,9 @@ function createStringRule(name, mask, mline) {
 			anyOne([
 				Expr,
 				EXPR_START[0], // consume expr start char when parse expr failed
-				new RegExp(`(?:[^\\\\${mline ? '' : '\\n'}${mask}${reEscape(EXPR_START[0])}]|\\\\.)+`), // string fragment
+				new RegExp(`(?:[^\\\\${mline ? '' : '\\n'}${mask}${reEscape(EXPR_START[0])}]|\\\\.)+`) // string fragment
 			]),
-			match(mask, attachOffset),
+			match(mask, attachOffset)
 		],
 		(d, rs, stream) => {
 			const buff = stream.orgbuff
@@ -111,20 +129,24 @@ const ATTR_NAME = match('AttrName', /([@:$_a-zA-Z][\w-\.]*)\s*/, 1),
 			match('undefined', attachStaticValue('undefined', undefined)),
 			match('null', attachStaticValue('null', undefined)),
 			match('true', attachStaticValue('boolean', true)),
-			match('false', attachStaticValue('boolean', false)),
+			match('false', attachStaticValue('boolean', false))
 		],
 		{
 			capturable: false,
 			attach(val, rs) {
 				rs.add(val[0])
-			},
+			}
 		}
 	),
-	Attrs = any('Attrs', [ATTR_NAME, option('AttrValue', [[/=\s*/, false, '=', UNATTACH], AttrValue, /\s*/])], (d, rs) => {
-		const attrs = {}
-		for (let i = 0, l = d.length; i < l; i += 2) attrs[d[i]] = d[i + 1][0]
-		rs.add(attrs)
-	})
+	Attrs = any(
+		'Attrs',
+		[ATTR_NAME, option('AttrValue', [[/=\s*/, false, '=', UNATTACH], AttrValue, /\s*/])],
+		(d, rs) => {
+			const attrs = {}
+			for (let i = 0, l = d.length; i < l; i += 2) attrs[d[i]] = d[i + 1][0]
+			rs.add(attrs)
+		}
+	)
 
 const ELEM_NAME_REG = '[_a-zA-Z][\\w-]*',
 	ELEM_NAME = match('ElemName', new RegExp(`<(${ELEM_NAME_REG})\\s*`), 1, '<'),
@@ -141,7 +163,7 @@ const ELEM_NAME_REG = '[_a-zA-Z][\\w-]*',
 			attachText(d, rs, stream, rule) // not element
 		}),
 		match(EXPR_START[0], attachText), // consume one char when Expr match failed
-		match(new RegExp(`[^\\\\<${reEscape(EXPR_START[0])}]+|\\\\${reEscape(EXPR_START[0])}`), attachText),
+		match(new RegExp(`[^\\\\<${reEscape(EXPR_START[0])}]+|\\\\${reEscape(EXPR_START[0])}`), attachText)
 	]),
 	Elem = and(
 		'Elem',
@@ -153,25 +175,28 @@ const ELEM_NAME_REG = '[_a-zA-Z][\\w-]*',
 				and('childNodes', [
 					match(/>/, false, '>', UNATTACH),
 					NodeCollection,
-					option([match('ElemClose', new RegExp(`<\/(${ELEM_NAME_REG})>\\s*`), 1, '<')], (close, childNodesResult, stream) => {
-						const closeTag = close[0],
-							elemResult = childNodesResult.parent.parent,
-							tag = elemResult.data[0]
+					option(
+						[match('ElemClose', new RegExp(`<\/(${ELEM_NAME_REG})>\\s*`), 1, '<')],
+						(close, childNodesResult, stream) => {
+							const closeTag = close[0],
+								elemResult = childNodesResult.parent.parent,
+								tag = elemResult.data[0]
 
-						if (closeTag) {
-							if (closeTag !== tag) {
-								if (AutoCloseElems[tag]) {
-									stream.reset()
-								} else {
-									return `expect: </${tag}>`
+							if (closeTag) {
+								if (closeTag !== tag) {
+									if (AutoCloseElems[tag]) {
+										stream.reset()
+									} else {
+										return `expect: </${tag}>`
+									}
 								}
+							} else if (!AutoCloseElems[tag]) {
+								return `expect: </${tag}>`
 							}
-						} else if (!AutoCloseElems[tag]) {
-							return `expect: </${tag}>`
 						}
-					}),
-				]),
-			]),
+					)
+				])
+			])
 		],
 		(d, rs) => {
 			const tag = d[0],

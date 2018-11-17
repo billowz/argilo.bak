@@ -1,3 +1,5 @@
+// @flow
+
 import { makeMap, makeArray } from '../util'
 
 describe('Util', () => {
@@ -24,7 +26,7 @@ describe('Util', () => {
 			)
 		).to.eql({
 			a: 0,
-			b: 1,
+			b: 1
 		})
 
 		expect(
@@ -37,7 +39,7 @@ describe('Util', () => {
 			)
 		).to.eql({
 			a: 0,
-			b: 1,
+			b: 1
 		})
 	})
 

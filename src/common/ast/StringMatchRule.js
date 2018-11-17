@@ -23,6 +23,6 @@ export default inherit(
 	},
 	RegMatchRule,
 	{
-		type: 'String',
+		type: 'String'
 	}
 )

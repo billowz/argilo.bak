@@ -4,112 +4,93 @@
  * @module helper/assign
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Jul 25 2018 15:22:13 GMT+0800 (China Standard Time)
- * @modified Sat Nov 10 2018 16:40:55 GMT+0800 (China Standard Time)
+ * @modified Sat Nov 17 2018 09:33:18 GMT+0800 (China Standard Time)
  */
 import create from './create'
-import { hasOwnProp } from './ownProp'
+import { hasOwnProp } from './prop'
 
 /**
- * do assign
- * @function
- * @param  {Object} dist
- * @param  {Array<Object>} overrides
- * @param  {number=0} offset?
- * @param  {(prop:string,dist:Object,override:Object,data:any)=>boolean} filter?
- * @param  {any} data?
- * @returns {any}
+ * assign filter
+ * @callback AssignFilter
+ * @param  {string} prop		property name
+ * @param  {Object} target		target object
+ * @param  {Object} override	override object
+ * @returns {boolean} is assign
  */
-export function __assign(
-	dist: Object,
-	overrides: Array<Object>,
-	offset?: number,
-	filter?: (prop: string, dist: Object, override: Object, data: any) => boolean,
-	data?: any
+export type AssignFilter = (prop: string, target: Object, override: Object) => boolean
+
+/**
+ * assign properties
+ * @param  {Object|void} 		target						target object
+ * @param  {Array<?Object>} 	overrides						override objects
+ * @param  {AssignFilter} 		filter							filter
+ * @param  {number} 			[startOffset=0]					start offset in overrides
+ * @param  {number} 			[endOffset=overrides.length-1]	end offset in overrides
+ * @returns {any} target object
+ */
+export function doAssign(
+	target: ?Object | ?Function,
+	overrides: Array<?Object>,
+	filter: AssignFilter,
+	startOffset?: number,
+	endOffset?: number
 ) {
-	if (!dist) dist = {}
-	let i = offset || 0,
-		l = overrides.length,
+	if (!target) target = {}
+	let i = startOffset || 0,
+		l = endOffset || overrides.length - 1,
 		override,
 		prop
 	for (; i < l; i++) {
 		if ((override = overrides[i]))
-			for (prop in override) if (filter(prop, dist, override, data)) dist[prop] = override[prop]
+			for (prop in override) if (filter(prop, target, override)) target[prop] = override[prop]
 	}
-	return dist
+	return target
 }
 
 /**
- * assign
+ * assign properties
  * > Object.assign shim
- * @function
- * @param  {Object} obj 	assign target
- * @param  {Array<Object>} ...args 	assign Objects
- * @returns Object
+ * @param  {Object} 			[target]	target object
+ * @param  {Array<?Object>} 	...args 	override objects
+ * @returns {Object} target object
  */
-export function assign(obj: Object): Object {
-	return __assign(obj, arguments, 1, __assignFilter)
+export function assign(target: ?Object | ?Function, ...objs: Array<?Object>): Object {
+	return doAssign(target, arguments, defaultAssignFilter, 1)
+}
+
+/**
+ * assign un-exist properties
+ * @param  {Object} 			[target]	target object
+ * @param  {Array<?Object>} 	...args 	override objects
+ * @returns {Object} target object
+ */
+export function assignIf(target: ?Object | ?Function, ...objs: Array<?Object>): Object {
+	return doAssign(target, arguments, assignIfFilter, 1)
 }
 
 /**
  * default assign filter
- * @function
+ * - property is owner in override
+ * @see {AssignFilter}
  * @param  {string} prop
- * @param  {Object} dist
+ * @param  {Object} target
  * @param  {Object} override
- * @returns {Object}
+ * @returns {boolean}
  */
-export function __assignFilter(prop: string, dist: Object, override: Object): Object {
+export function defaultAssignFilter(prop: string, target: Object, override: Object): boolean {
 	return hasOwnProp(override, prop)
 }
 
 /**
- * assign if property is not exist
- * @function
- * @param  {Object} obj 	assign target
- * @param  {Array<Object>} ...args 	assign Objects
- * @returns {Object}
- */
-export function assignIf(obj: Object): Object {
-	return __assign(obj, arguments, 1, __assignIfFilter)
-}
-
-/**
  * assign if filter
- * @function
+ * - property is owner in override
+ * - property not in target object
+ * @see {AssignFilter}
  * @param  {string} prop
- * @param  {Object} dist
+ * @param  {Object} target
  * @param  {Object} override
- * @returns {Object}
+ * @returns {boolean}
  */
-export function __assignIfFilter(prop: string, dist: Object, override: Object): Object {
-	return hasOwnProp(override, prop) && !hasOwnProp(dist, prop)
-}
-
-/**
- * assign by user filter
- * @function
- * @param  {Object} obj
- * @param  {(prop:string,dist:Object,overide:Object)=>boolean} filter
- * @param  {Array<Object>} ...args
- * @returns {Object}
- */
-export function assignBy(obj: Object, filter: (prop: string, dist: Object, overide: Object) => boolean): Object {
-	return __assign(obj, arguments, 2, __assignUserFilter, filter)
-}
-
-/**
- * user assign filter hook
- * @param  {string} prop
- * @param  {Object} dist
- * @param  {Object} override
- * @param  {(prop:string,dist:Object,overide:Object)=>boolean} cb
- * @returns {Object}
- */
-export function __assignUserFilter(
-	prop: string,
-	dist: Object,
-	override: Object,
-	cb: (prop: string, dist: Object, overide: Object) => boolean
-): Object {
-	return hasOwnProp(override, prop) && cb(prop, dist, override)
+export function assignIfFilter(prop: string, target: Object, override: Object): boolean {
+	return hasOwnProp(override, prop) && !(prop in target)
 }

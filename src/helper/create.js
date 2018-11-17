@@ -4,11 +4,11 @@
  * @module helper/create
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Jul 25 2018 15:24:47 GMT+0800 (China Standard Time)
- * @modified Sat Nov 10 2018 17:13:22 GMT+0800 (China Standard Time)
+ * @modified Fri Nov 16 2018 12:12:06 GMT+0800 (China Standard Time)
  */
 
-import { setPrototypeOf } from './prototypeOf'
-import { CONSTRUCTOR, PROTOTYPE } from './constants'
+import { setPrototypeOf } from './proto'
+import { CONSTRUCTOR, PROTOTYPE } from './consts'
 
 function FN() {}
 
@@ -19,7 +19,7 @@ function FN() {}
  * @param  {any} props?
  * @returns T
  */
-function doCreate<T>(parent: T, props?: any): T {
+function doCreate(parent: Object, props?: any): Object {
 	FN[PROTOTYPE] = parent
 	const obj = new FN()
 	FN[PROTOTYPE] = undefined
@@ -44,7 +44,7 @@ function doCreate<T>(parent: T, props?: any): T {
 export default Object.create ||
 	(Object.getPrototypeOf
 		? doCreate
-		: function create<T>(parent: T, props?: any): T {
+		: function create(parent: Object, props?: any): Object {
 				// update prototype
 				const obj = doCreate(parent, props)
 				setPrototypeOf(obj, parent)

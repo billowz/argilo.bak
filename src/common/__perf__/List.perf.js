@@ -22,7 +22,7 @@ function createTestObjs(size) {
 		i = 0
 	for (; i < size; i++) {
 		objs[i] = {
-			i: i,
+			i: i
 		}
 	}
 	return objs

@@ -11,7 +11,7 @@ export default registerVComment(
 		VComment,
 		HTMLMixin(VComment),
 		{
-			$htmlComment: true,
+			$htmlComment: true
 		}
 	)
 )

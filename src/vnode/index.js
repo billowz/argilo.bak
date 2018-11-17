@@ -10,7 +10,7 @@ export * from './Directive'
 
 import { assert, info, debug } from 'devlevel'
 import { create, fnName } from '../helper'
-import { PROTOTYPE } from '../helper/constants'
+import { PROTOTYPE } from '../helper/consts'
 import { VIRT_TEXT, VIRT_BINDING_TEXT, VIRT_COMMENT, VIRT_ELEMENT, VIRT_COMPLEX_ELEMENT } from './VNode'
 
 const VElements = create(null)
@@ -63,12 +63,15 @@ export function elem(name, attrs, directives, children) {
 
 	assert(VElement, `Virtual Element[${name}] is undefined`)
 
-	assert(!children || !children.length || VElement[PROTOTYPE][VIRT_COMPLEX_ELEMENT], `Virtual Element[${name}] have no children`)
+	assert(
+		!children || !children.length || VElement[PROTOTYPE][VIRT_COMPLEX_ELEMENT],
+		`Virtual Element[${name}] have no children`
+	)
 
 	const gen = generator(VElement, {
 		attrs,
 		directives,
-		children,
+		children
 	})
 	gen.ename = name
 	return gen

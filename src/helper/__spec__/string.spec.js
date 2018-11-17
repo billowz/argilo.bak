@@ -1,3 +1,5 @@
+// @flow
+
 import { trim } from '../string'
 
 describe('String', () => {

@@ -1,8 +1,8 @@
-/*
- * @author tao.zeng (tao.zeng.zt@gmail.com)
- * @created 2018-09-01 10:51:15
- * @Last Modified by: tao.zeng (tao.zeng.zt@gmail.com)
- * @Last Modified time: 2018-09-01 11:15:03
+/**
+ * @module vdom
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Tue Nov 06 2018 10:06:22 GMT+0800 (China Standard Time)
+ * @modified Sat Nov 17 2018 09:30:17 GMT+0800 (China Standard Time)
  */
 import { ROOTELEMENT, ADD_EVENT_LISTENER, ATTACH_EVENT } from './util'
 import { nextTick } from '../../common'

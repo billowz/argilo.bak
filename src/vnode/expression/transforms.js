@@ -1,10 +1,9 @@
-/*
- * Transforms
- *
- * @author tao.zeng (tao.zeng.zt@gmail.com)
- * @created 2018-08-20 17:57:39
- * @Last Modified by: tao.zeng (tao.zeng.zt@gmail.com)
- * @Last Modified time: 2018-08-20 18:30:39
+/**
+ * VNode Transforms of Expression
+ * @module vnode/expression
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Tue Nov 06 2018 10:06:22 GMT+0800 (China Standard Time)
+ * @modified Sat Nov 17 2018 09:32:03 GMT+0800 (China Standard Time)
  */
 import { makeMap, applyNoScope, isStr, trim } from '../../helper'
 import { format, plural, singular, thousandSeparate } from '../../common'
@@ -18,7 +17,7 @@ transforms.json = {
 	},
 	restore(value) {
 		return value && isStr(value) ? JSON.parse(value) : value
-	},
+	}
 }
 
 transforms.trim = {
@@ -27,7 +26,7 @@ transforms.trim = {
 	},
 	restore(value) {
 		return isStr(value) ? trim(value) : value
-	},
+	}
 }
 
 transforms.capitalize = function(value) {
@@ -81,7 +80,7 @@ transforms.bytes = {
 		v = +v
 		if (isNaN(v)) return value
 		return Math.round(v * unitMap[unit])
-	},
+	}
 }
 
 transforms.format = function(value, param) {

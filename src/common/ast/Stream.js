@@ -48,6 +48,7 @@ export default inherit(
 				curr[4] = null
 				return true
 			}
+			return false
 		},
 		/**
 		 * exit current context
@@ -133,9 +134,9 @@ export default inherit(
 		/**
 		 * get position(line and columns) by offset on original text
 		 * @param {number} offset
-		 * @returns Array [LineNumber, ColumnNumber]
+		 * @returns {[number, number]}	LineNumber, ColumnNumber
 		 */
-		position(offset: number): Array {
+		position(offset: number): [number, number] {
 			const { orgbuff } = this
 			let line = 0,
 				lineOffset = 0
@@ -155,6 +156,6 @@ export default inherit(
 			const { orgbuff } = this
 			let line = 1
 			return ` 0: ${orgbuff.replace(LINE_REG, () => `\n${pad(line++, 2)}: `)}`
-		},
+		}
 	}
 )

@@ -1,14 +1,15 @@
-/*
- * @author tao.zeng (tao.zeng.zt@gmail.com)
- * @created 2018-08-20 19:54:12
- * @Last Modified by: tao.zeng (tao.zeng.zt@gmail.com)
- * @Last Modified time: 2018-08-27 15:26:30
+/**
+ * @module vdom/directive
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Tue Nov 06 2018 10:06:22 GMT+0800 (China Standard Time)
+ * @modified Sat Nov 17 2018 09:27:35 GMT+0800 (China Standard Time)
  */
+
 import EventDirective from './EventDirective'
 import { registerDirective } from '../../vnode'
-import { array2obj, map, upperFirst, isStr } from '../../helper'
+import { arr2obj, map, upperFirst, isStr } from '../../helper'
 
-export default array2obj(
+export default arr2obj(
 	map(
 		[
 			'blur',
@@ -33,8 +34,8 @@ export default array2obj(
 			'unload',
 			{
 				eventName: 'input',
-				eventType: ['input', 'propertychange'],
-			},
+				eventType: ['input', 'propertychange']
+			}
 		],
 		event => {
 			if (isStr(event)) event = { eventName: event, eventType: event }
@@ -43,5 +44,5 @@ export default array2obj(
 			return registerDirective('on' + event.eventName, event)
 		}
 	),
-	directive => directive.name
+	directive => [directive.name, directive]
 )

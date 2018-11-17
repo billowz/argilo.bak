@@ -1,12 +1,8 @@
-/*
- * <CompontentTag>
- *      <div ref=""
- * </CompontentTag>
- *
- * @author tao.zeng (tao.zeng.zt@gmail.com)
- * @created 2018-08-29 12:37:24
- * @Last Modified by: tao.zeng (tao.zeng.zt@gmail.com)
- * @Last Modified time: 2018-09-05 14:01:41
+/**
+ * @module vnode
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Tue Nov 06 2018 10:06:22 GMT+0800 (China Standard Time)
+ * @modified Sat Nov 17 2018 09:30:30 GMT+0800 (China Standard Time)
  */
 import { assert } from 'devlevel'
 import VComplexElement from './VComplexElement'
@@ -38,7 +34,8 @@ export default inherit(
 		$getScope(attr) {
 			let $observer = this.$observer,
 				parent
-			while (!hasOwnProp($observer.source, attr) && (parent = $observer.$parent) && attr in parent.source) $observer = parent
+			while (!hasOwnProp($observer.source, attr) && (parent = $observer.$parent) && attr in parent.source)
+				$observer = parent
 			return $observer
 		},
 		getScope(attr) {
@@ -73,6 +70,6 @@ export default inherit(
 			this.$observer.unProxyChange(fn, scope)
 			return this
 		},
-		destroy() {},
+		destroy() {}
 	}
 )

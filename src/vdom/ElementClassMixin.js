@@ -1,10 +1,8 @@
-/*
- * element class operations
- *
- * @author tao.zeng (tao.zeng.zt@gmail.com)
- * @created 2018-08-20 17:48:52
- * @Last Modified by: tao.zeng (tao.zeng.zt@gmail.com)
- * @Last Modified time: 2018-09-01 12:43:08
+/**
+ * @module vdom
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Tue Nov 06 2018 10:06:22 GMT+0800 (China Standard Time)
+ * @modified Sat Nov 17 2018 09:28:05 GMT+0800 (China Standard Time)
  */
 import { DIV, CLASS_NAME } from './util/util'
 import { create, trim, isArray, isStr, isBool } from '../helper'
@@ -17,7 +15,8 @@ const addClass = DIV[CLASS_LIST]
 		? mkClasslistUpdator('add')
 		: function(el, className) {
 				className = parseClassNameArray(className)
-				if (className.length) el[CLASS_NAME] = trim(clearClassName(el[CLASS_NAME], className) + ' ' + className.join(' '))
+				if (className.length)
+					el[CLASS_NAME] = trim(clearClassName(el[CLASS_NAME], className) + ' ' + className.join(' '))
 				return this
 		  },
 	removeClass = DIV[CLASS_LIST]
@@ -54,7 +53,7 @@ export default {
 		}
 		el[CLASS_NAME] = trim(clearClassName(el[CLASS_NAME], clears) + ' ' + adds.join(' '))
 		return this
-	},
+	}
 }
 
 function mkClasslistUpdator(method) {

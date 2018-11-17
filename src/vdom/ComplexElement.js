@@ -8,7 +8,7 @@ import ElementValueMixin from './ElementValueMixin'
 import ElementEventMixin from './ElementEventMixin'
 import { DIV, PARENT_NODE, APPEND_CHILD, REPLACE_CHILD, INNER_HTML } from './util/util'
 import { inherit, isStr } from '../helper'
-import { PROTOTYPE } from '../helper/constants'
+import { PROTOTYPE } from '../helper/consts'
 
 const { append, appendAll, prepend, insertBefore, insertAfter, replace } = VComplexElement[PROTOTYPE]
 
@@ -74,6 +74,6 @@ export default inherit(
 			replace.call(this, node, target)
 			target.el[PARENT_NODE][REPLACE_CHILD](node.el, target.el)
 			return this
-		},
+		}
 	}
 )

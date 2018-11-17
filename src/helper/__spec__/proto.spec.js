@@ -1,8 +1,9 @@
-import { hasOwnProp } from '../ownProp'
-import { prototypeOf, setPrototypeOf } from '../prototypeOf'
+// @flow
+import { hasOwnProp } from '../prop'
+import { prototypeOf, setPrototypeOf } from '../proto'
 import create from '../create'
 import { inherit, superCls, subclassOf } from '../inherit'
-import { extend, extendIf, extendBy } from '../extend'
+import { extend, extendIf, doExtend} from '../extend'
 import createClass from '../class'
 
 describe('Prototype', () => {
@@ -76,10 +77,10 @@ describe('Prototype', () => {
 		extend(A, { a: 2 })
 		expect(A.prototype.a).to.equal(2)
 
-		extendBy(A, v => true, { a: 3 })
+		doExtend(A, v => true, { a: 3 })
 		expect(A.prototype.a).to.equal(3)
 
-		extendBy(A, v => false, { a: 4 })
+		doExtend(A, v => false, { a: 4 })
 		expect(A.prototype.a).to.equal(3)
 
 		extendIf(A, { a: 5, b: 6 })
@@ -106,14 +107,14 @@ describe('Prototype', () => {
 		const A = createClass({
 			name: 'AAA',
 			statics: {
-				a: 1,
+				a: 1
 			},
 			prototype: {
 				c: 2,
-				d: 1,
+				d: 1
 			},
 			b: 1,
-			c: 1,
+			c: 1
 		})
 		checkCls(A)
 
@@ -136,8 +137,8 @@ describe('Prototype', () => {
 				name: 'xxx',
 				statics: 'xxx',
 				extend: 'xxx',
-				prototype: 'xxx',
-			},
+				prototype: 'xxx'
+			}
 		})
 
 		checkCls(B, [A])
@@ -148,7 +149,7 @@ describe('Prototype', () => {
 		expect(new B().e).to.equal(1)
 
 		const C = createClass({
-			extend: B,
+			extend: B
 		})
 		checkCls(C, [B, A])
 		expect(new C().e).to.equal(1)
@@ -157,7 +158,7 @@ describe('Prototype', () => {
 			extend: C,
 			constructor() {
 				this.e = 2
-			},
+			}
 		})
 		checkCls(D, [C, B, A])
 		expect(new D().e).to.equal(2)

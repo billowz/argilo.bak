@@ -1,18 +1,35 @@
-/*
+/**
  * element css opeartions
  *
- * @author tao.zeng (tao.zeng.zt@gmail.com)
- * @created 2018-08-20 17:49:56
- * @Last Modified by: tao.zeng (tao.zeng.zt@gmail.com)
- * @Last Modified time: 2018-09-01 11:55:15
+ * @module vdom
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Tue Nov 06 2018 10:06:22 GMT+0800 (China Standard Time)
+ * @modified Sat Nov 17 2018 09:29:10 GMT+0800 (China Standard Time)
  */
-import { inDoc, getWindow, ROOTELEMENT, OWNER_DOCUMENT, PARENT_WINDOW, DEFAULT_VIEW, REMOVE_ATTRIBUTE, CLIENT_TOP, CLIENT_LEFT, SCROLL_LEFT, SCROLL_TOP, PAGE_XOFFSET, PAGE_YOFFSET } from './util/util'
+import {
+	inDoc,
+	getWindow,
+	ROOTELEMENT,
+	OWNER_DOCUMENT,
+	PARENT_WINDOW,
+	DEFAULT_VIEW,
+	REMOVE_ATTRIBUTE,
+	CLIENT_TOP,
+	CLIENT_LEFT,
+	SCROLL_LEFT,
+	SCROLL_TOP,
+	PAGE_XOFFSET,
+	PAGE_YOFFSET
+} from './util/util'
 import createHook from './util/hook'
 import { W3C, IE8 } from './util'
 import { create, applyScope, makeMap, isNil, isStr } from '../helper'
 import { $eachObj } from '../observer'
 
-const numberCss = makeMap('animationIterationCount,columnCount,order,flex,flexGrow,flexShrink,' + 'fillOpacity,fontWeight,lineHeight,opacity,orphans,widows,zIndex,zoom')
+const numberCss = makeMap(
+	'animationIterationCount,columnCount,order,flex,flexGrow,flexShrink,' +
+		'fillOpacity,fontWeight,lineHeight,opacity,orphans,widows,zIndex,zoom'
+)
 
 const NAME = 'name',
 	GET = 'get',
@@ -25,7 +42,7 @@ const { memberHook, addHook } = createHook({
 	},
 	set(el, name, value) {
 		el.style[name] = value
-	},
+	}
 })
 nameHooks.float = W3C ? 'cssFloat' : 'styleFloat'
 
@@ -68,7 +85,7 @@ export default {
 			doc = el[OWNER_DOCUMENT],
 			box = {
 				top: 0,
-				left: 0,
+				left: 0
 			}
 
 		if (!doc) return box
@@ -112,7 +129,7 @@ export default {
 		}
 		return {
 			top: top - getNumStyle(el, 'marginTop'),
-			left: left - getNumStyle(el, 'marginLeft'),
+			left: left - getNumStyle(el, 'marginLeft')
 		}
 	},
 	scrollTop() {
@@ -134,7 +151,7 @@ export default {
 			el[PAGE_XOFFSET] = left
 			el[PAGE_YOFFSET] = top
 		}
-	},
+	}
 }
 
 export function addDomStyleHook() {
@@ -192,7 +209,7 @@ if (computedStyle) {
 		border = {
 			thin: IE8 ? '1px' : '2px',
 			medium: IE8 ? '3px' : '4px',
-			thick: IE8 ? '5px' : '6px',
+			thick: IE8 ? '5px' : '6px'
 		}
 	getStyle = function(el, name) {
 		const currentStyle = el.currentStyle
@@ -233,7 +250,7 @@ if (computedStyle) {
 		get(el, name) {
 			let value = getStyle(el, name)
 			return value === '' ? 1 : value
-		},
+		}
 	})
 } else {
 	const FILTERS = FILTER + 's',
@@ -253,6 +270,6 @@ if (computedStyle) {
 			style.zoom = 1
 			style[FILTER] = trim(ralpha.test(filter) ? filter.replace(ralpha, opacity) : filter + ' ' + opacity)
 			if (!style[FILTER]) style[REMOVE_ATTRIBUTE](FILTER)
-		},
+		}
 	})
 }

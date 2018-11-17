@@ -1,10 +1,10 @@
-/*
+/**
  * Dom Value opeartions
  *
- * @author tao.zeng (tao.zeng.zt@gmail.com)
- * @created 2018-08-20 17:54:59
- * @Last Modified by: tao.zeng (tao.zeng.zt@gmail.com)
- * @Last Modified time: 2018-09-01 11:43:09
+ * @module vdom
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Tue Nov 06 2018 10:06:22 GMT+0800 (China Standard Time)
+ * @modified Sat Nov 17 2018 09:29:04 GMT+0800 (China Standard Time)
  */
 import { assert } from 'devlevel'
 import createHook from './util/hook'
@@ -25,7 +25,7 @@ export default {
 			return this
 		}
 		return memberHook(type, GET)[GET](el, type)
-	},
+	}
 }
 
 export function addDomValueHook() {
@@ -44,13 +44,13 @@ const { memberHook, addHook } = createHook(
 		},
 		set(el, value) {
 			el.value = strval(value)
-		},
+		}
 	},
 	{
 		option: {
 			get(el) {
 				return getOptionValue(el)
-			},
+			}
 		},
 		select: {
 			get(el) {
@@ -114,8 +114,8 @@ const { memberHook, addHook } = createHook(
 						if (map[getOptionValue(option)] === true) option[SELECTED] = true
 					}
 				}
-			},
-		},
+			}
+		}
 	}
 )
 

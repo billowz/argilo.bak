@@ -37,7 +37,10 @@ export default inherit(
 			pattern = regexp.source,
 			ignoreCase = regexp.ignoreCase
 
-		regexp = new RegExp(sticky ? pattern : `^(?:${pattern})`, (ignoreCase ? 'i' : '') + (regexp.multiline ? 'm' : '') + (sticky ? 'y' : ''))
+		regexp = new RegExp(
+			sticky ? pattern : `^(?:${pattern})`,
+			(ignoreCase ? 'i' : '') + (regexp.multiline ? 'm' : '') + (sticky ? 'y' : '')
+		)
 
 		option[OPTION_IGNORE_CASE] = ignoreCase
 		MatchRule.call(this, name, option)
@@ -51,7 +54,7 @@ export default inherit(
 	},
 	MatchRule,
 	{
-		type: 'RegExp',
+		type: 'RegExp'
 	}
 )
 

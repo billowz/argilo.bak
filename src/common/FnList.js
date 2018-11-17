@@ -1,18 +1,19 @@
-/*
+// @flow
+/**
  * Function List
- *
- * @author tao.zeng (tao.zeng.zt@gmail.com)
- * @created 2018-08-20 17:59:11
- * @Last Modified by: tao.zeng (tao.zeng.zt@gmail.com)
- * @Last Modified time: 2018-09-06 13:57:17
+ * @module common/List
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
+ * @modified Sat Nov 17 2018 09:42:49 GMT+0800 (China Standard Time)
  */
+
 import { assert } from 'devlevel'
 import List from './List'
 import { inherit, create, defPropValue } from '../helper'
 
 export const DEFAULT_FN_BINDING = '__id__'
 export const DEFAULT_SCOPE_BINDING = '__id__'
-export default function FnList(fnBinding, scopeBinding) {
+export default function FnList(fnBinding: string, scopeBinding: string) {
 	this.nodeMap = create(null)
 	this.list = new List()
 	this.fnBinding = fnBinding || DEFAULT_FN_BINDING
@@ -62,7 +63,7 @@ inherit(FnList, {
 		assert.fn(cb, 'callback is not a Function.')
 		if (scope) cb = cb.bind(scope)
 		this.list.each(node => cb(node[1], node[2], node[3]))
-	},
+	}
 })
 
 const DEFAULT_SCOPE_ID = 1

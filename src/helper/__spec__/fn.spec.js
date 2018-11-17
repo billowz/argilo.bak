@@ -1,4 +1,6 @@
-import { apply, applyScope, applyNoScope, applyN, applyScopeN, applyNoScopeN, createFn } from '../function'
+// @flow
+
+import { apply, applyScope, applyNoScope, applyN, applyScopeN, applyNoScopeN, createFn } from '../fn'
 
 const global = (function() {
 	return this
@@ -73,9 +75,9 @@ describe('Function', () => {
 		function A() {}
 
 		const fn1 = createFn(`return 1;`)
-		const fn2 = createFn('aaa', `return 2;`)
-		const fn3 = createFn(['a'], `return a + 2;`)
-		const fn4 = createFn('bbb', ['a', 'b'], `return a +b+ 2;`)
+		const fn2 = createFn(`return 2;`, [], 'aaa')
+		const fn3 = createFn(`return a + 2;`, ['a'])
+		const fn4 = createFn(`return a +b+ 2;`, ['a', 'b'], 'bbb')
 
 		expect(fn1()).to.equal(1)
 		expect(fn2()).to.equal(2)

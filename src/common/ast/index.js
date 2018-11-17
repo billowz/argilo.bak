@@ -1,7 +1,7 @@
 /**
+ *
  * @module common/ast
- * @author tao.zeng (tao.zeng.zt@gmail.com)
- * @created 2018-11-06 18:02:16
- * @Last Modified by:   tao.zeng (tao.zeng.zt@gmail.com)
- * @Last Modified time: 2018-11-06 18:02:16
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Tue Nov 06 2018 10:58:52 GMT+0800 (China Standard Time)
+ * @modified Sat Nov 17 2018 09:25:33 GMT+0800 (China Standard Time)
  */

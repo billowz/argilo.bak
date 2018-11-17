@@ -20,7 +20,7 @@ import {
 	CLIENTY,
 	PAGEX,
 	PAGEY,
-	DISABLED,
+	DISABLED
 } from './util/util'
 import createHook from './util/hook'
 import { inherit, create, applyScope, applyNoScope, hasOwnProp, isFn, isStr, makeMap } from '../helper'
@@ -86,7 +86,7 @@ const EventMixin = {
 			applyScope(fn, this, arguments)
 			self.un(type, proxy, scope)
 		}
-	},
+	}
 }
 
 EventMixin[MIXIN_ADD_LISTEN] = function(type, fn, scope) {
@@ -195,11 +195,23 @@ const keyEventReg = /^key/,
 		fix(event, original) {
 			event[ORIGINAL_PROPS](keyEventProps)
 			if (!event[WHICH]) event[WHICH] = original[CHARCODE] != null ? original[CHARCODE] : original[KEYCODE]
-		},
+		}
 	},
 	mouseEventReg = /^(?:mouse|contextmenu|drag)|click/,
 	BUTTON = 'button',
-	mouseEventProps = [BUTTON, BUTTON + 's', CLIENTX, CLIENTY, 'offsetX', 'offsetY', PAGEX, PAGEY, 'screenX', 'screenY', 'toElement'],
+	mouseEventProps = [
+		BUTTON,
+		BUTTON + 's',
+		CLIENTX,
+		CLIENTY,
+		'offsetX',
+		'offsetY',
+		PAGEX,
+		PAGEY,
+		'screenX',
+		'screenY',
+		'toElement'
+	],
 	mouseEventHook = {
 		fix(event, original) {
 			const button = original[BUTTON]
@@ -208,11 +220,18 @@ const keyEventReg = /^key/,
 				var eventDoc = event.target[OWNER_DOCUMENT] || document,
 					doc = eventDoc[DOCUMENT_ELEMENT],
 					body = eventDoc.body
-				event[PAGEX] = original[CLIENTX] + ((doc && doc[SCROLL_LEFT]) || (body && body[SCROLL_LEFT]) || 0) - ((doc && doc[CLIENT_LEFT]) || (body && body[CLIENT_LEFT]) || 0)
-				event[PAGEY] = original[CLIENTY] + ((doc && doc[SCROLL_TOP]) || (body && body[SCROLL_TOP]) || 0) - ((doc && doc[CLIENT_TOP]) || (body && body[CLIENT_TOP]) || 0)
+				event[PAGEX] =
+					original[CLIENTX] +
+					((doc && doc[SCROLL_LEFT]) || (body && body[SCROLL_LEFT]) || 0) -
+					((doc && doc[CLIENT_LEFT]) || (body && body[CLIENT_LEFT]) || 0)
+				event[PAGEY] =
+					original[CLIENTY] +
+					((doc && doc[SCROLL_TOP]) || (body && body[SCROLL_TOP]) || 0) -
+					((doc && doc[CLIENT_TOP]) || (body && body[CLIENT_TOP]) || 0)
 			}
-			if (!event[WHICH] && button !== undefined) event[WHICH] = button & 1 ? 1 : button & 2 ? 3 : button & 4 ? 2 : 0
-		},
+			if (!event[WHICH] && button !== undefined)
+				event[WHICH] = button & 1 ? 1 : button & 2 ? 3 : button & 4 ? 2 : 0
+		}
 	}
 
 let last = 0
@@ -265,13 +284,19 @@ function eventTarget(event) {
 	return target.nodeType == 3 ? target[PARENT_NODE] : target
 }
 
-const eventProps = 'altKey,bubbles,cancelable,ctrlKey,eventPhase,metaKey,shiftKey,view'.split(',').concat(RELATED_TARGET, PROPERTY_NAME, WHICH, CURRENT_TARGET)
+const eventProps = 'altKey,bubbles,cancelable,ctrlKey,eventPhase,metaKey,shiftKey,view'
+	.split(',')
+	.concat(RELATED_TARGET, PROPERTY_NAME, WHICH, CURRENT_TARGET)
 
 function Event(event, type) {
 	this.type = type || event.type
 	this[ORIGINAL_EVENT] = event
 	this.target = eventTarget(event)
-	this[RETURN_VALUE] = !(event.defaultPrevented || event[RETURN_VALUE] === false || (event[GET_PREVENT_DEFAULT] && event[GET_PREVENT_DEFAULT]()))
+	this[RETURN_VALUE] = !(
+		event.defaultPrevented ||
+		event[RETURN_VALUE] === false ||
+		(event[GET_PREVENT_DEFAULT] && event[GET_PREVENT_DEFAULT]())
+	)
 	this[TIME_STAMP] = event[TIME_STAMP] || new Date().getTime()
 	this[ORIGINAL_PROPS](eventProps)
 }
@@ -321,12 +346,12 @@ if (ROOTELEMENT.onmouseenter === undefined) {
 	addHook({
 		mouseover: {
 			type: 'mouseenter',
-			fix,
+			fix
 		},
 		mouseout: {
 			type: 'mouseleave',
-			fix,
-		},
+			fix
+		}
 	})
 }
 
@@ -351,7 +376,7 @@ if (document.onmousewheel === undefined) {
 		fix(event) {
 			event[WHEEL_DELTAY] = event[WHEEL_DELTA] = event[fixWheelDelta] > 0 ? -120 : 120
 			event[WHEEL_DELTAY] = 0
-		},
+		}
 	})
 }
 
@@ -366,7 +391,7 @@ if (document[CREATE_ELEMENT](INPUT).oninput === undefined) {
 		type: 'propertychange',
 		fix(event) {
 			return event[PROPERTY_NAME] === 'value'
-		},
+		}
 	})
 	let changeEventNum = 0
 	const DOM_CHANGE_EVENT = '__change_event'
@@ -384,7 +409,7 @@ if (document[CREATE_ELEMENT](INPUT).oninput === undefined) {
 				el[DOM_CHANGE_EVENT] = false
 				return false
 			}
-		},
+		}
 	})
 
 	function changeEventDispath(event) {
@@ -398,7 +423,7 @@ if (document[CREATE_ELEMENT](INPUT).oninput === undefined) {
 		fix(event) {
 			const el = event.target
 			el[OLD_VALUE] = el.value
-		},
+		}
 	})
 
 	// http://stackoverflow.com/questions/6382389/oninput-in-ie9-doesnt-fire-when-we-hit-backspace-del-do-cut

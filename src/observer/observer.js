@@ -1,18 +1,33 @@
-/*
- * @author tao.zeng (tao.zeng.zt@gmail.com)
- * @created 2018-08-29 12:33:23
- * @Last Modified by: tao.zeng (tao.zeng.zt@gmail.com)
- * @Last Modified time: 2018-09-06 13:59:32
+// @flow
+/**
+ *
+ * @module observer
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
+ * @modified Fri Nov 16 2018 19:16:11 GMT+0800 (China Standard Time)
  */
+
 import { assert, info } from 'devlevel'
 import { List, FnList, nextTick, parsePath, formatPath, get, set } from '../common'
 import { DEFAULT_BINDING } from '../common/List'
 import { DEFAULT_FN_BINDING, DEFAULT_SCOPE_BINDING } from '../common/FnList'
-import { inherit, create, extend, apply, defPropValue, hasOwnProp, eq, isPrimitive, isArray, makeMap, makeArray } from '../helper'
+import {
+	inherit,
+	create,
+	extend,
+	apply,
+	defPropValue,
+	hasOwnProp,
+	eq,
+	isPrimitive,
+	isArray,
+	makeMap,
+	makeArray
+} from '../helper'
 import es6 from './es6'
 import es5 from './es5'
 import vb from './vb'
-import { PROTOTYPE } from '../helper/constants'
+import { PROTOTYPE } from '../helper/consts'
 
 const OBSERVER_KEY = '__observer__'
 
@@ -31,7 +46,7 @@ const arrayHooks = makeArray('fill,pop,push,reverse,shift,sort,splice,unshift', 
 				observer.__write('change', this, this)
 				if (len !== newlen) observer.__write('length', newlen, len)
 				return rs
-			},
+			}
 		]
 	}),
 	arrayHookLength = arrayHooks.length
@@ -58,7 +73,7 @@ info(
 	{
 		proxyEnabled,
 		proxyChangeable,
-		sourceOwnProperty,
+		sourceOwnProperty
 	},
 	'default properties: ',
 	defaultProps
@@ -206,7 +221,7 @@ inherit(
 		},
 		__proxyChanged: noProxyChangeEventHandler,
 		onProxyChange: noProxyChangeEventHandler,
-		unProxyChange: noProxyChangeEventHandler,
+		unProxyChange: noProxyChangeEventHandler
 	},
 	policy.impl
 )
@@ -250,7 +265,10 @@ function freeWatchDescriptor(desc) {
 function unwatch(watchs, path, level, maxLevel, handler, scope) {
 	const desc = watchs[path[level]]
 	if (desc) {
-		const ret = level === maxLevel ? desc[DESC_HANDLERS_INDEX].remove(handler, scope) : unwatch(desc[DESC_CHILDREN_INDEX], path, level + 1, maxLevel, handler, scope)
+		const ret =
+			level === maxLevel
+				? desc[DESC_HANDLERS_INDEX].remove(handler, scope)
+				: unwatch(desc[DESC_CHILDREN_INDEX], path, level + 1, maxLevel, handler, scope)
 
 		if (!desc[DESC_CHILD_NUM_INDEX] && !desc[DESC_HANDLERS_INDEX].size()) {
 			unregisterBubble(desc[DESC_OBSERVER_INDEX], desc, desc[DESC_ATTR_INDEX])
@@ -311,7 +329,12 @@ function flushChangedQueue() {
 
 	for (; i < l; i++) {
 		desc = changedQueue[i]
-		bubble(desc, observerValue(desc[DESC_OBSERVER_INDEX], desc[DESC_ATTR_INDEX]), desc[DESC_CHANGED_INDEX], addEventQueue)
+		bubble(
+			desc,
+			observerValue(desc[DESC_OBSERVER_INDEX], desc[DESC_ATTR_INDEX]),
+			desc[DESC_CHANGED_INDEX],
+			addEventQueue
+		)
 		desc[DESC_CHANGED_INDEX] = NO_CHANGED
 	}
 	changedQueue.length = 0
@@ -323,7 +346,9 @@ function flushChangedQueue() {
 		oldValue = desc[DESC_EVENT_INDEX]
 		if (value !== oldValue || !isPrimitive(value))
 			desc[DESC_HANDLERS_INDEX].each((callback, scope) => {
-				scope ? callback.call(scope, desc[DESC_PATH_INDEX], value, oldValue, desc[DESC_OWNER_INDEX]) : callback(desc[DESC_PATH_INDEX], value, oldValue, desc[DESC_OWNER_INDEX])
+				scope
+					? callback.call(scope, desc[DESC_PATH_INDEX], value, oldValue, desc[DESC_OWNER_INDEX])
+					: callback(desc[DESC_PATH_INDEX], value, oldValue, desc[DESC_OWNER_INDEX])
 			})
 		desc[DESC_EVENT_INDEX] = NO_CHANGED
 	}
@@ -348,8 +373,13 @@ function __bubble(parent, newObserver, cb) {
 		nextObserver
 
 	for (attr in children) {
-		if ((desc = children[attr]) && desc[DESC_OWNER_INDEX] && (oldObserver = desc[DESC_OBSERVER_INDEX]) !== newObserver) {
-			if (desc[DESC_HANDLERS_INDEX].size()) cb(desc, observerValue(newObserver, attr), observerValue(oldObserver, attr))
+		if (
+			(desc = children[attr]) &&
+			desc[DESC_OWNER_INDEX] &&
+			(oldObserver = desc[DESC_OBSERVER_INDEX]) !== newObserver
+		) {
+			if (desc[DESC_HANDLERS_INDEX].size())
+				cb(desc, observerValue(newObserver, attr), observerValue(oldObserver, attr))
 
 			unregisterBubble(oldObserver, desc, attr)
 			desc[DESC_OBSERVER_INDEX] = newObserver
@@ -391,7 +421,8 @@ function _set(observer, path, value, setSource) {
 			source = observer.source
 			nextObj = source[prop]
 			if (!nextObj || !(observer = getObserver(nextObj))) {
-				if (nextObj === undefined || nextObj === null) nextObj = setSource ? (source[prop] = {}) : (observer.proxy[prop] = {})
+				if (nextObj === undefined || nextObj === null)
+					nextObj = setSource ? (source[prop] = {}) : (observer.proxy[prop] = {})
 				observer = undefined
 				obj = nextObj
 			}
@@ -504,7 +535,7 @@ if (proxyEnabled) {
 				assert.fn(fn, 'require function handler.')
 				let list = this.proxyListens
 				return list && list.remove(fn, scope)
-			},
+			}
 		})
 
 		onProxyChange = function(obj, fn, scope) {

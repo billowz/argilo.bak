@@ -38,6 +38,6 @@ export default inherit(
 		},
 		update(value) {
 			throw new Error(`abstract method`)
-		},
+		}
 	}
 )

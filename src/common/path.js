@@ -1,10 +1,10 @@
-/*
- * property path
- *
- * @author tao.zeng (tao.zeng.zt@gmail.com)
- * @created 2018-08-20 18:00:02
- * @Last Modified by:   tao.zeng (tao.zeng.zt@gmail.com)
- * @Last Modified time: 2018-08-20 18:00:02
+// @flow
+/**
+ * String format
+ * @module common
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
+ * @modified Fri Nov 16 2018 19:19:35 GMT+0800 (China Standard Time)
  */
 import { assert } from 'devlevel'
 import { create, isArray } from '../helper'

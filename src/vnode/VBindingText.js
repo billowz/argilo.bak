@@ -1,8 +1,8 @@
-/*
- * @author tao.zeng (tao.zeng.zt@gmail.com)
- * @created 2018-08-29 12:36:23
- * @Last Modified by: Tao Zeng (tao.zeng.zt@qq.com)
- * @Last Modified time: 2018-11-07 16:07:37
+/**
+ * @module vnode
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Tue Nov 06 2018 10:06:22 GMT+0800 (China Standard Time)
+ * @modified Sat Nov 17 2018 09:32:13 GMT+0800 (China Standard Time)
  */
 import { VIRT_BINDING_TEXT } from './VNode'
 import VText from './VText'
@@ -31,6 +31,6 @@ export default inherit(
 		exprHandler(path, value) {
 			const { expr, comp } = this
 			this.text(expr.simple ? expr.transform(value, comp, [this]) : expr.transformValue(comp, [this]))
-		},
+		}
 	}
 )

@@ -14,15 +14,15 @@ import { isStr, isArray, isInt } from '../../helper'
  * @param  {boolean} ignoreCase			ignore case
  * @param  {(code:number)=>void} cb		each callback
  */
-export function eachCharCodes(codes: number | string | Array, ignoreCase: boolean, cb: (code: number) => void) {
+export function eachCharCodes(codes: number | string | Array<any>, ignoreCase: boolean, cb: (code: number) => void) {
 	if (isStr(codes)) {
-		var i = codes.length
-		while (i--) eachCharCode(codes.charCodeAt(i), ignoreCase, cb)
+		var i = (codes: any).length
+		while (i--) eachCharCode((codes: any).charCodeAt(i), ignoreCase, cb)
 	} else if (isArray(codes)) {
-		var i = codes.length
-		while (i--) eachCharCodes(codes[i], ignoreCase, cb)
+		var i = (codes: any).length
+		while (i--) eachCharCodes((codes: any)[i], ignoreCase, cb)
 	} else if (isInt(codes)) {
-		eachCharCode(codes, ignoreCase, cb)
+		eachCharCode((codes: any), ignoreCase, cb)
 	}
 }
 /**

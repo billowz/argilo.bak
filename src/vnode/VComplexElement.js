@@ -1,15 +1,15 @@
-/*
- * @author tao.zeng (tao.zeng.zt@gmail.com)
- * @created 2018-08-29 12:36:34
- * @Last Modified by: tao.zeng (tao.zeng.zt@gmail.com)
- * @Last Modified time: 2018-09-15 19:13:56
+/**
+ * @module vnode
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Tue Nov 06 2018 10:06:22 GMT+0800 (China Standard Time)
+ * @modified Sat Nov 17 2018 09:32:27 GMT+0800 (China Standard Time)
  */
 import { assert } from 'devlevel'
 import { VIRT_NODE, VIRT_COMPLEX_ELEMENT, CHILD_NODES } from './VNode'
 import VElement from './VElement'
 import { List } from '../common'
 import { inherit } from '../helper'
-import { PROTOTYPE } from '../helper/constants'
+import { PROTOTYPE } from '../helper/consts'
 
 const { prepare, mount, unmount } = VElement[PROTOTYPE]
 
@@ -30,7 +30,10 @@ export default inherit(
 				const l = children.length
 				for (var i = 0, N; i < l; i++) {
 					N = children[i].VNode
-					assert(N[PROTOTYPE][this.$childKey], `Child Node[${i}: ${children[i].ename}] should be ${this.$childName}`)
+					assert(
+						N[PROTOTYPE][this.$childKey],
+						`Child Node[${i}: ${children[i].ename}] should be ${this.$childName}`
+					)
 				}
 			}
 		},
@@ -81,7 +84,7 @@ export default inherit(
 		},
 		eachChildren(cb, scope) {
 			return this[CHILD_NODES].each(cb, scope)
-		},
+		}
 	}
 )
 
