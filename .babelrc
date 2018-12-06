@@ -1,0 +1,31 @@
+{
+	"presets": [
+		"@babel/preset-typescript",
+		[
+			"@babel/preset-env",
+			{
+				"modules": "cjs",
+				"loose": true
+			}
+		]
+	],
+	"plugins": [
+		["@babel/plugin-proposal-class-properties", { "loose": true }],
+		"transform-es3-member-expression-literals",
+		"transform-es3-property-literals",
+		"minify-dead-code-elimination"
+	],
+	"env": {
+		"test": {
+			"plugins": [
+				[
+					"istanbul",
+					{
+						"include": ["src/**/*.ts"],
+						"exclude": ["src/**/__*__/*"]
+					}
+				]
+			]
+		}
+	}
+}

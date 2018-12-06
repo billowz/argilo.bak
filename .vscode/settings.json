@@ -1,0 +1,6 @@
+{
+    "mochaExplorer.files": "**/*.spec.ts",
+    "mochaExplorer.logpanel": true,
+    "mochaExplorer.mochaPath": "node_modules/mocha",
+    "mochaExplorer.optsFile": "mocha.opts"
+}

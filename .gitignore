@@ -1,0 +1,10 @@
+/node_modules
+/coverage
+/benchmark
+/doc
+/*.log
+/index.html
+/analysis
+/.rpt2_cache
+/.sonarlint
+/.cover-tmp

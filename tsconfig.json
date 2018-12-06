@@ -1,0 +1,23 @@
+{
+	"compilerOptions": {
+		"target": "es3",
+		"module": "commonjs",
+		"lib": ["es6", "es2015", "dom"],
+		"moduleResolution": "node",
+		"sourceMap": true,
+		"charset": "utf-8",
+		"newLine": "LF",
+		"esModuleInterop": true,
+		"allowSyntheticDefaultImports": true,
+		"experimentalDecorators": true,
+		"diagnostics": true,
+		"forceConsistentCasingInFileNames": true,
+		"noImplicitAny": false,
+		"noImplicitUseStrict": true,
+		"allowUnusedLabels": true,
+		"allowJs": false,
+		"pretty": true
+	},
+	"include": ["src/**/*", "types/*"],
+	"exclude": ["node_modules"]
+}
