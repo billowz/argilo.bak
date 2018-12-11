@@ -64,22 +64,25 @@ export default [
 
 	// commonjs && esmodule bundle
 	PROD &&
-		config({
-			external: Object.keys(pkg.dependencies || {}),
-			output: [
-				output({
-					file: pkg.main,
-					format: 'cjs'
-				}),
-				output({
-					file: pkg.module,
-					format: 'esm'
-				})
-			]
-		})
+		config(
+			{
+				external: Object.keys(pkg.dependencies || {}),
+				output: [
+					output({
+						file: pkg.main,
+						format: 'cjs'
+					}),
+					output({
+						file: pkg.module,
+						format: 'esm'
+					})
+				]
+			},
+			false
+		)
 ].filter(v => v)
 
-function config(options) {
+function config(options, loose = true) {
 	return Object.assign({ input: './src/index.ts' }, options, {
 		plugins: [
 			nodeResolve({ jsnext: true, extensions: ['.js', '.ts'] }),
@@ -91,7 +94,8 @@ function config(options) {
 						'@babel/preset-env',
 						{
 							modules: false,
-							loose: true
+							loose: true,
+							targets: !loose && { browsers: 'chrome >= 59' }
 						}
 					]
 				],

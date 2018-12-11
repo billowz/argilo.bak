@@ -3,7 +3,7 @@
  * @module utility
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Jul 25 2018 15:22:57 GMT+0800 (China Standard Time)
- * @modified Tue Nov 27 2018 20:00:13 GMT+0800 (China Standard Time)
+ * @modified Mon Dec 10 2018 12:44:40 GMT+0800 (China Standard Time)
  */
 import { PROTO, PROTOTYPE } from './consts'
 import { protoPropSupport } from './proto'
@@ -79,16 +79,16 @@ export const defPropValue: <V>(
 	obj: any,
 	prop: string,
 	value: V,
+	enumerable?: boolean,
 	configurable?: boolean,
-	writable?: boolean,
-	enumerable?: boolean
+	writable?: boolean
 ) => V = defPropSupport
 	? function defPropValue(obj, prop, value, configurable, writable, enumerable) {
 			__defProp(obj, prop, {
 				value,
-				configurable: configurable || false,
-				writable: writable || false,
-				enumerable: enumerable || false
+				enumerable: enumerable !== false,
+				configurable: configurable !== false,
+				writable: writable !== false
 			})
 			return value
 	  }

@@ -49,7 +49,7 @@ export const ComplexRule = inherit(
 				do {
 					pos = stream.position(err[0])
 					msg.unshift(
-						`[${pad(pos[0], 2)}:${pad(pos[1], 2)}] - ${err[4].toString()}: ${err[1]} on "${escapeString(
+						`[${pad(pos[0], 2)}:${pad(pos[1], 2)}] - ${err[4].toString()}: ${err[1]} on "${escapeStr(
 							buff.substr(err[0], 20)
 						)}"`
 					)

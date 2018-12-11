@@ -8,7 +8,7 @@
 import { Control } from './control'
 import { STOP, eachArray, reachArray, eachObj } from './each'
 import { IArray } from '../consts'
-import create from '../create'
+import {create} from '../create'
 import { bind } from '../fn'
 import { isArrayLike, isBool } from '../is'
 

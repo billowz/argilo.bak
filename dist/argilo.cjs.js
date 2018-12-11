@@ -11,7 +11,7 @@
  * Copyright (c) 2018 Tao Zeng <tao.zeng.zt@qq.com>
  * Released under the MIT license
  *
- * Date: Thu, 06 Dec 2018 12:10:36 GMT
+ * Date: Tue, 11 Dec 2018 12:13:30 GMT
  */
 'use strict';
 
@@ -24,15 +24,15 @@ Object.defineProperty(exports, '__esModule', { value: true });
  * @created 2018-11-09 15:23:35
  * @modified 2018-11-09 15:23:35 by Tao Zeng (tao.zeng.zt@qq.com)
  */
-var CONSTRUCTOR = 'constructor';
-var PROTOTYPE = 'prototype';
-var PROTO = '__proto__';
-var TYPE_BOOL = 'boolean';
-var TYPE_FN = 'function';
-var TYPE_NUM = 'number';
-var TYPE_STRING = 'string';
-var TYPE_UNDEF = 'undefined';
-var GLOBAL = typeof window !== TYPE_UNDEF ? window : typeof global !== TYPE_UNDEF ? global : typeof self !== TYPE_UNDEF ? self : {};
+const CONSTRUCTOR = 'constructor';
+const PROTOTYPE = 'prototype';
+const PROTO = '__proto__';
+const TYPE_BOOL = 'boolean';
+const TYPE_FN = 'function';
+const TYPE_NUM = 'number';
+const TYPE_STRING = 'string';
+const TYPE_UNDEF = 'undefined';
+const GLOBAL = typeof window !== TYPE_UNDEF ? window : typeof global !== TYPE_UNDEF ? global : typeof self !== TYPE_UNDEF ? self : {};
 
 /**
  * type checker
@@ -80,22 +80,22 @@ function isNil(o) {
  * is boolean
  */
 
-var isBool = mkIsPrimitive(TYPE_BOOL);
+const isBool = mkIsPrimitive(TYPE_BOOL);
 /**
  * is a number
  */
 
-var isNum = mkIsPrimitive(TYPE_NUM);
+const isNum = mkIsPrimitive(TYPE_NUM);
 /**
  * is a string
  */
 
-var isStr = mkIsPrimitive(TYPE_STRING);
+const isStr = mkIsPrimitive(TYPE_STRING);
 /**
  * is a function
  */
 
-var isFn = mkIsPrimitive(TYPE_FN);
+const isFn = mkIsPrimitive(TYPE_FN);
 /**
  * is integer number
  */
@@ -154,7 +154,7 @@ function instOf(obj, Cls) {
 
 function is(o, Type) {
   if (o !== undefined && o !== null) {
-    var C = o[CONSTRUCTOR] || Object;
+    const C = o[CONSTRUCTOR] || Object;
 
     if (Type[CONSTRUCTOR] === Array) {
       var i = Type.length;
@@ -175,39 +175,37 @@ function is(o, Type) {
  * is boolean or Boolean
  */
 
-var isBoolean = mkIs(Boolean);
+const isBoolean = mkIs(Boolean);
 /**
  * is number or Number
  */
 
-var isNumber = mkIs(Number);
+const isNumber = mkIs(Number);
 /**
  * is string or String
  */
 
-var isString = mkIs(String);
+const isString = mkIs(String);
 /**
  * is Date
  */
 
-var isDate = mkIs(Date);
+const isDate = mkIs(Date);
 /**
  * is RegExp
  */
 
-var isReg = mkIs(RegExp);
+const isReg = mkIs(RegExp);
 /**
  * is Array
  */
 
-var isArray = Array.isArray || mkIs(Array);
+const isArray = Array.isArray || mkIs(Array);
 /**
  * is Typed Array
  */
 
-var isTypedArray = isFn(ArrayBuffer) ? ArrayBuffer.isView : function () {
-  return false;
-};
+const isTypedArray = isFn(ArrayBuffer) ? ArrayBuffer.isView : () => false;
 /**
  * is Array or pseudo-array
  * - Array
@@ -237,7 +235,7 @@ function isArrayLike(o) {
         return true;
     }
 
-    var len = o.length;
+    const len = o.length;
     return typeof len === TYPE_NUM && (len === 0 || len > 0 && len % 1 === 0 && len - 1 in o);
   }
 
@@ -253,7 +251,7 @@ function isObj(o) {
     return false;
   }
 
-  var C = o[CONSTRUCTOR];
+  const C = o[CONSTRUCTOR];
   return C === undefined || C === Object;
 }
 
@@ -263,7 +261,7 @@ function mkIs(Type) {
   };
 }
 
-var blankStrReg = /^\s*$/;
+const blankStrReg = /^\s*$/;
 /**
  * is empty
  * - string: trim(string).length === 0
@@ -304,7 +302,7 @@ function isBlank(o) {
  */
 
 function createFn(body, args, name) {
-  return name ? Function("return function " + name + "(" + (args ? args.join(', ') : '') + "){" + body + "}")() : applyScope(Function, Function, args && args.length ? args.concat(body) : [body]);
+  return name ? Function(`return function ${name}(${args ? args.join(', ') : ''}){${body}}`)() : applyScope(Function, Function, args && args.length ? args.concat(body) : [body]);
 } // ========================================================================================
 
 /*                                                                                      *
@@ -319,15 +317,22 @@ function createFn(body, args, name) {
 function applyBuilder(maxArgs, scope, offset) {
   scope = scope ? 'scope' : '';
   offset = offset ? 'offset' : '';
-  var args = new Array(maxArgs + 1);
-  var cases = new Array(maxArgs + 1);
+  const args = new Array(maxArgs + 1);
+  const cases = new Array(maxArgs + 1);
 
-  for (var i = 0; i <= maxArgs; i++) {
-    args[i] = (i || scope ? ', ' : '') + "args[" + (offset ? "offset" + (i ? ' + ' + i : '') : i) + "]";
-    cases[i] = "case " + i + ": return fn" + (scope && '.call') + "(" + scope + args.slice(0, i).join('') + ");";
+  for (let i = 0; i <= maxArgs; i++) {
+    args[i] = `${i || scope ? ', ' : ''}args[${offset ? `offset${i ? ' + ' + i : ''}` : i}]`;
+    cases[i] = `case ${i}: return fn${scope && '.call'}(${scope}${args.slice(0, i).join('')});`;
   }
 
-  return Function("return function(fn, " + (scope && scope + ', ') + "args" + (offset && ', offset, len') + "){\nswitch(" + (offset ? 'len' : 'args.length') + "){\n" + cases.join('\n') + "\n}\n" + (offset && "var arr = new Array(len);\nfor(var i=0; i<len; i++) arr[i] = arr[offset + i];") + "\nreturn fn.apply(" + (scope || 'null') + ", " + (offset ? 'arr' : 'args') + ");\n}")();
+  return Function(`return function(fn, ${scope && scope + ', '}args${offset && ', offset, len'}){
+switch(${offset ? 'len' : 'args.length'}){
+${cases.join('\n')}
+}
+${offset && `var arr = new Array(len);
+for(var i=0; i<len; i++) arr[i] = arr[offset + i];`}
+return fn.apply(${scope || 'null'}, ${offset ? 'arr' : 'args'});
+}`)();
 }
 /**
  * apply function with scope
@@ -337,14 +342,14 @@ function applyBuilder(maxArgs, scope, offset) {
  */
 
 
-var applyScope = applyBuilder(8, 1, 0);
+const applyScope = applyBuilder(8, 1, 0);
 /**
  * apply function without scope
  * @param fn		target function
  * @param args	arguments of function
  */
 
-var applyNoScope = applyBuilder(8, 0, 0);
+const applyNoScope = applyBuilder(8, 0, 0);
 /**
  * apply function with scope
  * @param fn		target function
@@ -354,7 +359,7 @@ var applyNoScope = applyBuilder(8, 0, 0);
  * @param len		arg size from offset
  */
 
-var applyScopeN = applyBuilder(8, 1, 1);
+const applyScopeN = applyBuilder(8, 1, 1);
 /**
  * apply function without scope
  * @param fn		target function
@@ -363,7 +368,7 @@ var applyScopeN = applyBuilder(8, 1, 1);
  * @param len		arg size from offset
  */
 
-var applyNoScopeN = applyBuilder(8, 0, 1);
+const applyNoScopeN = applyBuilder(8, 0, 1);
 /**
  * apply function
  * @param fn		target function
@@ -400,13 +405,13 @@ function applyN(fn, scope, args, offset, len) {
  *                                                                                      */
 // ========================================================================================
 
-var varGenReg = /\$\d+$/;
+const varGenReg = /\$\d+$/;
 /**
  * get function name
  */
 
 function fnName(fn) {
-  var name = fn.name;
+  const name = fn.name;
   return name ? name.replace(varGenReg, '') : 'anonymous';
 } // ========================================================================================
 
@@ -415,14 +420,14 @@ function fnName(fn) {
  *                                                                                      */
 // ========================================================================================
 
-var _bind;
+let _bind;
 
-var funcProto = Function[PROTOTYPE];
+const funcProto = Function[PROTOTYPE];
 
 if (funcProto.bind) {
   _bind = function (fn, scope) {
-    var args = arguments,
-        argLen = args.length;
+    const args = arguments,
+          argLen = args.length;
 
     if (isNil(scope)) {
       return argLen > 2 ? bindPolyfill(fn, scope, args, 2) : fn;
@@ -469,7 +474,7 @@ if (funcProto.bind) {
  */
 
 
-var bind = _bind;
+const bind = _bind;
 /**
  * bind
  * > not bind scope when scope is null or undefined
@@ -481,7 +486,7 @@ var bind = _bind;
  */
 
 function bindPolyfill(fn, scope, bindArgs, argOffset) {
-  var argLen = bindArgs.length - argOffset;
+  const argLen = bindArgs.length - argOffset;
 
   if (scope === undefined) {
     scope = null;
@@ -490,11 +495,11 @@ function bindPolyfill(fn, scope, bindArgs, argOffset) {
   if (argLen > 0) {
     // bind with arguments
     return function () {
-      var args = arguments;
-      var i = args.length;
+      const args = arguments;
+      let i = args.length;
 
       if (i) {
-        var params = new Array(argLen + i);
+        const params = new Array(argLen + i);
 
         while (i--) {
           params[argLen + i] = args[i];
@@ -540,13 +545,13 @@ function bindPolyfill(fn, scope, bindArgs, argOffset) {
  * is support sticky on RegExp
  */
 
-var regStickySupport = isBool(/(?:)/.sticky);
+const regStickySupport = isBool(/(?:)/.sticky);
 /**
  * is support unicode on RegExp
  */
 
-var regUnicodeSupport = isBool(/(?:)/.unicode);
-var REG_ESCAPE = /[-\/\\^$*+?.()|[\]{}]/g;
+const regUnicodeSupport = isBool(/(?:)/.unicode);
+const REG_ESCAPE = /[-\/\\^$*+?.()|[\]{}]/g;
 /**
  * escape string for RegExp
  */
@@ -562,27 +567,27 @@ function reEscape(str) {
  * @created Wed Jul 25 2018 15:23:56 GMT+0800 (China Standard Time)
  * @modified Tue Nov 27 2018 20:00:18 GMT+0800 (China Standard Time)
  */
-var __hasOwn = Object[PROTOTYPE].hasOwnProperty;
-var __getProto = Object.getPrototypeOf,
-    ____setProto = Object.setPrototypeOf;
+const __hasOwn = Object[PROTOTYPE].hasOwnProperty;
+const __getProto = Object.getPrototypeOf,
+      ____setProto = Object.setPrototypeOf;
 /**
  * is support Object.getPrototypeOf and Object.setPrototypeOf
  */
 
-var prototypeOfSupport = !!____setProto;
-var protoPropSupport = {
+const prototypeOfSupport = !!____setProto;
+const protoPropSupport = {
   __proto__: []
 } instanceof Array;
 /**
  * Object.getPrototypeOf shim
  */
 
-var protoOf = ____setProto ? __getProto : __getProto ? function (obj) {
+const protoOf = ____setProto ? __getProto : __getProto ? function (obj) {
   return obj[PROTO] || __getProto(obj);
 } : function (obj) {
   return (__hasOwn.call(obj, PROTO) ? obj[PROTO] : obj[CONSTRUCTOR][PROTOTYPE]) || null;
 };
-var __setProto = ____setProto || function (obj, proto) {
+const __setProto = ____setProto || function (obj, proto) {
   obj[PROTO] = proto;
   return obj;
 };
@@ -590,8 +595,8 @@ var __setProto = ____setProto || function (obj, proto) {
  * Object.setPrototypeOf shim
  */
 
-var setProto = ____setProto || (protoPropSupport ? __setProto : function (obj, proto) {
-  for (var p in proto) {
+const setProto = ____setProto || (protoPropSupport ? __setProto : function (obj, proto) {
+  for (let p in proto) {
     if (__hasOwn.call(proto, p)) {
       obj[p] = proto[p];
     }
@@ -605,14 +610,14 @@ var setProto = ____setProto || (protoPropSupport ? __setProto : function (obj, p
  * @module utility
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Jul 25 2018 15:22:57 GMT+0800 (China Standard Time)
- * @modified Tue Nov 27 2018 20:00:13 GMT+0800 (China Standard Time)
+ * @modified Mon Dec 10 2018 12:44:40 GMT+0800 (China Standard Time)
  */
-var __hasOwn$1 = Object[PROTOTYPE].hasOwnProperty;
+const __hasOwn$1 = Object[PROTOTYPE].hasOwnProperty;
 /**
  * has own property
  */
 
-var hasOwnProp = protoPropSupport ? function (obj, prop) {
+const hasOwnProp = protoPropSupport ? function (obj, prop) {
   return __hasOwn$1.call(obj, prop);
 } : function (obj, prop) {
   return prop !== PROTO && __hasOwn$1.call(obj, prop);
@@ -626,23 +631,25 @@ var hasOwnProp = protoPropSupport ? function (obj, prop) {
 function getOwnProp(obj, prop, defaultVal) {
   return hasOwnProp(obj, prop) ? obj[prop] : defaultVal;
 }
-var __defProp = Object.defineProperty;
+let __defProp = Object.defineProperty;
 /**
  * is support Object.defineProperty
  */
 
-var defPropSupport = __defProp && function () {
+const defPropSupport = __defProp && function () {
   try {
     var val,
         obj = {};
 
     __defProp(obj, 's', {
-      get: function get() {
+      get() {
         return val;
       },
-      set: function set(value) {
+
+      set(value) {
         val = value;
       }
+
     });
 
     obj.s = 1;
@@ -665,17 +672,17 @@ if (!defPropSupport) {
  */
 
 
-var defProp = __defProp;
+const defProp = __defProp;
 /**
  * define property by value
  */
 
-var defPropValue = defPropSupport ? function (obj, prop, value, configurable, writable, enumerable) {
+const defPropValue = defPropSupport ? function (obj, prop, value, configurable, writable, enumerable) {
   __defProp(obj, prop, {
-    value: value,
-    configurable: configurable || false,
-    writable: writable || false,
-    enumerable: enumerable || false
+    value,
+    enumerable: enumerable !== false,
+    configurable: configurable !== false,
+    writable: writable !== false
   });
 
   return value;
@@ -689,7 +696,7 @@ var defPropValue = defPropSupport ? function (obj, prop, value, configurable, wr
  * @module utility/create
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Jul 25 2018 15:24:47 GMT+0800 (China Standard Time)
- * @modified Tue Nov 27 2018 15:37:23 GMT+0800 (China Standard Time)
+ * @modified Mon Dec 10 2018 11:45:30 GMT+0800 (China Standard Time)
  */
 
 function __() {}
@@ -700,7 +707,7 @@ function __() {}
 
 function doCreate(o, props) {
   __[PROTOTYPE] = o;
-  var obj = new __();
+  const obj = new __();
   __[PROTOTYPE] = null;
 
   if (props) {
@@ -718,8 +725,8 @@ function doCreate(o, props) {
  */
 
 
-var create = Object.create || (Object.getPrototypeOf ? doCreate : function (o, props) {
-  var obj = doCreate(o, props);
+const create = Object.create || (Object.getPrototypeOf ? doCreate : function (o, props) {
+  const obj = doCreate(o, props);
 
   __setProto(obj, o);
 
@@ -732,22 +739,17 @@ var create = Object.create || (Object.getPrototypeOf ? doCreate : function (o, p
  * @created Wed Jul 25 2018 17:10:41 GMT+0800 (China Standard Time)
  * @modified Tue Nov 27 2018 14:17:32 GMT+0800 (China Standard Time)
  */
-var Control =
-/*#__PURE__*/
-function () {
-  function Control(desc) {
+class Control {
+  constructor(desc) {
     this.desc = void 0;
     this.desc = desc;
   }
 
-  var _proto = Control.prototype;
-
-  _proto.toString = function toString() {
+  toString() {
     return this.desc;
-  };
+  }
 
-  return Control;
-}();
+}
 
 /**
  * @module utility/collection
@@ -760,7 +762,7 @@ function () {
  * > stop each/map/indexOf...
  */
 
-var STOP = new Control('STOP'); //========================================================================================
+const STOP = new Control('STOP'); //========================================================================================
 
 /*                                                                                      *
  *                                each object properties                                *
@@ -780,13 +782,9 @@ function eachProps(obj, callback, scope, own) {
   }
 
   if (own === false) {
-    for (var k in obj) {
-      if (callback(k, obj) === STOP) return k;
-    }
+    for (var k in obj) if (callback(k, obj) === STOP) return k;
   } else {
-    for (k in obj) {
-      if (hasOwnProp(obj, k) && callback(k, obj) === STOP) return k;
-    }
+    for (k in obj) if (hasOwnProp(obj, k) && callback(k, obj) === STOP) return k;
   }
 
   return false;
@@ -811,13 +809,9 @@ function eachObj(obj, callback, scope, own) {
   }
 
   if (own === false) {
-    for (var k in obj) {
-      if (callback(obj[k], k, obj) === STOP) return k;
-    }
+    for (var k in obj) if (callback(obj[k], k, obj) === STOP) return k;
   } else {
-    for (k in obj) {
-      if (hasOwnProp(obj, k) && callback(obj[k], k, obj) === STOP) return k;
-    }
+    for (k in obj) if (hasOwnProp(obj, k) && callback(obj[k], k, obj) === STOP) return k;
   }
 
   return false;
@@ -845,7 +839,7 @@ function eachObj(obj, callback, scope, own) {
 function eachArray(array, callback, scope) {
   callback = bind(callback, scope);
 
-  for (var i = 0, l = array.length; i < l; i++) {
+  for (let i = 0, l = array.length; i < l; i++) {
     if (callback(array[i], i, array) === STOP) return i;
   }
 
@@ -886,7 +880,7 @@ function each(obj, callback, scope, own) {
  * > skip map
  */
 
-var SKIP = new Control('SKIP'); //========================================================================================
+const SKIP = new Control('SKIP'); //========================================================================================
 
 /*                                                                                      *
  *                                    map object                                   *
@@ -909,9 +903,9 @@ function doMapObj(each$$1, obj, callback, scope, own) {
     callback = bind(callback, scope);
   }
 
-  var copy = create(null);
-  each$$1(obj, function (value, prop, obj) {
-    var v = callback(value, prop, obj);
+  const copy = create(null);
+  each$$1(obj, (value, prop, obj) => {
+    const v = callback(value, prop, obj);
     if (v === STOP) return STOP;
     if (v !== SKIP) copy[prop] = v;
   }, null, own);
@@ -947,10 +941,10 @@ function mapObj(obj, callback, scope, own) {
 
 function doMapArray(each$$1, array, callback, scope) {
   callback = bind(callback, scope);
-  var copy = [];
-  var j = 0;
-  each$$1(array, function (data, index, array) {
-    var v = callback(data, index, array);
+  const copy = [];
+  let j = 0;
+  each$$1(array, (data, index, array) => {
+    const v = callback(data, index, array);
     if (v === STOP) return STOP;
     if (v !== SKIP) copy[j++] = v;
   });
@@ -1032,10 +1026,10 @@ function doIdxOfObj(each$$1, obj, value, scope, own) {
     scope = null;
   }
 
-  var callback = parseCallback(value, scope);
-  var idx = -1;
-  each$$1(obj, function (data, prop, obj) {
-    var r = callback(data, prop, obj);
+  const callback = parseCallback(value, scope);
+  let idx = -1;
+  each$$1(obj, (data, prop, obj) => {
+    const r = callback(data, prop, obj);
 
     if (r === true) {
       idx = prop;
@@ -1076,10 +1070,10 @@ function idxOfObj(obj, value, scope, own) {
  */
 
 function doIdxOfArray(each$$1, array, value, scope) {
-  var callback = parseCallback(value, scope);
-  var idx = -1;
-  each$$1(array, function (data, index, array) {
-    var r = callback(data, index, array);
+  const callback = parseCallback(value, scope);
+  let idx = -1;
+  each$$1(array, (data, index, array) => {
+    const r = callback(data, index, array);
 
     if (r === true) {
       idx = index;
@@ -1149,8 +1143,8 @@ function doReduceObj(each$$1, obj, accumulator, callback, scope, own) {
     callback = bind(callback, scope);
   }
 
-  each$$1(obj, function (value, prop, obj) {
-    var rs = callback(accumulator, value, prop, obj);
+  each$$1(obj, (value, prop, obj) => {
+    const rs = callback(accumulator, value, prop, obj);
     if (rs === STOP) return STOP;
     accumulator = rs;
   }, null, own);
@@ -1182,8 +1176,8 @@ function reduceObj(obj, accumulator, callback, scope, own) {
 
 function doReduceArray(each$$1, array, accumulator, callback, scope) {
   callback = bind(callback, scope);
-  each$$1(array, function (data, index, array) {
-    var rs = callback(accumulator, data, index, array);
+  each$$1(array, (data, index, array) => {
+    const rs = callback(accumulator, data, index, array);
     if (rs === STOP) return STOP;
     accumulator = rs;
   });
@@ -1242,9 +1236,9 @@ function defaultObjKeyHandler(prop) {
 }
 
 function doObjKeys(each$$1, obj) {
-  var rs = [],
-      args = arguments;
-  var handler = defaultObjKeyHandler,
+  const rs = [],
+        args = arguments;
+  let handler = defaultObjKeyHandler,
       i = 2,
       j = 0;
 
@@ -1253,8 +1247,8 @@ function doObjKeys(each$$1, obj) {
     if (!isBool(args[i])) handler = bind(handler, args[i++]);
   }
 
-  each$$1(obj, function (prop, obj) {
-    var val = handler(prop, obj);
+  each$$1(obj, (prop, obj) => {
+    const val = handler(prop, obj);
     if (val === STOP) return STOP;
     if (val !== SKIP) rs[j++] = val;
   }, null, args[i]);
@@ -1281,9 +1275,9 @@ function defaultObjValueHandler(value) {
 }
 
 function doObjValues(each$$1, obj) {
-  var rs = [],
-      args = arguments;
-  var handler = defaultObjValueHandler,
+  const rs = [],
+        args = arguments;
+  let handler = defaultObjValueHandler,
       i = 1,
       j = 0;
 
@@ -1293,7 +1287,7 @@ function doObjValues(each$$1, obj) {
   }
 
   each$$1(obj, function (data, prop, obj) {
-    var val = handler(data, prop, obj);
+    const val = handler(data, prop, obj);
     if (val === STOP) return STOP;
     if (val !== SKIP) rs[j++] = val;
   }, null, args[i]);
@@ -1321,10 +1315,10 @@ function values(obj, callback, scope, own) {
  */
 
 function doArr2Obj(each$$1, array, callback, scope) {
-  var obj = create(null);
+  const obj = create(null);
   callback = bind(callback, scope);
-  each$$1(array, function (data, index, array) {
-    var r = callback(data, index, array);
+  each$$1(array, (data, index, array) => {
+    const r = callback(data, index, array);
 
     if (isArray(r)) {
       obj[r[0]] = r[1];
@@ -1350,9 +1344,7 @@ function arr2obj(array, callback, scope) {
 
 function makeMap(array, val, split) {
   if (isStr(array)) array = array.split(isStr(split) ? split : ',');
-  return arr2obj(array, isFn(val) ? val : function (data) {
-    return [data, val];
-  });
+  return arr2obj(array, isFn(val) ? val : data => [data, val]);
 }
 
 /**
@@ -1362,22 +1354,26 @@ function makeMap(array, val, split) {
  * @modified Tue Dec 04 2018 20:10:32 GMT+0800 (China Standard Time)
  */
 function makeArray(len, callback) {
-  var array = new Array(len);
-  var i = len;
+  const array = new Array(len);
+  let i = len;
 
-  while (i--) {
-    array[i] = callback(i);
-  }
+  while (i--) array[i] = callback(i);
 
   return array;
 }
 
-var pathCache = create(null); // prop | [index | "string prop" | 'string prop']
+/**
+ * @module utility/prop
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Fri Nov 30 2018 14:41:02 GMT+0800 (China Standard Time)
+ * @modified Mon Dec 10 2018 16:59:08 GMT+0800 (China Standard Time)
+ */
+const pathCache = create(null); // prop | [index | "string prop" | 'string prop']
 
-var pathReg = /(?:^|\.)([a-zA-Z$_][\w$]*)|\[\s*(?:(\d+)|"((?:[^\\"]|\\.)*)"|'((?:[^\\']|\\.)*)')\s*\]/g;
+const pathReg = /(?:^|\.)([a-zA-Z$_][\w$]*)|\[\s*(?:(\d+)|"((?:[^\\"]|\\.)*)"|'((?:[^\\']|\\.)*)')\s*\]/g;
 function parsePath(path, cacheable) {
   if (isArray(path)) return path;
-  var array = pathCache[path];
+  let array = pathCache[path];
 
   if (!array) {
     array = [];
@@ -1390,7 +1386,7 @@ function parsePath(path, cacheable) {
       cidx = pathReg.lastIndex;
 
       if (cidx !== idx + match[0].length) {
-        throw new SyntaxError("Invalid Path: \"" + path + "\", unkown character[" + path.charAt(idx) + "] at offset:" + idx);
+        throw new SyntaxError(`Invalid Path: "${path}", unkown character[${path.charAt(idx)}] at offset:${idx}`);
       }
 
       array[i++] = match[1] || match[2] || match[3] || match[4];
@@ -1408,14 +1404,14 @@ function formatPath(path) {
 }
 
 function formatPathHandler(prop) {
-  return "[\"" + String(prop).replace("'", '\\"') + "\"]";
+  return `["${String(prop).replace("'", '\\"')}"]`;
 }
 
 function get(obj, path) {
   path = parsePath(path);
-  var l = path.length - 1;
+  const l = path.length - 1;
   if (l === -1) return obj;
-  var i = 0;
+  let i = 0;
 
   for (; i < l; i++) {
     obj = obj[path[i]];
@@ -1426,9 +1422,9 @@ function get(obj, path) {
 }
 function set(obj, path, value) {
   path = parsePath(path);
-  var l = path.length - 1;
+  const l = path.length - 1;
   if (l === -1) return;
-  var attr,
+  let attr,
       v,
       i = 0;
 
@@ -1448,7 +1444,7 @@ function set(obj, path, value) {
  * @module utility/string
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 13:57:32 GMT+0800 (China Standard Time)
- * @modified Thu Dec 06 2018 18:45:25 GMT+0800 (China Standard Time)
+ * @modified Sat Dec 08 2018 16:16:42 GMT+0800 (China Standard Time)
  */
 
 /*                                                                                      *
@@ -1478,7 +1474,7 @@ function char(code) {
  *                                                                                      */
 //========================================================================================
 
-var TRIM_REG = /(^\s+)|(\s+$)/g;
+const TRIM_REG = /(^\s+)|(\s+$)/g;
 /**
  * trim
  */
@@ -1492,17 +1488,19 @@ function trim(str) {
  *                                                                                      */
 //========================================================================================
 
-var FIRST_LOWER_LETTER_REG = /^[a-z]/;
+const FIRST_LOWER_LETTER_REG = /^[a-z]/;
 /**
  * upper first char
  */
 
 function upperFirst(str) {
-  return str.replace(FIRST_LOWER_LETTER_REG, upperHandler);
+  return str.replace(FIRST_LOWER_LETTER_REG, upper);
 }
-
-function upperHandler(m) {
+function upper(m) {
   return m.toUpperCase();
+}
+function lower(m) {
+  return m.toLowerCase();
 } //========================================================================================
 
 /*                                                                                      *
@@ -1519,7 +1517,6 @@ function upperHandler(m) {
  * TODO support NaN, Infinity
  */
 
-
 function strval(obj) {
   return isNil(obj) ? '' : String(obj);
 } //========================================================================================
@@ -1529,31 +1526,61 @@ function strval(obj) {
  *                                                                                      */
 //========================================================================================
 
-var STR_ESCAPE_MAP = {
+const STR_ESCAPE_MAP = {
   '\n': '\\n',
   '\t': '\\t',
   '\f': '\\f',
   '"': '\\"',
   "'": "\\'"
 },
-    STR_ESCAPE = /[\n\t\f"']/g;
-function escapeString(str) {
-  return str.replace(STR_ESCAPE, function (str) {
-    return STR_ESCAPE_MAP[str];
-  });
-} //========================================================================================
+      STR_ESCAPE = /[\n\t\f"']/g;
+function escapeStr(str) {
+  return str.replace(STR_ESCAPE, str => STR_ESCAPE_MAP[str]);
+}
+
+/**
+ * @module utility/format
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Mon Dec 03 2018 19:46:41 GMT+0800 (China Standard Time)
+ * @modified Mon Dec 10 2018 16:26:23 GMT+0800 (China Standard Time)
+ */
 
 /*                                                                                      *
- *                                          pad                                         *
+ *                                       pad & cut                                      *
  *                                                                                      */
 //========================================================================================
 
 function pad(str, len, chr, leftAlign) {
-  str = String(str);
-  var l = str.length;
-  if (l >= len) return str;
-  var padding = new Array(len - l + 1).join(chr || ' ');
+  return len > str.length ? __pad(str, len, chr, leftAlign) : str;
+}
+function cut(str, len, suffix) {
+  return len < str.length ? (suffix = suffix || '', str.substr(0, len - suffix.length) + suffix) : str;
+}
+
+function __pad(str, len, chr, leftAlign) {
+  const padding = new Array(len - str.length + 1).join(chr || ' ');
   return leftAlign ? str + padding : padding + str;
+} //========================================================================================
+
+/*                                                                                      *
+ *                                       Separator                                      *
+ *                                                                                      */
+//========================================================================================
+
+
+const thousandSeparate = mkSeparator(3),
+      binarySeparate = mkSeparator(8, '01'),
+      octalSeparate = mkSeparator(4, '0-7'),
+      hexSeparate = mkSeparator(4, '\\da-fA-F');
+
+function mkSeparator(group, valReg) {
+  valReg = valReg || '\\d';
+  const reg = new RegExp(`^(?:[+-]|\\s+|0[xXbBoO])|([${valReg}])(?=([${valReg}]{${group}})+(?![${valReg}]))|[^${valReg}].*`, 'g');
+  return numStr => numStr.replace(reg, separatorHandler);
+}
+
+function separatorHandler(m, d) {
+  return d ? d + ',' : m;
 } //========================================================================================
 
 /*                                                                                      *
@@ -1561,122 +1588,91 @@ function pad(str, len, chr, leftAlign) {
  *                                                                                      */
 //========================================================================================
 
-function replacor(regs) {
-  return function (str) {
-    for (var i = 0, reg; i < 4; i++) {
-      reg = regs[i];
-      if (reg[0].test(str)) return str.replace(reg[0], reg[1]);
-    }
 
-    return str;
-  };
+const PLURAL_REG = /([a-zA-Z]+)([^aeiou])y$|([sxzh])$|([aeiou]y)$|([^sxzhy])$/;
+function plural(str) {
+  return str.replace(PLURAL_REG, pluralHandler);
 }
 
-var plural = replacor([[/([a-zA-Z]+[^aeiou])y$/, '$1ies'], [/([a-zA-Z]+[aeiou]y)$/, '$1s'], [/([a-zA-Z]+[sxzh])$/, '$1es'], [/([a-zA-Z]+[^sxzhy])$/, '$1s']]);
-var singular = replacor([[/([a-zA-Z]+[^aeiou])ies$/, '$1y'], [/([a-zA-Z]+[aeiou])s$/, '$1'], [/([a-zA-Z]+[sxzh])es$/, '$1'], [/([a-zA-Z]+[^sxzhy])s$/, '$1']]); //========================================================================================
-
-/*                                                                                      *
- *                                   thousand separate                                  *
- *                                                                                      */
-//========================================================================================
-
-var thousandSeparationReg = /(\d)(?=(\d{3})+(?!\d))/g;
-function thousandSeparate(number) {
-  var split = String(number).split('.');
-  split[0] = split[0].replace(thousandSeparationReg, '$1,');
-  return split.join('.');
+function pluralHandler(m, v, ies, es, ys, s) {
+  return v + (ies ? ies + 'ies' : es ? es + 'es' : (ys || s) + 's');
 }
 
-/**
- * @module utility/format
- * @author Tao Zeng <tao.zeng.zt@qq.com>
- * @created Mon Dec 03 2018 19:46:41 GMT+0800 (China Standard Time)
- * @modified Thu Dec 06 2018 20:10:18 GMT+0800 (China Standard Time)
- */
+const SINGULAR_REG = /([a-zA-Z]+)([^aeiou])ies$|([sxzh])es$|([aeiou]y)s$|([^sxzhy])s$/;
+function singular(str) {
+  return str.replace(SINGULAR_REG, singularHandler);
+}
 
-/*                                                                                      *
- *                                      format Rule                                     *
- *                                                                                      */
-//========================================================================================
-//   0      1      2     3     4       5       6           7         8      9           10             11             12      13
-// [match, expr, index, prop, flags, width, width-idx, width-prop, fill, precision, precision-idx, precision-prop, cut-fill, type]
-
-var paramIdxR = "(\\d+|\\$|@)",
-    paramPropR = "(?:\\{((?:[a-zA-Z$_][\\w$_]*|\\[(?:\\d+|\"(?:[^\\\\\"]|\\\\.)*\"|'(?:[^\\\\']|\\\\.)*')\\])(?:\\.[a-zA-Z$_][\\w$_]*|\\[(?:\\d+|\"(?:[^\\\\\"]|\\\\.)*\"|'(?:[^\\\\']|\\\\.)*')\\])*)\\})",
-    widthR = "(?:([1-9]\\d*)|&" + paramIdxR + paramPropR + ")",
-    fillR = "(?:=(.))",
-    cutSuffixR = "(?:=\"((?:[^\\\\\"]|\\\\.)*)\")",
-    formatReg = new RegExp("\\\\.|(\\{" + paramIdxR + "?" + paramPropR + "?(?::([#,+\\- 0]*)(?:" + widthR + fillR + "?)?(?:\\." + widthR + cutSuffixR + "?)?)?(?::?([a-zA-Z_][a-zA-Z0-9_$]*))?\\})", 'g'); //========================================================================================
+function singularHandler(m, v, ies, es, ys, s) {
+  return v + (ies ? ies + 'y' : es || ys || s);
+} //========================================================================================
 
 /*                                                                                      *
  *                                     format flags                                     *
  *                                                                                      */
 //========================================================================================
 
-var FORMAT_XPREFIX = 0x1;
-var FORMAT_PLUS = 0x1;
-var FORMAT_ZERO = 0x2;
-var FORMAT_SPACE = 0x4;
-var FORMAT_THOUSAND = 0x8;
-var FORMAT_LEFT = 0x16; //──── flags parser ──────────────────────────────────────────────────────────────────────
 
-var FLAG_MAPPING = {
+const FORMAT_XPREFIX = 0x1;
+const FORMAT_PLUS = 0x2;
+const FORMAT_ZERO = 0x4;
+const FORMAT_SPACE = 0x8;
+const FORMAT_SEPARATOR = 0x10;
+const FORMAT_LEFT = 0x20;
+const FLAG_MAPPING = {
   '#': FORMAT_XPREFIX,
   '+': FORMAT_PLUS,
   '0': FORMAT_ZERO,
   ' ': FORMAT_SPACE,
-  ',': FORMAT_THOUSAND,
+  ',': FORMAT_SEPARATOR,
   '-': FORMAT_LEFT
 };
 
 function parseFlags(f) {
-  var flags = 0;
+  let flags = 0;
 
   if (f) {
     var i = f.length;
 
-    while (i--) {
-      flags |= FLAG_MAPPING[f.charAt(i)];
-    }
+    while (i--) flags |= FLAG_MAPPING[f.charAt(i)];
   }
 
   return flags;
 } //========================================================================================
 
 /*                                                                                      *
+ *                                      format Rule                                     *
+ *                                                                                      */
+//========================================================================================
+//   0      1      2     3     4       5       6           7         8      9           10             11             12        13
+// [match, expr, index, prop, flags, width, width-idx, width-prop, fill, precision, precision-idx, precision-prop, cut-suffix, type]
+
+
+const paramIdxR = `(\\d+|\\$|@)`,
+      paramPropR = `(?:\\{((?:[a-zA-Z$_][\\w$_]*|\\[(?:\\d+|"(?:[^\\\\"]|\\\\.)*"|'(?:[^\\\\']|\\\\.)*')\\])(?:\\.[a-zA-Z$_][\\w$_]*|\\[(?:\\d+|"(?:[^\\\\"]|\\\\.)*"|'(?:[^\\\\']|\\\\.)*')\\])*)\\})`,
+      widthR = `(?:([1-9]\\d*)|&${paramIdxR}${paramPropR})`,
+      fillR = `(?:=(.))`,
+      cutSuffixR = `(?:="((?:[^\\\\"]|\\\\.)*)")`,
+      formatReg = new RegExp(`\\\\.|(\\{${paramIdxR}?${paramPropR}?(?::([#,+\\- 0]*)(?:${widthR}${fillR}?)?(?:\\.${widthR}${cutSuffixR}?)?)?([a-zA-Z_][a-zA-Z0-9_$]*)?\\})`, 'g'); //========================================================================================
+
+/*                                                                                      *
  *                                      Formatters                                      *
  *                                                                                      */
 //========================================================================================
 
-
-var formatters = create(null);
+const formatters = create(null);
 function extendFormatter(obj) {
   var fmt, name;
 
   for (name in obj) {
     fmt = obj[name];
-
-    if (isFn(fmt)) {
-      formatters[name] = {
-        fmt: fmt,
-        get: get
-      };
-    } else if (isFn(fmt.fmt)) {
-      formatters[name] = fmt;
-    }
+    isFn(fmt) && (formatters[name] = fmt);
   }
 }
-
 function getFormatter(name) {
-  var f = formatters[name || 's'];
+  const f = formatters[name || 's'];
   if (f) return f;
-  throw new Error("Invalid Formatter: " + name);
-}
-
-function __doFormat(formatter, val, flags, width, fill, precision, cutSuffix) {
-  var str = formatter.fmt(val, flags, width, precision, cutSuffix);
-  if (width > str.length) str = pad(str, width, fill, flags & FORMAT_LEFT);
-  return str;
+  throw new Error(`Invalid Formatter: ${name}`);
 } //========================================================================================
 
 /*                                                                                      *
@@ -1686,25 +1682,61 @@ function __doFormat(formatter, val, flags, width, fill, precision, cutSuffix) {
 
 /**
  * Syntax:
- * 			'{' (<parameter>)? ('!' <property>)? (':' (<flags>)? (<width>)? ('!' <property>)? ('=' <fill-char>)? ('.' <precision>  ('!' <property>)? )? )? (':'? <data-type>)? '}'
+ * @example
+ * 	'{'
+ * 		(<parameter>)?
+ * 		(
+ * 			':'
+ * 			(<flags>)?
+ * 			(
+ * 				<width> ('=' <fill-char>)?
+ * 			)?
+ * 			(
+ * 				'.'
+ * 				<precision> ('=' '"' <cut-suffix> '"')?
+ * 			)?
+ * 		)?
+ * 		(<type>)?
+ * 	'}'
+ *
  * - parameter
- * 		- parameter index
- * 			{}						format by next unused argument
- * 			{<number>}				format by arguments[number]
- * 			{@}						format by current used argument
- * 			{$}						format by next unused argument
- * 		- property
- * 			{.<path>}				get value on parameter by property path
- * 									Syntax: '.' (<propName> | '[' (<number> | <string>) ']') ('.' <propName> | '[' (<number> | <string>) ']')*
- * 									eg. .abc.abc | .["abc"]['abc'] | .abc[0] | .[0].abc
+ * 		- {}					format by next unused argument
+ * 		- {<number>}			format by arguments[number]
+ * 		- {@}					format by current used argument
+ * 		- {$}					format by next unused argument
+ * 		- {{name}}				format by "name" property on next unused argument
+ * 		- {<number>{name}}		format by "name" property on arguments[number]
+ * 		- {@{name}}				format by "name" property on current used argument
+ * 		- {${name}}				format by "name" property on next unused argument
+ * @example
+ * 		format('<{} {}>', 'abc')				// return "<abc undefined>"
+ * 		format('<{$} {$}>', 'abc')				// return "<abc undefined>"
+ * 		format('<{@} {} {@}>', 'abc')			// return "<abc abc abc>"
+ * 		format('<{0} {} {0}>', 'abc')			// return "<abc abc abc>"
+ * 		format('<{0{value}} {${value}} {@{value}} {{value.a}}>', {value: 'abc'}, {value: {a: 'cbd'}})
+ * 		// return "<abc abc abc bcd>"
+ * 		format('<{0{[0]}} {${[0]}} {@{[0]}} {{[0].a}}>', ['abc'], [{a: 'cbd'}])
+ * 		// return "<abc abc abc bcd>"
+ *
  * - flags
- * 		space   prefix non-negative number with a space
- * 		+       prefix non-negative number with a plus sign
- * 		-       left-justify within the field
- * 		,		thousand separation number
- * 		#       ensure the leading "0" for any octal
- * 				prefix non-zero hexadecimal with "0x" or "0X"
- * 				prefix non-zero binary with "0b" or "0B"
+ * 		- {:#}    	FORMAT_XPREFIX
+ * 					ensure the leading "0" for any octal
+ * 					prefix non-zero hexadecimal with "0x" or "0X"
+ * 					prefix non-zero binary with "0b" or "0B"
+ * 		- {:+}    	FORMAT_PLUS
+ * 					Forces to preceed the result with a plus or minus sign (+ or -) even for positive numbers.
+ * 					By default, only negative numbers are preceded with a - sign
+ * 		- {:0}		FORMAT_ZERO
+ * 					Left-pads the number with zeroes (0) instead of spaces when padding is specified
+ * 		- {: }   	FORMAT_SPACE
+ * 					If no sign is going to be written, a blank space is inserted before the value
+ * 		- {:,}		FORMAT_SEPARATOR
+ * 					use thousand separator on decimal number
+ * 					hexadecimal number: FFFFFFFF => FFFF,FFFF
+ * 					octal number: 77777777 => 7777,7777
+ * 					binary number: 1111111111111111 => 11111111,11111111
+ * 		{:-}    	FORMAT_LEFT
+ * 					Left-justify within the given field width; Right justification is the default
  * @example
  * 		format('<{: d}>',  12);		// return "< 12>"
  *		format('<{: d}>',   0);		// return "< 0>"
@@ -1719,11 +1751,74 @@ function __doFormat(formatter, val, flags, width, fill, precision, cutSuffix) {
  *		format('<{:#X}>',  12);		// return "<0XC>"
  *		format('<{:#b}>',  12);		// return "<0b1100>"
  *		format('<{:#B}>',  12);		// return "<0B1100>"
+
  * - width
- * 			(<width>)? ('=' <fill-char>)? ('.' <precision>)?
- * 		- min width
- * 		- precision width
- * - data-type
+ * 		Minimum number of characters to be printed.
+ * 		If the value to be printed is shorter than this number, the result is padded with pad char(default is space).
+ * 		The value is not truncated even if the result is larger.
+ *		- width value
+ * 			{:<number>}
+ * 			{:&@}
+ * 			{:&$}
+ * 			{:&<number>}
+ * 			{:&@{<prop>}}
+ * 			{:&${<prop>}}
+ * 			{:&<number>{<prop>}}
+ *		- pad char
+ * 			{:&@=<pad-char>}
+ * 			{:&$=<pad-char>}
+ * 			{:&<number>=<pad-char>}
+ * 			{:&@{<prop>}=<pad-char>}
+ * 			{:&${<prop>}=<pad-char>}
+ * 			{:&<number>{<prop>}=<pad-char>}
+ * @example
+ *
+ * - precision
+ * 		For integer specifiers (d,  o, u, x, X): precision specifies the minimum number of digits to be written.
+ * 		If the value to be written is shorter than this number, the result is padded with leading zeros.
+ * 		The value is not truncated even if the result is longer. A precision of 0 means that no character is written for the value 0.
+ * 		For a, A, e, E, f and F specifiers: this is the number of digits to be printed after the decimal point (by default, this is 6).
+ * 		For g and G specifiers: This is the maximum number of significant digits to be printed.
+ * 		For s: this is the maximum number of characters to be printed. By default all characters are printed until the ending null character is encountered.
+ * 		If the period is specified without an explicit value for precision, 0 is assumed.
+ * 		- precision value
+ * 			{:.<number>}
+ * 			{:.&@}
+ * 			{:.&$}
+ * 			{:.&<number>}
+ * 			{:.&@{<prop>}}
+ * 			{:.&${<prop>}}
+ * 			{:.&<number>{<prop>}}
+ * 		- cut suffix
+ * 			{:.&@="<suffix>"}
+ * 			{:.&$="<suffix>"}
+ * 			{:.&<number>="<suffix>"}
+ * 			{:.&@{<prop>}="<suffix>"}
+ * 			{:.&${<prop>}="<suffix>"}
+ * 			{:.&<number>{<prop>}="<suffix>"}
+ * - type
+ * 		- default types
+ *			- {c}		Character
+ * 			- {s}		String
+ * 			- {j}		JSON String
+ * 			- {y}		Date Year
+ * 			- {m}		Date Month
+ * 			- {w}		Date Weekly
+ * 			- {W}		Date Weekly
+ * 			- {D}		Date
+ * 			- {H}		Date
+ * 			- {M}		Date
+ * 			- {S}		Date
+ * 			- {d} 		Signed decimal integer
+ *			- {u}		Unsigned decimal integer
+ *			- {o}		Unsigned octal
+ *			- {x}		Unsigned hexadecimal integer
+ *			- {X}		Unsigned hexadecimal integer (uppercase)
+ *			- {f}		Decimal floating point, lowercase,
+ *			- {e}		Scientific notation (mantissa/exponent), lowercase
+ *			- {E}		Scientific notation (mantissa/exponent), uppercase
+ *			- {g}		Use the shortest representation: %e or %f
+ *			- {G}		Use the shortest representation: %E or %F
  * - Rules
  * 		- property-path
  * 				(
@@ -1749,12 +1844,11 @@ function __doFormat(formatter, val, flags, width, fill, precision, cutSuffix) {
  * 					)*
  * 				)
  * 		- expression
- * 			/[^\\{]+|											// escape
- * 			\\.|												// escape
+ * 			/\\.|												// escape
  * 			(													// 1: expression
  * 				\{
  * 				(\d+|\$|@)?										// 2: parameter index
- * 				(?:!<property-path> )?							// 3: property path of parameter
+ * 				(?:\{<property-path>\})?						// 3: property path of parameter
  * 				(?:
  * 					:
  * 					([#,+\- ]*)									// 4: flags
@@ -1764,7 +1858,7 @@ function __doFormat(formatter, val, flags, width, fill, precision, cutSuffix) {
  * 							(?:
  * 								&
  * 								(\d+|\$|@)						// 6: parameter index of width
- * 								(?:!<property-path>)?			// 7: property path of width parameter
+ * 								(?:\{<property-path>\})?		// 7: property path of width parameter
  * 							)
  * 						)
  * 						(?:=(.))?								// 8: pad fill
@@ -1776,43 +1870,48 @@ function __doFormat(formatter, val, flags, width, fill, precision, cutSuffix) {
  * 							(?:
  * 								&
  * 								(\d+|\$|@)						// 10: parameter index of width
- * 								(?:!<property-path>)?			// 11: property path of width parameter
+ * 								(?:\{<property-path>\})?		// 11: property path of width parameter
  * 							)
+ * 						)
+ * 						(?:
+ * 							=
+ * 							"
+ * 							((?:[^\\"]|\\.)*)					// 12: cut su
+ * 							"
  * 						)
  * 					)?
  * 				)?
- * 				(?:
- * 					:?
- * 					([a-zA-Z_][a-zA-Z0-9_$]*))?					// 12: data type
+ * 				([a-zA-Z_][a-zA-Z0-9_$]*)?						// 13: data type
  * 				\}
  * 			)/
+ * @param fmt 		format String
+ * @param args		format arguments
+ * @param offset	start offset of arguments
+ * @param getParam	get parameter on arguments callback
  */
-
 
 function vformat(fmt, args, offset, getParam) {
   offset = offset || 0;
-  var state = [offset, offset];
+  const start = offset;
   getParam = getParam || defaultGetParam;
   return fmt.replace(formatReg, function (s, m, param, paramProp, flags, width, widx, wprop, fill, precision, pidx, pprop, cutSuffix, type) {
     if (!m) return s.charAt(1);
-    var formatter = getFormatter(type);
-    return __doFormat(formatter, parseParam(param || '$', paramProp, state, args, getParam), parseFlags(flags), parseWidth(width, widx, wprop, state, args, getParam) || 0, fill || ' ', parseWidth(precision, pidx, pprop, state, args, getParam), cutSuffix || '');
+    return getFormatter(type)(parseParam(param || '$', paramProp), parseFlags(flags), parseWidth(width, widx, wprop) || 0, fill, parseWidth(precision, pidx, pprop), cutSuffix);
   });
-}
 
-function parseWidth(width, idx, prop, state, args, getParam) {
-  if (width) return width >> 0;
+  function parseWidth(width, idx, prop) {
+    if (width) return width >> 0;
 
-  if (idx) {
-    var w = parseParam(idx, prop, state, args, getParam) >> 0;
-    if (isFinite(w)) return w;
+    if (idx) {
+      const w = parseParam(idx, prop) >> 0;
+      if (isFinite(w)) return w;
+    }
   }
-}
 
-function parseParam(paramIdx, prop, state, args, getParam) {
-  var param = getParam(args, paramIdx === '$' ? state[0]++ : paramIdx === '@' ? state[0] === state[1] ? state[0] : state[0] - 1 : paramIdx >> 0);
-  if (prop) param = get(param, prop);
-  return param;
+  function parseParam(paramIdx, prop) {
+    let param = getParam(args, paramIdx === '$' ? offset++ : paramIdx === '@' ? offset === start ? offset : offset - 1 : paramIdx >> 0);
+    return prop ? get(param, prop) : param;
+  }
 }
 
 function defaultGetParam(args, idx) {
@@ -1824,17 +1923,19 @@ function defaultGetParam(args, idx) {
  *                                                                                      */
 //========================================================================================
 
-
-function getFormatParam(args, idx) {
-  return args[idx + 1];
-}
 /**
  * @see vformat
+ * @param fmt	format string
+ * @param args	format arguments
  */
 
 
 function format(fmt) {
   return vformat(fmt, arguments, 0, getFormatParam);
+}
+
+function getFormatParam(args, idx) {
+  return args[idx + 1];
 } //========================================================================================
 
 /*                                                                                      *
@@ -1842,19 +1943,20 @@ function format(fmt) {
  *                                                                                      */
 //========================================================================================
 
-var PROP1_VAR = 'p1',
-    PROP2_VAR = 'p2',
-    PROP3_VAR = 'p3',
-    GET_PARAM_VAR = 'getp',
-    GET_PROP_VAR = 'get',
-    STATE_VAR = 'state';
+
+const GET_PARAM_VAR = 'getp',
+      GET_PROP_VAR = 'get',
+      STATE_VAR = 'state';
 
 function createFormatter(m, getParam) {
-  var formatter = getFormatter(m[13]);
-  var p1 = m[3] && parsePath(m[3]),
-      p2 = m[7] && parsePath(m[7]),
-      p3 = m[11] && parsePath(m[11]);
-  return createFn("return function(args, " + STATE_VAR + "){\n\treturn dofmt(fmt,\n\t\t" + getParamCode(m[2] || '$', p1 && PROP1_VAR) + ",\n\t\tg,\n\t\t" + getWidthCode(m[5], m[6], p2 && PROP2_VAR, '0') + ",\n\t\tf,\n\t\t" + getWidthCode(m[9], m[10], p3 && PROP3_VAR, 'void 0') + ",\n\t\tcf);\n}", ['dofmt', 'fmt', 'g', 'f', 'cf', GET_PROP_VAR, GET_PARAM_VAR, PROP1_VAR, PROP2_VAR, PROP3_VAR])(__doFormat, formatter, parseFlags(m[4]), m[8] || ' ', m[12] || '', get, getParam, p1, p2, p3);
+  return createFn(`return function(args, ${STATE_VAR}){
+return fmt(${getParamCode(m[2] || '$', m[3])},
+"${parseFlags(m[4])}",
+${getWidthCode(m[5], m[6], m[7], '0')},
+"${m[8] ? escapeStr(m[8]) : ' '}",
+${getWidthCode(m[9], m[10], m[11], 'void 0')},
+"${m[12] ? escapeStr(m[12]) : ''}");
+}`, ['fmt', GET_PROP_VAR, GET_PARAM_VAR])(getFormatter(m[13]), get, getParam);
 }
 
 function getWidthCode(width, idx, prop, def) {
@@ -1862,13 +1964,29 @@ function getWidthCode(width, idx, prop, def) {
 }
 
 function getParamCode(idx, prop) {
-  var code = GET_PARAM_VAR + "(args, " + (idx === '$' ? STATE_VAR + "[0]++" : idx === '@' ? STATE_VAR + "[0] === " + STATE_VAR + "[1] ? " + STATE_VAR + "[0] : " + STATE_VAR + "[0] - 1" : idx) + ")";
-  if (prop) return GET_PROP_VAR + "(" + code + ", " + prop + ")";
+  let code = `${GET_PARAM_VAR}(args, ${idx === '$' ? `${STATE_VAR}[0]++` : idx === '@' ? `${STATE_VAR}[0] === ${STATE_VAR}[1] ? ${STATE_VAR}[0] : ${STATE_VAR}[0] - 1` : idx})`;
+
+  if (prop) {
+    const path = parsePath(prop);
+    var i = path.length;
+
+    while (i--) path[i] = `"${escapeStr(path[i])}"`;
+
+    return `${GET_PROP_VAR}(${code}, [${path.join(', ')}])`;
+  }
+
   return code;
 }
+/**
+ * @see vformat
+ * @param fmt		format string
+ * @param offset	start offset of arguments
+ * @param getParam	get parameter on arguments callback
+ */
+
 
 function formatter(fmt, offset, getParam) {
-  var m,
+  let m,
       lastIdx = 0,
       mStart,
       mEnd,
@@ -1883,7 +2001,7 @@ function formatter(fmt, offset, getParam) {
     lastIdx < mStart && pushStr(fmt.substring(lastIdx, mStart), 0);
 
     if (m[1]) {
-      codes[i] = "arr[" + i + "](arguments, " + STATE_VAR + ")";
+      codes[i] = `arr[${i}](arguments, ${STATE_VAR})`;
       arr[i++] = createFormatter(m, getParam || defaultGetParam);
     } else {
       pushStr(m[0].charAt(1), i);
@@ -1893,96 +2011,119 @@ function formatter(fmt, offset, getParam) {
   }
 
   lastIdx < fmt.length && pushStr(fmt.substring(lastIdx), i);
-  return createFn("return function(){var " + STATE_VAR + " = [" + offset + ", " + offset + "]; return " + codes.join(' + ') + "}", ['arr'])(arr);
+  return createFn(`return function(){var ${STATE_VAR} = [${offset}, ${offset}]; return ${codes.join(' + ')}}`, ['arr'])(arr);
 
   function pushStr(str, append) {
-    if (append && arr[i - 1].length) {
+    if (append && arr[i - 1].match) {
       arr[i - 1] += str;
     } else {
-      codes[i] = "arr[" + i + "]";
+      codes[i] = `arr[${i}]`;
       arr[i++] = str;
     }
   }
-} //========================================================================================
+}
+/*
+setTimeout(() => {
+	var f,
+		n = 100000
+	console.time()
+	for (var i = 0; i < n; i++) {
+		f = formatter(`{:.10="..."}`)
+	}
+	console.timeEnd()
+	console.time()
+	for (var i = 0; i < n; i++) {
+		f('abbdddded')
+	}
+	console.timeEnd()
+	console.time()
+	for (var i = 0; i < n; i++) {
+		format(`{:.10="..."}`, 'abbdddded')
+	}
+	console.timeEnd()
+	console.log(formatter(`{:.10="..."}`).toString())
+}) */
+//========================================================================================
 
 /*                                                                                      *
  *                                  default formatters                                  *
  *                                                                                      */
 //========================================================================================
 
-var TOEXPONENTIAL = 'toExponential',
-    TOPRECISION = 'toPrecision',
-    TOFIXED = 'toFixed';
-
-function floatFormatter(type) {
-  var toStr = type === 'e' || type === 'E' ? function (num, precision) {
-    return num[TOEXPONENTIAL](precision);
-  } : type === 'f' ? function (num, precision) {
-    return precision >= 0 && num[TOFIXED](precision);
-  } : function (num, precision) {
-    return precision && num[TOPRECISION](precision);
-  },
-      upper = charCode(type) < 97;
-  return function (val, flags, width, precision) {
-    var num = parseFloat(val);
-    if (!isFinite(num)) return String(num);
-    var str = toStr(num, precision) || String(num);
-
-    if (flags & FORMAT_THOUSAND) {
-      var split = str.split('.');
-      split[0] = split[0].replace(thousandSeparationReg, '$1,');
-      str = split.join('.');
-    }
-
-    str = prefixNum(num, str, flags, width);
-    return upper ? str.toUpperCase() : str;
+function strFormatter(toStr) {
+  return function (val, flags, width, fill, precision, cutSuffix) {
+    const str = toStr(val, flags);
+    return width > str.length ? __pad(str, width, fill, flags & FORMAT_LEFT) : cut(str, precision, cutSuffix);
   };
 }
 
-var BaseRadixs = {
-  b: 2,
-  B: 2,
-  o: 8,
-  u: 10,
-  x: 16,
-  X: 16
+function numFormatter(parseNum, getPrefix, toStr, separator) {
+  return function (val, flags, width, fill, precision) {
+    const num = parseNum(val);
+    if (!isFinite(num)) return String(num);
+    const prefix = getPrefix(num, flags),
+          plen = prefix.length;
+    let str = toStr(num < 0 ? -num : num, flags, precision);
+    return flags & FORMAT_ZERO ? (str = prefix + pad(str, width - plen, '0'), flags & FORMAT_SEPARATOR ? separator(str) : str) : (flags & FORMAT_SEPARATOR && (str = separator(str)), pad(prefix + str, width, fill, flags & FORMAT_LEFT));
+  };
+}
+
+function decimalPrefix(num, flags) {
+  return num < 0 ? '-' : flags & FORMAT_PLUS ? '+' : flags & FORMAT_SPACE ? ' ' : '';
+} //──── base formatter ───────────────────────────────────────────────────────────────────────
+
+
+const BASE_RADIXS = {
+  b: [2, binarySeparate],
+  o: [8, octalSeparate],
+  u: [10, thousandSeparate],
+  x: [16, hexSeparate]
 };
-var BasePrefixs = ['0b', '0', '0x'];
+const BASE_PREFIXS = ['0b', '0o', '0x'];
 
 function baseFormatter(type) {
-  var base = BaseRadixs[type],
-      xprefix = base != 10 ? BasePrefixs[base >> 3] : '',
-      upper = charCode(type) < 97;
-  return function (val, flags, width) {
-    var num = val >>> 0;
-    if (!isFinite(num)) return String(num);
-    var str = formatNum(num.toString(base), flags & FORMAT_XPREFIX ? xprefix : '', flags, width);
-    return upper ? str.toUpperCase() : str;
-  };
+  const base = BASE_RADIXS[type.toLowerCase()],
+        n = base[0],
+        __toStr = num => num.toString(n),
+        toStr = type === 'X' ? num => upper(__toStr(num)) : __toStr;
+
+  let xprefix = n === 10 ? '' : BASE_PREFIXS[n >> 3];
+  charCode(type) < 96 && (xprefix = upper(xprefix));
+  return numFormatter(v => v >>> 0, (num, flags) => flags & FORMAT_XPREFIX ? xprefix : '', toStr, base[1]);
+} //──── float formatter ───────────────────────────────────────────────────────────────────
+
+
+function floatFormatter(type) {
+  const ____toStr = upper(type) === 'E' ? toExponential : type === 'f' ? toFixed : toPrecision,
+        __toStr = (num, flags, precision) => ____toStr(num, precision) || String(num),
+        toStr = charCode(type) > 96 ? __toStr : (num, flags, precision) => upper(__toStr(num, flags, precision));
+
+  return numFormatter(parseFloat, decimalPrefix, toStr, thousandSeparate);
 }
 
-function cutStr(str, len, suffix) {
-  return len < str.length ? str.substr(0, len - suffix.length) + suffix : str;
+function toExponential(num, precision) {
+  return num.toExponential(precision);
 }
+
+function toPrecision(num, precision) {
+  return precision && num.toPrecision(precision);
+}
+
+function toFixed(num, precision) {
+  return precision >= 0 && num.toFixed(precision);
+} //──── register formatters ───────────────────────────────────────────────────────────────
+
 
 extendFormatter({
-  s: function s(val, flags, width, precision, cutSuffix) {
-    return cutStr(String(val), precision, cutSuffix);
-  },
-  j: function j(val, flags, width, precision, cutSuffix) {
-    return cutStr(JSON.stringify(val), precision, cutSuffix);
-  },
-  c: function c(val) {
-    var num = val >> 0;
+  s: strFormatter(toStr),
+  j: strFormatter(v => v === undefined ? 'undefined' : JSON.stringify(v)),
+
+  c(val) {
+    const num = val >> 0;
     return num > 0 ? String.fromCharCode(num) : '';
   },
-  d: function d(val, flags, width) {
-    var num = val >> 0;
-    if (!isFinite(num)) return String(num);
-    var str = String(num);
-    if (flags & FORMAT_THOUSAND) str = str.replace(thousandSeparationReg, '$1,');
-    return prefixNum(num, str, flags, width);
-  },
+
+  d: numFormatter(val => val >> 0, decimalPrefix, toStr, thousandSeparate),
   e: floatFormatter('e'),
   E: floatFormatter('E'),
   f: floatFormatter('f'),
@@ -1991,21 +2132,14 @@ extendFormatter({
   b: baseFormatter('b'),
   B: baseFormatter('B'),
   o: baseFormatter('o'),
+  O: baseFormatter('O'),
   u: baseFormatter('u'),
   x: baseFormatter('x'),
   X: baseFormatter('X')
 });
 
-function prefixNum(num, str, flags, width) {
-  return formatNum(str, num < 0 ? '' : flags & FORMAT_PLUS ? '+' : flags & FORMAT_SPACE ? ' ' : '', flags, width);
-}
-
-function formatNum(str, prefix, flags, width) {
-  if (flags & FORMAT_ZERO && width > str.length - prefix.length) {
-    str = pad(str, width - prefix.length, '0');
-  }
-
-  return prefix + str;
+function toStr(v) {
+  return String(v);
 }
 
 /**
@@ -2036,8 +2170,8 @@ function doAssign(target, overrides, filter, startOffset, endOffset) {
     target = {};
   }
 
-  var l = endOffset || overrides.length - 1;
-  var i = startOffset || 0,
+  const l = endOffset || overrides.length - 1;
+  let i = startOffset || 0,
       override,
       prop;
 
@@ -2089,109 +2223,231 @@ function assignIfFilter(prop, target, override) {
 }
 
 /**
+ * @module utility/assert
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Wed Nov 28 2018 11:01:45 GMT+0800 (China Standard Time)
+ * @modified Tue Dec 11 2018 16:43:09 GMT+0800 (China Standard Time)
+ */
+const formatters$1 = [],
+      formatArgHandlers = [];
+
+function parseMessage(msg, args, msgIdx) {
+  const fs = formatters$1[msgIdx] || (formatArgHandlers[msgIdx] = (args, offset) => {
+    return args[0][offset >= msgIdx ? offset + 1 : offset];
+  }, formatters$1[msgIdx] = create(null));
+  return (fs[msg] || (fs[msg] = formatter(msg, msgIdx, formatArgHandlers[msgIdx])))(args);
+}
+
+const assert = function (msg) {
+  throw new Error(parseMessage(msg, arguments, 0));
+};
+
+function catchErr(fn) {
+  try {
+    fn();
+  } catch (e) {
+    return e;
+  }
+}
+
+function checkErr(expect, err) {
+  let msg = isStr(expect) ? expect : expect.message;
+  return msg === err.message;
+}
+
+const ERROR = new Error();
+const throwMsg = mkMsg(objFormatter(1), 'throw');
+
+assert["throw"] = function (fn, expect, msg) {
+  const err = catchErr(fn);
+
+  if (!err || expect && !checkErr(expect, err)) {
+    arguments[0] = err;
+    !expect && (arguments[2] = ERROR);
+    throw new Error(parseMessage(msg || throwMsg[0], arguments, 2));
+  }
+
+  return assert;
+};
+
+assert.notThrow = function (fn, expect, msg) {
+  const err = catchErr(fn);
+
+  if (err && (!expect || !checkErr(expect, err))) {
+    arguments[0] = err;
+    !expect && (arguments[2] = ERROR);
+    throw new Error(parseMessage(msg || throwMsg[0], arguments, 2));
+  }
+
+  return assert;
+};
+
+function extendAssert(name, condition, args, dmsg, Err) {
+  const params = isStr(args) ? args.split(/,/g) : isNum(args) ? makeArray(args, i => `arg${i + 1}`) : args,
+        paramStr = params.join(', '),
+        cond = isArray(condition) ? condition[0] : condition,
+        expr = (isArray(condition) ? condition[1] : '') + (isStr(cond) ? `(${cond})` : `cond(${paramStr})`);
+  return assert[name] = createFn(`return function assert${upperFirst(name)}(${paramStr}, msg){
+	if (${expr})
+		throw new Err(parseMsg(msg || dmsg, arguments, ${params.length}));
+	return assert;
+}`, ['Err', 'parseMsg', 'dmsg', 'cond', 'assert'])(Err || Error, parseMessage, dmsg, cond, assert);
+} // [condition, argcount?, [msg, not msg], Error]
+
+
+function extendAsserts(apis) {
+  eachObj(apis, (desc, name) => {
+    const condition = desc[0],
+          args = desc[1],
+          msg = desc[2],
+          Err = desc[3] || TypeError;
+    msg[0] && extendAssert(name, [condition, '!'], args, msg[0], Err);
+    msg[1] && extendAssert('not' + upperFirst(name), condition, args, msg[1], Err);
+  });
+}
+
+const NULL = 'null';
+const UNDEFINED = 'undefined';
+const BOOLEAN = 'boolean';
+const NUMBER = 'number';
+const INTEGER = 'integer';
+const STRING = 'string';
+const FUNCTION = 'function';
+const ARRAY = 'Array';
+const TYPED_ARRAY = 'TypedArray';
+extendAssert('is', '!o', 'o', expectMsg('Exist'));
+extendAssert('not', 'o', 'o', expectMsg('Not Exist'));
+extendAsserts({
+  eq: [eq, 2, mkMsg(objFormatter(1))],
+  nul: [isNull, 1, mkMsg(NULL)],
+  nil: [isNil, 1, mkMsg(typeExpect(NULL, UNDEFINED))],
+  undef: [isUndef, 1, mkMsg(UNDEFINED)],
+  bool: [isBool, 1, mkMsg(BOOLEAN)],
+  num: [isNum, 1, mkMsg(NUMBER)],
+  int: [isInt, 1, mkMsg(INTEGER)],
+  str: [isStr, 1, mkMsg(STRING)],
+  fn: [isFn, 1, mkMsg(FUNCTION)],
+  primitive: [isPrimitive, 1, mkMsg(`Primitive type(${typeExpect(NULL, UNDEFINED, BOOLEAN, NUMBER, INTEGER, STRING, FUNCTION)})`)],
+  boolean: [isBoolean, 1, mkMsg(packTypeExpect(BOOLEAN))],
+  number: [isNumber, 1, mkMsg(packTypeExpect(NUMBER))],
+  string: [isString, 1, mkMsg(packTypeExpect(STRING))],
+  date: [isDate, 1, mkMsg('Date')],
+  reg: [isReg, 1, mkMsg('RegExp')],
+  array: [isArray, 1, mkMsg(ARRAY)],
+  typedArray: [isTypedArray, 1, mkMsg('TypedArray')],
+  arrayLike: [isArrayLike, 1, mkMsg(typeExpect(ARRAY, packTypeExpect(STRING), 'Arguments', TYPED_ARRAY, 'NodeList', 'HTMLCollection'))],
+  obj: [isObj, 1, mkMsg('Object')],
+  nan: [isNaN, 1, mkMsg('NaN')],
+  finite: [isFinite, 1, mkMsg('Finite')],
+  blank: [isBlank, 1, mkMsg('Blank')],
+  less: ['o<t', 'o,t', mkMsg(objFormatter(1), 'less than')],
+  greater: ['o>t', 'o,t', mkMsg(objFormatter(1), 'greater than')],
+  match: ['reg.test(str)', 'str,reg', mkMsg(objFormatter(1), 'match')],
+  range: ['o>=s&&o<e', 'o,s,e', mkMsg(`[{1} - {2})`)]
+});
+
+function mkMsg(expect, to) {
+  return [expectMsg(expect, false, to), expectMsg(expect, true, to)];
+}
+
+function expectMsg(expect, not, to) {
+  return `Expected ${objFormatter(0)} ${not ? 'not ' : ''}${to || 'to'} ${expect}`;
+}
+
+function objFormatter(idx) {
+  return `{${idx}:.20="..."j}`;
+}
+
+function packTypeExpect(base, all) {
+  return all ? typeExpect(base, upperFirst(base)) : upperFirst(base);
+}
+
+function typeExpect() {
+  return Array.prototype.join.call(arguments, ' | ');
+}
+
+/**
  * Double Linked List
  * @module utility/List
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
- * @modified Tue Nov 27 2018 19:56:25 GMT+0800 (China Standard Time)
+ * @modified Mon Dec 10 2018 19:07:47 GMT+0800 (China Standard Time)
  */
-var DEFAULT_BINDING = '__list__'; //type ListNode = [ListElement | void, IListNode | void, IListNode | void, List]
+const DEFAULT_BINDING = '__this__'; //type ListNode = [ListElement, IListNode, IListNode, List]
 
-var List =
-/*#__PURE__*/
-function () {
-  function List(binding) {
-    this.length = 0;
+class List {
+  constructor(binding) {
+    this.binding = void 0;
     this.head = void 0;
     this.tail = void 0;
-    this.binding = void 0;
+    this.length = 0;
     this.scaning = false;
     this.lazyRemoves = void 0;
     this.binding = binding || DEFAULT_BINDING;
   }
 
-  var _proto = List.prototype;
+  size() {
+    return this.length;
+  }
 
-  _proto.has = function has(obj) {
-    var node = obj[this.binding];
+  has(obj) {
+    const node = obj[this.binding];
     return node ? node[0] === obj && node[3] === this : false;
-  };
+  }
 
-  _proto.add = function add(obj) {
-    return __insert(this, obj, this.tail);
-  };
+  add(obj) {
+    return this.__insert(obj, this.tail);
+  }
 
-  _proto.addFirst = function addFirst(obj) {
-    return __insert(this, obj);
-  };
+  addFirst(obj) {
+    return this.__insert(obj);
+  }
 
-  _proto.insertAfter = function insertAfter(obj, target) {
-    return __insert(this, obj, target && __getNode(this, target));
-  };
+  insertAfter(obj, target) {
+    return this.__insert(obj, target && this.__getNode(target));
+  }
 
-  _proto.insertBefore = function insertBefore(obj, target) {
-    return __insert(this, obj, target && __getNode(this, target)[1]);
-  };
+  insertBefore(obj, target) {
+    return this.__insert(obj, target && this.__getNode(target)[1]);
+  }
 
-  _proto.addAll = function addAll(objs) {
-    return __insertAll(this, objs, this.tail);
-  };
+  addAll(objs) {
+    return this.__insertAll(objs, this.tail);
+  }
 
-  _proto.addFirstAll = function addFirstAll(objs) {
-    return __insertAll(this, objs);
-  };
+  addFirstAll(objs) {
+    return this.__insertAll(objs);
+  }
 
-  _proto.insertAfterAll = function insertAfterAll(objs, target) {
-    return __insertAll(this, objs, target && __getNode(this, target));
-  };
+  insertAfterAll(objs, target) {
+    return this.__insertAll(objs, target && this.__getNode(target));
+  }
 
-  _proto.insertBeforeAll = function insertBeforeAll(objs, target) {
-    return __insertAll(this, objs, target && __getNode(this, target)[1]);
-  };
+  insertBeforeAll(objs, target) {
+    return this.__insertAll(objs, target && this.__getNode(target)[1]);
+  }
 
-  _proto.prev = function prev(obj) {
-    return __siblingObj(this, obj, 1);
-  };
+  prev(obj) {
+    return this.__siblingObj(obj, 1);
+  }
 
-  _proto.next = function next(obj) {
-    return __siblingObj(this, obj, 2);
-  };
+  next(obj) {
+    return this.__siblingObj(obj, 2);
+  }
 
-  _proto.first = function first() {
-    var node = this.head;
+  first() {
+    const node = this.head;
     return node && node[0];
-  };
+  }
 
-  _proto.last = function last() {
-    var node = this.tail;
+  last() {
+    const node = this.tail;
     return node && node[0];
-  };
+  }
 
-  _proto.remove = function remove(obj) {
-    var node = __getNode(this, obj);
-
-    if (this.scaning) {
-      var lazyRemoves = this.lazyRemoves;
-      obj[this.binding] = undefined; // unbind list node
-
-      node[3] = undefined;
-
-      if (lazyRemoves) {
-        lazyRemoves.push(node);
-      } else {
-        this.lazyRemoves = [node];
-      }
-    } else {
-      __remove(this, node);
-    }
-
-    return --this.length;
-  };
-
-  _proto.each = function each(cb, scope) {
-    if (!this.scaning) throw new Error('Recursive calls are not allowed.');
-
+  each(cb, scope) {
     if (this.length) {
+      assert.not(this.scaning, 'Recursive calls are not allowed.');
       this.scaning = true;
       cb = bind(cb, scope);
       var node = this.head;
@@ -2201,15 +2457,15 @@ function () {
         node = node[2];
       }
 
-      __doLazyRemove(this);
+      this.__doLazyRemove();
 
       this.scaning = false;
     }
-  };
+  }
 
-  _proto.toArray = function toArray() {
-    var array = new Array(this.length);
-    var node = this.head,
+  toArray() {
+    const array = new Array(this.length);
+    let node = this.head,
         i = 0;
 
     while (node) {
@@ -2218,503 +2474,227 @@ function () {
     }
 
     return array;
-  };
+  }
 
-  _proto.clean = function clean() {
+  remove(obj) {
+    return this.__remove(this.__getNode(obj));
+  }
+
+  pop() {}
+
+  clean() {
     if (this.length) {
       if (this.scaning) {
-        var binding = this.binding;
-        var lazyRemoves = this.lazyRemoves || (this.lazyRemoves = []);
         var node = this.head;
 
         while (node) {
-          if (node[3] === this) {
-            node[0][binding] = undefined;
-            lazyRemoves.push(node);
-          }
-
+          node[3] === this && this.__lazyRemove(node);
           node = node[2];
         }
 
         this.length = 0;
       } else {
-        __clean(this);
+        this.__clean();
       }
     }
-  };
+  }
 
-  _proto.clone = function clone(cb, scope) {
-    var newlist = new List(this.binding);
+  toJSON() {}
 
-    if (this.length) {
-      cb = bind(cb, scope);
-      var node = this.head,
-          newtail,
-          newhead,
-          newprev = undefined,
-          i = 0;
+  __initNode(obj) {
+    const {
+      binding
+    } = this;
+    let node = obj[binding];
 
-      while (node) {
-        if (node[3] === this && (newtail = cb(node[0]))) {
-          newtail = __initNode(newlist, newtail);
-          if (!newtail[3]) throw new Error('Double add List, Clone Callback should return a new Object');
-          newtail[3] = newlist;
+    if (node && node[0] === obj) {
+      if (node[3] === this) {
+        this.__remove(node);
 
-          if (newprev) {
-            newtail[1] = newprev;
-            newprev[2] = newtail;
-            newprev = newtail;
-          } else {
-            newprev = newhead = newtail;
-          }
-
-          i++;
-        }
-
-        node = node[2];
+        return this.__initNode(obj);
+      } else if (node[3]) {
+        assert('Object is still in some List');
       }
-
-      i && __doInsert(newlist, newhead, newtail, i);
+    } else {
+      node = [obj];
+      defPropValue(obj, binding, node, false);
     }
 
-    return newlist;
-  };
-
-  return List;
-}();
-List.binding = DEFAULT_BINDING;
-
-function __doInsert(list, nodeHead, nodeTail, len, prev) {
-  var next;
-  nodeHead[1] = prev;
-
-  if (prev) {
-    nodeTail[2] = next = prev[2];
-    prev[2] = nodeHead;
-  } else {
-    nodeTail[2] = next = list.head;
-    list.head = nodeHead;
-  }
-
-  if (next) next[1] = nodeTail;else list.tail = nodeTail;
-  return list.length += len;
-}
-
-function __insert(list, obj, prev) {
-  var node = __initNode(list, obj);
-
-  if (!node[3]) {
-    node[3] = list;
-    return __doInsert(list, node, node, 1, prev);
-  }
-}
-
-function __insertAll(list, objs, prev) {
-  var l = objs.length;
-
-  if (l) {
-    var head = __initNode(list, objs[0]);
-
-    if (!head[3]) throw new Error('Double add List, Object have added in this List');
-    head[3] = list;
-    var __prev = head,
-        tail = head,
-        i = 1;
-
-    for (; i < l; i++) {
-      tail = __initNode(list, objs[i]);
-      if (!tail[3]) throw new Error('Double add List, Object have added in this List');
-      tail[3] = list;
-      tail[1] = __prev;
-      __prev[2] = tail;
-      __prev = tail;
-    }
-
-    return __doInsert(list, head, tail, l, prev);
-  }
-}
-
-function __initNode(list, obj) {
-  var binding = list.binding;
-  var node = obj[binding];
-
-  if (node && node[0] === obj) {
-    if (!node[3] || node[3] === list) throw new Error('Double add List, Object is still in other List');
-  } else {
-    node = [obj];
-    defPropValue(obj, binding, node, true, true);
-  }
-
-  return node;
-}
-
-function __getNode(list, obj) {
-  var node = obj[list.binding];
-
-  if (node && node[0] === obj) {
-    if (node[3] === list) throw new Error('Object is not in this List');
+    node[3] = this;
     return node;
   }
 
-  throw new Error('Object is not in List');
-}
-
-function __siblingObj(list, obj, siblingIdx) {
-  var node = __getNode(list, obj);
-
-  var sibling = node[siblingIdx];
-
-  if (sibling) {
-    while (!sibling[3]) {
-      sibling = sibling[siblingIdx];
-      if (!sibling) return;
-    }
-
-    return sibling[0];
-  }
-}
-
-function __remove(list, node) {
-  var prev = node[1],
-      next = node[2];
-
-  if (prev) {
-    prev[2] = next;
-  } else {
-    list.head = next;
+  __getNode(obj) {
+    const node = obj[this.binding];
+    assert.is(node && node[3] === this, 'Object is not in this List');
+    return node;
   }
 
-  if (next) {
-    next[1] = prev;
-  } else {
-    list.tail = prev;
-  }
+  __siblingObj(obj, siblingIdx) {
+    const node = this.__getNode(obj);
 
-  node.length = 1;
-}
+    let sibling = node[siblingIdx];
 
-function __clean(list) {
-  var node,
-      next = list.head;
-
-  while (node = next) {
-    next = node[2];
-    node.length = 1;
-  }
-
-  list.head = undefined;
-  list.tail = undefined;
-  list.length = 0;
-}
-
-function __doLazyRemove(list) {
-  var lazyRemoves = list.lazyRemoves;
-
-  if (lazyRemoves) {
-    var len = lazyRemoves.length;
-
-    if (len) {
-      if (list.length) {
-        while (len--) {
-          __remove(list, lazyRemoves[len]);
-        }
-      } else {
-        __clean(list);
+    if (sibling) {
+      while (!sibling[3]) {
+        sibling = sibling[siblingIdx];
+        if (!sibling) return;
       }
 
-      lazyRemoves.length = 0;
+      return sibling[0];
     }
   }
-}
-/*
-export default function List(binding?: string) {
-	this.binding = binding || DEFAULT_BINDING
-}
 
-defPropValue(List, 'binding', DEFAULT_BINDING)
+  __doInsert(nodeHead, nodeTail, len, prev) {
+    let next;
+    nodeHead[1] = prev;
 
-inherit(List, {
-	length: 0,
-	has(obj: ListElement): boolean {
-		const node?:ListNode = obj[this.binding]
-		return node ? node[0] === obj && node[3] === this : false
-	},
-	add(obj: ListElement) {
-		return __insert(this, obj, this.tail)
-	},
-	addFirst(obj: ListElement) {
-		return __insert(this, obj)
-	},
-	insertAfter(obj: ListElement, target?:ListElement) {
-		return __insert(this, obj, target && __getNode(this, target))
-	},
-	insertBefore(obj: ListElement, target?:ListElement) {
-		return __insert(this, obj, target && __getNode(this, target)[1])
-	},
-	addAll(objs: ListElement[]) {
-		return __insertAll(this, objs, this.tail)
-	},
-	addFirstAll(objs: ListElement[]) {
-		return __insertAll(this, objs)
-	},
-	insertAfterAll(objs: ListElement[], target?:ListElement) {
-		return __insertAll(this, objs, target && __getNode(this, target))
-	},
-	insertBeforeAll(objs: ListElement[], target?:ListElement) {
-		return __insertAll(this, objs, target && __getNode(this, target)[1])
-	},
-	prev(obj: ListElement): ListElement {
-		return __siblingObj(this, obj, 1)
-	},
-	next(obj: ListElement): ListElement {
-		return __siblingObj(this, obj, 2)
-	},
-	first(): ListElement {
-		const node?:ListNode = this.head
-		return node && node[0]
-	},
-	last(): ListElement {
-		const node?:ListNode = this.tail
-		return node && node[0]
-	},
-	remove(obj: ListElement) {
-		const node = __getNode(this, obj)
-		if (this.scaning) {
-			const { lazyRemoves } = this
-			obj[this.binding] = undefined // unbind list node
-			node[3] = undefined
-			if (lazyRemoves) {
-				lazyRemoves.push(node)
-			} else {
-				this.lazyRemoves = [node]
-			}
-		} else {
-			__remove(this, node)
-		}
-		return --this.length
-	},
-	each(cb, scope?: any) {
-		assert(!this.scaning, 'Recursive calls are not allowed.')
-		this.scaning = true
-		cb = bind(cb, scope)
-		let node = this.head
-		while (node) {
-			if (node[3] === this && cb(node[0]) === false) break
-			node = node[2]
-		}
-		__doLazyRemove(this)
-		this.scaning = false
-	},
-	toArray() {
-		const array = new Array(this.length)
-		let node = this.head,
-			i = 0
-		while (node) {
-			if (node[3] === this) array[i++] = node[0]
-			node = node[2]
-		}
-		return array
-	},
-	clean() {
-		if (this.length) {
-			if (this.scaning) {
-				const { binding } = this
-				const lazyRemoves = this.lazyRemoves || (this.lazyRemoves = [])
-				var node = this.head
-				while (node) {
-					if (node[3] === this) {
-						node[0][binding] = undefined
-						lazyRemoves.push(node)
-					}
-					node = node[2]
-				}
-				this.length = 0
-			} else {
-				__clean(this)
-			}
-		}
-	},
-	clone(cb, scope) {
-		const newlist = new List(this.binding)
-		if (this.length) {
-			if (scope) cb = cb.bind(scope)
-			var node = this.head,
-				newtail,
-				newhead,
-				newprev = undefined,
-				i = 0
-			while (node) {
-				if (node[3] === this && (newtail = cb(node[0]))) {
-					newtail = __initNode(newlist, newtail)
-					assert(!newtail[3], 'Double add List, Clone Callback should return a new Object')
-					newtail[3] = newlist
-					if (newprev) {
-						newtail[1] = newprev
-						newprev[2] = newtail
-						newprev = newtail
-					} else {
-						newprev = newhead = newtail
-					}
-					i++
-				}
-				node = node[2]
-			}
-			i && __doInsert(newlist, newhead, newtail, i)
-		}
-		return newlist
-	}
-})
+    if (prev) {
+      nodeTail[2] = next = prev[2];
+      prev[2] = nodeHead;
+    } else {
+      nodeTail[2] = next = this.head;
+      this.head = nodeHead;
+    }
 
-function __doInsert(list: List, nodeHead: ListNode, nodeTail: ListNode, len: number, prev?:ListNode) {
-	let next
-	nodeHead[1] = prev
-	if (prev) {
-		nodeTail[2] = next = prev[2]
-		prev[2] = nodeHead
-	} else {
-		nodeTail[2] = next = list.head
-		list.head = nodeHead
-	}
-	if (next) next[1] = nodeTail
-	else list.tail = nodeTail
-	return (list.length += len)
+    if (next) next[1] = nodeTail;else this.tail = nodeTail;
+    return this.length += len;
+  }
+
+  __insert(obj, prev) {
+    const node = this.__initNode(obj);
+
+    return this.__doInsert(node, node, 1, prev);
+  }
+
+  __insertAll(objs, prev) {
+    let l = objs.length;
+
+    if (l) {
+      const head = this.__initNode(objs[0]);
+
+      var __prev = head,
+          tail = head,
+          i = 1;
+
+      for (; i < l; i++) {
+        tail = this.__initNode(objs[i]);
+        tail[1] = __prev;
+        __prev[2] = tail;
+        __prev = tail;
+      }
+
+      return this.__doInsert(head, tail, l, prev);
+    }
+
+    return -1;
+  }
+
+  __remove(node) {
+    this.scaning ? this.__lazyRemove(node) : this.__doRemove(node);
+    return --this.length;
+  }
+
+  __lazyRemove(node) {
+    const {
+      lazyRemoves
+    } = this;
+    node[0][this.binding] = undefined; // unbind this node
+
+    node[3] = null;
+
+    if (lazyRemoves) {
+      lazyRemoves.push(node);
+    } else {
+      this.lazyRemoves = [node];
+    }
+  }
+
+  __doLazyRemove() {
+    const {
+      lazyRemoves
+    } = this;
+
+    if (lazyRemoves) {
+      var len = lazyRemoves.length;
+
+      if (len) {
+        if (this.length) {
+          while (len--) this.__doRemove(lazyRemoves[len]);
+        } else {
+          this.__clean();
+        }
+
+        lazyRemoves.length = 0;
+      }
+    }
+  }
+
+  __doRemove(node) {
+    const prev = node[1],
+          next = node[2];
+
+    if (prev) {
+      prev[2] = next;
+    } else {
+      this.head = next;
+    }
+
+    if (next) {
+      next[1] = prev;
+    } else {
+      this.tail = prev;
+    }
+
+    node[1] = node[2] = node[3] = null;
+  }
+
+  __clean() {
+    let node,
+        next = this.head;
+
+    while (node = next) {
+      next = node[2];
+      node.length = 1;
+    }
+
+    this.head = undefined;
+    this.tail = undefined;
+    this.length = 0;
+  }
+
 }
-
-function __insert(list, obj, prev) {
-	const node = __initNode(list, obj)
-	if (!node[3]) {
-		node[3] = list
-		return __doInsert(list, node, node, 1, prev)
-	}
-}
-
-function __insertAll(list, objs, prev) {
-	let l = objs.length
-	if (!l) return
-	const head = __initNode(list, objs[0])
-	assert(!head[3], 'Double add List, Object have added in this List')
-	head[3] = list
-	let __prev = head,
-		tail = head,
-		i = 1
-	for (; i < l; i++) {
-		tail = __initNode(list, objs[i])
-		assert(!tail[3], 'Double add List, Object have added in this List')
-		tail[3] = list
-		tail[1] = __prev
-		__prev[2] = tail
-		__prev = tail
-	}
-	return __doInsert(list, head, tail, l, prev)
-}
-
-function __initNode(list: List, obj: ListElement): ListNode {
-	const { binding } = list
-	let node?:ListNode = obj[binding]
-	if (node && node[0] === obj) {
-		assert(!node[3] || node[3] === list, 'Double add List, Object is still in other List')
-	} else {
-		node = defPropValue(obj, binding, [obj], true, true)
-	}
-	return node
-}
-
-function __getNode(list: List, obj: ListElement): ListNode {
-	const node?:ListNode = obj[list.binding]
-	if (node && node[0] === obj) {
-		assert(node[3] === list, 'Object is not in this List')
-		return node
-	}
-	assert(0, 'Object is not in List')
-}
-
-function __siblingObj(list: List, obj: ListElement, siblingIdx: number): ListElement {
-	const node: ListNode = __getNode(list, obj)
-	let sibling: ListNode = node[siblingIdx]
-	if (sibling) {
-		while (!sibling[3]) {
-			sibling = sibling[siblingIdx]
-			if (!sibling) return
-		}
-		return sibling[0]
-	}
-}
-
-function __remove(list, node) {
-	const prev = node[1],
-		next = node[2]
-	if (prev) {
-		prev[2] = next
-	} else {
-		list.head = next
-	}
-	if (next) {
-		next[1] = prev
-	} else {
-		list.tail = prev
-	}
-	node.length = 1
-}
-
-function __clean(list) {
-	let node,
-		next = list.head
-	while ((node = next)) {
-		next = node[2]
-		node.length = 1
-	}
-	list.head = undefined
-	list.tail = undefined
-	list.length = 0
-}
-
-function __doLazyRemove(list) {
-	const { lazyRemoves } = list
-	if (lazyRemoves) {
-		var len = lazyRemoves.length
-		if (len) {
-			if (list.length) {
-				while (len--) __remove(list, lazyRemoves[len])
-			} else {
-				__clean(list)
-			}
-			lazyRemoves.length = 0
-		}
-	}
-}
-*/
+List.binding = DEFAULT_BINDING;
 
 /**
  * Function List
  * @module utility/List
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
- * @modified Tue Nov 27 2018 19:56:10 GMT+0800 (China Standard Time)
+ * @modified Mon Dec 10 2018 18:48:02 GMT+0800 (China Standard Time)
  */
-var DEFAULT_FN_BINDING = '__id__';
-var DEFAULT_SCOPE_BINDING = '__id__';
-var FnList =
-/*#__PURE__*/
-function () {
-  function FnList(fnBinding, scopeBinding) {
-    this.nodeMap = void 0;
-    this.list = void 0;
+const DEFAULT_FN_BINDING = '__id__';
+const DEFAULT_SCOPE_BINDING = '__id__';
+class FnList {
+  constructor(fnBinding, scopeBinding) {
     this.fnBinding = void 0;
     this.scopeBinding = void 0;
+    this.list = void 0;
+    this.nodeMap = void 0;
     this.nodeMap = create(null);
     this.list = new List();
     this.fnBinding = fnBinding || DEFAULT_FN_BINDING;
     this.scopeBinding = scopeBinding || DEFAULT_SCOPE_BINDING;
   }
 
-  var _proto = FnList.prototype;
-
-  _proto.add = function add(fn, scope, data) {
+  add(fn, scope, data) {
     scope = parseScope(scope);
-    var list = this.list,
-        nodeMap = this.nodeMap;
-    var id = nodeId(this, fn, scope);
-    var node = nodeMap[id];
+    const {
+      list,
+      nodeMap
+    } = this;
+    const id = nodeId(this, fn, scope);
+    let node = nodeMap[id];
 
     if (!node) {
       node = [id, fn, scope, data];
@@ -2722,56 +2702,63 @@ function () {
       if (ret) nodeMap[id] = node;
       return ret;
     }
-  };
 
-  _proto.remove = function remove(fn, scope) {
-    var list = this.list,
-        nodeMap = this.nodeMap;
-    var id = nodeId(this, fn, parseScope(scope));
-    var node = nodeMap[id];
+    return -1;
+  }
+
+  remove(fn, scope) {
+    const {
+      list,
+      nodeMap
+    } = this;
+    const id = nodeId(this, fn, parseScope(scope));
+    const node = nodeMap[id];
 
     if (node) {
       nodeMap[id] = undefined;
       return list.remove(node);
     }
-  };
 
-  _proto.has = function has(fn, scope) {
+    return -1;
+  }
+
+  has(fn, scope) {
     return !!this.nodeMap[nodeId(this, fn, parseScope(scope))];
-  };
+  }
 
-  _proto.size = function size() {
-    return this.list.length;
-  };
+  size() {
+    return this.list.size();
+  }
 
-  _proto.clean = function clean() {
+  clean() {
     this.nodeMap = create(null);
     this.list.clean();
-  };
+  }
 
-  _proto.each = function each(cb, scope) {
+  each(cb, scope) {
     cb = cb.bind(scope);
-    this.list.each(function (node) {
-      return cb(node[1], node[2], node[3]);
-    });
-  };
+    this.list.each(node => cb(node[1], node[2], node[3]));
+  }
 
-  return FnList;
-}();
+  toJSON() {}
+
+}
 FnList.fnBinding = DEFAULT_FN_BINDING;
 FnList.scopeBinding = DEFAULT_SCOPE_BINDING;
-var DEFAULT_SCOPE_ID = 1;
-var scopeIdGenerator = 1,
+const DEFAULT_SCOPE_ID = 1;
+let scopeIdGenerator = 1,
     fnIdGenerator = 0;
 
 function nodeId(list, fn, scope) {
-  var fnBinding = list.fnBinding,
-      scopeBinding = list.scopeBinding;
-  var fnId = fn[fnBinding],
+  const {
+    fnBinding,
+    scopeBinding
+  } = list;
+  let fnId = fn[fnBinding],
       scopeId = scope ? scope[scopeBinding] : DEFAULT_SCOPE_ID;
-  if (!fnId) fnId = defPropValue(fn, fnBinding, ++fnIdGenerator);
-  if (!scopeId) scopeId = defPropValue(scope, scopeBinding, ++scopeIdGenerator);
-  return fnId + "&" + scopeId;
+  if (!fnId) fnId = defPropValue(fn, fnBinding, ++fnIdGenerator, false, false, false);
+  if (!scopeId) scopeId = defPropValue(scope, scopeBinding, ++scopeIdGenerator, false, false, false);
+  return `${fnId}&${scopeId}`;
 }
 
 function parseScope(scope) {
@@ -2790,11 +2777,11 @@ function parseScope(scope) {
  * @module utility/nextTick
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
- * @modified Tue Nov 27 2018 20:00:52 GMT+0800 (China Standard Time)
+ * @modified Mon Dec 10 2018 16:59:56 GMT+0800 (China Standard Time)
  */
-var ticks = new FnList();
-var pending = false;
-var next;
+const ticks = new FnList();
+let pending = false;
+let next;
 
 function executeTick(fn, scope) {
   scope ? fn.call(scope) : fn();
@@ -2806,7 +2793,7 @@ function flush() {
   pending = false;
 }
 
-if (typeof MutationObserver === 'function') {
+if (isFn(MutationObserver)) {
   // chrome18+, safari6+, firefox14+,ie11+,opera15
   var counter = 0,
       observer = new MutationObserver(flush),
@@ -2838,12 +2825,363 @@ function clearTick(fn, scope) {
 }
 
 /**
+ * @module common/AST
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Tue Nov 06 2018 10:06:22 GMT+0800 (China Standard Time)
+ * @modified Tue Dec 11 2018 19:53:20 GMT+0800 (China Standard Time)
+ */
+
+function defaultErr(err) {
+  return err;
+}
+
+function defaultMatch(data, len, context) {
+  context.add(data);
+}
+
+let idGen = 0;
+class Rule {
+  constructor(name, capturable, onMatch, onErr) {
+    this.name = name;
+    this.capturable = capturable;
+    this.$rule = true;
+    this.id = void 0;
+    this.type = 'Rule';
+    this.expr = void 0;
+    this.EXPECT = void 0;
+    this.onMatch = void 0;
+    this.onErr = void 0;
+    this.id = idGen++;
+    this.onMatch = onMatch || defaultMatch;
+    this.onErr = onErr || defaultErr;
+  }
+
+  mkErr(msg, context, capturable, src) {
+    return [msg, capturable && src ? src[1] : capturable, src, context, this];
+  }
+
+  error(msg, context, capturable, src) {
+    const err = this.mkErr(msg, context, capturable, src);
+    const userErr = this.onErr(err, context, this);
+    if (userErr) return isStr(userErr) ? (err[0] = userErr, err) : userErr;
+  }
+
+  matched(data, len, context) {
+    const err = this.onMatch(data, len, context, this);
+    if (err) return err.push && err.length === 5 ? err : this.mkErr(String(err), context, false);
+  }
+  /**
+   * prepare test before match
+   */
+
+
+  test(context) {
+    return !context.eof();
+  }
+
+  match() {
+    return assert('abstruct');
+  }
+  /**
+   * get start char codes
+   */
+
+
+  getStart() {
+    return [];
+  } //──── for debug ─────────────────────────────────────────────────────────────────────────
+
+  /**
+   * make rule expression
+   *
+   * @param expr expression text
+   */
+
+
+  mkExpr(expr) {
+    return `<${this.type}: ${expr}>`;
+  }
+  /**
+   * set rule expression
+   * 1. make rule expression
+   * 2. make rule Expect text
+   */
+
+
+  setExpr(expr) {
+    this.expr = this.mkExpr(expr);
+    this.EXPECT = `Expect: ${expr}`;
+  }
+  /**
+   * tostring by name or expression
+   * @return {string}
+   */
+
+
+  toString() {
+    return this.name || this.expr;
+  }
+
+}
+
+/**
+ * utilities for ast builder
+ *
+ * @module utility/AST
+ * @author Tao Zeng (tao.zeng.zt@qq.com)
+ * @created 2018-11-09 13:22:51
+ * @modified 2018-11-09 13:22:51 by Tao Zeng (tao.zeng.zt@qq.com)
+ */
+/**
+ * each char codes
+ */
+
+function eachCharCodes(codes, ignoreCase, cb) {
+  if (isStr(codes)) {
+    var i = codes.length;
+
+    while (i--) eachCharCode(codes.charCodeAt(i), ignoreCase, cb);
+  } else if (isArray(codes)) {
+    var i = codes.length;
+
+    while (i--) eachCharCodes(codes[i], ignoreCase, cb);
+  } else if (isInt(codes)) {
+    eachCharCode(codes, ignoreCase, cb);
+  }
+}
+
+function eachCharCode(code, ignoreCase, cb) {
+  cb(code);
+
+  if (ignoreCase) {
+    if (code <= 90) {
+      if (code >= 65) cb(code + 32);
+    } else if (code <= 122) {
+      cb(code - 32);
+    }
+  }
+}
+
+/**
+ * @module common/AST
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Tue Nov 06 2018 10:06:22 GMT+0800 (China Standard Time)
+ * @modified Tue Dec 11 2018 17:07:13 GMT+0800 (China Standard Time)
+ */
+class MatchRule extends Rule {
+  constructor(name, start, ignoreCase, capturable, onMatch, onErr) {
+    super(name, capturable, onMatch, onErr);
+    this.start = void 0;
+    this.index = void 0;
+    this.ignoreCase = void 0;
+    this.ignoreCase = ignoreCase;
+    const __start = [],
+          index = [];
+    eachCharCodes(start, ignoreCase, code => {
+      if (!index[code]) {
+        __start.push(code);
+
+        index[code] = code;
+      }
+    });
+    this.start = __start;
+    this.index = index;
+    __start.length && (this.test = indexTest);
+  }
+
+  comsume(data, len, context) {
+    context.advance(len);
+    return this.matched(data, len, context);
+  }
+
+  getStart() {
+    return this.start;
+  }
+
+}
+/**
+ * prepare test by index of start codes
+ */
+
+function indexTest(context) {
+  return this.index[context.nextCode()];
+}
+
+/**
+ * @module utility/AST
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Tue Dec 11 2018 15:36:42 GMT+0800 (China Standard Time)
+ * @modified Tue Dec 11 2018 19:58:29 GMT+0800 (China Standard Time)
+ */
+/**
+ * match by RegExp
+ *
+ * optimization:
+ * - Priority use sticky mode {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp/sticky}
+ *
+ * @class RegMatchRule
+ * @implements MatchRule
+ *
+ * @param name		rule name
+ * @param regexp	regexp
+ * @param start		start chars
+ * @param pick		pick match result
+ * <table>
+ * <tr><td> 0            </td><td> pick match[0] (optimize: test and substring in sticky mode)  </td></tr>
+ * <tr><td> less than 0  </td><td> pick match[pick]                                             </td></tr>
+ * <tr><td> great than 0 </td><td> pick first matched group                                     </td></tr>
+ * <tr><td> true         </td><td> pick match                                                   </td></tr>
+ * <tr><td> false        </td><td> no data pick (optimize: just test string in sticky mode)     </td></tr>
+ * </table>
+ */
+
+class RegMatchRule extends MatchRule {
+  constructor(name, regexp, pick, start, capturable, onMatch, onErr) {
+    pick = pick === false || isInt(pick) ? pick : !!pick || 0;
+    const sticky = regStickySupport && !pick,
+          // use exec when need pick match group data
+    pattern = regexp.source,
+          ignoreCase = regexp.ignoreCase; // always wrapping in a none capturing group preceded by '^' to make sure
+    // matching can only work on start of input. duplicate/redundant start of
+    // input markers have no meaning (/^^^^A/ === /^A/)
+    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp/sticky
+    // When the y flag is used with a pattern, ^ always matches only at the
+    // beginning of the input, or (if multiline is true) at the beginning of a
+    // line.
+
+    regexp = new RegExp(sticky ? pattern : `^(?:${pattern})`, (ignoreCase ? 'i' : '') + (regexp.multiline ? 'm' : '') + (sticky ? 'y' : ''));
+    super(name, start, regexp.ignoreCase, capturable, onMatch, onErr);
+    this.regexp = void 0;
+    this.pick = void 0;
+    this.picker = void 0;
+    this.regexp = regexp;
+    this.pick = pick;
+    this.match = sticky ? this.stickyMatch : this.execMatch;
+    !sticky && (this.picker = pick === true ? pickAll : pick < 0 ? anyPicker(-pick) : idxPicker(pick || 0));
+    this.setExpr(pattern);
+  }
+
+  match(context) {
+    return this.comsume(context.nextChar(), 1, context);
+  }
+
+  stickyMatch(context) {
+    const reg = this.regexp,
+          buff = context.getBuff(),
+          start = context.getOffset();
+    reg.lastIndex = start;
+    if (reg.test(buff)) return this.comsume(this.pick === false ? null : buff.substring(start, reg.lastIndex), reg.lastIndex - start, context);
+    return this.error(this.EXPECT, context, this.capturable);
+  }
+
+  execMatch(context) {
+    const m = this.regexp.exec(context.getBuff(true));
+
+    if (m) {
+      return this.comsume(this.picker(m), m[0].length, context);
+    }
+
+    return this.error(this.EXPECT, context, this.capturable);
+  }
+
+}
+
+function pickAll(m) {
+  return m;
+}
+
+const idxPickers = [];
+
+function idxPicker(pick) {
+  return idxPickers[pick] || (idxPickers[pick] = m => m[pick]);
+}
+
+const anyPickers = [];
+
+function anyPicker(size) {
+  let picker = anyPickers[size];
+
+  if (!picker) {
+    const arr = new Array(size);
+    var i = size;
+
+    while (i--) arr[i] = `m[${i + 1}]`;
+
+    anyPickers[size] = picker = createFn(`return ${arr.join(' || ')}`, ['m']);
+  }
+
+  return picker;
+}
+
+/**
+ * @module utility/AST
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Tue Dec 11 2018 15:36:42 GMT+0800 (China Standard Time)
+ * @modified Tue Dec 11 2018 19:57:58 GMT+0800 (China Standard Time)
+ */
+/**
+ * match one char which in allow list.
+ * well match every char when allows is empty
+ *
+ * @param name                        rule name
+ * @param allows                      which char can be matched.
+ *                                    well match every char when allows is empty
+ */
+
+class CharMatchRule extends MatchRule {
+  constructor(name, allows, ignoreCase, capturable, onMatch, onErr) {
+    super(name, allows, ignoreCase, capturable, onMatch, onErr);
+    this.type = 'Character';
+    const codes = this.start;
+    let i = codes.length,
+        expr = '*';
+
+    if (i) {
+      const chars = [];
+
+      while (i--) chars[i] = char(codes[i]);
+
+      expr = `"${chars.join('" | "')}"`;
+    }
+
+    this.setExpr(expr);
+  }
+
+  match(context) {
+    return this.comsume(context.nextChar(), 1, context);
+  }
+
+}
+
+/**
+ * @module utility/AST
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Tue Dec 11 2018 15:36:42 GMT+0800 (China Standard Time)
+ * @modified Tue Dec 11 2018 19:58:37 GMT+0800 (China Standard Time)
+ */
+class StrMatchRule extends RegMatchRule {
+  constructor(name, str, ignoreCase, capturable, onMatch, onErr) {
+    super(name, new RegExp(reEscape(str), ignoreCase ? 'i' : ''), 0, str.charCodeAt(0), capturable, onMatch, onErr);
+    this.setExpr(str);
+  }
+
+}
+
+/**
+ *
+ * @module common/AST
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Tue Nov 06 2018 10:58:52 GMT+0800 (China Standard Time)
+ * @modified Tue Dec 11 2018 19:57:06 GMT+0800 (China Standard Time)
+ */
+
+/**
  * common utilities
  * @module utility
  * @preferred
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Nov 21 2018 10:21:41 GMT+0800 (China Standard Time)
- * @modified Tue Dec 04 2018 20:12:57 GMT+0800 (China Standard Time)
+ * @modified Tue Dec 11 2018 09:21:05 GMT+0800 (China Standard Time)
  */
 
 /**
@@ -2907,23 +3245,30 @@ exports.charCode = charCode;
 exports.char = char;
 exports.trim = trim;
 exports.upperFirst = upperFirst;
+exports.upper = upper;
+exports.lower = lower;
 exports.strval = strval;
-exports.escapeString = escapeString;
+exports.escapeStr = escapeStr;
 exports.pad = pad;
+exports.cut = cut;
+exports.thousandSeparate = thousandSeparate;
+exports.binarySeparate = binarySeparate;
+exports.octalSeparate = octalSeparate;
+exports.hexSeparate = hexSeparate;
 exports.plural = plural;
 exports.singular = singular;
-exports.thousandSeparationReg = thousandSeparationReg;
-exports.thousandSeparate = thousandSeparate;
 exports.FORMAT_XPREFIX = FORMAT_XPREFIX;
 exports.FORMAT_PLUS = FORMAT_PLUS;
 exports.FORMAT_ZERO = FORMAT_ZERO;
 exports.FORMAT_SPACE = FORMAT_SPACE;
-exports.FORMAT_THOUSAND = FORMAT_THOUSAND;
+exports.FORMAT_SEPARATOR = FORMAT_SEPARATOR;
 exports.FORMAT_LEFT = FORMAT_LEFT;
 exports.extendFormatter = extendFormatter;
+exports.getFormatter = getFormatter;
 exports.vformat = vformat;
 exports.format = format;
 exports.formatter = formatter;
+exports.create = create;
 exports.doAssign = doAssign;
 exports.assign = assign;
 exports.assignIf = assignIf;
@@ -2949,6 +3294,11 @@ exports.keys = keys;
 exports.values = values;
 exports.arr2obj = arr2obj;
 exports.makeMap = makeMap;
+exports.List = List;
+exports.FnList = FnList;
 exports.nextTick = nextTick;
 exports.clearTick = clearTick;
+exports.RegMatchRule = RegMatchRule;
+exports.CharMatchRule = CharMatchRule;
+exports.StrMatchRule = StrMatchRule;
 //# sourceMappingURL=argilo.cjs.js.map

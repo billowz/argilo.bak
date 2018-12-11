@@ -1,5 +1,5 @@
 import expect from 'expect.js'
-import create from '../create'
+import {create} from '../create'
 import { hasOwnProp } from '../prop'
 import { protoOf } from '../proto'
 

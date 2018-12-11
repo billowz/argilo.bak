@@ -1,4 +1,11 @@
-import create from './create'
+/**
+ * @module utility/prop
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Fri Nov 30 2018 14:41:02 GMT+0800 (China Standard Time)
+ * @modified Mon Dec 10 2018 16:59:08 GMT+0800 (China Standard Time)
+ */
+
+import {create} from './create'
 import { isArray } from './is'
 import { mapArray } from './collection'
 

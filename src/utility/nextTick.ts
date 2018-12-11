@@ -3,9 +3,10 @@
  * @module utility/nextTick
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
- * @modified Tue Nov 27 2018 20:00:52 GMT+0800 (China Standard Time)
+ * @modified Mon Dec 10 2018 16:59:56 GMT+0800 (China Standard Time)
  */
 import { FnList } from './List'
+import { isFn } from './is'
 
 const ticks = new FnList()
 let pending = false
@@ -21,7 +22,7 @@ function flush() {
 	pending = false
 }
 
-if (typeof MutationObserver === 'function') {
+if (isFn(MutationObserver)) {
 	// chrome18+, safari6+, firefox14+,ie11+,opera15
 	var counter = 0,
 		observer = new MutationObserver(flush),

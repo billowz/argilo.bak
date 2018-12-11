@@ -1,8 +1,8 @@
 import expect from 'expect.js'
-import { vformat, format, formatter } from '../format'
+import { vformat, format, formatter, pad } from '../format'
 import { eachArray } from '../collection'
 import { applyNoScope, createFn } from '../fn'
-import { escapeString } from '../string'
+import { escapeStr } from '../string'
 
 const formatCases = [
 	['\\{}', '{}'],
@@ -23,8 +23,8 @@ const formatCases = [
 	],
 	[`{$:c} {$c} {c} {c}`, 'A A A A', 65, '+65', '+6.5e+1', '6.5E+1'],
 	[
-		`{$:o} {@:#o} {@:#05o} {$o} {o} {o} {o}`,
-		'10 010 00010 10 37777777770 10 37777777770',
+		`{$:o} {@:#o} {@:#O} {@:#05O} {$o} {o} {o} {o}`,
+		'10 0o10 0O10 0O010 10 37777777770 10 37777777770',
 		8,
 		'+8',
 		'-8',
@@ -43,7 +43,7 @@ const formatCases = [
 	[`{$:u} {$u} {u} {u} {u}`, '10 10 4294967286 10 4294967286', 10, '+10', '-10', '+1e+1', '-1E+1'],
 	[
 		`{$:d} {@:+d} {@: d} {2: d} {@:,+d} {@: ,d} {@:,+010d} {d} {d} {d} {d}`,
-		'10000 +10000  10000 -10000 +10,000  10,000 +00010,000 10000 -10000 10000 -10000',
+		'10000 +10000  10000 -10000 +10,000  10,000 +000,010,000 10000 -10000 10000 -10000',
 		10000,
 		'+10000',
 		'-10000',
@@ -52,7 +52,7 @@ const formatCases = [
 	],
 	[
 		`{$:f} {@:+f} {@: f} {2: f} {@:,+f} {@: ,f} {@:,+012.2f} {f} {f} {f} {f}`,
-		'10000.00001 +10000.00001  10000.00001 -10000.00001 +10,000.00001  10,000.00001 +0010,000.00 10000.00001 -10000.00001 10000.00001 -10000.00001',
+		'10000.00001 +10000.00001  10000.00001 -10000.00001 +10,000.00001  10,000.00001 +00,010,000.00 10000.00001 -10000.00001 10000.00001 -10000.00001',
 		10000.00001,
 		'+10000.00001',
 		'-10000.00001',
@@ -62,12 +62,19 @@ const formatCases = [
 	[
 		`{$:s} {@:10s} {@:10=-s} {@:5=X.10} {$:5=X.10}`,
 		'test       test ------test Xtest test-strin',
-		"test",
-		"test-string"
-	]
+		'test',
+		'test-string'
+	],
+	[`===={:.10="..."}====`, '====abcdefg...====', 'abcdefghijh']
 ]
 
 describe('utility/format', () => {
+	it('pad', () => {
+		expect(pad('1', 3, '#')).to.equal('##1')
+		expect(pad('1', 3, '#', true)).to.equal('1##')
+		expect(pad('123', 3, '#')).to.equal('123')
+		expect(pad('123', 3, '#', true)).to.equal('123')
+	})
 	describe('vformat', function() {
 		eachArray(formatCases, t => {
 			it(`vformat: ${t[0]}`, () => {

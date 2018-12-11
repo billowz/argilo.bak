@@ -11,7 +11,7 @@
  * Copyright (c) 2018 Tao Zeng <tao.zeng.zt@qq.com>
  * Released under the MIT license
  *
- * Date: Thu, 06 Dec 2018 12:10:36 GMT
+ * Date: Tue, 11 Dec 2018 12:13:30 GMT
  */
 (function (global, factory) {
 	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
@@ -606,7 +606,7 @@
 	 * @module utility
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Wed Jul 25 2018 15:22:57 GMT+0800 (China Standard Time)
-	 * @modified Tue Nov 27 2018 20:00:13 GMT+0800 (China Standard Time)
+	 * @modified Mon Dec 10 2018 12:44:40 GMT+0800 (China Standard Time)
 	 */
 	var __hasOwn$1 = Object[PROTOTYPE].hasOwnProperty;
 	/**
@@ -674,9 +674,9 @@
 	var defPropValue = defPropSupport ? function (obj, prop, value, configurable, writable, enumerable) {
 	  __defProp(obj, prop, {
 	    value: value,
-	    configurable: configurable || false,
-	    writable: writable || false,
-	    enumerable: enumerable || false
+	    enumerable: enumerable !== false,
+	    configurable: configurable !== false,
+	    writable: writable !== false
 	  });
 
 	  return value;
@@ -690,7 +690,7 @@
 	 * @module utility/create
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Wed Jul 25 2018 15:24:47 GMT+0800 (China Standard Time)
-	 * @modified Tue Nov 27 2018 15:37:23 GMT+0800 (China Standard Time)
+	 * @modified Mon Dec 10 2018 11:45:30 GMT+0800 (China Standard Time)
 	 */
 
 	function __() {}
@@ -1373,6 +1373,12 @@
 	  return array;
 	}
 
+	/**
+	 * @module utility/prop
+	 * @author Tao Zeng <tao.zeng.zt@qq.com>
+	 * @created Fri Nov 30 2018 14:41:02 GMT+0800 (China Standard Time)
+	 * @modified Mon Dec 10 2018 16:59:08 GMT+0800 (China Standard Time)
+	 */
 	var pathCache = create(null); // prop | [index | "string prop" | 'string prop']
 
 	var pathReg = /(?:^|\.)([a-zA-Z$_][\w$]*)|\[\s*(?:(\d+)|"((?:[^\\"]|\\.)*)"|'((?:[^\\']|\\.)*)')\s*\]/g;
@@ -1449,7 +1455,7 @@
 	 * @module utility/string
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Mon Dec 11 2017 13:57:32 GMT+0800 (China Standard Time)
-	 * @modified Thu Dec 06 2018 18:45:25 GMT+0800 (China Standard Time)
+	 * @modified Sat Dec 08 2018 16:16:42 GMT+0800 (China Standard Time)
 	 */
 
 	/*                                                                                      *
@@ -1499,11 +1505,13 @@
 	 */
 
 	function upperFirst(str) {
-	  return str.replace(FIRST_LOWER_LETTER_REG, upperHandler);
+	  return str.replace(FIRST_LOWER_LETTER_REG, upper);
 	}
-
-	function upperHandler(m) {
+	function upper(m) {
 	  return m.toUpperCase();
+	}
+	function lower(m) {
+	  return m.toLowerCase();
 	} //========================================================================================
 
 	/*                                                                                      *
@@ -1519,7 +1527,6 @@
 	 * - other: String(value)
 	 * TODO support NaN, Infinity
 	 */
-
 
 	function strval(obj) {
 	  return isNil(obj) ? '' : String(obj);
@@ -1538,23 +1545,57 @@
 	  "'": "\\'"
 	},
 	    STR_ESCAPE = /[\n\t\f"']/g;
-	function escapeString(str) {
+	function escapeStr(str) {
 	  return str.replace(STR_ESCAPE, function (str) {
 	    return STR_ESCAPE_MAP[str];
 	  });
-	} //========================================================================================
+	}
+
+	/**
+	 * @module utility/format
+	 * @author Tao Zeng <tao.zeng.zt@qq.com>
+	 * @created Mon Dec 03 2018 19:46:41 GMT+0800 (China Standard Time)
+	 * @modified Mon Dec 10 2018 16:26:23 GMT+0800 (China Standard Time)
+	 */
 
 	/*                                                                                      *
-	 *                                          pad                                         *
+	 *                                       pad & cut                                      *
 	 *                                                                                      */
 	//========================================================================================
 
 	function pad(str, len, chr, leftAlign) {
-	  str = String(str);
-	  var l = str.length;
-	  if (l >= len) return str;
-	  var padding = new Array(len - l + 1).join(chr || ' ');
+	  return len > str.length ? __pad(str, len, chr, leftAlign) : str;
+	}
+	function cut(str, len, suffix) {
+	  return len < str.length ? (suffix = suffix || '', str.substr(0, len - suffix.length) + suffix) : str;
+	}
+
+	function __pad(str, len, chr, leftAlign) {
+	  var padding = new Array(len - str.length + 1).join(chr || ' ');
 	  return leftAlign ? str + padding : padding + str;
+	} //========================================================================================
+
+	/*                                                                                      *
+	 *                                       Separator                                      *
+	 *                                                                                      */
+	//========================================================================================
+
+
+	var thousandSeparate = mkSeparator(3),
+	    binarySeparate = mkSeparator(8, '01'),
+	    octalSeparate = mkSeparator(4, '0-7'),
+	    hexSeparate = mkSeparator(4, '\\da-fA-F');
+
+	function mkSeparator(group, valReg) {
+	  valReg = valReg || '\\d';
+	  var reg = new RegExp("^(?:[+-]|\\s+|0[xXbBoO])|([" + valReg + "])(?=([" + valReg + "]{" + group + "})+(?![" + valReg + "]))|[^" + valReg + "].*", 'g');
+	  return function (numStr) {
+	    return numStr.replace(reg, separatorHandler);
+	  };
+	}
+
+	function separatorHandler(m, d) {
+	  return d ? d + ',' : m;
 	} //========================================================================================
 
 	/*                                                                                      *
@@ -1562,71 +1603,43 @@
 	 *                                                                                      */
 	//========================================================================================
 
-	function replacor(regs) {
-	  return function (str) {
-	    for (var i = 0, reg; i < 4; i++) {
-	      reg = regs[i];
-	      if (reg[0].test(str)) return str.replace(reg[0], reg[1]);
-	    }
 
-	    return str;
-	  };
+	var PLURAL_REG = /([a-zA-Z]+)([^aeiou])y$|([sxzh])$|([aeiou]y)$|([^sxzhy])$/;
+	function plural(str) {
+	  return str.replace(PLURAL_REG, pluralHandler);
 	}
 
-	var plural = replacor([[/([a-zA-Z]+[^aeiou])y$/, '$1ies'], [/([a-zA-Z]+[aeiou]y)$/, '$1s'], [/([a-zA-Z]+[sxzh])$/, '$1es'], [/([a-zA-Z]+[^sxzhy])$/, '$1s']]);
-	var singular = replacor([[/([a-zA-Z]+[^aeiou])ies$/, '$1y'], [/([a-zA-Z]+[aeiou])s$/, '$1'], [/([a-zA-Z]+[sxzh])es$/, '$1'], [/([a-zA-Z]+[^sxzhy])s$/, '$1']]); //========================================================================================
-
-	/*                                                                                      *
-	 *                                   thousand separate                                  *
-	 *                                                                                      */
-	//========================================================================================
-
-	var thousandSeparationReg = /(\d)(?=(\d{3})+(?!\d))/g;
-	function thousandSeparate(number) {
-	  var split = String(number).split('.');
-	  split[0] = split[0].replace(thousandSeparationReg, '$1,');
-	  return split.join('.');
+	function pluralHandler(m, v, ies, es, ys, s) {
+	  return v + (ies ? ies + 'ies' : es ? es + 'es' : (ys || s) + 's');
 	}
 
-	/**
-	 * @module utility/format
-	 * @author Tao Zeng <tao.zeng.zt@qq.com>
-	 * @created Mon Dec 03 2018 19:46:41 GMT+0800 (China Standard Time)
-	 * @modified Thu Dec 06 2018 20:10:18 GMT+0800 (China Standard Time)
-	 */
+	var SINGULAR_REG = /([a-zA-Z]+)([^aeiou])ies$|([sxzh])es$|([aeiou]y)s$|([^sxzhy])s$/;
+	function singular(str) {
+	  return str.replace(SINGULAR_REG, singularHandler);
+	}
 
-	/*                                                                                      *
-	 *                                      format Rule                                     *
-	 *                                                                                      */
-	//========================================================================================
-	//   0      1      2     3     4       5       6           7         8      9           10             11             12      13
-	// [match, expr, index, prop, flags, width, width-idx, width-prop, fill, precision, precision-idx, precision-prop, cut-fill, type]
-
-	var paramIdxR = "(\\d+|\\$|@)",
-	    paramPropR = "(?:\\{((?:[a-zA-Z$_][\\w$_]*|\\[(?:\\d+|\"(?:[^\\\\\"]|\\\\.)*\"|'(?:[^\\\\']|\\\\.)*')\\])(?:\\.[a-zA-Z$_][\\w$_]*|\\[(?:\\d+|\"(?:[^\\\\\"]|\\\\.)*\"|'(?:[^\\\\']|\\\\.)*')\\])*)\\})",
-	    widthR = "(?:([1-9]\\d*)|&" + paramIdxR + paramPropR + ")",
-	    fillR = "(?:=(.))",
-	    cutSuffixR = "(?:=\"((?:[^\\\\\"]|\\\\.)*)\")",
-	    formatReg = new RegExp("\\\\.|(\\{" + paramIdxR + "?" + paramPropR + "?(?::([#,+\\- 0]*)(?:" + widthR + fillR + "?)?(?:\\." + widthR + cutSuffixR + "?)?)?(?::?([a-zA-Z_][a-zA-Z0-9_$]*))?\\})", 'g'); //========================================================================================
+	function singularHandler(m, v, ies, es, ys, s) {
+	  return v + (ies ? ies + 'y' : es || ys || s);
+	} //========================================================================================
 
 	/*                                                                                      *
 	 *                                     format flags                                     *
 	 *                                                                                      */
 	//========================================================================================
 
-	var FORMAT_XPREFIX = 0x1;
-	var FORMAT_PLUS = 0x1;
-	var FORMAT_ZERO = 0x2;
-	var FORMAT_SPACE = 0x4;
-	var FORMAT_THOUSAND = 0x8;
-	var FORMAT_LEFT = 0x16; //──── flags parser ──────────────────────────────────────────────────────────────────────
 
+	var FORMAT_XPREFIX = 0x1;
+	var FORMAT_PLUS = 0x2;
+	var FORMAT_ZERO = 0x4;
+	var FORMAT_SPACE = 0x8;
+	var FORMAT_SEPARATOR = 0x10;
+	var FORMAT_LEFT = 0x20;
 	var FLAG_MAPPING = {
 	  '#': FORMAT_XPREFIX,
 	  '+': FORMAT_PLUS,
 	  '0': FORMAT_ZERO,
 	  ' ': FORMAT_SPACE,
-	  ',': FORMAT_THOUSAND,
+	  ',': FORMAT_SEPARATOR,
 	  '-': FORMAT_LEFT
 	};
 
@@ -1645,10 +1658,24 @@
 	} //========================================================================================
 
 	/*                                                                                      *
+	 *                                      format Rule                                     *
+	 *                                                                                      */
+	//========================================================================================
+	//   0      1      2     3     4       5       6           7         8      9           10             11             12        13
+	// [match, expr, index, prop, flags, width, width-idx, width-prop, fill, precision, precision-idx, precision-prop, cut-suffix, type]
+
+
+	var paramIdxR = "(\\d+|\\$|@)",
+	    paramPropR = "(?:\\{((?:[a-zA-Z$_][\\w$_]*|\\[(?:\\d+|\"(?:[^\\\\\"]|\\\\.)*\"|'(?:[^\\\\']|\\\\.)*')\\])(?:\\.[a-zA-Z$_][\\w$_]*|\\[(?:\\d+|\"(?:[^\\\\\"]|\\\\.)*\"|'(?:[^\\\\']|\\\\.)*')\\])*)\\})",
+	    widthR = "(?:([1-9]\\d*)|&" + paramIdxR + paramPropR + ")",
+	    fillR = "(?:=(.))",
+	    cutSuffixR = "(?:=\"((?:[^\\\\\"]|\\\\.)*)\")",
+	    formatReg = new RegExp("\\\\.|(\\{" + paramIdxR + "?" + paramPropR + "?(?::([#,+\\- 0]*)(?:" + widthR + fillR + "?)?(?:\\." + widthR + cutSuffixR + "?)?)?([a-zA-Z_][a-zA-Z0-9_$]*)?\\})", 'g'); //========================================================================================
+
+	/*                                                                                      *
 	 *                                      Formatters                                      *
 	 *                                                                                      */
 	//========================================================================================
-
 
 	var formatters = create(null);
 	function extendFormatter(obj) {
@@ -1656,28 +1683,13 @@
 
 	  for (name in obj) {
 	    fmt = obj[name];
-
-	    if (isFn(fmt)) {
-	      formatters[name] = {
-	        fmt: fmt,
-	        get: get
-	      };
-	    } else if (isFn(fmt.fmt)) {
-	      formatters[name] = fmt;
-	    }
+	    isFn(fmt) && (formatters[name] = fmt);
 	  }
 	}
-
 	function getFormatter(name) {
 	  var f = formatters[name || 's'];
 	  if (f) return f;
 	  throw new Error("Invalid Formatter: " + name);
-	}
-
-	function __doFormat(formatter, val, flags, width, fill, precision, cutSuffix) {
-	  var str = formatter.fmt(val, flags, width, precision, cutSuffix);
-	  if (width > str.length) str = pad(str, width, fill, flags & FORMAT_LEFT);
-	  return str;
 	} //========================================================================================
 
 	/*                                                                                      *
@@ -1687,25 +1699,61 @@
 
 	/**
 	 * Syntax:
-	 * 			'{' (<parameter>)? ('!' <property>)? (':' (<flags>)? (<width>)? ('!' <property>)? ('=' <fill-char>)? ('.' <precision>  ('!' <property>)? )? )? (':'? <data-type>)? '}'
+	 * @example
+	 * 	'{'
+	 * 		(<parameter>)?
+	 * 		(
+	 * 			':'
+	 * 			(<flags>)?
+	 * 			(
+	 * 				<width> ('=' <fill-char>)?
+	 * 			)?
+	 * 			(
+	 * 				'.'
+	 * 				<precision> ('=' '"' <cut-suffix> '"')?
+	 * 			)?
+	 * 		)?
+	 * 		(<type>)?
+	 * 	'}'
+	 *
 	 * - parameter
-	 * 		- parameter index
-	 * 			{}						format by next unused argument
-	 * 			{<number>}				format by arguments[number]
-	 * 			{@}						format by current used argument
-	 * 			{$}						format by next unused argument
-	 * 		- property
-	 * 			{.<path>}				get value on parameter by property path
-	 * 									Syntax: '.' (<propName> | '[' (<number> | <string>) ']') ('.' <propName> | '[' (<number> | <string>) ']')*
-	 * 									eg. .abc.abc | .["abc"]['abc'] | .abc[0] | .[0].abc
+	 * 		- {}					format by next unused argument
+	 * 		- {<number>}			format by arguments[number]
+	 * 		- {@}					format by current used argument
+	 * 		- {$}					format by next unused argument
+	 * 		- {{name}}				format by "name" property on next unused argument
+	 * 		- {<number>{name}}		format by "name" property on arguments[number]
+	 * 		- {@{name}}				format by "name" property on current used argument
+	 * 		- {${name}}				format by "name" property on next unused argument
+	 * @example
+	 * 		format('<{} {}>', 'abc')				// return "<abc undefined>"
+	 * 		format('<{$} {$}>', 'abc')				// return "<abc undefined>"
+	 * 		format('<{@} {} {@}>', 'abc')			// return "<abc abc abc>"
+	 * 		format('<{0} {} {0}>', 'abc')			// return "<abc abc abc>"
+	 * 		format('<{0{value}} {${value}} {@{value}} {{value.a}}>', {value: 'abc'}, {value: {a: 'cbd'}})
+	 * 		// return "<abc abc abc bcd>"
+	 * 		format('<{0{[0]}} {${[0]}} {@{[0]}} {{[0].a}}>', ['abc'], [{a: 'cbd'}])
+	 * 		// return "<abc abc abc bcd>"
+	 *
 	 * - flags
-	 * 		space   prefix non-negative number with a space
-	 * 		+       prefix non-negative number with a plus sign
-	 * 		-       left-justify within the field
-	 * 		,		thousand separation number
-	 * 		#       ensure the leading "0" for any octal
-	 * 				prefix non-zero hexadecimal with "0x" or "0X"
-	 * 				prefix non-zero binary with "0b" or "0B"
+	 * 		- {:#}    	FORMAT_XPREFIX
+	 * 					ensure the leading "0" for any octal
+	 * 					prefix non-zero hexadecimal with "0x" or "0X"
+	 * 					prefix non-zero binary with "0b" or "0B"
+	 * 		- {:+}    	FORMAT_PLUS
+	 * 					Forces to preceed the result with a plus or minus sign (+ or -) even for positive numbers.
+	 * 					By default, only negative numbers are preceded with a - sign
+	 * 		- {:0}		FORMAT_ZERO
+	 * 					Left-pads the number with zeroes (0) instead of spaces when padding is specified
+	 * 		- {: }   	FORMAT_SPACE
+	 * 					If no sign is going to be written, a blank space is inserted before the value
+	 * 		- {:,}		FORMAT_SEPARATOR
+	 * 					use thousand separator on decimal number
+	 * 					hexadecimal number: FFFFFFFF => FFFF,FFFF
+	 * 					octal number: 77777777 => 7777,7777
+	 * 					binary number: 1111111111111111 => 11111111,11111111
+	 * 		{:-}    	FORMAT_LEFT
+	 * 					Left-justify within the given field width; Right justification is the default
 	 * @example
 	 * 		format('<{: d}>',  12);		// return "< 12>"
 	 *		format('<{: d}>',   0);		// return "< 0>"
@@ -1720,11 +1768,74 @@
 	 *		format('<{:#X}>',  12);		// return "<0XC>"
 	 *		format('<{:#b}>',  12);		// return "<0b1100>"
 	 *		format('<{:#B}>',  12);		// return "<0B1100>"
+
 	 * - width
-	 * 			(<width>)? ('=' <fill-char>)? ('.' <precision>)?
-	 * 		- min width
-	 * 		- precision width
-	 * - data-type
+	 * 		Minimum number of characters to be printed.
+	 * 		If the value to be printed is shorter than this number, the result is padded with pad char(default is space).
+	 * 		The value is not truncated even if the result is larger.
+	 *		- width value
+	 * 			{:<number>}
+	 * 			{:&@}
+	 * 			{:&$}
+	 * 			{:&<number>}
+	 * 			{:&@{<prop>}}
+	 * 			{:&${<prop>}}
+	 * 			{:&<number>{<prop>}}
+	 *		- pad char
+	 * 			{:&@=<pad-char>}
+	 * 			{:&$=<pad-char>}
+	 * 			{:&<number>=<pad-char>}
+	 * 			{:&@{<prop>}=<pad-char>}
+	 * 			{:&${<prop>}=<pad-char>}
+	 * 			{:&<number>{<prop>}=<pad-char>}
+	 * @example
+	 *
+	 * - precision
+	 * 		For integer specifiers (d,  o, u, x, X): precision specifies the minimum number of digits to be written.
+	 * 		If the value to be written is shorter than this number, the result is padded with leading zeros.
+	 * 		The value is not truncated even if the result is longer. A precision of 0 means that no character is written for the value 0.
+	 * 		For a, A, e, E, f and F specifiers: this is the number of digits to be printed after the decimal point (by default, this is 6).
+	 * 		For g and G specifiers: This is the maximum number of significant digits to be printed.
+	 * 		For s: this is the maximum number of characters to be printed. By default all characters are printed until the ending null character is encountered.
+	 * 		If the period is specified without an explicit value for precision, 0 is assumed.
+	 * 		- precision value
+	 * 			{:.<number>}
+	 * 			{:.&@}
+	 * 			{:.&$}
+	 * 			{:.&<number>}
+	 * 			{:.&@{<prop>}}
+	 * 			{:.&${<prop>}}
+	 * 			{:.&<number>{<prop>}}
+	 * 		- cut suffix
+	 * 			{:.&@="<suffix>"}
+	 * 			{:.&$="<suffix>"}
+	 * 			{:.&<number>="<suffix>"}
+	 * 			{:.&@{<prop>}="<suffix>"}
+	 * 			{:.&${<prop>}="<suffix>"}
+	 * 			{:.&<number>{<prop>}="<suffix>"}
+	 * - type
+	 * 		- default types
+	 *			- {c}		Character
+	 * 			- {s}		String
+	 * 			- {j}		JSON String
+	 * 			- {y}		Date Year
+	 * 			- {m}		Date Month
+	 * 			- {w}		Date Weekly
+	 * 			- {W}		Date Weekly
+	 * 			- {D}		Date
+	 * 			- {H}		Date
+	 * 			- {M}		Date
+	 * 			- {S}		Date
+	 * 			- {d} 		Signed decimal integer
+	 *			- {u}		Unsigned decimal integer
+	 *			- {o}		Unsigned octal
+	 *			- {x}		Unsigned hexadecimal integer
+	 *			- {X}		Unsigned hexadecimal integer (uppercase)
+	 *			- {f}		Decimal floating point, lowercase,
+	 *			- {e}		Scientific notation (mantissa/exponent), lowercase
+	 *			- {E}		Scientific notation (mantissa/exponent), uppercase
+	 *			- {g}		Use the shortest representation: %e or %f
+	 *			- {G}		Use the shortest representation: %E or %F
 	 * - Rules
 	 * 		- property-path
 	 * 				(
@@ -1750,12 +1861,11 @@
 	 * 					)*
 	 * 				)
 	 * 		- expression
-	 * 			/[^\\{]+|											// escape
-	 * 			\\.|												// escape
+	 * 			/\\.|												// escape
 	 * 			(													// 1: expression
 	 * 				\{
 	 * 				(\d+|\$|@)?										// 2: parameter index
-	 * 				(?:!<property-path> )?							// 3: property path of parameter
+	 * 				(?:\{<property-path>\})?						// 3: property path of parameter
 	 * 				(?:
 	 * 					:
 	 * 					([#,+\- ]*)									// 4: flags
@@ -1765,7 +1875,7 @@
 	 * 							(?:
 	 * 								&
 	 * 								(\d+|\$|@)						// 6: parameter index of width
-	 * 								(?:!<property-path>)?			// 7: property path of width parameter
+	 * 								(?:\{<property-path>\})?		// 7: property path of width parameter
 	 * 							)
 	 * 						)
 	 * 						(?:=(.))?								// 8: pad fill
@@ -1777,43 +1887,48 @@
 	 * 							(?:
 	 * 								&
 	 * 								(\d+|\$|@)						// 10: parameter index of width
-	 * 								(?:!<property-path>)?			// 11: property path of width parameter
+	 * 								(?:\{<property-path>\})?		// 11: property path of width parameter
 	 * 							)
+	 * 						)
+	 * 						(?:
+	 * 							=
+	 * 							"
+	 * 							((?:[^\\"]|\\.)*)					// 12: cut su
+	 * 							"
 	 * 						)
 	 * 					)?
 	 * 				)?
-	 * 				(?:
-	 * 					:?
-	 * 					([a-zA-Z_][a-zA-Z0-9_$]*))?					// 12: data type
+	 * 				([a-zA-Z_][a-zA-Z0-9_$]*)?						// 13: data type
 	 * 				\}
 	 * 			)/
+	 * @param fmt 		format String
+	 * @param args		format arguments
+	 * @param offset	start offset of arguments
+	 * @param getParam	get parameter on arguments callback
 	 */
-
 
 	function vformat(fmt, args, offset, getParam) {
 	  offset = offset || 0;
-	  var state = [offset, offset];
+	  var start = offset;
 	  getParam = getParam || defaultGetParam;
 	  return fmt.replace(formatReg, function (s, m, param, paramProp, flags, width, widx, wprop, fill, precision, pidx, pprop, cutSuffix, type) {
 	    if (!m) return s.charAt(1);
-	    var formatter = getFormatter(type);
-	    return __doFormat(formatter, parseParam(param || '$', paramProp, state, args, getParam), parseFlags(flags), parseWidth(width, widx, wprop, state, args, getParam) || 0, fill || ' ', parseWidth(precision, pidx, pprop, state, args, getParam), cutSuffix || '');
+	    return getFormatter(type)(parseParam(param || '$', paramProp), parseFlags(flags), parseWidth(width, widx, wprop) || 0, fill, parseWidth(precision, pidx, pprop), cutSuffix);
 	  });
-	}
 
-	function parseWidth(width, idx, prop, state, args, getParam) {
-	  if (width) return width >> 0;
+	  function parseWidth(width, idx, prop) {
+	    if (width) return width >> 0;
 
-	  if (idx) {
-	    var w = parseParam(idx, prop, state, args, getParam) >> 0;
-	    if (isFinite(w)) return w;
+	    if (idx) {
+	      var w = parseParam(idx, prop) >> 0;
+	      if (isFinite(w)) return w;
+	    }
 	  }
-	}
 
-	function parseParam(paramIdx, prop, state, args, getParam) {
-	  var param = getParam(args, paramIdx === '$' ? state[0]++ : paramIdx === '@' ? state[0] === state[1] ? state[0] : state[0] - 1 : paramIdx >> 0);
-	  if (prop) param = get(param, prop);
-	  return param;
+	  function parseParam(paramIdx, prop) {
+	    var param = getParam(args, paramIdx === '$' ? offset++ : paramIdx === '@' ? offset === start ? offset : offset - 1 : paramIdx >> 0);
+	    return prop ? get(param, prop) : param;
+	  }
 	}
 
 	function defaultGetParam(args, idx) {
@@ -1825,17 +1940,19 @@
 	 *                                                                                      */
 	//========================================================================================
 
-
-	function getFormatParam(args, idx) {
-	  return args[idx + 1];
-	}
 	/**
 	 * @see vformat
+	 * @param fmt	format string
+	 * @param args	format arguments
 	 */
 
 
 	function format(fmt) {
 	  return vformat(fmt, arguments, 0, getFormatParam);
+	}
+
+	function getFormatParam(args, idx) {
+	  return args[idx + 1];
 	} //========================================================================================
 
 	/*                                                                                      *
@@ -1843,19 +1960,13 @@
 	 *                                                                                      */
 	//========================================================================================
 
-	var PROP1_VAR = 'p1',
-	    PROP2_VAR = 'p2',
-	    PROP3_VAR = 'p3',
-	    GET_PARAM_VAR = 'getp',
+
+	var GET_PARAM_VAR = 'getp',
 	    GET_PROP_VAR = 'get',
 	    STATE_VAR = 'state';
 
 	function createFormatter(m, getParam) {
-	  var formatter = getFormatter(m[13]);
-	  var p1 = m[3] && parsePath(m[3]),
-	      p2 = m[7] && parsePath(m[7]),
-	      p3 = m[11] && parsePath(m[11]);
-	  return createFn("return function(args, " + STATE_VAR + "){\n\treturn dofmt(fmt,\n\t\t" + getParamCode(m[2] || '$', p1 && PROP1_VAR) + ",\n\t\tg,\n\t\t" + getWidthCode(m[5], m[6], p2 && PROP2_VAR, '0') + ",\n\t\tf,\n\t\t" + getWidthCode(m[9], m[10], p3 && PROP3_VAR, 'void 0') + ",\n\t\tcf);\n}", ['dofmt', 'fmt', 'g', 'f', 'cf', GET_PROP_VAR, GET_PARAM_VAR, PROP1_VAR, PROP2_VAR, PROP3_VAR])(__doFormat, formatter, parseFlags(m[4]), m[8] || ' ', m[12] || '', get, getParam, p1, p2, p3);
+	  return createFn("return function(args, " + STATE_VAR + "){\nreturn fmt(" + getParamCode(m[2] || '$', m[3]) + ",\n\"" + parseFlags(m[4]) + "\",\n" + getWidthCode(m[5], m[6], m[7], '0') + ",\n\"" + (m[8] ? escapeStr(m[8]) : ' ') + "\",\n" + getWidthCode(m[9], m[10], m[11], 'void 0') + ",\n\"" + (m[12] ? escapeStr(m[12]) : '') + "\");\n}", ['fmt', GET_PROP_VAR, GET_PARAM_VAR])(getFormatter(m[13]), get, getParam);
 	}
 
 	function getWidthCode(width, idx, prop, def) {
@@ -1864,9 +1975,27 @@
 
 	function getParamCode(idx, prop) {
 	  var code = GET_PARAM_VAR + "(args, " + (idx === '$' ? STATE_VAR + "[0]++" : idx === '@' ? STATE_VAR + "[0] === " + STATE_VAR + "[1] ? " + STATE_VAR + "[0] : " + STATE_VAR + "[0] - 1" : idx) + ")";
-	  if (prop) return GET_PROP_VAR + "(" + code + ", " + prop + ")";
+
+	  if (prop) {
+	    var path = parsePath(prop);
+	    var i = path.length;
+
+	    while (i--) {
+	      path[i] = "\"" + escapeStr(path[i]) + "\"";
+	    }
+
+	    return GET_PROP_VAR + "(" + code + ", [" + path.join(', ') + "])";
+	  }
+
 	  return code;
 	}
+	/**
+	 * @see vformat
+	 * @param fmt		format string
+	 * @param offset	start offset of arguments
+	 * @param getParam	get parameter on arguments callback
+	 */
+
 
 	function formatter(fmt, offset, getParam) {
 	  var m,
@@ -1897,93 +2026,130 @@
 	  return createFn("return function(){var " + STATE_VAR + " = [" + offset + ", " + offset + "]; return " + codes.join(' + ') + "}", ['arr'])(arr);
 
 	  function pushStr(str, append) {
-	    if (append && arr[i - 1].length) {
+	    if (append && arr[i - 1].match) {
 	      arr[i - 1] += str;
 	    } else {
 	      codes[i] = "arr[" + i + "]";
 	      arr[i++] = str;
 	    }
 	  }
-	} //========================================================================================
+	}
+	/*
+	setTimeout(() => {
+		var f,
+			n = 100000
+		console.time()
+		for (var i = 0; i < n; i++) {
+			f = formatter(`{:.10="..."}`)
+		}
+		console.timeEnd()
+		console.time()
+		for (var i = 0; i < n; i++) {
+			f('abbdddded')
+		}
+		console.timeEnd()
+		console.time()
+		for (var i = 0; i < n; i++) {
+			format(`{:.10="..."}`, 'abbdddded')
+		}
+		console.timeEnd()
+		console.log(formatter(`{:.10="..."}`).toString())
+	}) */
+	//========================================================================================
 
 	/*                                                                                      *
 	 *                                  default formatters                                  *
 	 *                                                                                      */
 	//========================================================================================
 
-	var TOEXPONENTIAL = 'toExponential',
-	    TOPRECISION = 'toPrecision',
-	    TOFIXED = 'toFixed';
-
-	function floatFormatter(type) {
-	  var toStr = type === 'e' || type === 'E' ? function (num, precision) {
-	    return num[TOEXPONENTIAL](precision);
-	  } : type === 'f' ? function (num, precision) {
-	    return precision >= 0 && num[TOFIXED](precision);
-	  } : function (num, precision) {
-	    return precision && num[TOPRECISION](precision);
-	  },
-	      upper = charCode(type) < 97;
-	  return function (val, flags, width, precision) {
-	    var num = parseFloat(val);
-	    if (!isFinite(num)) return String(num);
-	    var str = toStr(num, precision) || String(num);
-
-	    if (flags & FORMAT_THOUSAND) {
-	      var split = str.split('.');
-	      split[0] = split[0].replace(thousandSeparationReg, '$1,');
-	      str = split.join('.');
-	    }
-
-	    str = prefixNum(num, str, flags, width);
-	    return upper ? str.toUpperCase() : str;
+	function strFormatter(toStr) {
+	  return function (val, flags, width, fill, precision, cutSuffix) {
+	    var str = toStr(val, flags);
+	    return width > str.length ? __pad(str, width, fill, flags & FORMAT_LEFT) : cut(str, precision, cutSuffix);
 	  };
 	}
 
-	var BaseRadixs = {
-	  b: 2,
-	  B: 2,
-	  o: 8,
-	  u: 10,
-	  x: 16,
-	  X: 16
+	function numFormatter(parseNum, getPrefix, toStr, separator) {
+	  return function (val, flags, width, fill, precision) {
+	    var num = parseNum(val);
+	    if (!isFinite(num)) return String(num);
+	    var prefix = getPrefix(num, flags),
+	        plen = prefix.length;
+	    var str = toStr(num < 0 ? -num : num, flags, precision);
+	    return flags & FORMAT_ZERO ? (str = prefix + pad(str, width - plen, '0'), flags & FORMAT_SEPARATOR ? separator(str) : str) : (flags & FORMAT_SEPARATOR && (str = separator(str)), pad(prefix + str, width, fill, flags & FORMAT_LEFT));
+	  };
+	}
+
+	function decimalPrefix(num, flags) {
+	  return num < 0 ? '-' : flags & FORMAT_PLUS ? '+' : flags & FORMAT_SPACE ? ' ' : '';
+	} //──── base formatter ───────────────────────────────────────────────────────────────────────
+
+
+	var BASE_RADIXS = {
+	  b: [2, binarySeparate],
+	  o: [8, octalSeparate],
+	  u: [10, thousandSeparate],
+	  x: [16, hexSeparate]
 	};
-	var BasePrefixs = ['0b', '0', '0x'];
+	var BASE_PREFIXS = ['0b', '0o', '0x'];
 
 	function baseFormatter(type) {
-	  var base = BaseRadixs[type],
-	      xprefix = base != 10 ? BasePrefixs[base >> 3] : '',
-	      upper = charCode(type) < 97;
-	  return function (val, flags, width) {
-	    var num = val >>> 0;
-	    if (!isFinite(num)) return String(num);
-	    var str = formatNum(num.toString(base), flags & FORMAT_XPREFIX ? xprefix : '', flags, width);
-	    return upper ? str.toUpperCase() : str;
+	  var base = BASE_RADIXS[type.toLowerCase()],
+	      n = base[0],
+	      __toStr = function (num) {
+	    return num.toString(n);
+	  },
+	      toStr = type === 'X' ? function (num) {
+	    return upper(__toStr(num));
+	  } : __toStr;
+
+	  var xprefix = n === 10 ? '' : BASE_PREFIXS[n >> 3];
+	  charCode(type) < 96 && (xprefix = upper(xprefix));
+	  return numFormatter(function (v) {
+	    return v >>> 0;
+	  }, function (num, flags) {
+	    return flags & FORMAT_XPREFIX ? xprefix : '';
+	  }, toStr, base[1]);
+	} //──── float formatter ───────────────────────────────────────────────────────────────────
+
+
+	function floatFormatter(type) {
+	  var ____toStr = upper(type) === 'E' ? toExponential : type === 'f' ? toFixed : toPrecision,
+	      __toStr = function (num, flags, precision) {
+	    return ____toStr(num, precision) || String(num);
+	  },
+	      toStr = charCode(type) > 96 ? __toStr : function (num, flags, precision) {
+	    return upper(__toStr(num, flags, precision));
 	  };
+
+	  return numFormatter(parseFloat, decimalPrefix, toStr, thousandSeparate);
 	}
 
-	function cutStr(str, len, suffix) {
-	  return len < str.length ? str.substr(0, len - suffix.length) + suffix : str;
+	function toExponential(num, precision) {
+	  return num.toExponential(precision);
 	}
+
+	function toPrecision(num, precision) {
+	  return precision && num.toPrecision(precision);
+	}
+
+	function toFixed(num, precision) {
+	  return precision >= 0 && num.toFixed(precision);
+	} //──── register formatters ───────────────────────────────────────────────────────────────
+
 
 	extendFormatter({
-	  s: function s(val, flags, width, precision, cutSuffix) {
-	    return cutStr(String(val), precision, cutSuffix);
-	  },
-	  j: function j(val, flags, width, precision, cutSuffix) {
-	    return cutStr(JSON.stringify(val), precision, cutSuffix);
-	  },
+	  s: strFormatter(toStr),
+	  j: strFormatter(function (v) {
+	    return v === undefined ? 'undefined' : JSON.stringify(v);
+	  }),
 	  c: function c(val) {
 	    var num = val >> 0;
 	    return num > 0 ? String.fromCharCode(num) : '';
 	  },
-	  d: function d(val, flags, width) {
-	    var num = val >> 0;
-	    if (!isFinite(num)) return String(num);
-	    var str = String(num);
-	    if (flags & FORMAT_THOUSAND) str = str.replace(thousandSeparationReg, '$1,');
-	    return prefixNum(num, str, flags, width);
-	  },
+	  d: numFormatter(function (val) {
+	    return val >> 0;
+	  }, decimalPrefix, toStr, thousandSeparate),
 	  e: floatFormatter('e'),
 	  E: floatFormatter('E'),
 	  f: floatFormatter('f'),
@@ -1992,21 +2158,14 @@
 	  b: baseFormatter('b'),
 	  B: baseFormatter('B'),
 	  o: baseFormatter('o'),
+	  O: baseFormatter('O'),
 	  u: baseFormatter('u'),
 	  x: baseFormatter('x'),
 	  X: baseFormatter('X')
 	});
 
-	function prefixNum(num, str, flags, width) {
-	  return formatNum(str, num < 0 ? '' : flags & FORMAT_PLUS ? '+' : flags & FORMAT_SPACE ? ' ' : '', flags, width);
-	}
-
-	function formatNum(str, prefix, flags, width) {
-	  if (flags & FORMAT_ZERO && width > str.length - prefix.length) {
-	    str = pad(str, width - prefix.length, '0');
-	  }
-
-	  return prefix + str;
+	function toStr(v) {
+	  return String(v);
 	}
 
 	/**
@@ -2090,22 +2249,164 @@
 	}
 
 	/**
+	 * @module utility/assert
+	 * @author Tao Zeng <tao.zeng.zt@qq.com>
+	 * @created Wed Nov 28 2018 11:01:45 GMT+0800 (China Standard Time)
+	 * @modified Tue Dec 11 2018 16:43:09 GMT+0800 (China Standard Time)
+	 */
+	var formatters$1 = [],
+	    formatArgHandlers = [];
+
+	function parseMessage(msg, args, msgIdx) {
+	  var fs = formatters$1[msgIdx] || (formatArgHandlers[msgIdx] = function (args, offset) {
+	    return args[0][offset >= msgIdx ? offset + 1 : offset];
+	  }, formatters$1[msgIdx] = create(null));
+	  return (fs[msg] || (fs[msg] = formatter(msg, msgIdx, formatArgHandlers[msgIdx])))(args);
+	}
+
+	var assert = function (msg) {
+	  throw new Error(parseMessage(msg, arguments, 0));
+	};
+
+	function catchErr(fn) {
+	  try {
+	    fn();
+	  } catch (e) {
+	    return e;
+	  }
+	}
+
+	function checkErr(expect, err) {
+	  var msg = isStr(expect) ? expect : expect.message;
+	  return msg === err.message;
+	}
+
+	var ERROR = new Error();
+	var throwMsg = mkMsg(objFormatter(1), 'throw');
+
+	assert["throw"] = function (fn, expect, msg) {
+	  var err = catchErr(fn);
+
+	  if (!err || expect && !checkErr(expect, err)) {
+	    arguments[0] = err;
+	    !expect && (arguments[2] = ERROR);
+	    throw new Error(parseMessage(msg || throwMsg[0], arguments, 2));
+	  }
+
+	  return assert;
+	};
+
+	assert.notThrow = function (fn, expect, msg) {
+	  var err = catchErr(fn);
+
+	  if (err && (!expect || !checkErr(expect, err))) {
+	    arguments[0] = err;
+	    !expect && (arguments[2] = ERROR);
+	    throw new Error(parseMessage(msg || throwMsg[0], arguments, 2));
+	  }
+
+	  return assert;
+	};
+
+	function extendAssert(name, condition, args, dmsg, Err) {
+	  var params = isStr(args) ? args.split(/,/g) : isNum(args) ? makeArray(args, function (i) {
+	    return "arg" + (i + 1);
+	  }) : args,
+	      paramStr = params.join(', '),
+	      cond = isArray(condition) ? condition[0] : condition,
+	      expr = (isArray(condition) ? condition[1] : '') + (isStr(cond) ? "(" + cond + ")" : "cond(" + paramStr + ")");
+	  return assert[name] = createFn("return function assert" + upperFirst(name) + "(" + paramStr + ", msg){\n\tif (" + expr + ")\n\t\tthrow new Err(parseMsg(msg || dmsg, arguments, " + params.length + "));\n\treturn assert;\n}", ['Err', 'parseMsg', 'dmsg', 'cond', 'assert'])(Err || Error, parseMessage, dmsg, cond, assert);
+	} // [condition, argcount?, [msg, not msg], Error]
+
+
+	function extendAsserts(apis) {
+	  eachObj(apis, function (desc, name) {
+	    var condition = desc[0],
+	        args = desc[1],
+	        msg = desc[2],
+	        Err = desc[3] || TypeError;
+	    msg[0] && extendAssert(name, [condition, '!'], args, msg[0], Err);
+	    msg[1] && extendAssert('not' + upperFirst(name), condition, args, msg[1], Err);
+	  });
+	}
+
+	var NULL = 'null';
+	var UNDEFINED = 'undefined';
+	var BOOLEAN = 'boolean';
+	var NUMBER = 'number';
+	var INTEGER = 'integer';
+	var STRING = 'string';
+	var FUNCTION = 'function';
+	var ARRAY = 'Array';
+	var TYPED_ARRAY = 'TypedArray';
+	extendAssert('is', '!o', 'o', expectMsg('Exist'));
+	extendAssert('not', 'o', 'o', expectMsg('Not Exist'));
+	extendAsserts({
+	  eq: [eq, 2, mkMsg(objFormatter(1))],
+	  nul: [isNull, 1, mkMsg(NULL)],
+	  nil: [isNil, 1, mkMsg(typeExpect(NULL, UNDEFINED))],
+	  undef: [isUndef, 1, mkMsg(UNDEFINED)],
+	  bool: [isBool, 1, mkMsg(BOOLEAN)],
+	  num: [isNum, 1, mkMsg(NUMBER)],
+	  int: [isInt, 1, mkMsg(INTEGER)],
+	  str: [isStr, 1, mkMsg(STRING)],
+	  fn: [isFn, 1, mkMsg(FUNCTION)],
+	  primitive: [isPrimitive, 1, mkMsg("Primitive type(" + typeExpect(NULL, UNDEFINED, BOOLEAN, NUMBER, INTEGER, STRING, FUNCTION) + ")")],
+	  boolean: [isBoolean, 1, mkMsg(packTypeExpect(BOOLEAN))],
+	  number: [isNumber, 1, mkMsg(packTypeExpect(NUMBER))],
+	  string: [isString, 1, mkMsg(packTypeExpect(STRING))],
+	  date: [isDate, 1, mkMsg('Date')],
+	  reg: [isReg, 1, mkMsg('RegExp')],
+	  array: [isArray, 1, mkMsg(ARRAY)],
+	  typedArray: [isTypedArray, 1, mkMsg('TypedArray')],
+	  arrayLike: [isArrayLike, 1, mkMsg(typeExpect(ARRAY, packTypeExpect(STRING), 'Arguments', TYPED_ARRAY, 'NodeList', 'HTMLCollection'))],
+	  obj: [isObj, 1, mkMsg('Object')],
+	  nan: [isNaN, 1, mkMsg('NaN')],
+	  finite: [isFinite, 1, mkMsg('Finite')],
+	  blank: [isBlank, 1, mkMsg('Blank')],
+	  less: ['o<t', 'o,t', mkMsg(objFormatter(1), 'less than')],
+	  greater: ['o>t', 'o,t', mkMsg(objFormatter(1), 'greater than')],
+	  match: ['reg.test(str)', 'str,reg', mkMsg(objFormatter(1), 'match')],
+	  range: ['o>=s&&o<e', 'o,s,e', mkMsg("[{1} - {2})")]
+	});
+
+	function mkMsg(expect, to) {
+	  return [expectMsg(expect, false, to), expectMsg(expect, true, to)];
+	}
+
+	function expectMsg(expect, not, to) {
+	  return "Expected " + objFormatter(0) + " " + (not ? 'not ' : '') + (to || 'to') + " " + expect;
+	}
+
+	function objFormatter(idx) {
+	  return "{" + idx + ":.20=\"...\"j}";
+	}
+
+	function packTypeExpect(base, all) {
+	  return all ? typeExpect(base, upperFirst(base)) : upperFirst(base);
+	}
+
+	function typeExpect() {
+	  return Array.prototype.join.call(arguments, ' | ');
+	}
+
+	/**
 	 * Double Linked List
 	 * @module utility/List
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
-	 * @modified Tue Nov 27 2018 19:56:25 GMT+0800 (China Standard Time)
+	 * @modified Mon Dec 10 2018 19:07:47 GMT+0800 (China Standard Time)
 	 */
-	var DEFAULT_BINDING = '__list__'; //type ListNode = [ListElement | void, IListNode | void, IListNode | void, List]
+	var DEFAULT_BINDING = '__this__'; //type ListNode = [ListElement, IListNode, IListNode, List]
 
 	var List =
 	/*#__PURE__*/
 	function () {
 	  function List(binding) {
-	    this.length = 0;
+	    this.binding = void 0;
 	    this.head = void 0;
 	    this.tail = void 0;
-	    this.binding = void 0;
+	    this.length = 0;
 	    this.scaning = false;
 	    this.lazyRemoves = void 0;
 	    this.binding = binding || DEFAULT_BINDING;
@@ -2113,49 +2414,53 @@
 
 	  var _proto = List.prototype;
 
+	  _proto.size = function size() {
+	    return this.length;
+	  };
+
 	  _proto.has = function has(obj) {
 	    var node = obj[this.binding];
 	    return node ? node[0] === obj && node[3] === this : false;
 	  };
 
 	  _proto.add = function add(obj) {
-	    return __insert(this, obj, this.tail);
+	    return this.__insert(obj, this.tail);
 	  };
 
 	  _proto.addFirst = function addFirst(obj) {
-	    return __insert(this, obj);
+	    return this.__insert(obj);
 	  };
 
 	  _proto.insertAfter = function insertAfter(obj, target) {
-	    return __insert(this, obj, target && __getNode(this, target));
+	    return this.__insert(obj, target && this.__getNode(target));
 	  };
 
 	  _proto.insertBefore = function insertBefore(obj, target) {
-	    return __insert(this, obj, target && __getNode(this, target)[1]);
+	    return this.__insert(obj, target && this.__getNode(target)[1]);
 	  };
 
 	  _proto.addAll = function addAll(objs) {
-	    return __insertAll(this, objs, this.tail);
+	    return this.__insertAll(objs, this.tail);
 	  };
 
 	  _proto.addFirstAll = function addFirstAll(objs) {
-	    return __insertAll(this, objs);
+	    return this.__insertAll(objs);
 	  };
 
 	  _proto.insertAfterAll = function insertAfterAll(objs, target) {
-	    return __insertAll(this, objs, target && __getNode(this, target));
+	    return this.__insertAll(objs, target && this.__getNode(target));
 	  };
 
 	  _proto.insertBeforeAll = function insertBeforeAll(objs, target) {
-	    return __insertAll(this, objs, target && __getNode(this, target)[1]);
+	    return this.__insertAll(objs, target && this.__getNode(target)[1]);
 	  };
 
 	  _proto.prev = function prev(obj) {
-	    return __siblingObj(this, obj, 1);
+	    return this.__siblingObj(obj, 1);
 	  };
 
 	  _proto.next = function next(obj) {
-	    return __siblingObj(this, obj, 2);
+	    return this.__siblingObj(obj, 2);
 	  };
 
 	  _proto.first = function first() {
@@ -2168,31 +2473,9 @@
 	    return node && node[0];
 	  };
 
-	  _proto.remove = function remove(obj) {
-	    var node = __getNode(this, obj);
-
-	    if (this.scaning) {
-	      var lazyRemoves = this.lazyRemoves;
-	      obj[this.binding] = undefined; // unbind list node
-
-	      node[3] = undefined;
-
-	      if (lazyRemoves) {
-	        lazyRemoves.push(node);
-	      } else {
-	        this.lazyRemoves = [node];
-	      }
-	    } else {
-	      __remove(this, node);
-	    }
-
-	    return --this.length;
-	  };
-
 	  _proto.each = function each(cb, scope) {
-	    if (!this.scaning) throw new Error('Recursive calls are not allowed.');
-
 	    if (this.length) {
+	      assert.not(this.scaning, 'Recursive calls are not allowed.');
 	      this.scaning = true;
 	      cb = bind(cb, scope);
 	      var node = this.head;
@@ -2202,7 +2485,7 @@
 	        node = node[2];
 	      }
 
-	      __doLazyRemove(this);
+	      this.__doLazyRemove();
 
 	      this.scaning = false;
 	    }
@@ -2221,476 +2504,199 @@
 	    return array;
 	  };
 
+	  _proto.remove = function remove(obj) {
+	    return this.__remove(this.__getNode(obj));
+	  };
+
+	  _proto.pop = function pop() {};
+
 	  _proto.clean = function clean() {
 	    if (this.length) {
 	      if (this.scaning) {
-	        var binding = this.binding;
-	        var lazyRemoves = this.lazyRemoves || (this.lazyRemoves = []);
 	        var node = this.head;
 
 	        while (node) {
-	          if (node[3] === this) {
-	            node[0][binding] = undefined;
-	            lazyRemoves.push(node);
-	          }
-
+	          node[3] === this && this.__lazyRemove(node);
 	          node = node[2];
 	        }
 
 	        this.length = 0;
 	      } else {
-	        __clean(this);
+	        this.__clean();
 	      }
 	    }
 	  };
 
-	  _proto.clone = function clone(cb, scope) {
-	    var newlist = new List(this.binding);
+	  _proto.toJSON = function toJSON() {};
 
-	    if (this.length) {
-	      cb = bind(cb, scope);
-	      var node = this.head,
-	          newtail,
-	          newhead,
-	          newprev = undefined,
-	          i = 0;
+	  _proto.__initNode = function __initNode(obj) {
+	    var binding = this.binding;
+	    var node = obj[binding];
 
-	      while (node) {
-	        if (node[3] === this && (newtail = cb(node[0]))) {
-	          newtail = __initNode(newlist, newtail);
-	          if (!newtail[3]) throw new Error('Double add List, Clone Callback should return a new Object');
-	          newtail[3] = newlist;
+	    if (node && node[0] === obj) {
+	      if (node[3] === this) {
+	        this.__remove(node);
 
-	          if (newprev) {
-	            newtail[1] = newprev;
-	            newprev[2] = newtail;
-	            newprev = newtail;
-	          } else {
-	            newprev = newhead = newtail;
-	          }
-
-	          i++;
-	        }
-
-	        node = node[2];
+	        return this.__initNode(obj);
+	      } else if (node[3]) {
+	        assert('Object is still in some List');
 	      }
-
-	      i && __doInsert(newlist, newhead, newtail, i);
+	    } else {
+	      node = [obj];
+	      defPropValue(obj, binding, node, false);
 	    }
 
-	    return newlist;
+	    node[3] = this;
+	    return node;
+	  };
+
+	  _proto.__getNode = function __getNode(obj) {
+	    var node = obj[this.binding];
+	    assert.is(node && node[3] === this, 'Object is not in this List');
+	    return node;
+	  };
+
+	  _proto.__siblingObj = function __siblingObj(obj, siblingIdx) {
+	    var node = this.__getNode(obj);
+
+	    var sibling = node[siblingIdx];
+
+	    if (sibling) {
+	      while (!sibling[3]) {
+	        sibling = sibling[siblingIdx];
+	        if (!sibling) return;
+	      }
+
+	      return sibling[0];
+	    }
+	  };
+
+	  _proto.__doInsert = function __doInsert(nodeHead, nodeTail, len, prev) {
+	    var next;
+	    nodeHead[1] = prev;
+
+	    if (prev) {
+	      nodeTail[2] = next = prev[2];
+	      prev[2] = nodeHead;
+	    } else {
+	      nodeTail[2] = next = this.head;
+	      this.head = nodeHead;
+	    }
+
+	    if (next) next[1] = nodeTail;else this.tail = nodeTail;
+	    return this.length += len;
+	  };
+
+	  _proto.__insert = function __insert(obj, prev) {
+	    var node = this.__initNode(obj);
+
+	    return this.__doInsert(node, node, 1, prev);
+	  };
+
+	  _proto.__insertAll = function __insertAll(objs, prev) {
+	    var l = objs.length;
+
+	    if (l) {
+	      var head = this.__initNode(objs[0]);
+
+	      var __prev = head,
+	          tail = head,
+	          i = 1;
+
+	      for (; i < l; i++) {
+	        tail = this.__initNode(objs[i]);
+	        tail[1] = __prev;
+	        __prev[2] = tail;
+	        __prev = tail;
+	      }
+
+	      return this.__doInsert(head, tail, l, prev);
+	    }
+
+	    return -1;
+	  };
+
+	  _proto.__remove = function __remove(node) {
+	    this.scaning ? this.__lazyRemove(node) : this.__doRemove(node);
+	    return --this.length;
+	  };
+
+	  _proto.__lazyRemove = function __lazyRemove(node) {
+	    var lazyRemoves = this.lazyRemoves;
+	    node[0][this.binding] = undefined; // unbind this node
+
+	    node[3] = null;
+
+	    if (lazyRemoves) {
+	      lazyRemoves.push(node);
+	    } else {
+	      this.lazyRemoves = [node];
+	    }
+	  };
+
+	  _proto.__doLazyRemove = function __doLazyRemove() {
+	    var lazyRemoves = this.lazyRemoves;
+
+	    if (lazyRemoves) {
+	      var len = lazyRemoves.length;
+
+	      if (len) {
+	        if (this.length) {
+	          while (len--) {
+	            this.__doRemove(lazyRemoves[len]);
+	          }
+	        } else {
+	          this.__clean();
+	        }
+
+	        lazyRemoves.length = 0;
+	      }
+	    }
+	  };
+
+	  _proto.__doRemove = function __doRemove(node) {
+	    var prev = node[1],
+	        next = node[2];
+
+	    if (prev) {
+	      prev[2] = next;
+	    } else {
+	      this.head = next;
+	    }
+
+	    if (next) {
+	      next[1] = prev;
+	    } else {
+	      this.tail = prev;
+	    }
+
+	    node[1] = node[2] = node[3] = null;
+	  };
+
+	  _proto.__clean = function __clean() {
+	    var node,
+	        next = this.head;
+
+	    while (node = next) {
+	      next = node[2];
+	      node.length = 1;
+	    }
+
+	    this.head = undefined;
+	    this.tail = undefined;
+	    this.length = 0;
 	  };
 
 	  return List;
 	}();
 	List.binding = DEFAULT_BINDING;
 
-	function __doInsert(list, nodeHead, nodeTail, len, prev) {
-	  var next;
-	  nodeHead[1] = prev;
-
-	  if (prev) {
-	    nodeTail[2] = next = prev[2];
-	    prev[2] = nodeHead;
-	  } else {
-	    nodeTail[2] = next = list.head;
-	    list.head = nodeHead;
-	  }
-
-	  if (next) next[1] = nodeTail;else list.tail = nodeTail;
-	  return list.length += len;
-	}
-
-	function __insert(list, obj, prev) {
-	  var node = __initNode(list, obj);
-
-	  if (!node[3]) {
-	    node[3] = list;
-	    return __doInsert(list, node, node, 1, prev);
-	  }
-	}
-
-	function __insertAll(list, objs, prev) {
-	  var l = objs.length;
-
-	  if (l) {
-	    var head = __initNode(list, objs[0]);
-
-	    if (!head[3]) throw new Error('Double add List, Object have added in this List');
-	    head[3] = list;
-	    var __prev = head,
-	        tail = head,
-	        i = 1;
-
-	    for (; i < l; i++) {
-	      tail = __initNode(list, objs[i]);
-	      if (!tail[3]) throw new Error('Double add List, Object have added in this List');
-	      tail[3] = list;
-	      tail[1] = __prev;
-	      __prev[2] = tail;
-	      __prev = tail;
-	    }
-
-	    return __doInsert(list, head, tail, l, prev);
-	  }
-	}
-
-	function __initNode(list, obj) {
-	  var binding = list.binding;
-	  var node = obj[binding];
-
-	  if (node && node[0] === obj) {
-	    if (!node[3] || node[3] === list) throw new Error('Double add List, Object is still in other List');
-	  } else {
-	    node = [obj];
-	    defPropValue(obj, binding, node, true, true);
-	  }
-
-	  return node;
-	}
-
-	function __getNode(list, obj) {
-	  var node = obj[list.binding];
-
-	  if (node && node[0] === obj) {
-	    if (node[3] === list) throw new Error('Object is not in this List');
-	    return node;
-	  }
-
-	  throw new Error('Object is not in List');
-	}
-
-	function __siblingObj(list, obj, siblingIdx) {
-	  var node = __getNode(list, obj);
-
-	  var sibling = node[siblingIdx];
-
-	  if (sibling) {
-	    while (!sibling[3]) {
-	      sibling = sibling[siblingIdx];
-	      if (!sibling) return;
-	    }
-
-	    return sibling[0];
-	  }
-	}
-
-	function __remove(list, node) {
-	  var prev = node[1],
-	      next = node[2];
-
-	  if (prev) {
-	    prev[2] = next;
-	  } else {
-	    list.head = next;
-	  }
-
-	  if (next) {
-	    next[1] = prev;
-	  } else {
-	    list.tail = prev;
-	  }
-
-	  node.length = 1;
-	}
-
-	function __clean(list) {
-	  var node,
-	      next = list.head;
-
-	  while (node = next) {
-	    next = node[2];
-	    node.length = 1;
-	  }
-
-	  list.head = undefined;
-	  list.tail = undefined;
-	  list.length = 0;
-	}
-
-	function __doLazyRemove(list) {
-	  var lazyRemoves = list.lazyRemoves;
-
-	  if (lazyRemoves) {
-	    var len = lazyRemoves.length;
-
-	    if (len) {
-	      if (list.length) {
-	        while (len--) {
-	          __remove(list, lazyRemoves[len]);
-	        }
-	      } else {
-	        __clean(list);
-	      }
-
-	      lazyRemoves.length = 0;
-	    }
-	  }
-	}
-	/*
-	export default function List(binding?: string) {
-		this.binding = binding || DEFAULT_BINDING
-	}
-
-	defPropValue(List, 'binding', DEFAULT_BINDING)
-
-	inherit(List, {
-		length: 0,
-		has(obj: ListElement): boolean {
-			const node?:ListNode = obj[this.binding]
-			return node ? node[0] === obj && node[3] === this : false
-		},
-		add(obj: ListElement) {
-			return __insert(this, obj, this.tail)
-		},
-		addFirst(obj: ListElement) {
-			return __insert(this, obj)
-		},
-		insertAfter(obj: ListElement, target?:ListElement) {
-			return __insert(this, obj, target && __getNode(this, target))
-		},
-		insertBefore(obj: ListElement, target?:ListElement) {
-			return __insert(this, obj, target && __getNode(this, target)[1])
-		},
-		addAll(objs: ListElement[]) {
-			return __insertAll(this, objs, this.tail)
-		},
-		addFirstAll(objs: ListElement[]) {
-			return __insertAll(this, objs)
-		},
-		insertAfterAll(objs: ListElement[], target?:ListElement) {
-			return __insertAll(this, objs, target && __getNode(this, target))
-		},
-		insertBeforeAll(objs: ListElement[], target?:ListElement) {
-			return __insertAll(this, objs, target && __getNode(this, target)[1])
-		},
-		prev(obj: ListElement): ListElement {
-			return __siblingObj(this, obj, 1)
-		},
-		next(obj: ListElement): ListElement {
-			return __siblingObj(this, obj, 2)
-		},
-		first(): ListElement {
-			const node?:ListNode = this.head
-			return node && node[0]
-		},
-		last(): ListElement {
-			const node?:ListNode = this.tail
-			return node && node[0]
-		},
-		remove(obj: ListElement) {
-			const node = __getNode(this, obj)
-			if (this.scaning) {
-				const { lazyRemoves } = this
-				obj[this.binding] = undefined // unbind list node
-				node[3] = undefined
-				if (lazyRemoves) {
-					lazyRemoves.push(node)
-				} else {
-					this.lazyRemoves = [node]
-				}
-			} else {
-				__remove(this, node)
-			}
-			return --this.length
-		},
-		each(cb, scope?: any) {
-			assert(!this.scaning, 'Recursive calls are not allowed.')
-			this.scaning = true
-			cb = bind(cb, scope)
-			let node = this.head
-			while (node) {
-				if (node[3] === this && cb(node[0]) === false) break
-				node = node[2]
-			}
-			__doLazyRemove(this)
-			this.scaning = false
-		},
-		toArray() {
-			const array = new Array(this.length)
-			let node = this.head,
-				i = 0
-			while (node) {
-				if (node[3] === this) array[i++] = node[0]
-				node = node[2]
-			}
-			return array
-		},
-		clean() {
-			if (this.length) {
-				if (this.scaning) {
-					const { binding } = this
-					const lazyRemoves = this.lazyRemoves || (this.lazyRemoves = [])
-					var node = this.head
-					while (node) {
-						if (node[3] === this) {
-							node[0][binding] = undefined
-							lazyRemoves.push(node)
-						}
-						node = node[2]
-					}
-					this.length = 0
-				} else {
-					__clean(this)
-				}
-			}
-		},
-		clone(cb, scope) {
-			const newlist = new List(this.binding)
-			if (this.length) {
-				if (scope) cb = cb.bind(scope)
-				var node = this.head,
-					newtail,
-					newhead,
-					newprev = undefined,
-					i = 0
-				while (node) {
-					if (node[3] === this && (newtail = cb(node[0]))) {
-						newtail = __initNode(newlist, newtail)
-						assert(!newtail[3], 'Double add List, Clone Callback should return a new Object')
-						newtail[3] = newlist
-						if (newprev) {
-							newtail[1] = newprev
-							newprev[2] = newtail
-							newprev = newtail
-						} else {
-							newprev = newhead = newtail
-						}
-						i++
-					}
-					node = node[2]
-				}
-				i && __doInsert(newlist, newhead, newtail, i)
-			}
-			return newlist
-		}
-	})
-
-	function __doInsert(list: List, nodeHead: ListNode, nodeTail: ListNode, len: number, prev?:ListNode) {
-		let next
-		nodeHead[1] = prev
-		if (prev) {
-			nodeTail[2] = next = prev[2]
-			prev[2] = nodeHead
-		} else {
-			nodeTail[2] = next = list.head
-			list.head = nodeHead
-		}
-		if (next) next[1] = nodeTail
-		else list.tail = nodeTail
-		return (list.length += len)
-	}
-
-	function __insert(list, obj, prev) {
-		const node = __initNode(list, obj)
-		if (!node[3]) {
-			node[3] = list
-			return __doInsert(list, node, node, 1, prev)
-		}
-	}
-
-	function __insertAll(list, objs, prev) {
-		let l = objs.length
-		if (!l) return
-		const head = __initNode(list, objs[0])
-		assert(!head[3], 'Double add List, Object have added in this List')
-		head[3] = list
-		let __prev = head,
-			tail = head,
-			i = 1
-		for (; i < l; i++) {
-			tail = __initNode(list, objs[i])
-			assert(!tail[3], 'Double add List, Object have added in this List')
-			tail[3] = list
-			tail[1] = __prev
-			__prev[2] = tail
-			__prev = tail
-		}
-		return __doInsert(list, head, tail, l, prev)
-	}
-
-	function __initNode(list: List, obj: ListElement): ListNode {
-		const { binding } = list
-		let node?:ListNode = obj[binding]
-		if (node && node[0] === obj) {
-			assert(!node[3] || node[3] === list, 'Double add List, Object is still in other List')
-		} else {
-			node = defPropValue(obj, binding, [obj], true, true)
-		}
-		return node
-	}
-
-	function __getNode(list: List, obj: ListElement): ListNode {
-		const node?:ListNode = obj[list.binding]
-		if (node && node[0] === obj) {
-			assert(node[3] === list, 'Object is not in this List')
-			return node
-		}
-		assert(0, 'Object is not in List')
-	}
-
-	function __siblingObj(list: List, obj: ListElement, siblingIdx: number): ListElement {
-		const node: ListNode = __getNode(list, obj)
-		let sibling: ListNode = node[siblingIdx]
-		if (sibling) {
-			while (!sibling[3]) {
-				sibling = sibling[siblingIdx]
-				if (!sibling) return
-			}
-			return sibling[0]
-		}
-	}
-
-	function __remove(list, node) {
-		const prev = node[1],
-			next = node[2]
-		if (prev) {
-			prev[2] = next
-		} else {
-			list.head = next
-		}
-		if (next) {
-			next[1] = prev
-		} else {
-			list.tail = prev
-		}
-		node.length = 1
-	}
-
-	function __clean(list) {
-		let node,
-			next = list.head
-		while ((node = next)) {
-			next = node[2]
-			node.length = 1
-		}
-		list.head = undefined
-		list.tail = undefined
-		list.length = 0
-	}
-
-	function __doLazyRemove(list) {
-		const { lazyRemoves } = list
-		if (lazyRemoves) {
-			var len = lazyRemoves.length
-			if (len) {
-				if (list.length) {
-					while (len--) __remove(list, lazyRemoves[len])
-				} else {
-					__clean(list)
-				}
-				lazyRemoves.length = 0
-			}
-		}
-	}
-	*/
-
 	/**
 	 * Function List
 	 * @module utility/List
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
-	 * @modified Tue Nov 27 2018 19:56:10 GMT+0800 (China Standard Time)
+	 * @modified Mon Dec 10 2018 18:48:02 GMT+0800 (China Standard Time)
 	 */
 	var DEFAULT_FN_BINDING = '__id__';
 	var DEFAULT_SCOPE_BINDING = '__id__';
@@ -2698,10 +2704,10 @@
 	/*#__PURE__*/
 	function () {
 	  function FnList(fnBinding, scopeBinding) {
-	    this.nodeMap = void 0;
-	    this.list = void 0;
 	    this.fnBinding = void 0;
 	    this.scopeBinding = void 0;
+	    this.list = void 0;
+	    this.nodeMap = void 0;
 	    this.nodeMap = create(null);
 	    this.list = new List();
 	    this.fnBinding = fnBinding || DEFAULT_FN_BINDING;
@@ -2723,6 +2729,8 @@
 	      if (ret) nodeMap[id] = node;
 	      return ret;
 	    }
+
+	    return -1;
 	  };
 
 	  _proto.remove = function remove(fn, scope) {
@@ -2735,6 +2743,8 @@
 	      nodeMap[id] = undefined;
 	      return list.remove(node);
 	    }
+
+	    return -1;
 	  };
 
 	  _proto.has = function has(fn, scope) {
@@ -2742,7 +2752,7 @@
 	  };
 
 	  _proto.size = function size() {
-	    return this.list.length;
+	    return this.list.size();
 	  };
 
 	  _proto.clean = function clean() {
@@ -2757,6 +2767,8 @@
 	    });
 	  };
 
+	  _proto.toJSON = function toJSON() {};
+
 	  return FnList;
 	}();
 	FnList.fnBinding = DEFAULT_FN_BINDING;
@@ -2770,8 +2782,8 @@
 	      scopeBinding = list.scopeBinding;
 	  var fnId = fn[fnBinding],
 	      scopeId = scope ? scope[scopeBinding] : DEFAULT_SCOPE_ID;
-	  if (!fnId) fnId = defPropValue(fn, fnBinding, ++fnIdGenerator);
-	  if (!scopeId) scopeId = defPropValue(scope, scopeBinding, ++scopeIdGenerator);
+	  if (!fnId) fnId = defPropValue(fn, fnBinding, ++fnIdGenerator, false, false, false);
+	  if (!scopeId) scopeId = defPropValue(scope, scopeBinding, ++scopeIdGenerator, false, false, false);
 	  return fnId + "&" + scopeId;
 	}
 
@@ -2791,7 +2803,7 @@
 	 * @module utility/nextTick
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
-	 * @modified Tue Nov 27 2018 20:00:52 GMT+0800 (China Standard Time)
+	 * @modified Mon Dec 10 2018 16:59:56 GMT+0800 (China Standard Time)
 	 */
 	var ticks = new FnList();
 	var pending = false;
@@ -2807,7 +2819,7 @@
 	  pending = false;
 	}
 
-	if (typeof MutationObserver === 'function') {
+	if (isFn(MutationObserver)) {
 	  // chrome18+, safari6+, firefox14+,ie11+,opera15
 	  var counter = 0,
 	      observer = new MutationObserver(flush),
@@ -2838,13 +2850,398 @@
 	  ticks.remove(fn, scope);
 	}
 
+	function _inheritsLoose(subClass, superClass) {
+	  subClass.prototype = Object.create(superClass.prototype);
+	  subClass.prototype.constructor = subClass;
+	  subClass.__proto__ = superClass;
+	}
+
+	/**
+	 * @module common/AST
+	 * @author Tao Zeng <tao.zeng.zt@qq.com>
+	 * @created Tue Nov 06 2018 10:06:22 GMT+0800 (China Standard Time)
+	 * @modified Tue Dec 11 2018 19:53:20 GMT+0800 (China Standard Time)
+	 */
+
+	function defaultErr(err) {
+	  return err;
+	}
+
+	function defaultMatch(data, len, context) {
+	  context.add(data);
+	}
+
+	var idGen = 0;
+	var Rule =
+	/*#__PURE__*/
+	function () {
+	  function Rule(name, capturable, onMatch, onErr) {
+	    this.$rule = true;
+	    this.id = void 0;
+	    this.type = 'Rule';
+	    this.expr = void 0;
+	    this.EXPECT = void 0;
+	    this.onMatch = void 0;
+	    this.onErr = void 0;
+	    this.id = idGen++;
+	    this.onMatch = onMatch || defaultMatch;
+	    this.onErr = onErr || defaultErr;
+	  }
+
+	  var _proto = Rule.prototype;
+
+	  _proto.mkErr = function mkErr(msg, context, capturable, src) {
+	    return [msg, capturable && src ? src[1] : capturable, src, context, this];
+	  };
+
+	  _proto.error = function error(msg, context, capturable, src) {
+	    var err = this.mkErr(msg, context, capturable, src);
+	    var userErr = this.onErr(err, context, this);
+	    if (userErr) return isStr(userErr) ? (err[0] = userErr, err) : userErr;
+	  };
+
+	  _proto.matched = function matched(data, len, context) {
+	    var err = this.onMatch(data, len, context, this);
+	    if (err) return err.push && err.length === 5 ? err : this.mkErr(String(err), context, false);
+	  };
+	  /**
+	   * prepare test before match
+	   */
+
+
+	  _proto.test = function test(context) {
+	    return !context.eof();
+	  };
+
+	  _proto.match = function match() {
+	    return assert('abstruct');
+	  };
+	  /**
+	   * get start char codes
+	   */
+
+
+	  _proto.getStart = function getStart() {
+	    return [];
+	  }; //──── for debug ─────────────────────────────────────────────────────────────────────────
+
+	  /**
+	   * make rule expression
+	   *
+	   * @param expr expression text
+	   */
+
+
+	  _proto.mkExpr = function mkExpr(expr) {
+	    return "<" + this.type + ": " + expr + ">";
+	  };
+	  /**
+	   * set rule expression
+	   * 1. make rule expression
+	   * 2. make rule Expect text
+	   */
+
+
+	  _proto.setExpr = function setExpr(expr) {
+	    this.expr = this.mkExpr(expr);
+	    this.EXPECT = "Expect: " + expr;
+	  };
+	  /**
+	   * tostring by name or expression
+	   * @return {string}
+	   */
+
+
+	  _proto.toString = function toString() {
+	    return this.name || this.expr;
+	  };
+
+	  return Rule;
+	}();
+
+	/**
+	 * utilities for ast builder
+	 *
+	 * @module utility/AST
+	 * @author Tao Zeng (tao.zeng.zt@qq.com)
+	 * @created 2018-11-09 13:22:51
+	 * @modified 2018-11-09 13:22:51 by Tao Zeng (tao.zeng.zt@qq.com)
+	 */
+	/**
+	 * each char codes
+	 */
+
+	function eachCharCodes(codes, ignoreCase, cb) {
+	  if (isStr(codes)) {
+	    var i = codes.length;
+
+	    while (i--) {
+	      eachCharCode(codes.charCodeAt(i), ignoreCase, cb);
+	    }
+	  } else if (isArray(codes)) {
+	    var i = codes.length;
+
+	    while (i--) {
+	      eachCharCodes(codes[i], ignoreCase, cb);
+	    }
+	  } else if (isInt(codes)) {
+	    eachCharCode(codes, ignoreCase, cb);
+	  }
+	}
+
+	function eachCharCode(code, ignoreCase, cb) {
+	  cb(code);
+
+	  if (ignoreCase) {
+	    if (code <= 90) {
+	      if (code >= 65) cb(code + 32);
+	    } else if (code <= 122) {
+	      cb(code - 32);
+	    }
+	  }
+	}
+
+	var MatchRule =
+	/*#__PURE__*/
+	function (_Rule) {
+	  _inheritsLoose(MatchRule, _Rule);
+
+	  function MatchRule(name, start, ignoreCase, capturable, onMatch, onErr) {
+	    var _this = _Rule.call(this, name, capturable, onMatch, onErr) || this;
+
+	    _this.start = void 0;
+	    _this.index = void 0;
+	    _this.ignoreCase = void 0;
+	    _this.ignoreCase = ignoreCase;
+	    var __start = [],
+	        index = [];
+	    eachCharCodes(start, ignoreCase, function (code) {
+	      if (!index[code]) {
+	        __start.push(code);
+
+	        index[code] = code;
+	      }
+	    });
+	    _this.start = __start;
+	    _this.index = index;
+	    __start.length && (_this.test = indexTest);
+	    return _this;
+	  }
+
+	  var _proto = MatchRule.prototype;
+
+	  _proto.comsume = function comsume(data, len, context) {
+	    context.advance(len);
+	    return this.matched(data, len, context);
+	  };
+
+	  _proto.getStart = function getStart() {
+	    return this.start;
+	  };
+
+	  return MatchRule;
+	}(Rule);
+	/**
+	 * prepare test by index of start codes
+	 */
+
+	function indexTest(context) {
+	  return this.index[context.nextCode()];
+	}
+
+	/**
+	 * match by RegExp
+	 *
+	 * optimization:
+	 * - Priority use sticky mode {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp/sticky}
+	 *
+	 * @class RegMatchRule
+	 * @implements MatchRule
+	 *
+	 * @param name		rule name
+	 * @param regexp	regexp
+	 * @param start		start chars
+	 * @param pick		pick match result
+	 * <table>
+	 * <tr><td> 0            </td><td> pick match[0] (optimize: test and substring in sticky mode)  </td></tr>
+	 * <tr><td> less than 0  </td><td> pick match[pick]                                             </td></tr>
+	 * <tr><td> great than 0 </td><td> pick first matched group                                     </td></tr>
+	 * <tr><td> true         </td><td> pick match                                                   </td></tr>
+	 * <tr><td> false        </td><td> no data pick (optimize: just test string in sticky mode)     </td></tr>
+	 * </table>
+	 */
+
+	var RegMatchRule =
+	/*#__PURE__*/
+	function (_MatchRule) {
+	  _inheritsLoose(RegMatchRule, _MatchRule);
+
+	  function RegMatchRule(name, regexp, pick, start, capturable, onMatch, onErr) {
+	    var _this;
+
+	    pick = pick === false || isInt(pick) ? pick : !!pick || 0;
+	    var sticky = regStickySupport && !pick,
+	        // use exec when need pick match group data
+	    pattern = regexp.source,
+	        ignoreCase = regexp.ignoreCase; // always wrapping in a none capturing group preceded by '^' to make sure
+	    // matching can only work on start of input. duplicate/redundant start of
+	    // input markers have no meaning (/^^^^A/ === /^A/)
+	    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp/sticky
+	    // When the y flag is used with a pattern, ^ always matches only at the
+	    // beginning of the input, or (if multiline is true) at the beginning of a
+	    // line.
+
+	    regexp = new RegExp(sticky ? pattern : "^(?:" + pattern + ")", (ignoreCase ? 'i' : '') + (regexp.multiline ? 'm' : '') + (sticky ? 'y' : ''));
+	    _this = _MatchRule.call(this, name, start, regexp.ignoreCase, capturable, onMatch, onErr) || this;
+	    _this.regexp = void 0;
+	    _this.pick = void 0;
+	    _this.picker = void 0;
+	    _this.regexp = regexp;
+	    _this.pick = pick;
+	    _this.match = sticky ? _this.stickyMatch : _this.execMatch;
+	    !sticky && (_this.picker = pick === true ? pickAll : pick < 0 ? anyPicker(-pick) : idxPicker(pick || 0));
+
+	    _this.setExpr(pattern);
+
+	    return _this;
+	  }
+
+	  var _proto = RegMatchRule.prototype;
+
+	  _proto.match = function match(context) {
+	    return this.comsume(context.nextChar(), 1, context);
+	  };
+
+	  _proto.stickyMatch = function stickyMatch(context) {
+	    var reg = this.regexp,
+	        buff = context.getBuff(),
+	        start = context.getOffset();
+	    reg.lastIndex = start;
+	    if (reg.test(buff)) return this.comsume(this.pick === false ? null : buff.substring(start, reg.lastIndex), reg.lastIndex - start, context);
+	    return this.error(this.EXPECT, context, this.capturable);
+	  };
+
+	  _proto.execMatch = function execMatch(context) {
+	    var m = this.regexp.exec(context.getBuff(true));
+
+	    if (m) {
+	      return this.comsume(this.picker(m), m[0].length, context);
+	    }
+
+	    return this.error(this.EXPECT, context, this.capturable);
+	  };
+
+	  return RegMatchRule;
+	}(MatchRule);
+
+	function pickAll(m) {
+	  return m;
+	}
+
+	var idxPickers = [];
+
+	function idxPicker(pick) {
+	  return idxPickers[pick] || (idxPickers[pick] = function (m) {
+	    return m[pick];
+	  });
+	}
+
+	var anyPickers = [];
+
+	function anyPicker(size) {
+	  var picker = anyPickers[size];
+
+	  if (!picker) {
+	    var arr = new Array(size);
+	    var i = size;
+
+	    while (i--) {
+	      arr[i] = "m[" + (i + 1) + "]";
+	    }
+
+	    anyPickers[size] = picker = createFn("return " + arr.join(' || '), ['m']);
+	  }
+
+	  return picker;
+	}
+
+	/**
+	 * match one char which in allow list.
+	 * well match every char when allows is empty
+	 *
+	 * @param name                        rule name
+	 * @param allows                      which char can be matched.
+	 *                                    well match every char when allows is empty
+	 */
+
+	var CharMatchRule =
+	/*#__PURE__*/
+	function (_MatchRule) {
+	  _inheritsLoose(CharMatchRule, _MatchRule);
+
+	  function CharMatchRule(name, allows, ignoreCase, capturable, onMatch, onErr) {
+	    var _this = _MatchRule.call(this, name, allows, ignoreCase, capturable, onMatch, onErr) || this;
+
+	    _this.type = 'Character';
+	    var codes = _this.start;
+	    var i = codes.length,
+	        expr = '*';
+
+	    if (i) {
+	      var chars = [];
+
+	      while (i--) {
+	        chars[i] = char(codes[i]);
+	      }
+
+	      expr = "\"" + chars.join('" | "') + "\"";
+	    }
+
+	    _this.setExpr(expr);
+
+	    return _this;
+	  }
+
+	  var _proto = CharMatchRule.prototype;
+
+	  _proto.match = function match(context) {
+	    return this.comsume(context.nextChar(), 1, context);
+	  };
+
+	  return CharMatchRule;
+	}(MatchRule);
+
+	var StrMatchRule =
+	/*#__PURE__*/
+	function (_RegMatchRule) {
+	  _inheritsLoose(StrMatchRule, _RegMatchRule);
+
+	  function StrMatchRule(name, str, ignoreCase, capturable, onMatch, onErr) {
+	    var _this = _RegMatchRule.call(this, name, new RegExp(reEscape(str), ignoreCase ? 'i' : ''), 0, str.charCodeAt(0), capturable, onMatch, onErr) || this;
+
+	    _this.setExpr(str);
+
+	    return _this;
+	  }
+
+	  return StrMatchRule;
+	}(RegMatchRule);
+
+	/**
+	 *
+	 * @module common/AST
+	 * @author Tao Zeng <tao.zeng.zt@qq.com>
+	 * @created Tue Nov 06 2018 10:58:52 GMT+0800 (China Standard Time)
+	 * @modified Tue Dec 11 2018 19:57:06 GMT+0800 (China Standard Time)
+	 */
+
 	/**
 	 * common utilities
 	 * @module utility
 	 * @preferred
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Wed Nov 21 2018 10:21:41 GMT+0800 (China Standard Time)
-	 * @modified Tue Dec 04 2018 20:12:57 GMT+0800 (China Standard Time)
+	 * @modified Tue Dec 11 2018 09:21:05 GMT+0800 (China Standard Time)
 	 */
 
 	/**
@@ -2908,23 +3305,30 @@
 	exports.char = char;
 	exports.trim = trim;
 	exports.upperFirst = upperFirst;
+	exports.upper = upper;
+	exports.lower = lower;
 	exports.strval = strval;
-	exports.escapeString = escapeString;
+	exports.escapeStr = escapeStr;
 	exports.pad = pad;
+	exports.cut = cut;
+	exports.thousandSeparate = thousandSeparate;
+	exports.binarySeparate = binarySeparate;
+	exports.octalSeparate = octalSeparate;
+	exports.hexSeparate = hexSeparate;
 	exports.plural = plural;
 	exports.singular = singular;
-	exports.thousandSeparationReg = thousandSeparationReg;
-	exports.thousandSeparate = thousandSeparate;
 	exports.FORMAT_XPREFIX = FORMAT_XPREFIX;
 	exports.FORMAT_PLUS = FORMAT_PLUS;
 	exports.FORMAT_ZERO = FORMAT_ZERO;
 	exports.FORMAT_SPACE = FORMAT_SPACE;
-	exports.FORMAT_THOUSAND = FORMAT_THOUSAND;
+	exports.FORMAT_SEPARATOR = FORMAT_SEPARATOR;
 	exports.FORMAT_LEFT = FORMAT_LEFT;
 	exports.extendFormatter = extendFormatter;
+	exports.getFormatter = getFormatter;
 	exports.vformat = vformat;
 	exports.format = format;
 	exports.formatter = formatter;
+	exports.create = create;
 	exports.doAssign = doAssign;
 	exports.assign = assign;
 	exports.assignIf = assignIf;
@@ -2950,8 +3354,13 @@
 	exports.values = values;
 	exports.arr2obj = arr2obj;
 	exports.makeMap = makeMap;
+	exports.List = List;
+	exports.FnList = FnList;
 	exports.nextTick = nextTick;
 	exports.clearTick = clearTick;
+	exports.RegMatchRule = RegMatchRule;
+	exports.CharMatchRule = CharMatchRule;
+	exports.StrMatchRule = StrMatchRule;
 
 	Object.defineProperty(exports, '__esModule', { value: true });
 

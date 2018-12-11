@@ -3,7 +3,7 @@
  * @module utility/create
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Jul 25 2018 15:24:47 GMT+0800 (China Standard Time)
- * @modified Tue Nov 27 2018 15:37:23 GMT+0800 (China Standard Time)
+ * @modified Mon Dec 10 2018 11:45:30 GMT+0800 (China Standard Time)
  */
 
 import { CONSTRUCTOR, PROTOTYPE } from './consts'
@@ -33,7 +33,7 @@ function doCreate(o: object | null, props?: PropertyDescriptorMap & ThisType<any
 /**
  * create object
  */
-export default Object.create ||
+export const create = Object.create ||
 	(Object.getPrototypeOf
 		? doCreate
 		: function create(o: object | null, props?: PropertyDescriptorMap & ThisType<any>): object {

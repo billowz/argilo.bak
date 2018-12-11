@@ -10,7 +10,7 @@ import { eachArray } from './each'
 import { IArray } from '../consts'
 import { bind } from '../fn'
 import { isFn, isStr, isArray } from '../is'
-import create from '../create'
+import {create} from '../create'
 
 /**
  * @return STOP or SKIP or [key: string, value: any]
