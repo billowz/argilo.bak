@@ -2,22 +2,31 @@
  * @module common/AST
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Tue Nov 06 2018 10:06:22 GMT+0800 (China Standard Time)
- * @modified Tue Dec 11 2018 19:53:20 GMT+0800 (China Standard Time)
+ * @modified Sat Dec 15 2018 20:24:10 GMT+0800 (China Standard Time)
  */
 import { MatchContext } from './MatchContext'
+import { eachCharCodes } from './util'
 import { assert } from '../assert'
-import { isStr } from '../is'
+import { isStr, isBool } from '../is'
+import { PROTOTYPE, CONSTRUCTOR } from '../consts'
 
-export interface MatchError extends Array<any> {
-	0: string // error message
-	1: boolean // capturable
-	2: MatchError // source error
-	3: MatchContext //context
-	4: Rule // rule
-}
-
-export interface IRule {
-	match(context: MatchContext): MatchError
+export class MatchError {
+	readonly $ruleErr: boolean = true
+	readonly rule: Rule
+	readonly context: MatchContext
+	source: MatchError
+	readonly capturable: boolean
+	msg: string
+	pos: number
+	constructor(msg: string, capturable: boolean, source: MatchError, context: MatchContext, rule: Rule) {
+		!isBool(capturable) && (capturable = rule.capturable)
+		this.capturable = capturable && source ? source.capturable : capturable
+		this.msg = msg
+		this.source = source
+		this.context = context
+		this.rule = rule
+		this.pos = context.currPos()
+	}
 }
 
 export type onMatchCallback = (data: any, len: number, context: MatchContext, rule: Rule) => MatchError | string | void
@@ -31,15 +40,37 @@ function defaultMatch(data: any, len: number, context: MatchContext) {
 	context.add(data)
 }
 
+export function discardMatch(data: any, len: number, context: MatchContext) {}
+
 let idGen = 0
+/**
+ * Abstract Rule
+ */
 export class Rule {
 	readonly $rule: boolean = true
+	// rule type (for debug)
+	protected type: string
+	// rule id
 	readonly id: number
-	protected type: string = 'Rule'
+	// rule expression (for debug)
 	protected expr: string
+	// rule EXPECT content (for debug)
 	protected EXPECT: string
+	// matched callback
 	readonly onMatch: onMatchCallback
+	// error callback
 	readonly onErr: onErrorCallback
+	// index of start codes
+	protected startCodeIdx: any[]
+	// start codes
+	protected startCodes: number[]
+
+	/**
+	 * @param name			rule name
+	 * @param capturable	error is capturable
+	 * @param onMatch		callback on matched, allow modify the match result or return an error
+	 * @param onErr			callback on Error, allow to ignore error or modify error message or return new error
+	 */
 	constructor(
 		public readonly name: string,
 		public readonly capturable: boolean,
@@ -51,63 +82,116 @@ export class Rule {
 		this.onErr = onErr || defaultErr
 	}
 
-	mkErr(msg: string, context: MatchContext, capturable: boolean, src?: MatchError): MatchError {
-		return [msg, capturable && src ? src[1] : capturable, src, context, this]
+	/**
+	 * create Error
+	 * @param msg 			error message
+	 * @param context 		match context
+	 * @param capturable 	is capturable error
+	 * @param src 			source error
+	 */
+	mkErr(msg: string, context: MatchContext, source?: MatchError, capturable?: boolean): MatchError {
+		return new MatchError(msg, capturable, source, context, this)
 	}
 
-	error(msg: string, context: MatchContext, capturable: boolean, src?: MatchError): MatchError {
-		const err = this.mkErr(msg, context, capturable, src)
+	/**
+	 * match fail
+	 * @param msg 			error message
+	 * @param context 		match context
+	 * @param capturable 	is capturable error
+	 * @param src 			source error
+	 * @return Error|void: may ignore Error in the error callback
+	 */
+	protected error(msg: string, context: MatchContext, src?: MatchError, capturable?: boolean): MatchError {
+		const err = this.mkErr(msg, context, src, capturable)
 		const userErr = this.onErr(err, context, this)
 		if (userErr) return isStr(userErr) ? ((err[0] = userErr as string), err) : (userErr as MatchError)
 	}
 
-	matched(data: any, len: number, context: MatchContext): MatchError {
+	/**
+	 * match success
+	 * > attach the matched result by match callback
+	 * @param data 		matched data
+	 * @param len  		matched data length
+	 * @param context 	match context
+	 * @return Error|void: may return Error in the match callback
+	 */
+	protected matched(data: any, len: number, context: MatchContext): MatchError {
 		const err = this.onMatch(data, len, context, this)
-		if (err)
-			return (err as any).push && err.length === 5 ? (err as MatchError) : this.mkErr(String(err), context, false)
+		if (err) return (err as any).$ruleErr ? (err as MatchError) : this.mkErr(String(err), context, null, false)
+	}
+
+	/**
+	 * match
+	 * @param context match context
+	 */
+	match(context: MatchContext): MatchError {
+		return assert()
+	}
+
+	/**
+	 * get start char codes
+	 */
+	getStart(stack?: number[]): number[] {
+		return this.startCodes
 	}
 
 	/**
 	 * prepare test before match
 	 */
 	test(context: MatchContext): boolean {
-		return !context.eof()
+		return context.nextCode() !== 0
 	}
 
-	match(context: MatchContext): MatchError {
-		return assert('abstruct')
+	protected startCodeTest(context: MatchContext): boolean {
+		const code = context.nextCode()
+		return code !== 0 && !!this.startCodeIdx[code]
 	}
 
-	/**
-	 * get start char codes
-	 */
-	protected getStart(): number[] {
-		return []
+	protected setStartCodes(start: number | string | any[], ignoreCase?: boolean) {
+		const codes: number[] = [],
+			index: number[] = []
+		eachCharCodes(start, ignoreCase, code => {
+			if (!index[code]) {
+				codes.push(code)
+				index[code] = code
+			}
+		})
+		this.startCodes = codes
+		this.setCodeIdx(index)
+	}
+
+	protected setCodeIdx(index: any[]) {
+		this.startCodeIdx = index
+		this.test = index && index.length > 1 ? this.startCodeTest : Rule[PROTOTYPE].test
 	}
 
 	//──── for debug ─────────────────────────────────────────────────────────────────────────
 	/**
 	 * make rule expression
-	 *
 	 * @param expr expression text
 	 */
 	protected mkExpr(expr: string): string {
 		return `<${this.type}: ${expr}>`
 	}
+
 	/**
 	 * set rule expression
-	 * 1. make rule expression
-	 * 2. make rule Expect text
+	 * 		1. make rule expression
+	 * 		2. make Expect text
 	 */
 	protected setExpr(expr: string) {
 		this.expr = this.mkExpr(expr)
 		this.EXPECT = `Expect: ${expr}`
 	}
+
+	getExpr(stack?: number[]): string {
+		return this.name || this.expr
+	}
+
 	/**
-	 * tostring by name or expression
-	 * @return {string}
+	 * toString by name or expression
 	 */
 	toString(): string {
-		return this.name || this.expr
+		return this.getExpr()
 	}
 }

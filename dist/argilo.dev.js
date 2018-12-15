@@ -11,7 +11,7 @@
  * Copyright (c) 2018 Tao Zeng <tao.zeng.zt@qq.com>
  * Released under the MIT license
  *
- * Date: Tue, 11 Dec 2018 12:13:30 GMT
+ * Date: Sat, 15 Dec 2018 12:19:10 GMT
  */
 (function (global, factory) {
 	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
@@ -40,7 +40,7 @@
 	 * @module utility
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Mon Dec 11 2017 13:57:32 GMT+0800 (China Standard Time)
-	 * @modified Mon Dec 03 2018 17:48:07 GMT+0800 (China Standard Time)
+	 * @modified Sat Dec 15 2018 18:43:45 GMT+0800 (China Standard Time)
 	 */
 	/**
 	 * is equals
@@ -2252,7 +2252,7 @@
 	 * @module utility/assert
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Wed Nov 28 2018 11:01:45 GMT+0800 (China Standard Time)
-	 * @modified Tue Dec 11 2018 16:43:09 GMT+0800 (China Standard Time)
+	 * @modified Sat Dec 15 2018 16:33:50 GMT+0800 (China Standard Time)
 	 */
 	var formatters$1 = [],
 	    formatArgHandlers = [];
@@ -2265,7 +2265,7 @@
 	}
 
 	var assert = function (msg) {
-	  throw new Error(parseMessage(msg, arguments, 0));
+	  throw new Error(parseMessage(msg || 'Error', arguments, 0));
 	};
 
 	function catchErr(fn) {
@@ -2850,115 +2850,6 @@
 	  ticks.remove(fn, scope);
 	}
 
-	function _inheritsLoose(subClass, superClass) {
-	  subClass.prototype = Object.create(superClass.prototype);
-	  subClass.prototype.constructor = subClass;
-	  subClass.__proto__ = superClass;
-	}
-
-	/**
-	 * @module common/AST
-	 * @author Tao Zeng <tao.zeng.zt@qq.com>
-	 * @created Tue Nov 06 2018 10:06:22 GMT+0800 (China Standard Time)
-	 * @modified Tue Dec 11 2018 19:53:20 GMT+0800 (China Standard Time)
-	 */
-
-	function defaultErr(err) {
-	  return err;
-	}
-
-	function defaultMatch(data, len, context) {
-	  context.add(data);
-	}
-
-	var idGen = 0;
-	var Rule =
-	/*#__PURE__*/
-	function () {
-	  function Rule(name, capturable, onMatch, onErr) {
-	    this.$rule = true;
-	    this.id = void 0;
-	    this.type = 'Rule';
-	    this.expr = void 0;
-	    this.EXPECT = void 0;
-	    this.onMatch = void 0;
-	    this.onErr = void 0;
-	    this.id = idGen++;
-	    this.onMatch = onMatch || defaultMatch;
-	    this.onErr = onErr || defaultErr;
-	  }
-
-	  var _proto = Rule.prototype;
-
-	  _proto.mkErr = function mkErr(msg, context, capturable, src) {
-	    return [msg, capturable && src ? src[1] : capturable, src, context, this];
-	  };
-
-	  _proto.error = function error(msg, context, capturable, src) {
-	    var err = this.mkErr(msg, context, capturable, src);
-	    var userErr = this.onErr(err, context, this);
-	    if (userErr) return isStr(userErr) ? (err[0] = userErr, err) : userErr;
-	  };
-
-	  _proto.matched = function matched(data, len, context) {
-	    var err = this.onMatch(data, len, context, this);
-	    if (err) return err.push && err.length === 5 ? err : this.mkErr(String(err), context, false);
-	  };
-	  /**
-	   * prepare test before match
-	   */
-
-
-	  _proto.test = function test(context) {
-	    return !context.eof();
-	  };
-
-	  _proto.match = function match() {
-	    return assert('abstruct');
-	  };
-	  /**
-	   * get start char codes
-	   */
-
-
-	  _proto.getStart = function getStart() {
-	    return [];
-	  }; //──── for debug ─────────────────────────────────────────────────────────────────────────
-
-	  /**
-	   * make rule expression
-	   *
-	   * @param expr expression text
-	   */
-
-
-	  _proto.mkExpr = function mkExpr(expr) {
-	    return "<" + this.type + ": " + expr + ">";
-	  };
-	  /**
-	   * set rule expression
-	   * 1. make rule expression
-	   * 2. make rule Expect text
-	   */
-
-
-	  _proto.setExpr = function setExpr(expr) {
-	    this.expr = this.mkExpr(expr);
-	    this.EXPECT = "Expect: " + expr;
-	  };
-	  /**
-	   * tostring by name or expression
-	   * @return {string}
-	   */
-
-
-	  _proto.toString = function toString() {
-	    return this.name || this.expr;
-	  };
-
-	  return Rule;
-	}();
-
 	/**
 	 * utilities for ast builder
 	 *
@@ -3001,10 +2892,225 @@
 	  }
 	}
 
+	/**
+	 * @module common/AST
+	 * @author Tao Zeng <tao.zeng.zt@qq.com>
+	 * @created Tue Nov 06 2018 10:06:22 GMT+0800 (China Standard Time)
+	 * @modified Sat Dec 15 2018 16:34:01 GMT+0800 (China Standard Time)
+	 */
+	var MatchError = function (msg, capturable, source, context, rule) {
+	  this.$ruleErr = true;
+	  this.rule = void 0;
+	  this.context = void 0;
+	  this.source = void 0;
+	  this.capturable = void 0;
+	  this.msg = void 0;
+	  this.pos = void 0;
+	  !isBool(capturable) && (capturable = rule.capturable);
+	  this.capturable = capturable && source ? source.capturable : capturable;
+	  this.msg = msg;
+	  this.source = source;
+	  this.context = context;
+	  this.rule = rule;
+	  this.pos = context.currPos();
+	};
+
+	function defaultErr(err) {
+	  return err;
+	}
+
+	function defaultMatch(data, len, context) {
+	  context.add(data);
+	}
+
+	var idGen = 0;
+	/**
+	 * Abstract Rule
+	 */
+
+	var Rule =
+	/*#__PURE__*/
+	function () {
+	  // rule type (for debug)
+	  // rule id
+	  // rule expression (for debug)
+	  // rule EXPECT content (for debug)
+	  // matched callback
+	  // error callback
+	  // index of start codes
+	  // start codes
+
+	  /**
+	   * @param name			rule name
+	   * @param capturable	error is capturable
+	   * @param onMatch		callback on matched, allow modify the match result or return an error
+	   * @param onErr			callback on Error, allow to ignore error or modify error message or return new error
+	   */
+	  function Rule(name, capturable, onMatch, onErr) {
+	    this.$rule = true;
+	    this.type = void 0;
+	    this.id = void 0;
+	    this.expr = void 0;
+	    this.EXPECT = void 0;
+	    this.onMatch = void 0;
+	    this.onErr = void 0;
+	    this.startCodeIdx = void 0;
+	    this.startCodes = void 0;
+	    this.id = idGen++;
+	    this.onMatch = onMatch || defaultMatch;
+	    this.onErr = onErr || defaultErr;
+	  }
+	  /**
+	   * create Error
+	   * @param msg 			error message
+	   * @param context 		match context
+	   * @param capturable 	is capturable error
+	   * @param src 			source error
+	   */
+
+
+	  var _proto = Rule.prototype;
+
+	  _proto.mkErr = function mkErr(msg, context, source, capturable) {
+	    return new MatchError(msg, capturable, source, context, this);
+	  };
+	  /**
+	   * match fail
+	   * @param msg 			error message
+	   * @param context 		match context
+	   * @param capturable 	is capturable error
+	   * @param src 			source error
+	   * @return Error|void: may ignore Error in the error callback
+	   */
+
+
+	  _proto.error = function error(msg, context, src, capturable) {
+	    var err = this.mkErr(msg, context, src, capturable);
+	    var userErr = this.onErr(err, context, this);
+	    if (userErr) return isStr(userErr) ? (err[0] = userErr, err) : userErr;
+	  };
+	  /**
+	   * match success
+	   * > attach the matched result by match callback
+	   * @param data 		matched data
+	   * @param len  		matched data length
+	   * @param context 	match context
+	   * @return Error|void: may return Error in the match callback
+	   */
+
+
+	  _proto.matched = function matched(data, len, context) {
+	    var err = this.onMatch(data, len, context, this);
+	    if (err) return err.$ruleErr ? err : this.mkErr(String(err), context, null, false);
+	  };
+	  /**
+	   * match
+	   * @param context match context
+	   */
+
+
+	  _proto.match = function match() {
+	    return assert();
+	  };
+	  /**
+	   * get start char codes
+	   */
+
+
+	  _proto.getStart = function getStart() {
+	    return this.startCodes;
+	  };
+	  /**
+	   * prepare test before match
+	   */
+
+
+	  _proto.test = function test(context) {
+	    return context.nextCode() !== 0;
+	  };
+
+	  _proto.startCodeTest = function startCodeTest(context) {
+	    var code = context.nextCode();
+	    return code !== 0 && !!this.startCodeIdx[code];
+	  };
+
+	  _proto.setStartCodes = function setStartCodes(start, ignoreCase) {
+	    var codes = [],
+	        index = [];
+	    eachCharCodes(start, ignoreCase, function (code) {
+	      if (!index[code]) {
+	        codes.push(code);
+	        index[code] = code;
+	      }
+	    });
+	    this.startCodes = codes;
+	    this.setCodeIdx(index);
+	  };
+
+	  _proto.setCodeIdx = function setCodeIdx(index) {
+	    this.startCodeIdx = index;
+	    this.test = index && index.length > 1 ? this.startCodeTest : Rule[PROTOTYPE].test;
+	  }; //──── for debug ─────────────────────────────────────────────────────────────────────────
+
+	  /**
+	   * make rule expression
+	   * @param expr expression text
+	   */
+
+
+	  _proto.mkExpr = function mkExpr(expr) {
+	    return "<" + this.type + ": " + expr + ">";
+	  };
+	  /**
+	   * set rule expression
+	   * 		1. make rule expression
+	   * 		2. make Expect text
+	   */
+
+
+	  _proto.setExpr = function setExpr(expr) {
+	    this.expr = this.mkExpr(expr);
+	    this.EXPECT = "Expect: " + expr;
+	  };
+
+	  _proto.getExpr = function getExpr() {
+	    return this.name || this.expr;
+	  };
+	  /**
+	   * toString by name or expression
+	   */
+
+
+	  _proto.toString = function toString() {
+	    return this.getExpr();
+	  };
+
+	  return Rule;
+	}();
+
+	function _inheritsLoose(subClass, superClass) {
+	  subClass.prototype = Object.create(superClass.prototype);
+	  subClass.prototype.constructor = subClass;
+	  subClass.__proto__ = superClass;
+	}
+
+	/**
+	 * Match Rule Interface
+	 */
+
 	var MatchRule =
 	/*#__PURE__*/
 	function (_Rule) {
 	  _inheritsLoose(MatchRule, _Rule);
+	  /**
+	   * @param name 			match name
+	   * @param start 		start char codes, prepare test by start char codes before match
+	   * @param ignoreCase	ignore case for the start char codes
+	   * @param capturable	error is capturable
+	   * @param onMatch		match callback
+	   * @param onErr			error callback
+	   */
+
 
 	  function MatchRule(name, start, ignoreCase, capturable, onMatch, onErr) {
 	    var _this = _Rule.call(this, name, capturable, onMatch, onErr) || this;
@@ -3013,20 +3119,18 @@
 	    _this.index = void 0;
 	    _this.ignoreCase = void 0;
 	    _this.ignoreCase = ignoreCase;
-	    var __start = [],
-	        index = [];
-	    eachCharCodes(start, ignoreCase, function (code) {
-	      if (!index[code]) {
-	        __start.push(code);
 
-	        index[code] = code;
-	      }
-	    });
-	    _this.start = __start;
-	    _this.index = index;
-	    __start.length && (_this.test = indexTest);
+	    _this.setStartCodes(start, ignoreCase);
+
 	    return _this;
 	  }
+	  /**
+	   * consume matched result
+	   * @param data 		matched result
+	   * @param len 		matched chars
+	   * @param context 	match context
+	   */
+
 
 	  var _proto = MatchRule.prototype;
 
@@ -3035,149 +3139,30 @@
 	    return this.matched(data, len, context);
 	  };
 
-	  _proto.getStart = function getStart() {
-	    return this.start;
-	  };
-
 	  return MatchRule;
 	}(Rule);
-	/**
-	 * prepare test by index of start codes
-	 */
-
-	function indexTest(context) {
-	  return this.index[context.nextCode()];
-	}
 
 	/**
-	 * match by RegExp
+	 * match a character in the allowed list
+	 * > well match any character if the allowed list is empty
 	 *
-	 * optimization:
-	 * - Priority use sticky mode {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp/sticky}
-	 *
-	 * @class RegMatchRule
-	 * @implements MatchRule
-	 *
-	 * @param name		rule name
-	 * @param regexp	regexp
-	 * @param start		start chars
-	 * @param pick		pick match result
-	 * <table>
-	 * <tr><td> 0            </td><td> pick match[0] (optimize: test and substring in sticky mode)  </td></tr>
-	 * <tr><td> less than 0  </td><td> pick match[pick]                                             </td></tr>
-	 * <tr><td> great than 0 </td><td> pick first matched group                                     </td></tr>
-	 * <tr><td> true         </td><td> pick match                                                   </td></tr>
-	 * <tr><td> false        </td><td> no data pick (optimize: just test string in sticky mode)     </td></tr>
-	 * </table>
-	 */
-
-	var RegMatchRule =
-	/*#__PURE__*/
-	function (_MatchRule) {
-	  _inheritsLoose(RegMatchRule, _MatchRule);
-
-	  function RegMatchRule(name, regexp, pick, start, capturable, onMatch, onErr) {
-	    var _this;
-
-	    pick = pick === false || isInt(pick) ? pick : !!pick || 0;
-	    var sticky = regStickySupport && !pick,
-	        // use exec when need pick match group data
-	    pattern = regexp.source,
-	        ignoreCase = regexp.ignoreCase; // always wrapping in a none capturing group preceded by '^' to make sure
-	    // matching can only work on start of input. duplicate/redundant start of
-	    // input markers have no meaning (/^^^^A/ === /^A/)
-	    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp/sticky
-	    // When the y flag is used with a pattern, ^ always matches only at the
-	    // beginning of the input, or (if multiline is true) at the beginning of a
-	    // line.
-
-	    regexp = new RegExp(sticky ? pattern : "^(?:" + pattern + ")", (ignoreCase ? 'i' : '') + (regexp.multiline ? 'm' : '') + (sticky ? 'y' : ''));
-	    _this = _MatchRule.call(this, name, start, regexp.ignoreCase, capturable, onMatch, onErr) || this;
-	    _this.regexp = void 0;
-	    _this.pick = void 0;
-	    _this.picker = void 0;
-	    _this.regexp = regexp;
-	    _this.pick = pick;
-	    _this.match = sticky ? _this.stickyMatch : _this.execMatch;
-	    !sticky && (_this.picker = pick === true ? pickAll : pick < 0 ? anyPicker(-pick) : idxPicker(pick || 0));
-
-	    _this.setExpr(pattern);
-
-	    return _this;
-	  }
-
-	  var _proto = RegMatchRule.prototype;
-
-	  _proto.match = function match(context) {
-	    return this.comsume(context.nextChar(), 1, context);
-	  };
-
-	  _proto.stickyMatch = function stickyMatch(context) {
-	    var reg = this.regexp,
-	        buff = context.getBuff(),
-	        start = context.getOffset();
-	    reg.lastIndex = start;
-	    if (reg.test(buff)) return this.comsume(this.pick === false ? null : buff.substring(start, reg.lastIndex), reg.lastIndex - start, context);
-	    return this.error(this.EXPECT, context, this.capturable);
-	  };
-
-	  _proto.execMatch = function execMatch(context) {
-	    var m = this.regexp.exec(context.getBuff(true));
-
-	    if (m) {
-	      return this.comsume(this.picker(m), m[0].length, context);
-	    }
-
-	    return this.error(this.EXPECT, context, this.capturable);
-	  };
-
-	  return RegMatchRule;
-	}(MatchRule);
-
-	function pickAll(m) {
-	  return m;
-	}
-
-	var idxPickers = [];
-
-	function idxPicker(pick) {
-	  return idxPickers[pick] || (idxPickers[pick] = function (m) {
-	    return m[pick];
-	  });
-	}
-
-	var anyPickers = [];
-
-	function anyPicker(size) {
-	  var picker = anyPickers[size];
-
-	  if (!picker) {
-	    var arr = new Array(size);
-	    var i = size;
-
-	    while (i--) {
-	      arr[i] = "m[" + (i + 1) + "]";
-	    }
-
-	    anyPickers[size] = picker = createFn("return " + arr.join(' || '), ['m']);
-	  }
-
-	  return picker;
-	}
-
-	/**
-	 * match one char which in allow list.
-	 * well match every char when allows is empty
-	 *
-	 * @param name                        rule name
-	 * @param allows                      which char can be matched.
-	 *                                    well match every char when allows is empty
+	 * > must call test() before match
 	 */
 
 	var CharMatchRule =
 	/*#__PURE__*/
 	function (_MatchRule) {
 	  _inheritsLoose(CharMatchRule, _MatchRule);
+	  /**
+	   * @param name 			match name
+	   * @param allows 		allowed character codes for match
+	   * 						well match any character if the allowed list is empty
+	   * @param ignoreCase	ignore case for the allowed character codes
+	   * @param capturable	error is capturable
+	   * @param onMatch		match callback
+	   * @param onErr			error callback
+	   */
+
 
 	  function CharMatchRule(name, allows, ignoreCase, capturable, onMatch, onErr) {
 	    var _this = _MatchRule.call(this, name, allows, ignoreCase, capturable, onMatch, onErr) || this;
@@ -3211,29 +3196,670 @@
 	  return CharMatchRule;
 	}(MatchRule);
 
-	var StrMatchRule =
+	/**
+	 * match string by RegExp
+	 *
+	 * optimization:
+	 * - Priority use sticky mode {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp/sticky}
+
+	 */
+
+	var RegMatchRule =
+	/*#__PURE__*/
+	function (_MatchRule) {
+	  _inheritsLoose(RegMatchRule, _MatchRule);
+	  /**
+	   * @param name 			match name
+	   * @param regexp		regular
+	   * @param pick			pick regular matching results
+	   * 						    0: pick results[0] (optimize: test and substring in sticky mode)
+	   * 						  > 0: pick results[{pick}]
+	   * 						  < 0: pick first non-blank string from 1 to -{pick} index on results
+	   * 						 true: pick results
+	   * 						false: not pick result, result is null (optimize: just test string in sticky mode)
+	   * @param start			start character codes in the regular, optimize performance by start character codes
+	   * @param capturable	error is capturable
+	   * @param onMatch		match callback
+	   * @param onErr			error callback
+	   */
+
+
+	  function RegMatchRule(name, regexp, pick, start, capturable, onMatch, onErr) {
+	    var _this;
+
+	    pick = pick === false || isInt(pick) ? pick : !!pick || 0;
+	    var sticky = regStickySupport && !pick,
+	        // use exec mode when need pick match group data
+	    pattern = regexp.source,
+	        ignoreCase = regexp.ignoreCase; // always wrapping in a none capturing group preceded by '^' to make sure
+	    // matching can only work on start of input. duplicate/redundant start of
+	    // input markers have no meaning (/^^^^A/ === /^A/)
+	    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp/sticky
+	    // When the y flag is used with a pattern, ^ always matches only at the
+	    // beginning of the input, or (if multiline is true) at the beginning of a
+	    // line.
+
+	    regexp = new RegExp(sticky ? pattern : "^(?:" + pattern + ")", (ignoreCase ? 'i' : '') + (regexp.multiline ? 'm' : '') + (sticky ? 'y' : ''));
+	    _this = _MatchRule.call(this, name, start, ignoreCase, capturable, onMatch, onErr) || this;
+	    _this.regexp = void 0;
+	    _this.pick = void 0;
+	    _this.picker = void 0;
+	    _this.spicker = void 0;
+	    _this.type = 'RegExp';
+	    _this.regexp = regexp;
+	    _this.pick = pick;
+	    _this.match = sticky ? _this.stickyMatch : _this.execMatch;
+	    sticky ? _this.spicker = pick === false ? pickNone : pickTestStr : _this.picker = mkPicker(pick);
+
+	    _this.setExpr(pattern);
+
+	    return _this;
+	  }
+
+	  var _proto = RegMatchRule.prototype;
+
+	  _proto.match = function match(context) {
+	    return this.comsume(context.nextChar(), 1, context);
+	  };
+	  /**
+	   * match on sticky mode
+	   */
+
+
+	  _proto.stickyMatch = function stickyMatch(context) {
+	    var reg = this.regexp,
+	        buff = context.getBuff(),
+	        start = context.getOffset();
+	    reg.lastIndex = start;
+	    return reg.test(buff) ? this.comsume(this.spicker(buff, start, reg.lastIndex), reg.lastIndex - start, context) : this.error(this.EXPECT, context);
+	  };
+	  /**
+	   * match on exec mode
+	   */
+
+
+	  _proto.execMatch = function execMatch(context) {
+	    var m = this.regexp.exec(context.getBuff(true));
+
+	    if (m) {
+	      return this.comsume(this.picker(m), m[0].length, context);
+	    }
+
+	    return this.error(this.EXPECT, context);
+	  };
+
+	  return RegMatchRule;
+	}(MatchRule);
+
+	function mkPicker(pick) {
+	  return pick === false ? pickNone : pick === true ? pickAll : pick >= 0 ? function (m) {
+	    return m[pick];
+	  } : createFn("return " + mapArray(new Array(-pick), function (v, i) {
+	    return "m[" + (i + 1) + "]";
+	  }).join(' || '), ['m']);
+	}
+
+	function pickNone() {
+	  return null;
+	}
+
+	function pickAll(m) {
+	  return m;
+	}
+
+	function pickTestStr(buff, start, end) {
+	  return buff.substring(start, end);
+	}
+
+	var StringMatchRule =
 	/*#__PURE__*/
 	function (_RegMatchRule) {
-	  _inheritsLoose(StrMatchRule, _RegMatchRule);
+	  _inheritsLoose(StringMatchRule, _RegMatchRule);
 
-	  function StrMatchRule(name, str, ignoreCase, capturable, onMatch, onErr) {
+	  function StringMatchRule(name, str, ignoreCase, capturable, onMatch, onErr) {
 	    var _this = _RegMatchRule.call(this, name, new RegExp(reEscape(str), ignoreCase ? 'i' : ''), 0, str.charCodeAt(0), capturable, onMatch, onErr) || this;
+
+	    _this.type = 'String';
 
 	    _this.setExpr(str);
 
 	    return _this;
 	  }
 
-	  return StrMatchRule;
+	  return StringMatchRule;
 	}(RegMatchRule);
+
+	/**
+	 * complex rule interface
+	 *
+	 */
+
+	var ComplexRule =
+	/*#__PURE__*/
+	function (_Rule) {
+	  _inheritsLoose(ComplexRule, _Rule);
+	  /**
+	   * @param name 			match name
+	   * @param builder 		callback of build rules
+	   * @param capturable	error is capturable
+	   * @param onMatch		match callback
+	   * @param onErr			error callback
+	   */
+
+
+	  function ComplexRule(name, type, repeat, builder, capturable, onMatch, onErr) {
+	    var _this = _Rule.call(this, name, capturable, onMatch, onErr) || this;
+
+	    _this.split = void 0;
+	    _this.EXPECTS = void 0;
+	    _this.builder = void 0;
+	    _this.rules = void 0;
+	    _this.repeat = void 0;
+	    _this.builder = builder;
+	    if (!(repeat[0] >= 0)) repeat[0] = 0;
+	    if (!(repeat[1] > 0)) repeat[1] = 1e5;
+	    assert.notGreater(repeat[0], repeat[1]);
+	    _this.repeat = [repeat[0], repeat[1]];
+
+	    if (repeat[0] === repeat[1] && repeat[0] === 1) {
+	      _this.match = _this.repeatMatch;
+	    } else {
+	      type = type + "[" + repeat[0] + (repeat[0] === repeat[1] ? '' : " - " + (repeat[1] === 1e5 ? 'MAX' : repeat[1])) + "]";
+	    }
+
+	    _this.type = type;
+	    return _this;
+	  }
+
+	  var _proto = ComplexRule.prototype;
+
+	  _proto.repeatMatch = function repeatMatch() {
+	    return assert();
+	  };
+
+	  _proto.init = function init() {
+	    var rules = this.builder(this);
+	    var i = rules && rules.length;
+	    assert.is(i, "Require Complex Rules");
+	    this.rules = rules;
+	    this.builder = null;
+	    var names = this.rnames(rules);
+	    this.setExpr(names.join(this.split));
+
+	    while (i--) {
+	      names[i] = "Expect[" + i + "]: " + names[i];
+	    }
+
+	    this.EXPECTS = names;
+	    return rules;
+	  };
+
+	  _proto.getRules = function getRules() {
+	    return this.rules || this.init();
+	  };
+
+	  _proto.getStart = function getStart(stack) {
+	    var id = this.id,
+	        startCodes = this.startCodes;
+	    return startCodes ? startCodes : stack && ~idxOfArray(stack, id) || this.rules ? [] : (this.init(), this.startCodes);
+	  };
+
+	  _proto.consume = function consume(context) {
+	    var err = this.matched(context.data, context.len(), context);
+	    !err && context.commit();
+	    return err;
+	  };
+
+	  _proto.rnames = function rnames(rules, stack) {
+	    var i = rules.length;
+	    var names = new Array(i),
+	        id = this.id;
+
+	    while (i--) {
+	      names[i] = rules[i].getExpr(stack ? stack.concat(id) : [id]);
+	    }
+
+	    return names;
+	  };
+
+	  _proto.getExpr = function getExpr(stack) {
+	    var id = this.id,
+	        name = this.name;
+	    var i;
+	    return name ? name : stack ? (i = idxOfArray(stack, id), ~i) ? "<" + this.type + " -> $" + stack[i] + ">" : this.mkExpr(this.rnames(this.getRules(), stack).join(this.split)) : this.expr;
+	  };
+
+	  return ComplexRule;
+	}(Rule);
+
+	/**
+	 * and complex rule interface
+	 *
+	 */
+
+	var AndRule =
+	/*#__PURE__*/
+	function (_ComplexRule) {
+	  _inheritsLoose(AndRule, _ComplexRule);
+
+	  function AndRule(name, repeat, builder, capturable, onMatch, onErr) {
+	    var _this = _ComplexRule.call(this, name, 'And', repeat, builder, capturable, onMatch, onErr) || this;
+
+	    _this.type = void 0;
+	    _this.split = void 0;
+	    return _this;
+	  }
+
+	  var _proto = AndRule.prototype;
+
+	  _proto.init = function init() {
+	    var rules = _ComplexRule.prototype.init.call(this);
+
+	    this.setStartCodes(rules[0].getStart([this.id]));
+	    return rules;
+	  };
+
+	  _proto.match = function match(context) {
+	    var rules = this.getRules(),
+	        len = rules.length,
+	        ctx = context.create();
+	    var err,
+	        i = 0;
+
+	    for (; i < len; i++) {
+	      if (err = this.testRule(rules[i], i, ctx)) return err;
+	    }
+
+	    return this.consume(ctx);
+	  };
+
+	  _proto.repeatMatch = function repeatMatch(context) {
+	    var rules = this.getRules(),
+	        len = rules.length,
+	        _this$repeat = this.repeat,
+	        min = _this$repeat[0],
+	        max = _this$repeat[1],
+	        ctx = context.create();
+	    var err,
+	        repeat = 0,
+	        i,
+	        mlen,
+	        dlen;
+
+	    out: for (; repeat < max; repeat++) {
+	      dlen = ctx.dataLen();
+	      mlen = ctx.len();
+
+	      for (i = 0; i < len; i++) {
+	        if (err = this.testRule(rules[i], i, ctx)) {
+	          if (repeat < min) return err;
+	          ctx.reset(mlen, dlen);
+	          break out;
+	        }
+	      }
+	    }
+
+	    return this.consume(ctx);
+	  };
+
+	  _proto.testRule = function testRule(rule, i, ctx) {
+	    var err;
+	    return (!rule.test(ctx) || (err = rule.match(ctx))) && (err = this.error(this.EXPECTS[i], ctx, err));
+	  };
+
+	  return AndRule;
+	}(ComplexRule);
+
+	/**
+	 * and complex rule interface
+	 *
+	 */
+
+	var OrRule =
+	/*#__PURE__*/
+	function (_ComplexRule) {
+	  _inheritsLoose(OrRule, _ComplexRule);
+
+	  function OrRule(name, repeat, builder, capturable, onMatch, onErr) {
+	    var _this = _ComplexRule.call(this, name, 'And', repeat, builder, capturable, onMatch, onErr) || this;
+
+	    _this.startCodeIdx = void 0;
+	    _this.type = void 0;
+	    _this.split = void 0;
+	    _this.index = void 0;
+	    return _this;
+	  }
+
+	  var _proto = OrRule.prototype;
+
+	  _proto.init = function init() {
+	    var rules = _ComplexRule.prototype.init.call(this),
+	        len = rules.length,
+	        id = this.id,
+	        starts = [],
+	        // all distinct start codes
+	    rStarts = [],
+	        // start codes per rule
+	    index = [[] // rules which without start code
+	    ];
+
+	    var i, j, k, codes; // get start codes of all rules
+
+	    for (i = 0; i < len; i++) {
+	      rStarts[i] = []; // init rule start codes
+
+	      eachCharCodes(rules[i].getStart([id]), false, function (code) {
+	        rStarts[i].push(code); // append to rule start codes
+
+	        if (!index[code]) {
+	          index[code] = []; // init start code index
+
+	          starts.push(code); // append to all start codes
+	        }
+	      });
+	    } // fill index
+
+
+	    for (i = 0; i < len; i++) {
+	      codes = rStarts[i]; // append rule to start code index by rule start codes
+
+	      if (!codes.length) {
+	        // rule without start code
+	        index[0].push(rules[i]); // append rule to index[0]
+
+	        codes = starts; // append rule to start code index by all start codes
+	      } // append rule to start code index (by rule start codes or all start codes)
+
+
+	      j = codes.length;
+
+	      while (j--) {
+	        k = index[codes[j]];
+
+	        if (k.idx !== i) {
+	          // deduplication
+	          k.push(rules[i]); // append rules[i] to start code index[codes[j]]
+
+	          k.idx = i;
+	        }
+	      }
+	    } // rule have unkown start code when got unkown start code from any rules
+
+
+	    this.startCodes = index[0].length ? [] : starts;
+	    this.index = starts.length && index;
+	    starts.length && !index[0].length && this.setCodeIdx(index);
+	    return rules;
+	  };
+
+	  _proto.match = function match(context) {
+	    var index = this.index;
+	    var rules = index ? index[context.nextCode()] || index[0] : this.getRules(),
+	        len = rules.length,
+	        ctx = context.create();
+	    var err,
+	        upErr,
+	        i = 0;
+
+	    for (; i < len; i++) {
+	      err = rules[i].match(ctx) || this.consume(ctx);
+	      if (!err) return;
+
+	      if (!err.capturable) {
+	        upErr = err;
+	        break;
+	      }
+
+	      if (!upErr || err.pos >= upErr.pos) upErr = err;
+	      ctx.reset(0, 0);
+	    }
+
+	    return this.error(this.EXPECT, ctx, upErr);
+	  };
+
+	  _proto.repeatMatch = function repeatMatch(context) {
+	    var index = this.index;
+	    var _this$repeat = this.repeat,
+	        min = _this$repeat[0],
+	        max = _this$repeat[1],
+	        ctx = context.create();
+	    var rules,
+	        len,
+	        err,
+	        upErr,
+	        repeat = 0,
+	        i,
+	        mlen,
+	        dlen;
+
+	    if (!index) {
+	      rules = this.getRules();
+	      len = rules.length;
+	    }
+
+	    out: for (; repeat < max; repeat++) {
+	      if (index) {
+	        rules = index[ctx.nextCode()] || index[0];
+	        len = rules.length;
+	      }
+
+	      if (len) {
+	        dlen = ctx.dataLen();
+	        mlen = ctx.len();
+	        upErr = null;
+
+	        for (i = 0; i < len; i++) {
+	          err = rules[i].match(ctx);
+	          if (!err) continue out;
+
+	          if (!err.capturable) {
+	            upErr = err;
+	            break;
+	          }
+
+	          if (!upErr || err.pos >= upErr.pos) upErr = err;
+	          ctx.reset(mlen, dlen);
+	        }
+	      }
+
+	      if (repeat < min) return this.error(this.EXPECT, ctx, upErr);
+	    }
+
+	    return this.consume(ctx);
+	  };
+
+	  return OrRule;
+	}(ComplexRule);
 
 	/**
 	 *
 	 * @module common/AST
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Tue Nov 06 2018 10:58:52 GMT+0800 (China Standard Time)
-	 * @modified Tue Dec 11 2018 19:57:06 GMT+0800 (China Standard Time)
+	 * @modified Sat Dec 15 2018 20:18:48 GMT+0800 (China Standard Time)
 	 */
+
+	/*                                                                                      *
+	 *                                  match rule builder                                  *
+	 *                                                                                      */
+	//========================================================================================
+	//──── named regexp match api ────────────────────────────────────────────────────────────
+
+	function match(o) {
+	  return mkMatch(isObj(o) ? o : arguments);
+	}
+
+	function mkMatch(args) {
+	  var name,
+	      pattern,
+	      regexp,
+	      pick = 0,
+	      startCodes,
+	      ignoreCase = false,
+	      capturable,
+	      onMatch,
+	      onErr;
+
+	  if (isArrayLike(args)) {
+	    var i = 2;
+
+	    if (isMatchPattern(args[1])) {
+	      name = args[0];
+	      isReg(args[1]) ? regexp = args[1] : pattern = args[1];
+	    } else if (isMatchPattern(args[0])) {
+	      i = 1;
+	      isReg(args[0]) ? regexp = args[0] : pattern = args[0];
+	    }
+
+	    if (regexp) {
+	      if (isBool(args[i]) || isInt(args[i])) pick = args[i++];
+	      if (isStrOrCodes(pattern)) startCodes = args[i++];
+	    } else {
+	      if (isBool(args[i])) ignoreCase = args[i++];
+	    }
+
+	    if (isBool(args[i])) capturable = args[i++];
+	    onMatch = args[i++];
+	    onErr = args[i++];
+	  } else if (isObj(args)) {
+	    var _desc = args,
+	        p = _desc.pattern;
+
+	    if (isReg(p)) {
+	      regexp = p;
+	      pick = _desc.pick;
+	      startCodes = _desc.startCodes;
+	    } else if (isMatchPattern(p)) {
+	      pattern = p;
+	      ignoreCase = _desc.ignoreCase;
+	    }
+
+	    name = _desc.name;
+	    capturable = _desc.capturable;
+	    onMatch = _desc.onMatch;
+	    onErr = _desc.onErr;
+	  }
+
+	  return regexp ? regMatch(name, regexp, pick, startCodes, capturable, onMatch, onErr) : pattern ? strMatch(name, pattern, ignoreCase, capturable, onMatch, onErr) : null;
+	}
+
+	function isStrOrCodes(pattern) {
+	  return isStr(pattern) || isNum(pattern) || isArray(pattern);
+	}
+
+	function isMatchPattern(pattern) {
+	  return isReg(pattern) || isStrOrCodes(pattern);
+	}
+
+	function strMatch(name, pattern, ignoreCase, capturable, onMatch, onErr) {
+	  var C = isStr(pattern) && pattern.length <= 1 ? StringMatchRule : CharMatchRule;
+	  return new C(name, pattern, ignoreCase, capturable, onMatch, onErr);
+	}
+
+	var REG_ESPEC_CHARS = makeMap('dDsStrnt0cbBfvwW', 1, '');
+
+	function regMatch(name, pattern, pick, startCodes, capturable, onMatch, onErr) {
+	  var source = pattern.source;
+
+	  if (!pick) {
+	    var c = 0;
+
+	    if (source.length == 1 && source !== '^' && source !== '$') {
+	      c = source === '.' ? '' : source;
+	    } else if (source.length == 2 && source[0] === '\\' && REG_ESPEC_CHARS[source[1]]) {
+	      c = source[1];
+	    }
+
+	    if (c != 0) return strMatch(name, c, pattern.ignoreCase, capturable, onMatch, onErr);
+	  }
+
+	  return new RegMatchRule(name, pattern, pick, startCodes, capturable, onMatch, onErr);
+	} //========================================================================================
+
+	/*                                                                                      *
+	 *                                   and rule builder                                   *
+	 *                                                                                      */
+	//========================================================================================
+
+
+	function and() {
+	  return mkComplexRule(arguments, AndRule, [1, 1]);
+	}
+	function any() {
+	  return mkComplexRule(arguments, AndRule, [1, -1]);
+	}
+	function many() {
+	  return mkComplexRule(arguments, AndRule, [0, -1]);
+	}
+	function option() {
+	  return mkComplexRule(arguments, AndRule, [0, 1]);
+	} //========================================================================================
+
+	/*                                                                                      *
+	 *                                   OR Rule Builders                                   *
+	 *                                                                                      */
+	//========================================================================================
+
+	function or() {
+	  return mkComplexRule(arguments, OrRule, [1, 1]);
+	}
+	function anyOne() {
+	  return mkComplexRule(arguments, OrRule, [1, -1]);
+	}
+	function manyOne() {
+	  return mkComplexRule(arguments, OrRule, [0, -1]);
+	}
+	function optionOne() {
+	  return mkComplexRule(arguments, OrRule, [0, 1]);
+	} //========================================================================================
+
+	/*                                                                                      *
+	 *                                 complex rule builder                                 *
+	 *                                                                                      */
+	//========================================================================================
+
+	function mkComplexRule(args, Rule, defaultRepeat) {
+	  var name, builder, rules, repeat, capturable, onMatch, onErr;
+
+	  if (isObj(args[0])) {
+	    var _desc2 = args[0],
+	        r = _desc2.rules;
+	    if (isArray(r)) rules = r;else if (isFn(r)) builder = r;
+	    repeat = _desc2.repeat;
+	    name = _desc2.name;
+	    capturable = _desc2.capturable;
+	    onMatch = _desc2.onMatch;
+	    onErr = _desc2.onErr;
+	  } else if (isArrayLike(args)) {
+	    var i = 0;
+	    if (isStr(args[i])) name = args[i++];
+	    if (isArray(args[i])) rules = args[i++];else if (isFn(args[i])) builder = args[i++];
+	    if (isArray(args[i])) repeat = args[i++];
+	    if (isBool(args[i])) capturable = args[i++];
+	    onMatch = args[i++];
+	    onErr = args[i++];
+	  }
+
+	  if (!repeat) repeat = defaultRepeat;
+
+	  if (!builder && rules) {
+	    builder = rulesBuilder(rules);
+	  }
+
+	  if (builder) if (isBool(args[i])) capturable = args[i++];
+	  return new Rule(name, repeat, builder, capturable, onMatch, onErr);
+	}
+
+	function rulesBuilder(rules) {
+	  return function () {
+	    return mapArray(rules, function (r, i) {
+	      if (!r) return SKIP;
+	      var rule = isArray(r) || isObj(r) ? mkMatch(r) : r.$rule ? r : null;
+	      assert.is(rule, 'Invalid Rule Configuration on index {d}: {:.20="..."j}', i, r);
+	      return rule;
+	    });
+	  };
+	}
 
 	/**
 	 * common utilities
@@ -3358,9 +3984,24 @@
 	exports.FnList = FnList;
 	exports.nextTick = nextTick;
 	exports.clearTick = clearTick;
-	exports.RegMatchRule = RegMatchRule;
+	exports.match = match;
+	exports.and = and;
+	exports.any = any;
+	exports.many = many;
+	exports.option = option;
+	exports.or = or;
+	exports.anyOne = anyOne;
+	exports.manyOne = manyOne;
+	exports.optionOne = optionOne;
+	exports.MatchError = MatchError;
+	exports.Rule = Rule;
+	exports.MatchRule = MatchRule;
 	exports.CharMatchRule = CharMatchRule;
-	exports.StrMatchRule = StrMatchRule;
+	exports.RegMatchRule = RegMatchRule;
+	exports.StringMatchRule = StringMatchRule;
+	exports.ComplexRule = ComplexRule;
+	exports.AndRule = AndRule;
+	exports.OrRule = OrRule;
 
 	Object.defineProperty(exports, '__esModule', { value: true });
 

@@ -2,7 +2,7 @@
  * @module utility/AST
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Tue Dec 11 2018 15:36:42 GMT+0800 (China Standard Time)
- * @modified Tue Dec 11 2018 20:17:28 GMT+0800 (China Standard Time)
+ * @modified Sat Dec 15 2018 11:53:49 GMT+0800 (China Standard Time)
  */
 
 import { MatchError, onMatchCallback, onErrorCallback } from './Rule'
@@ -11,32 +11,34 @@ import { MatchRule } from './MatchRule'
 import { regStickySupport } from '../reg'
 import { isInt } from '../is'
 import { createFn } from '../fn'
+import { map, mapArray } from '../collection'
 
 /**
- * match by RegExp
+ * match string by RegExp
  *
  * optimization:
  * - Priority use sticky mode {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp/sticky}
- *
- * @class RegMatchRule
- * @implements MatchRule
- *
- * @param name		rule name
- * @param regexp	regexp
- * @param start		start chars
- * @param pick		pick match result
- * <table>
- * <tr><td> 0            </td><td> pick match[0] (optimize: test and substring in sticky mode)  </td></tr>
- * <tr><td> less than 0  </td><td> pick match[pick]                                             </td></tr>
- * <tr><td> great than 0 </td><td> pick first matched group                                     </td></tr>
- * <tr><td> true         </td><td> pick match                                                   </td></tr>
- * <tr><td> false        </td><td> no data pick (optimize: just test string in sticky mode)     </td></tr>
- * </table>
+
  */
 export class RegMatchRule extends MatchRule {
 	readonly regexp: RegExp
 	readonly pick: boolean | number
-	private picker: (m: string[]) => any
+	private picker: (m: string[]) => string | string[]
+	private spicker: (buff: string, start: number, end: number) => string
+	/**
+	 * @param name 			match name
+	 * @param regexp		regular
+	 * @param pick			pick regular matching results
+	 * 						    0: pick results[0] (optimize: test and substring in sticky mode)
+	 * 						  > 0: pick results[{pick}]
+	 * 						  < 0: pick first non-blank string from 1 to -{pick} index on results
+	 * 						 true: pick results
+	 * 						false: not pick result, result is null (optimize: just test string in sticky mode)
+	 * @param start			start character codes in the regular, optimize performance by start character codes
+	 * @param capturable	error is capturable
+	 * @param onMatch		match callback
+	 * @param onErr			error callback
+	 */
 	constructor(
 		name: string,
 		regexp: RegExp,
@@ -48,7 +50,7 @@ export class RegMatchRule extends MatchRule {
 	) {
 		pick = pick === false || isInt(pick) ? pick : !!pick || 0
 
-		const sticky = regStickySupport && !pick, // use exec when need pick match group data
+		const sticky = regStickySupport && !pick, // use exec mode when need pick match group data
 			pattern = regexp.source,
 			ignoreCase = regexp.ignoreCase
 
@@ -65,58 +67,61 @@ export class RegMatchRule extends MatchRule {
 			(ignoreCase ? 'i' : '') + (regexp.multiline ? 'm' : '') + (sticky ? 'y' : '')
 		)
 
-		super(name, start, regexp.ignoreCase, capturable, onMatch, onErr)
-
+		super(name, start, ignoreCase, capturable, onMatch, onErr)
 		this.type = 'RegExp'
 		this.regexp = regexp
 		this.pick = pick
 		this.match = sticky ? this.stickyMatch : this.execMatch
-		!sticky && (this.picker = pick === true ? pickAll : pick < 0 ? anyPicker(-pick) : idxPicker(pick || 0))
+
+		sticky ? (this.spicker = pick === false ? pickNone : pickTestStr) : (this.picker = mkPicker(pick))
 
 		this.setExpr(pattern)
 	}
 	match(context: MatchContext) {
 		return this.comsume(context.nextChar(), 1, context)
 	}
+	/**
+	 * match on sticky mode
+	 */
 	stickyMatch(context: MatchContext): MatchError {
 		const reg = this.regexp,
 			buff = context.getBuff(),
 			start = context.getOffset()
 		reg.lastIndex = start
-		if (reg.test(buff))
-			return this.comsume(
-				this.pick === false ? null : buff.substring(start, reg.lastIndex),
-				reg.lastIndex - start,
-				context
-			)
-		return this.error(this.EXPECT, context, this.capturable)
+		return reg.test(buff)
+			? this.comsume(this.spicker(buff, start, reg.lastIndex), reg.lastIndex - start, context)
+			: this.error(this.EXPECT, context)
 	}
+	/**
+	 * match on exec mode
+	 */
 	execMatch(context: MatchContext): MatchError {
 		const m = this.regexp.exec(context.getBuff(true))
 		if (m) {
 			return this.comsume(this.picker(m), m[0].length, context)
 		}
-		return this.error(this.EXPECT, context, this.capturable)
+		return this.error(this.EXPECT, context)
 	}
 }
 
-function pickAll(m: string[]) {
+function mkPicker(pick: number | boolean): (m: string[]) => string | string[] {
+	return pick === false
+		? pickNone
+		: pick === true
+		? pickAll
+		: pick >= 0
+		? (m: string[]): string => m[pick as number]
+		: createFn(`return ${mapArray(new Array(-pick), (v, i) => `m[${i + 1}]`).join(' || ')}`, ['m'])
+}
+
+function pickNone(): string {
+	return null
+}
+
+function pickAll(m: string[]): string[] {
 	return m
 }
 
-const idxPickers: ((m: string[]) => any)[] = []
-function idxPicker(pick: number): (m: string[]) => any {
-	return idxPickers[pick] || (idxPickers[pick] = m => m[pick])
-}
-
-const anyPickers: ((m: string[]) => any)[] = []
-function anyPicker(size: number): (m: string[]) => any {
-	let picker = anyPickers[size]
-	if (!picker) {
-		const arr = new Array(size)
-		var i = size
-		while (i--) arr[i] = `m[${i + 1}]`
-		anyPickers[size] = picker = createFn(`return ${arr.join(' || ')}`, ['m'])
-	}
-	return picker
+function pickTestStr(buff: string, start: number, end: number): string {
+	return buff.substring(start, end)
 }

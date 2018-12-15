@@ -2,7 +2,7 @@
  * @module utility/AST
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Tue Dec 11 2018 15:36:42 GMT+0800 (China Standard Time)
- * @modified Tue Dec 11 2018 20:16:34 GMT+0800 (China Standard Time)
+ * @modified Sat Dec 15 2018 14:19:44 GMT+0800 (China Standard Time)
  */
 
 import { onMatchCallback, onErrorCallback } from './Rule'
@@ -11,14 +11,22 @@ import { MatchRule } from './MatchRule'
 import { char } from '../string'
 
 /**
- * match one char which in allow list.
- * well match every char when allows is empty
+ * match a character in the allowed list
+ * > well match any character if the allowed list is empty
  *
- * @param name                        rule name
- * @param allows                      which char can be matched.
- *                                    well match every char when allows is empty
+ * > must call test() before match
  */
 export class CharMatchRule extends MatchRule {
+	type: string = 'Character'
+	/**
+	 * @param name 			match name
+	 * @param allows 		allowed character codes for match
+	 * 						well match any character if the allowed list is empty
+	 * @param ignoreCase	ignore case for the allowed character codes
+	 * @param capturable	error is capturable
+	 * @param onMatch		match callback
+	 * @param onErr			error callback
+	 */
 	constructor(
 		name: string,
 		allows: number | string | any[],
@@ -28,7 +36,6 @@ export class CharMatchRule extends MatchRule {
 		onErr: onErrorCallback
 	) {
 		super(name, allows, ignoreCase, capturable, onMatch, onErr)
-		this.type = 'Character'
 		const codes = this.start
 
 		let i = codes.length,

@@ -11,7 +11,7 @@
  * Copyright (c) 2018 Tao Zeng <tao.zeng.zt@qq.com>
  * Released under the MIT license
  *
- * Date: Tue, 11 Dec 2018 12:13:30 GMT
+ * Date: Sat, 15 Dec 2018 12:19:10 GMT
  */
 'use strict';
 
@@ -39,7 +39,7 @@ const GLOBAL = typeof window !== TYPE_UNDEF ? window : typeof global !== TYPE_UN
  * @module utility
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 13:57:32 GMT+0800 (China Standard Time)
- * @modified Mon Dec 03 2018 17:48:07 GMT+0800 (China Standard Time)
+ * @modified Sat Dec 15 2018 18:43:45 GMT+0800 (China Standard Time)
  */
 /**
  * is equals
@@ -2226,7 +2226,7 @@ function assignIfFilter(prop, target, override) {
  * @module utility/assert
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Nov 28 2018 11:01:45 GMT+0800 (China Standard Time)
- * @modified Tue Dec 11 2018 16:43:09 GMT+0800 (China Standard Time)
+ * @modified Sat Dec 15 2018 16:33:50 GMT+0800 (China Standard Time)
  */
 const formatters$1 = [],
       formatArgHandlers = [];
@@ -2239,7 +2239,7 @@ function parseMessage(msg, args, msgIdx) {
 }
 
 const assert = function (msg) {
-  throw new Error(parseMessage(msg, arguments, 0));
+  throw new Error(parseMessage(msg || 'Error', arguments, 0));
 };
 
 function catchErr(fn) {
@@ -2825,106 +2825,6 @@ function clearTick(fn, scope) {
 }
 
 /**
- * @module common/AST
- * @author Tao Zeng <tao.zeng.zt@qq.com>
- * @created Tue Nov 06 2018 10:06:22 GMT+0800 (China Standard Time)
- * @modified Tue Dec 11 2018 19:53:20 GMT+0800 (China Standard Time)
- */
-
-function defaultErr(err) {
-  return err;
-}
-
-function defaultMatch(data, len, context) {
-  context.add(data);
-}
-
-let idGen = 0;
-class Rule {
-  constructor(name, capturable, onMatch, onErr) {
-    this.name = name;
-    this.capturable = capturable;
-    this.$rule = true;
-    this.id = void 0;
-    this.type = 'Rule';
-    this.expr = void 0;
-    this.EXPECT = void 0;
-    this.onMatch = void 0;
-    this.onErr = void 0;
-    this.id = idGen++;
-    this.onMatch = onMatch || defaultMatch;
-    this.onErr = onErr || defaultErr;
-  }
-
-  mkErr(msg, context, capturable, src) {
-    return [msg, capturable && src ? src[1] : capturable, src, context, this];
-  }
-
-  error(msg, context, capturable, src) {
-    const err = this.mkErr(msg, context, capturable, src);
-    const userErr = this.onErr(err, context, this);
-    if (userErr) return isStr(userErr) ? (err[0] = userErr, err) : userErr;
-  }
-
-  matched(data, len, context) {
-    const err = this.onMatch(data, len, context, this);
-    if (err) return err.push && err.length === 5 ? err : this.mkErr(String(err), context, false);
-  }
-  /**
-   * prepare test before match
-   */
-
-
-  test(context) {
-    return !context.eof();
-  }
-
-  match() {
-    return assert('abstruct');
-  }
-  /**
-   * get start char codes
-   */
-
-
-  getStart() {
-    return [];
-  } //──── for debug ─────────────────────────────────────────────────────────────────────────
-
-  /**
-   * make rule expression
-   *
-   * @param expr expression text
-   */
-
-
-  mkExpr(expr) {
-    return `<${this.type}: ${expr}>`;
-  }
-  /**
-   * set rule expression
-   * 1. make rule expression
-   * 2. make rule Expect text
-   */
-
-
-  setExpr(expr) {
-    this.expr = this.mkExpr(expr);
-    this.EXPECT = `Expect: ${expr}`;
-  }
-  /**
-   * tostring by name or expression
-   * @return {string}
-   */
-
-
-  toString() {
-    return this.name || this.expr;
-  }
-
-}
-
-/**
  * utilities for ast builder
  *
  * @module utility/AST
@@ -2966,169 +2866,263 @@ function eachCharCode(code, ignoreCase, cb) {
  * @module common/AST
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Tue Nov 06 2018 10:06:22 GMT+0800 (China Standard Time)
- * @modified Tue Dec 11 2018 17:07:13 GMT+0800 (China Standard Time)
+ * @modified Sat Dec 15 2018 16:34:01 GMT+0800 (China Standard Time)
  */
+class MatchError {
+  constructor(msg, capturable, source, context, rule) {
+    this.$ruleErr = true;
+    this.rule = void 0;
+    this.context = void 0;
+    this.source = void 0;
+    this.capturable = void 0;
+    this.msg = void 0;
+    this.pos = void 0;
+    !isBool(capturable) && (capturable = rule.capturable);
+    this.capturable = capturable && source ? source.capturable : capturable;
+    this.msg = msg;
+    this.source = source;
+    this.context = context;
+    this.rule = rule;
+    this.pos = context.currPos();
+  }
+
+}
+
+function defaultErr(err) {
+  return err;
+}
+
+function defaultMatch(data, len, context) {
+  context.add(data);
+}
+
+let idGen = 0;
+/**
+ * Abstract Rule
+ */
+
+class Rule {
+  // rule type (for debug)
+  // rule id
+  // rule expression (for debug)
+  // rule EXPECT content (for debug)
+  // matched callback
+  // error callback
+  // index of start codes
+  // start codes
+
+  /**
+   * @param name			rule name
+   * @param capturable	error is capturable
+   * @param onMatch		callback on matched, allow modify the match result or return an error
+   * @param onErr			callback on Error, allow to ignore error or modify error message or return new error
+   */
+  constructor(name, capturable, onMatch, onErr) {
+    this.name = name;
+    this.capturable = capturable;
+    this.$rule = true;
+    this.type = void 0;
+    this.id = void 0;
+    this.expr = void 0;
+    this.EXPECT = void 0;
+    this.onMatch = void 0;
+    this.onErr = void 0;
+    this.startCodeIdx = void 0;
+    this.startCodes = void 0;
+    this.id = idGen++;
+    this.onMatch = onMatch || defaultMatch;
+    this.onErr = onErr || defaultErr;
+  }
+  /**
+   * create Error
+   * @param msg 			error message
+   * @param context 		match context
+   * @param capturable 	is capturable error
+   * @param src 			source error
+   */
+
+
+  mkErr(msg, context, source, capturable) {
+    return new MatchError(msg, capturable, source, context, this);
+  }
+  /**
+   * match fail
+   * @param msg 			error message
+   * @param context 		match context
+   * @param capturable 	is capturable error
+   * @param src 			source error
+   * @return Error|void: may ignore Error in the error callback
+   */
+
+
+  error(msg, context, src, capturable) {
+    const err = this.mkErr(msg, context, src, capturable);
+    const userErr = this.onErr(err, context, this);
+    if (userErr) return isStr(userErr) ? (err[0] = userErr, err) : userErr;
+  }
+  /**
+   * match success
+   * > attach the matched result by match callback
+   * @param data 		matched data
+   * @param len  		matched data length
+   * @param context 	match context
+   * @return Error|void: may return Error in the match callback
+   */
+
+
+  matched(data, len, context) {
+    const err = this.onMatch(data, len, context, this);
+    if (err) return err.$ruleErr ? err : this.mkErr(String(err), context, null, false);
+  }
+  /**
+   * match
+   * @param context match context
+   */
+
+
+  match() {
+    return assert();
+  }
+  /**
+   * get start char codes
+   */
+
+
+  getStart() {
+    return this.startCodes;
+  }
+  /**
+   * prepare test before match
+   */
+
+
+  test(context) {
+    return context.nextCode() !== 0;
+  }
+
+  startCodeTest(context) {
+    const code = context.nextCode();
+    return code !== 0 && !!this.startCodeIdx[code];
+  }
+
+  setStartCodes(start, ignoreCase) {
+    const codes = [],
+          index = [];
+    eachCharCodes(start, ignoreCase, code => {
+      if (!index[code]) {
+        codes.push(code);
+        index[code] = code;
+      }
+    });
+    this.startCodes = codes;
+    this.setCodeIdx(index);
+  }
+
+  setCodeIdx(index) {
+    this.startCodeIdx = index;
+    this.test = index && index.length > 1 ? this.startCodeTest : Rule[PROTOTYPE].test;
+  } //──── for debug ─────────────────────────────────────────────────────────────────────────
+
+  /**
+   * make rule expression
+   * @param expr expression text
+   */
+
+
+  mkExpr(expr) {
+    return `<${this.type}: ${expr}>`;
+  }
+  /**
+   * set rule expression
+   * 		1. make rule expression
+   * 		2. make Expect text
+   */
+
+
+  setExpr(expr) {
+    this.expr = this.mkExpr(expr);
+    this.EXPECT = `Expect: ${expr}`;
+  }
+
+  getExpr() {
+    return this.name || this.expr;
+  }
+  /**
+   * toString by name or expression
+   */
+
+
+  toString() {
+    return this.getExpr();
+  }
+
+}
+
+/**
+ * @module common/AST
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Tue Nov 06 2018 10:06:22 GMT+0800 (China Standard Time)
+ * @modified Sat Dec 15 2018 18:43:41 GMT+0800 (China Standard Time)
+ */
+/**
+ * Match Rule Interface
+ */
+
 class MatchRule extends Rule {
+  /**
+   * @param name 			match name
+   * @param start 		start char codes, prepare test by start char codes before match
+   * @param ignoreCase	ignore case for the start char codes
+   * @param capturable	error is capturable
+   * @param onMatch		match callback
+   * @param onErr			error callback
+   */
   constructor(name, start, ignoreCase, capturable, onMatch, onErr) {
     super(name, capturable, onMatch, onErr);
     this.start = void 0;
     this.index = void 0;
     this.ignoreCase = void 0;
     this.ignoreCase = ignoreCase;
-    const __start = [],
-          index = [];
-    eachCharCodes(start, ignoreCase, code => {
-      if (!index[code]) {
-        __start.push(code);
-
-        index[code] = code;
-      }
-    });
-    this.start = __start;
-    this.index = index;
-    __start.length && (this.test = indexTest);
+    this.setStartCodes(start, ignoreCase);
   }
+  /**
+   * consume matched result
+   * @param data 		matched result
+   * @param len 		matched chars
+   * @param context 	match context
+   */
+
 
   comsume(data, len, context) {
     context.advance(len);
     return this.matched(data, len, context);
   }
 
-  getStart() {
-    return this.start;
-  }
-
-}
-/**
- * prepare test by index of start codes
- */
-
-function indexTest(context) {
-  return this.index[context.nextCode()];
 }
 
 /**
  * @module utility/AST
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Tue Dec 11 2018 15:36:42 GMT+0800 (China Standard Time)
- * @modified Tue Dec 11 2018 19:58:29 GMT+0800 (China Standard Time)
+ * @modified Sat Dec 15 2018 14:19:44 GMT+0800 (China Standard Time)
  */
 /**
- * match by RegExp
+ * match a character in the allowed list
+ * > well match any character if the allowed list is empty
  *
- * optimization:
- * - Priority use sticky mode {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp/sticky}
- *
- * @class RegMatchRule
- * @implements MatchRule
- *
- * @param name		rule name
- * @param regexp	regexp
- * @param start		start chars
- * @param pick		pick match result
- * <table>
- * <tr><td> 0            </td><td> pick match[0] (optimize: test and substring in sticky mode)  </td></tr>
- * <tr><td> less than 0  </td><td> pick match[pick]                                             </td></tr>
- * <tr><td> great than 0 </td><td> pick first matched group                                     </td></tr>
- * <tr><td> true         </td><td> pick match                                                   </td></tr>
- * <tr><td> false        </td><td> no data pick (optimize: just test string in sticky mode)     </td></tr>
- * </table>
- */
-
-class RegMatchRule extends MatchRule {
-  constructor(name, regexp, pick, start, capturable, onMatch, onErr) {
-    pick = pick === false || isInt(pick) ? pick : !!pick || 0;
-    const sticky = regStickySupport && !pick,
-          // use exec when need pick match group data
-    pattern = regexp.source,
-          ignoreCase = regexp.ignoreCase; // always wrapping in a none capturing group preceded by '^' to make sure
-    // matching can only work on start of input. duplicate/redundant start of
-    // input markers have no meaning (/^^^^A/ === /^A/)
-    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp/sticky
-    // When the y flag is used with a pattern, ^ always matches only at the
-    // beginning of the input, or (if multiline is true) at the beginning of a
-    // line.
-
-    regexp = new RegExp(sticky ? pattern : `^(?:${pattern})`, (ignoreCase ? 'i' : '') + (regexp.multiline ? 'm' : '') + (sticky ? 'y' : ''));
-    super(name, start, regexp.ignoreCase, capturable, onMatch, onErr);
-    this.regexp = void 0;
-    this.pick = void 0;
-    this.picker = void 0;
-    this.regexp = regexp;
-    this.pick = pick;
-    this.match = sticky ? this.stickyMatch : this.execMatch;
-    !sticky && (this.picker = pick === true ? pickAll : pick < 0 ? anyPicker(-pick) : idxPicker(pick || 0));
-    this.setExpr(pattern);
-  }
-
-  match(context) {
-    return this.comsume(context.nextChar(), 1, context);
-  }
-
-  stickyMatch(context) {
-    const reg = this.regexp,
-          buff = context.getBuff(),
-          start = context.getOffset();
-    reg.lastIndex = start;
-    if (reg.test(buff)) return this.comsume(this.pick === false ? null : buff.substring(start, reg.lastIndex), reg.lastIndex - start, context);
-    return this.error(this.EXPECT, context, this.capturable);
-  }
-
-  execMatch(context) {
-    const m = this.regexp.exec(context.getBuff(true));
-
-    if (m) {
-      return this.comsume(this.picker(m), m[0].length, context);
-    }
-
-    return this.error(this.EXPECT, context, this.capturable);
-  }
-
-}
-
-function pickAll(m) {
-  return m;
-}
-
-const idxPickers = [];
-
-function idxPicker(pick) {
-  return idxPickers[pick] || (idxPickers[pick] = m => m[pick]);
-}
-
-const anyPickers = [];
-
-function anyPicker(size) {
-  let picker = anyPickers[size];
-
-  if (!picker) {
-    const arr = new Array(size);
-    var i = size;
-
-    while (i--) arr[i] = `m[${i + 1}]`;
-
-    anyPickers[size] = picker = createFn(`return ${arr.join(' || ')}`, ['m']);
-  }
-
-  return picker;
-}
-
-/**
- * @module utility/AST
- * @author Tao Zeng <tao.zeng.zt@qq.com>
- * @created Tue Dec 11 2018 15:36:42 GMT+0800 (China Standard Time)
- * @modified Tue Dec 11 2018 19:57:58 GMT+0800 (China Standard Time)
- */
-/**
- * match one char which in allow list.
- * well match every char when allows is empty
- *
- * @param name                        rule name
- * @param allows                      which char can be matched.
- *                                    well match every char when allows is empty
+ * > must call test() before match
  */
 
 class CharMatchRule extends MatchRule {
+  /**
+   * @param name 			match name
+   * @param allows 		allowed character codes for match
+   * 						well match any character if the allowed list is empty
+   * @param ignoreCase	ignore case for the allowed character codes
+   * @param capturable	error is capturable
+   * @param onMatch		match callback
+   * @param onErr			error callback
+   */
   constructor(name, allows, ignoreCase, capturable, onMatch, onErr) {
     super(name, allows, ignoreCase, capturable, onMatch, onErr);
     this.type = 'Character';
@@ -3157,12 +3151,447 @@ class CharMatchRule extends MatchRule {
  * @module utility/AST
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Tue Dec 11 2018 15:36:42 GMT+0800 (China Standard Time)
- * @modified Tue Dec 11 2018 19:58:37 GMT+0800 (China Standard Time)
+ * @modified Sat Dec 15 2018 11:53:49 GMT+0800 (China Standard Time)
  */
-class StrMatchRule extends RegMatchRule {
+/**
+ * match string by RegExp
+ *
+ * optimization:
+ * - Priority use sticky mode {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp/sticky}
+
+ */
+
+class RegMatchRule extends MatchRule {
+  /**
+   * @param name 			match name
+   * @param regexp		regular
+   * @param pick			pick regular matching results
+   * 						    0: pick results[0] (optimize: test and substring in sticky mode)
+   * 						  > 0: pick results[{pick}]
+   * 						  < 0: pick first non-blank string from 1 to -{pick} index on results
+   * 						 true: pick results
+   * 						false: not pick result, result is null (optimize: just test string in sticky mode)
+   * @param start			start character codes in the regular, optimize performance by start character codes
+   * @param capturable	error is capturable
+   * @param onMatch		match callback
+   * @param onErr			error callback
+   */
+  constructor(name, regexp, pick, start, capturable, onMatch, onErr) {
+    pick = pick === false || isInt(pick) ? pick : !!pick || 0;
+    const sticky = regStickySupport && !pick,
+          // use exec mode when need pick match group data
+    pattern = regexp.source,
+          ignoreCase = regexp.ignoreCase; // always wrapping in a none capturing group preceded by '^' to make sure
+    // matching can only work on start of input. duplicate/redundant start of
+    // input markers have no meaning (/^^^^A/ === /^A/)
+    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp/sticky
+    // When the y flag is used with a pattern, ^ always matches only at the
+    // beginning of the input, or (if multiline is true) at the beginning of a
+    // line.
+
+    regexp = new RegExp(sticky ? pattern : `^(?:${pattern})`, (ignoreCase ? 'i' : '') + (regexp.multiline ? 'm' : '') + (sticky ? 'y' : ''));
+    super(name, start, ignoreCase, capturable, onMatch, onErr);
+    this.regexp = void 0;
+    this.pick = void 0;
+    this.picker = void 0;
+    this.spicker = void 0;
+    this.type = 'RegExp';
+    this.regexp = regexp;
+    this.pick = pick;
+    this.match = sticky ? this.stickyMatch : this.execMatch;
+    sticky ? this.spicker = pick === false ? pickNone : pickTestStr : this.picker = mkPicker(pick);
+    this.setExpr(pattern);
+  }
+
+  match(context) {
+    return this.comsume(context.nextChar(), 1, context);
+  }
+  /**
+   * match on sticky mode
+   */
+
+
+  stickyMatch(context) {
+    const reg = this.regexp,
+          buff = context.getBuff(),
+          start = context.getOffset();
+    reg.lastIndex = start;
+    return reg.test(buff) ? this.comsume(this.spicker(buff, start, reg.lastIndex), reg.lastIndex - start, context) : this.error(this.EXPECT, context);
+  }
+  /**
+   * match on exec mode
+   */
+
+
+  execMatch(context) {
+    const m = this.regexp.exec(context.getBuff(true));
+
+    if (m) {
+      return this.comsume(this.picker(m), m[0].length, context);
+    }
+
+    return this.error(this.EXPECT, context);
+  }
+
+}
+
+function mkPicker(pick) {
+  return pick === false ? pickNone : pick === true ? pickAll : pick >= 0 ? m => m[pick] : createFn(`return ${mapArray(new Array(-pick), (v, i) => `m[${i + 1}]`).join(' || ')}`, ['m']);
+}
+
+function pickNone() {
+  return null;
+}
+
+function pickAll(m) {
+  return m;
+}
+
+function pickTestStr(buff, start, end) {
+  return buff.substring(start, end);
+}
+
+/**
+ * @module utility/AST
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Tue Dec 11 2018 15:36:42 GMT+0800 (China Standard Time)
+ * @modified Sat Dec 15 2018 18:14:27 GMT+0800 (China Standard Time)
+ */
+class StringMatchRule extends RegMatchRule {
   constructor(name, str, ignoreCase, capturable, onMatch, onErr) {
     super(name, new RegExp(reEscape(str), ignoreCase ? 'i' : ''), 0, str.charCodeAt(0), capturable, onMatch, onErr);
+    this.type = 'String';
     this.setExpr(str);
+  }
+
+}
+
+/**
+ * @module common/AST
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Tue Nov 06 2018 10:06:22 GMT+0800 (China Standard Time)
+ * @modified Sat Dec 15 2018 19:43:41 GMT+0800 (China Standard Time)
+ */
+/**
+ * complex rule interface
+ *
+ */
+
+class ComplexRule extends Rule {
+  /**
+   * @param name 			match name
+   * @param builder 		callback of build rules
+   * @param capturable	error is capturable
+   * @param onMatch		match callback
+   * @param onErr			error callback
+   */
+  constructor(name, type, repeat, builder, capturable, onMatch, onErr) {
+    super(name, capturable, onMatch, onErr);
+    this.split = void 0;
+    this.EXPECTS = void 0;
+    this.builder = void 0;
+    this.rules = void 0;
+    this.repeat = void 0;
+    this.builder = builder;
+    if (!(repeat[0] >= 0)) repeat[0] = 0;
+    if (!(repeat[1] > 0)) repeat[1] = 1e5;
+    assert.notGreater(repeat[0], repeat[1]);
+    this.repeat = [repeat[0], repeat[1]];
+
+    if (repeat[0] === repeat[1] && repeat[0] === 1) {
+      this.match = this.repeatMatch;
+    } else {
+      type = `${type}[${repeat[0]}${repeat[0] === repeat[1] ? '' : ` - ${repeat[1] === 1e5 ? 'MAX' : repeat[1]}`}]`;
+    }
+
+    this.type = type;
+  }
+
+  repeatMatch() {
+    return assert();
+  }
+
+  init() {
+    const rules = this.builder(this);
+    let i = rules && rules.length;
+    assert.is(i, `Require Complex Rules`);
+    this.rules = rules;
+    this.builder = null;
+    const names = this.rnames(rules);
+    this.setExpr(names.join(this.split));
+
+    while (i--) names[i] = `Expect[${i}]: ${names[i]}`;
+
+    this.EXPECTS = names;
+    return rules;
+  }
+
+  getRules() {
+    return this.rules || this.init();
+  }
+
+  getStart(stack) {
+    const {
+      id,
+      startCodes
+    } = this;
+    return startCodes ? startCodes : stack && ~idxOfArray(stack, id) || this.rules ? [] : (this.init(), this.startCodes);
+  }
+
+  consume(context) {
+    const err = this.matched(context.data, context.len(), context);
+    !err && context.commit();
+    return err;
+  }
+
+  rnames(rules, stack) {
+    let i = rules.length;
+    const names = new Array(i),
+          id = this.id;
+
+    while (i--) names[i] = rules[i].getExpr(stack ? stack.concat(id) : [id]);
+
+    return names;
+  }
+
+  getExpr(stack) {
+    const {
+      id,
+      name
+    } = this;
+    let i;
+    return name ? name : stack ? (i = idxOfArray(stack, id), ~i) ? `<${this.type} -> $${stack[i]}>` : this.mkExpr(this.rnames(this.getRules(), stack).join(this.split)) : this.expr;
+  }
+
+}
+
+/**
+ *
+ * @module common/AST
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Tue Nov 27 2018 19:05:48 GMT+0800 (China Standard Time)
+ * @modified Sat Dec 15 2018 18:03:08 GMT+0800 (China Standard Time)
+ */
+/**
+ * and complex rule interface
+ *
+ */
+
+class AndRule extends ComplexRule {
+  constructor(name, repeat, builder, capturable, onMatch, onErr) {
+    super(name, 'And', repeat, builder, capturable, onMatch, onErr);
+    this.type = void 0;
+    this.split = void 0;
+  }
+
+  init() {
+    const rules = super.init();
+    this.setStartCodes(rules[0].getStart([this.id]));
+    return rules;
+  }
+
+  match(context) {
+    const rules = this.getRules(),
+          len = rules.length,
+          ctx = context.create();
+    let err,
+        i = 0;
+
+    for (; i < len; i++) if (err = this.testRule(rules[i], i, ctx)) return err;
+
+    return this.consume(ctx);
+  }
+
+  repeatMatch(context) {
+    const rules = this.getRules(),
+          len = rules.length,
+          [min, max] = this.repeat,
+          ctx = context.create();
+    let err,
+        repeat = 0,
+        i,
+        mlen,
+        dlen;
+
+    out: for (; repeat < max; repeat++) {
+      dlen = ctx.dataLen();
+      mlen = ctx.len();
+
+      for (i = 0; i < len; i++) {
+        if (err = this.testRule(rules[i], i, ctx)) {
+          if (repeat < min) return err;
+          ctx.reset(mlen, dlen);
+          break out;
+        }
+      }
+    }
+
+    return this.consume(ctx);
+  }
+
+  testRule(rule, i, ctx) {
+    let err;
+    return (!rule.test(ctx) || (err = rule.match(ctx))) && (err = this.error(this.EXPECTS[i], ctx, err));
+  }
+
+}
+
+/**
+ *
+ * @module common/AST
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Tue Nov 27 2018 19:05:48 GMT+0800 (China Standard Time)
+ * @modified Sat Dec 15 2018 18:03:34 GMT+0800 (China Standard Time)
+ */
+/**
+ * and complex rule interface
+ *
+ */
+
+class OrRule extends ComplexRule {
+  constructor(name, repeat, builder, capturable, onMatch, onErr) {
+    super(name, 'And', repeat, builder, capturable, onMatch, onErr);
+    this.startCodeIdx = void 0;
+    this.type = void 0;
+    this.split = void 0;
+    this.index = void 0;
+  }
+
+  init() {
+    const rules = super.init(),
+          len = rules.length,
+          id = this.id,
+          starts = [],
+          // all distinct start codes
+    rStarts = [],
+          // start codes per rule
+    index = [[] // rules which without start code
+    ];
+    let i, j, k, codes; // get start codes of all rules
+
+    for (i = 0; i < len; i++) {
+      rStarts[i] = []; // init rule start codes
+
+      eachCharCodes(rules[i].getStart([id]), false, code => {
+        rStarts[i].push(code); // append to rule start codes
+
+        if (!index[code]) {
+          index[code] = []; // init start code index
+
+          starts.push(code); // append to all start codes
+        }
+      });
+    } // fill index
+
+
+    for (i = 0; i < len; i++) {
+      codes = rStarts[i]; // append rule to start code index by rule start codes
+
+      if (!codes.length) {
+        // rule without start code
+        index[0].push(rules[i]); // append rule to index[0]
+
+        codes = starts; // append rule to start code index by all start codes
+      } // append rule to start code index (by rule start codes or all start codes)
+
+
+      j = codes.length;
+
+      while (j--) {
+        k = index[codes[j]];
+
+        if (k.idx !== i) {
+          // deduplication
+          k.push(rules[i]); // append rules[i] to start code index[codes[j]]
+
+          k.idx = i;
+        }
+      }
+    } // rule have unkown start code when got unkown start code from any rules
+
+
+    this.startCodes = index[0].length ? [] : starts;
+    this.index = starts.length && index;
+    starts.length && !index[0].length && this.setCodeIdx(index);
+    return rules;
+  }
+
+  match(context) {
+    const {
+      index
+    } = this;
+    const rules = index ? index[context.nextCode()] || index[0] : this.getRules(),
+          len = rules.length,
+          ctx = context.create();
+    let err,
+        upErr,
+        i = 0;
+
+    for (; i < len; i++) {
+      err = rules[i].match(ctx) || this.consume(ctx);
+      if (!err) return;
+
+      if (!err.capturable) {
+        upErr = err;
+        break;
+      }
+
+      if (!upErr || err.pos >= upErr.pos) upErr = err;
+      ctx.reset(0, 0);
+    }
+
+    return this.error(this.EXPECT, ctx, upErr);
+  }
+
+  repeatMatch(context) {
+    const {
+      index
+    } = this;
+    const [min, max] = this.repeat,
+          ctx = context.create();
+    let rules,
+        len,
+        err,
+        upErr,
+        repeat = 0,
+        i,
+        mlen,
+        dlen;
+
+    if (!index) {
+      rules = this.getRules();
+      len = rules.length;
+    }
+
+    out: for (; repeat < max; repeat++) {
+      if (index) {
+        rules = index[ctx.nextCode()] || index[0];
+        len = rules.length;
+      }
+
+      if (len) {
+        dlen = ctx.dataLen();
+        mlen = ctx.len();
+        upErr = null;
+
+        for (i = 0; i < len; i++) {
+          err = rules[i].match(ctx);
+          if (!err) continue out;
+
+          if (!err.capturable) {
+            upErr = err;
+            break;
+          }
+
+          if (!upErr || err.pos >= upErr.pos) upErr = err;
+          ctx.reset(mlen, dlen);
+        }
+      }
+
+      if (repeat < min) return this.error(this.EXPECT, ctx, upErr);
+    }
+
+    return this.consume(ctx);
   }
 
 }
@@ -3172,8 +3601,190 @@ class StrMatchRule extends RegMatchRule {
  * @module common/AST
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Tue Nov 06 2018 10:58:52 GMT+0800 (China Standard Time)
- * @modified Tue Dec 11 2018 19:57:06 GMT+0800 (China Standard Time)
+ * @modified Sat Dec 15 2018 20:18:48 GMT+0800 (China Standard Time)
  */
+
+/*                                                                                      *
+ *                                  match rule builder                                  *
+ *                                                                                      */
+//========================================================================================
+//──── named regexp match api ────────────────────────────────────────────────────────────
+
+function match(o) {
+  return mkMatch(isObj(o) ? o : arguments);
+}
+
+function mkMatch(args) {
+  let name,
+      pattern,
+      regexp,
+      pick = 0,
+      startCodes,
+      ignoreCase = false,
+      capturable,
+      onMatch,
+      onErr;
+
+  if (isArrayLike(args)) {
+    var i = 2;
+
+    if (isMatchPattern(args[1])) {
+      name = args[0];
+      isReg(args[1]) ? regexp = args[1] : pattern = args[1];
+    } else if (isMatchPattern(args[0])) {
+      i = 1;
+      isReg(args[0]) ? regexp = args[0] : pattern = args[0];
+    }
+
+    if (regexp) {
+      if (isBool(args[i]) || isInt(args[i])) pick = args[i++];
+      if (isStrOrCodes(pattern)) startCodes = args[i++];
+    } else {
+      if (isBool(args[i])) ignoreCase = args[i++];
+    }
+
+    if (isBool(args[i])) capturable = args[i++];
+    onMatch = args[i++];
+    onErr = args[i++];
+  } else if (isObj(args)) {
+    const desc = args,
+          p = desc.pattern;
+
+    if (isReg(p)) {
+      regexp = p;
+      pick = desc.pick;
+      startCodes = desc.startCodes;
+    } else if (isMatchPattern(p)) {
+      pattern = p;
+      ignoreCase = desc.ignoreCase;
+    }
+
+    name = desc.name;
+    capturable = desc.capturable;
+    onMatch = desc.onMatch;
+    onErr = desc.onErr;
+  }
+
+  return regexp ? regMatch(name, regexp, pick, startCodes, capturable, onMatch, onErr) : pattern ? strMatch(name, pattern, ignoreCase, capturable, onMatch, onErr) : null;
+}
+
+function isStrOrCodes(pattern) {
+  return isStr(pattern) || isNum(pattern) || isArray(pattern);
+}
+
+function isMatchPattern(pattern) {
+  return isReg(pattern) || isStrOrCodes(pattern);
+}
+
+function strMatch(name, pattern, ignoreCase, capturable, onMatch, onErr) {
+  const C = isStr(pattern) && pattern.length <= 1 ? StringMatchRule : CharMatchRule;
+  return new C(name, pattern, ignoreCase, capturable, onMatch, onErr);
+}
+
+const REG_ESPEC_CHARS = makeMap('dDsStrnt0cbBfvwW', 1, '');
+
+function regMatch(name, pattern, pick, startCodes, capturable, onMatch, onErr) {
+  const source = pattern.source;
+
+  if (!pick) {
+    var c = 0;
+
+    if (source.length == 1 && source !== '^' && source !== '$') {
+      c = source === '.' ? '' : source;
+    } else if (source.length == 2 && source[0] === '\\' && REG_ESPEC_CHARS[source[1]]) {
+      c = source[1];
+    }
+
+    if (c != 0) return strMatch(name, c, pattern.ignoreCase, capturable, onMatch, onErr);
+  }
+
+  return new RegMatchRule(name, pattern, pick, startCodes, capturable, onMatch, onErr);
+} //========================================================================================
+
+/*                                                                                      *
+ *                                   and rule builder                                   *
+ *                                                                                      */
+//========================================================================================
+
+
+function and() {
+  return mkComplexRule(arguments, AndRule, [1, 1]);
+}
+function any() {
+  return mkComplexRule(arguments, AndRule, [1, -1]);
+}
+function many() {
+  return mkComplexRule(arguments, AndRule, [0, -1]);
+}
+function option() {
+  return mkComplexRule(arguments, AndRule, [0, 1]);
+} //========================================================================================
+
+/*                                                                                      *
+ *                                   OR Rule Builders                                   *
+ *                                                                                      */
+//========================================================================================
+
+function or() {
+  return mkComplexRule(arguments, OrRule, [1, 1]);
+}
+function anyOne() {
+  return mkComplexRule(arguments, OrRule, [1, -1]);
+}
+function manyOne() {
+  return mkComplexRule(arguments, OrRule, [0, -1]);
+}
+function optionOne() {
+  return mkComplexRule(arguments, OrRule, [0, 1]);
+} //========================================================================================
+
+/*                                                                                      *
+ *                                 complex rule builder                                 *
+ *                                                                                      */
+//========================================================================================
+
+function mkComplexRule(args, Rule, defaultRepeat) {
+  let name, builder, rules, repeat, capturable, onMatch, onErr;
+
+  if (isObj(args[0])) {
+    const desc = args[0],
+          r = desc.rules;
+    if (isArray(r)) rules = r;else if (isFn(r)) builder = r;
+    repeat = desc.repeat;
+    name = desc.name;
+    capturable = desc.capturable;
+    onMatch = desc.onMatch;
+    onErr = desc.onErr;
+  } else if (isArrayLike(args)) {
+    var i = 0;
+    if (isStr(args[i])) name = args[i++];
+    if (isArray(args[i])) rules = args[i++];else if (isFn(args[i])) builder = args[i++];
+    if (isArray(args[i])) repeat = args[i++];
+    if (isBool(args[i])) capturable = args[i++];
+    onMatch = args[i++];
+    onErr = args[i++];
+  }
+
+  if (!repeat) repeat = defaultRepeat;
+
+  if (!builder && rules) {
+    builder = rulesBuilder(rules);
+  }
+
+  if (builder) if (isBool(args[i])) capturable = args[i++];
+  return new Rule(name, repeat, builder, capturable, onMatch, onErr);
+}
+
+function rulesBuilder(rules) {
+  return function () {
+    return mapArray(rules, (r, i) => {
+      if (!r) return SKIP;
+      let rule = isArray(r) || isObj(r) ? mkMatch(r) : r.$rule ? r : null;
+      assert.is(rule, 'Invalid Rule Configuration on index {d}: {:.20="..."j}', i, r);
+      return rule;
+    });
+  };
+}
 
 /**
  * common utilities
@@ -3298,7 +3909,22 @@ exports.List = List;
 exports.FnList = FnList;
 exports.nextTick = nextTick;
 exports.clearTick = clearTick;
-exports.RegMatchRule = RegMatchRule;
+exports.match = match;
+exports.and = and;
+exports.any = any;
+exports.many = many;
+exports.option = option;
+exports.or = or;
+exports.anyOne = anyOne;
+exports.manyOne = manyOne;
+exports.optionOne = optionOne;
+exports.MatchError = MatchError;
+exports.Rule = Rule;
+exports.MatchRule = MatchRule;
 exports.CharMatchRule = CharMatchRule;
-exports.StrMatchRule = StrMatchRule;
+exports.RegMatchRule = RegMatchRule;
+exports.StringMatchRule = StringMatchRule;
+exports.ComplexRule = ComplexRule;
+exports.AndRule = AndRule;
+exports.OrRule = OrRule;
 //# sourceMappingURL=argilo.cjs.js.map

@@ -2,7 +2,7 @@
  * @module utility/assert
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Nov 28 2018 11:01:45 GMT+0800 (China Standard Time)
- * @modified Tue Dec 11 2018 16:43:09 GMT+0800 (China Standard Time)
+ * @modified Sat Dec 15 2018 16:33:50 GMT+0800 (China Standard Time)
  */
 
 import {
@@ -47,7 +47,7 @@ function parseMessage(msg: string, args: any[] | IArguments, msgIdx: number): st
 }
 
 export interface assert {
-	(msg: string, ...args: any[]): never
+	(msg?: string, ...args: any[]): never
 	is(actual: any, msg?: string, ...args: any[]): assert
 	not(actual: any, msg?: string, ...args: any[]): assert
 	eq(actual: any, expect: any, msg?: string, ...args: any[]): assert
@@ -71,7 +71,12 @@ export interface assert {
 	arrayLike(actual: any, msg?: string, ...args: any[]): assert
 	obj(actual: any, msg?: string, ...args: any[]): assert
 	nan(actual: any, msg?: string, ...args: any[]): assert
-	finite(actual: any, msg?: string, ...args: any[]): assert
+	finite(actual: number | string, msg?: string, ...args: any[]): assert
+	less(actual: number, expect: number, msg?: string, ...args: any[]): assert
+	greater(actual: number, expect: number, msg?: string, ...args: any[]): assert
+	match(actual: string, expect: any, msg?: string, ...args: any[]): assert
+	range(actual: number, start: number, end: number, msg?: string, ...args: any[]): assert
+
 	notEq(actual: any, expect: any, msg?: string, ...args: any[]): assert
 	notBlank(actual: any, msg?: string, ...args: any[]): assert
 	notNul(actual: any, msg?: string, ...args: any[]): assert
@@ -96,10 +101,14 @@ export interface assert {
 	notFinite(actual: any, msg?: string, ...args: any[]): assert
 	throw(fn: () => any, err: Error | string, msg?: string, ...args: any[]): assert
 	notThrow(fn: () => any, err: Error | string, msg?: string, ...args: any[]): assert
+	notLess(actual: number, expect: number, msg?: string, ...args: any[]): assert
+	notGreater(actual: number, expect: number, msg?: string, ...args: any[]): assert
+	notMatch(actual: string, expect: any, msg?: string, ...args: any[]): assert
+	notRange(actual: number, start: number, end: number, msg?: string, ...args: any[]): assert
 }
 
-export const assert = <assert>function assert(msg: string): never {
-	throw new Error(parseMessage(msg, arguments, 0))
+export const assert = <assert>function assert(msg?: string): never {
+	throw new Error(parseMessage(msg || 'Error', arguments, 0))
 }
 
 function catchErr(fn): Error {

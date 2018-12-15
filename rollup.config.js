@@ -103,7 +103,7 @@ function config(options, loose = true) {
 			}),
 			prototypeMinify({ sourcemap: true }),
 			filesize(),
-			progress()
+			//progress()
 		].concat(options.plugins || [])
 	})
 }

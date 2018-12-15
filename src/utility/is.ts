@@ -3,7 +3,7 @@
  * @module utility
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 13:57:32 GMT+0800 (China Standard Time)
- * @modified Mon Dec 03 2018 17:48:07 GMT+0800 (China Standard Time)
+ * @modified Sat Dec 15 2018 18:43:45 GMT+0800 (China Standard Time)
  */
 
 import { CONSTRUCTOR, GLOBAL, TYPE_BOOL, TYPE_FN, TYPE_NUM, TYPE_STRING, TYPE_UNDEF } from './consts'

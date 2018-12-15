@@ -10,6 +10,7 @@
 		]
 	],
 	"plugins": [
+		["@babel/plugin-proposal-decorators", { "legacy": true }],
 		["@babel/plugin-proposal-class-properties", { "loose": true }],
 		"transform-es3-member-expression-literals",
 		"transform-es3-property-literals",

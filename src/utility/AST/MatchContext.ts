@@ -2,10 +2,11 @@
  * @module utility/AST
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Tue Dec 11 2018 15:36:42 GMT+0800 (China Standard Time)
- * @modified Tue Dec 11 2018 19:57:40 GMT+0800 (China Standard Time)
+ * @modified Sat Dec 15 2018 17:31:42 GMT+0800 (China Standard Time)
  */
 
 import { char, charCode } from '../string'
+import { assert } from '../assert'
 /**
  * Match Context of Rule
  */
@@ -34,7 +35,7 @@ export class MatchContext {
 	// parent context
 	private readonly parent: MatchContext
 
-	constructor(buff: string, offset: number, orgBuff: string, orgPos: number, parent?: MatchContext) {
+	constructor(buff: string, offset: number, orgBuff: string, orgPos: number, parent?: MatchContext, code?: number) {
 		this.data = []
 		this.advanced = 0
 		this.buff = buff
@@ -42,7 +43,7 @@ export class MatchContext {
 		this.orgBuff = orgBuff
 		this.orgPos = orgPos
 		this.parent = parent
-		this.flushCache()
+		code ? (this.codeCache = code) : this.flushCache()
 	}
 
 	private flushCache() {
@@ -54,21 +55,23 @@ export class MatchContext {
 	 * create sub Context
 	 */
 	create() {
-		return new MatchContext(this.buff, this.offset, this.orgBuff, this.orgPos + this.advanced, this)
+		return new MatchContext(this.buff, this.offset, this.orgBuff, this.orgPos + this.advanced, this, this.codeCache)
 	}
 
-	commit() {
+	commit(margeData?: boolean) {
 		const { parent, advanced } = this
 		if (parent) {
 			parent.advance(advanced)
 			this.orgPos += advanced
 			this.advanced = 0
+			margeData ? parent.addAll(this.data) : parent.add(this.data)
 		}
 	}
 
-	rollback() {
-		this.reset()
-		this.data = []
+	reset(len?: number, dataLen?: number) {
+		assert.range(len, 0, this.advanced + 1)
+		this.advance(-(this.advanced - len))
+		dataLen >= 0 && this.resetData(dataLen)
 	}
 
 	advance(i: number) {
@@ -79,10 +82,6 @@ export class MatchContext {
 			this.offset = this.orgPos + this.advanced
 		}
 		this.flushCache()
-	}
-
-	reset() {
-		this.advance(-this.advanced)
 	}
 
 	getBuff(reset?: boolean): string {
@@ -109,7 +108,9 @@ export class MatchContext {
 		const { orgPos } = this
 		return [orgPos, orgPos + this.advanced]
 	}
-
+	len(): number {
+		return this.advanced
+	}
 	/**
 	 * get next char code
 	 * @return number char code number
@@ -145,8 +146,12 @@ export class MatchContext {
 	/**
 	 * reset result data size
 	 */
-	resetData(len) {
+	resetData(len?: number) {
 		const { data } = this
+		len = len || 0
 		if (data.length > len) data.length = len
+	}
+	dataLen() {
+		return this.data.length
 	}
 }
