@@ -2,7 +2,7 @@
  * @module utility/AST
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Tue Dec 11 2018 15:36:42 GMT+0800 (China Standard Time)
- * @modified Sat Dec 15 2018 14:19:44 GMT+0800 (China Standard Time)
+ * @modified Mon Dec 17 2018 14:33:10 GMT+0800 (China Standard Time)
  */
 
 import { onMatchCallback, onErrorCallback } from './Rule'
@@ -36,7 +36,7 @@ export class CharMatchRule extends MatchRule {
 		onErr: onErrorCallback
 	) {
 		super(name, allows, ignoreCase, capturable, onMatch, onErr)
-		const codes = this.start
+		const codes = this.startCodes
 
 		let i = codes.length,
 			expr = '*'

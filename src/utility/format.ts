@@ -2,7 +2,7 @@
  * @module utility/format
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 03 2018 19:46:41 GMT+0800 (China Standard Time)
- * @modified Mon Dec 10 2018 16:26:23 GMT+0800 (China Standard Time)
+ * @modified Mon Dec 17 2018 19:24:20 GMT+0800 (China Standard Time)
  */
 
 import { createFn } from './fn'
@@ -566,7 +566,7 @@ setTimeout(() => {
  *                                                                                      */
 //========================================================================================
 
-function strFormatter(toStr: (num: number, flags: FormatFlags) => string): FormatCallback {
+function strFormatter(toStr: (val: any, flags: FormatFlags) => string): FormatCallback {
 	return function(val, flags, width, fill, precision, cutSuffix) {
 		const str = toStr(val, flags)
 		return width > str.length ? __pad(str, width, fill, flags & FORMAT_LEFT) : cut(str, precision, cutSuffix)
@@ -636,7 +636,9 @@ function toFixed(num: number, precision: number): string {
 //──── register formatters ───────────────────────────────────────────────────────────────
 extendFormatter({
 	s: strFormatter(toStr),
-	j: strFormatter(v => (v === undefined ? 'undefined' : JSON.stringify(v))),
+	j: strFormatter(v =>
+		v === undefined || isFn(v) || (v.toJSON && v.toJSON() === undefined) ? toStr(v) : JSON.stringify(v)
+	),
 	c(val: any) {
 		const num = val >> 0
 		return num > 0 ? String.fromCharCode(num) : ''

@@ -3,7 +3,7 @@
  * @module common/AST
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Tue Nov 27 2018 19:05:48 GMT+0800 (China Standard Time)
- * @modified Sat Dec 15 2018 18:03:34 GMT+0800 (China Standard Time)
+ * @modified Mon Dec 17 2018 19:49:49 GMT+0800 (China Standard Time)
  */
 
 import { Rule, onMatchCallback, onErrorCallback, MatchError } from './Rule'
@@ -17,8 +17,7 @@ import { eachCharCodes } from './util'
  */
 export class OrRule extends ComplexRule {
 	startCodeIdx: Rule[][]
-	type: 'Or'
-	split: ' | '
+	split = ' | '
 	index: Rule[][]
 	constructor(
 		name: string,
@@ -28,7 +27,7 @@ export class OrRule extends ComplexRule {
 		onMatch: onMatchCallback,
 		onErr: onErrorCallback
 	) {
-		super(name, 'And', repeat, builder, capturable, onMatch, onErr)
+		super(name, 'Or', repeat, builder, capturable, onMatch, onErr)
 	}
 	init(): Rule[] {
 		const rules = super.init(),
@@ -98,12 +97,12 @@ export class OrRule extends ComplexRule {
 				break
 			}
 			if (!upErr || err.pos >= upErr.pos) upErr = err
-			ctx.reset(0, 0)
+			ctx.reset()
 		}
 		return this.error(this.EXPECT, ctx, upErr)
 	}
 	protected repeatMatch(context: MatchContext): MatchError {
-		const { index } = this
+		let { index } = this
 		const [min, max] = this.repeat,
 			ctx = context.create()
 
@@ -118,6 +117,7 @@ export class OrRule extends ComplexRule {
 
 		if (!index) {
 			rules = this.getRules()
+			index = this.index
 			len = rules.length
 		}
 

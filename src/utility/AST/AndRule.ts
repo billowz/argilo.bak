@@ -3,7 +3,7 @@
  * @module common/AST
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Tue Nov 27 2018 19:05:48 GMT+0800 (China Standard Time)
- * @modified Sat Dec 15 2018 18:03:08 GMT+0800 (China Standard Time)
+ * @modified Mon Dec 17 2018 17:08:28 GMT+0800 (China Standard Time)
  */
 
 import { Rule, onMatchCallback, onErrorCallback, MatchError } from './Rule'
@@ -15,8 +15,7 @@ import { ComplexRule, ruleBuilder } from './ComplexRule'
  *
  */
 export class AndRule extends ComplexRule {
-	type: 'And'
-	split: ' '
+	split = ' '
 	constructor(
 		name: string,
 		repeat: [number, number],
@@ -29,6 +28,7 @@ export class AndRule extends ComplexRule {
 	}
 	init(): Rule[] {
 		const rules = super.init()
+
 		this.setStartCodes(rules[0].getStart([this.id]))
 		return rules
 	}

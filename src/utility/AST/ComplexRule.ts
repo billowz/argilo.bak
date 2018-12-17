@@ -2,7 +2,7 @@
  * @module common/AST
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Tue Nov 06 2018 10:06:22 GMT+0800 (China Standard Time)
- * @modified Sat Dec 15 2018 19:43:41 GMT+0800 (China Standard Time)
+ * @modified Mon Dec 17 2018 17:28:14 GMT+0800 (China Standard Time)
  */
 
 import { Rule, MatchError, onMatchCallback, onErrorCallback } from './Rule'
@@ -10,6 +10,9 @@ import { MatchContext } from './MatchContext'
 import { assert } from '../assert'
 import { idxOfArray } from '../collection'
 import { PROTOTYPE } from '../consts'
+import { pad } from '../format'
+import { escapeStr } from '../string'
+import { Source } from './Source'
 
 export type ruleBuilder = (rule: Rule) => Rule[]
 
@@ -46,14 +49,32 @@ export class ComplexRule extends Rule {
 		if (!(repeat[1] > 0)) repeat[1] = 1e5
 		assert.notGreater(repeat[0], repeat[1])
 		this.repeat = [repeat[0], repeat[1]]
-		if (repeat[0] === repeat[1] && repeat[0] === 1) {
+		if (repeat[0] !== repeat[1] || repeat[0] !== 1) {
 			this.match = this.repeatMatch
-		} else {
 			type = `${type}[${repeat[0]}${
 				repeat[0] === repeat[1] ? '' : ` - ${repeat[1] === 1e5 ? 'MAX' : repeat[1]}`
 			}]`
 		}
 		this.type = type
+	}
+	parse(buff: string, errSource?: boolean): any[] {
+		const ctx = new MatchContext(new Source(buff), buff, 0, 0)
+		let err = this.match(ctx)
+		if (err) {
+			const msg = []
+			var pos: [number, number, string]
+			do {
+				pos = err.position()
+				msg.unshift(
+					`[${pad(String(pos[0]), 3)}:${pad(String(pos[1]), 2)}] - ${err.rule.toString()}: ${
+						err.msg
+					} on "${escapeStr(pos[2])}"`
+				)
+			} while ((err = err.source))
+			if (errSource !== false) msg.push('[Source]', ctx.source.source())
+			throw new SyntaxError(msg.join('\n'))
+		}
+		return ctx.data
 	}
 	protected repeatMatch(context: MatchContext): MatchError {
 		return assert()
@@ -77,6 +98,9 @@ export class ComplexRule extends Rule {
 		return rules
 	}
 
+	protected setCodeIdx(index: any[]) {
+		if (this.repeat[0]) super.setCodeIdx(index)
+	}
 	getRules(): Rule[] {
 		return this.rules || this.init()
 	}
@@ -91,7 +115,7 @@ export class ComplexRule extends Rule {
 	}
 
 	consume(context: MatchContext): MatchError {
-		const err = this.matched(context.data, context.len(), context)
+		const err = this.matched(context.data, context.len(), context.parent)
 		!err && context.commit()
 		return err
 	}

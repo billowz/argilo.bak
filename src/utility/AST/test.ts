@@ -1,7 +1,9 @@
 import { makeMap } from '../collection'
-import { match, discardMatch, and, anyOne, many, option, or } from '.'
+import { match, discardMatch, and, anyOne, many, option, or, any } from '.'
 import { reEscape } from '../reg'
 import { escapeStr } from '../string'
+import { MatchContext } from './MatchContext'
+import { Rule } from './Rule'
 
 const EXPR_START = '{',
 	EXPR_END = '}'
@@ -13,9 +15,11 @@ const EXPR_START_LEN = EXPR_START.length,
 	EXPR_END_LEN = EXPR_END.length
 
 const EXPR_KEY_WORDS = `"'\`[{`
-and('', () => [], () => {})
+
+and('a', () => [], discardMatch)
+
 const EXPR_KEYS = match(EXPR_KEY_WORDS.split(''), discardMatch),
-	EXPR_STR = match(/"(?:[^\\"\n]|\\.)*"|'(?:[^\\'\n]|\\.)*'|`(?:[^\\`]|\\.)*`/, false, `'"\``, false, discardMatch),
+	EXPR_STR = match(/"(?:[^\\"\n]|\\.)*"|'(?:[^\\'\n]|\\.)*'|`(?:[^\\`]|\\.)*`/, `'"\``, false, discardMatch),
 	ExprObject = and(
 		'ExprObject',
 		() => [
@@ -23,9 +27,9 @@ const EXPR_KEYS = match(EXPR_KEY_WORDS.split(''), discardMatch),
 			anyOne(
 				'ObjBody',
 				[
-					EXPR_STR, // match by "'`
-					ExprObject, // match by {
-					ExprArray, // match by ]
+					EXPR_STR,
+					ExprObject,
+					ExprArray,
 					EXPR_KEYS, // consume start char when EXPR_STR | ExprObject | ExprArray match failed
 					new RegExp(`[^${reEscape(EXPR_KEY_WORDS + '}')}]+`) // consume chars which before start codes of EXPR_STR | ExprObject | ExprArray and "}"
 				],
@@ -61,18 +65,18 @@ const EXPR_KEYS = match(EXPR_KEY_WORDS.split(''), discardMatch),
 			),
 			['ExprEnd', EXPR_END, attachOffset]
 		],
-		(d, rs, stream) => {
-			const content_start = d[0],
-				expr_end = d[1]
-			rs.add([
-				stream.orgbuff.substring(content_start, expr_end - EXPR_END_LEN),
+		(data: any, len: number, ctx: MatchContext) => {
+			const content_start = data[0],
+				expr_end = data[1]
+			ctx.add([
+				ctx.source.buff.substring(content_start, expr_end - EXPR_END_LEN),
 				content_start - EXPR_START_LEN,
 				expr_end
 			])
 		}
 	)
 
-function createStringRule(name, mask, mline) {
+function createStringRule(name, mask, mline?) {
 	return and(
 		name,
 		[
@@ -84,11 +88,11 @@ function createStringRule(name, mask, mline) {
 			]),
 			match(mask, attachOffset)
 		],
-		(d, rs, stream) => {
-			const buff = stream.orgbuff
-			let start = d[0],
-				end = d[2] - 1,
-				exprs = d[1]
+		(data: any, len: number, ctx: MatchContext) => {
+			const buff = ctx.source.buff
+			let start = data[0],
+				end = data[2] - 1,
+				exprs = data[1]
 			if (exprs.length) {
 				const offset = start - 1
 				var i = 0,
@@ -104,9 +108,9 @@ function createStringRule(name, mask, mline) {
 				}
 				if (start < end) expr.push(exprStr(buff, start, end))
 
-				rs.add(['expr', expr.join(' + '), offset, end + 1])
+				ctx.add(['expr', expr.join(' + '), offset, end + 1])
 			} else {
-				rs.add(['string', buff.substring(start, end)])
+				ctx.add(['string', buff.substring(start, end)])
 			}
 		}
 	)
@@ -123,7 +127,7 @@ const ATTR_NAME = match('AttrName', /([@:$_a-zA-Z][\w-\.]*)\s*/, 1),
 			createStringRule('SQString', "'"),
 			createStringRule('DQString', '"'),
 			createStringRule('MString', '`', true),
-			and(Expr, attachValue('expr', expr => expr[0][0])),
+			and([Expr], attachValue('expr', expr => expr[0][0])),
 			match('Number', /-?(0|[1-9]\d*)(\.\d+)?([eE][+-]?\d+)?/, '-0123456789', attachValue('number', num => +num)),
 			match('NaN', attachStaticValue('number', NaN)),
 			match('undefined', attachStaticValue('undefined', undefined)),
@@ -131,20 +135,16 @@ const ATTR_NAME = match('AttrName', /([@:$_a-zA-Z][\w-\.]*)\s*/, 1),
 			match('true', attachStaticValue('boolean', true)),
 			match('false', attachStaticValue('boolean', false))
 		],
-		{
-			capturable: false,
-			attach(val, rs) {
-				rs.add(val[0])
-			}
-		}
+		false,
+		(data: any, len: number, ctx: MatchContext) => ctx.add(data[0])
 	),
 	Attrs = any(
 		'Attrs',
 		[ATTR_NAME, option('AttrValue', [[/=\s*/, false, '=', discardMatch], AttrValue, /\s*/])],
-		(d, rs) => {
+		(data, length, ctx) => {
 			const attrs = {}
-			for (let i = 0, l = d.length; i < l; i += 2) attrs[d[i]] = d[i + 1][0]
-			rs.add(attrs)
+			for (let i = 0, l = data.length; i < l; i += 2) attrs[data[i]] = data[i + 1][0]
+			ctx.add(attrs)
 		}
 	)
 
@@ -152,15 +152,15 @@ const ELEM_NAME_REG = '[_a-zA-Z][\\w-]*',
 	ELEM_NAME = match('ElemName', new RegExp(`<(${ELEM_NAME_REG})\\s*`), 1, '<'),
 	NodeCollection = anyOne('NodeCollection', () => [
 		Elem,
-		and(Expr, (d, rs, stream) => {
-			rs.add({ type: 'expr', data: d[0][0] })
+		and([Expr], (data: any, len: number, ctx: MatchContext) => {
+			ctx.add({ type: 'expr', data: data[0][0] })
 		}),
-		match('<', (d, rs, stream, rule) => {
+		match('<', (data: any, len: number, ctx: MatchContext, rule: Rule) => {
 			//consume one char when Elem match failed
-			if (stream.nextCode() === 47)
+			if (ctx.nextCode() === 47)
 				// is close element
-				return rule.error(stream, 'expect: /<[^/]/', true)
-			attachText(d, rs, stream, rule) // not element
+				return rule.mkErr('expect: /<[^/]/', ctx)
+			attachText(data, len, ctx) // not element
 		}),
 		match(EXPR_START[0], attachText), // consume one char when Expr match failed
 		match(new RegExp(`[^\\\\<${reEscape(EXPR_START[0])}]+|\\\\${reEscape(EXPR_START[0])}`), attachText)
@@ -175,63 +175,65 @@ const ELEM_NAME_REG = '[_a-zA-Z][\\w-]*',
 				and('childNodes', [
 					match(/>/, false, '>', discardMatch),
 					NodeCollection,
-					option(
-						[match('ElemClose', new RegExp(`<\/(${ELEM_NAME_REG})>\\s*`), 1, '<')],
-						(close, childNodesResult, stream) => {
-							const closeTag = close[0],
-								elemResult = childNodesResult.parent.parent,
-								tag = elemResult.data[0]
+					option([match('ElemClose', new RegExp(`<\/(${ELEM_NAME_REG})>\\s*`), 1, '<')], (data, len, ctx) => {
+						const closeTag = data[0],
+							pctx = ctx.parent.parent,
+							tag = pctx.data[0]
 
-							if (closeTag) {
-								if (closeTag !== tag) {
-									if (AutoCloseElems[tag]) {
-										stream.reset()
-									} else {
-										return `expect: </${tag}>`
-									}
+						if (closeTag) {
+							if (closeTag !== tag) {
+								if (AutoCloseElems[tag]) {
+									ctx.reset()
+								} else {
+									return `expect: </${tag}>`
 								}
-							} else if (!AutoCloseElems[tag]) {
-								return `expect: </${tag}>`
 							}
+						} else if (!AutoCloseElems[tag]) {
+							return `expect: </${tag}>`
 						}
-					)
+					})
 				])
 			])
 		],
-		(d, rs) => {
-			const tag = d[0],
-				children = d[2][0] && d[2][0][0],
-				elem = { type: 'elem', tag, attrs: d[1], children }
+		(data: any, len: number, ctx: MatchContext) => {
+			const tag = data[0],
+				children = data[2][0] && data[2][0][0],
+				elem = { type: 'elem', tag, attrs: data[1], children }
 
-			rs.add(elem)
+			ctx.add(elem)
 
 			if (children && AutoCloseElems[tag]) {
-				rs.addAll(children)
+				ctx.addAll(children)
 				children.length = 0
 			}
 		}
 	)
 
-function attachText(text, rs) {
-	const data = rs.data,
+function attachText(text: string, length: number, ctx: MatchContext) {
+	const data = ctx.data,
 		len = data.length
 	let prev
 	if (len && (prev = data[len - 1]) && prev.type === 'text') {
 		prev.data += text
 	} else {
-		rs.add({ type: 'text', data: text })
+		ctx.add({ type: 'text', data: text })
 	}
 }
 
-const ElemContent = and('Elem-Content', [/\s*/, many(Elem), match('EOF', /\s*$/, discardMatch)], (d, rs) => {
-	rs.addAll(d[0])
-}).init()
+export const ElemContent = and(
+	'Elem-Content',
+	[/\s*/, many([Elem]), match('EOF', /\s*$/, discardMatch)],
+	(data: any, len: number, ctx: MatchContext) => {
+		ctx.addAll(data[0])
+	}
+)
 
-export default ElemContent
+ElemContent.init()
+
 
 function attachValue(type, valHandler) {
-	return function(value, rs) {
-		rs.add([type, valHandler(value)])
+	return function(data: any, len: number, ctx: MatchContext) {
+		ctx.add([type, valHandler(data)])
 	}
 }
 
@@ -239,6 +241,6 @@ function attachStaticValue(type, val) {
 	return attachValue(type, v => v)
 }
 
-function attachOffset(d, rs, stream) {
-	rs.add(stream.orgOffset())
+function attachOffset(data: any, len: number, ctx: MatchContext) {
+	ctx.add(ctx.currPos())
 }

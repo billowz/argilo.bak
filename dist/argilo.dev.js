@@ -11,7 +11,7 @@
  * Copyright (c) 2018 Tao Zeng <tao.zeng.zt@qq.com>
  * Released under the MIT license
  *
- * Date: Sat, 15 Dec 2018 12:19:10 GMT
+ * Date: Mon, 17 Dec 2018 06:45:21 GMT
  */
 (function (global, factory) {
 	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
@@ -1555,7 +1555,7 @@
 	 * @module utility/format
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Mon Dec 03 2018 19:46:41 GMT+0800 (China Standard Time)
-	 * @modified Mon Dec 10 2018 16:26:23 GMT+0800 (China Standard Time)
+	 * @modified Mon Dec 17 2018 19:24:20 GMT+0800 (China Standard Time)
 	 */
 
 	/*                                                                                      *
@@ -2141,7 +2141,7 @@
 	extendFormatter({
 	  s: strFormatter(toStr),
 	  j: strFormatter(function (v) {
-	    return v === undefined ? 'undefined' : JSON.stringify(v);
+	    return v === undefined || isFn(v) || v.toJSON && v.toJSON() === undefined ? toStr(v) : JSON.stringify(v);
 	  }),
 	  c: function c(val) {
 	    var num = val >> 0;
@@ -2896,24 +2896,36 @@
 	 * @module common/AST
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Tue Nov 06 2018 10:06:22 GMT+0800 (China Standard Time)
-	 * @modified Sat Dec 15 2018 16:34:01 GMT+0800 (China Standard Time)
+	 * @modified Mon Dec 17 2018 20:03:32 GMT+0800 (China Standard Time)
 	 */
-	var MatchError = function (msg, capturable, source, context, rule) {
-	  this.$ruleErr = true;
-	  this.rule = void 0;
-	  this.context = void 0;
-	  this.source = void 0;
-	  this.capturable = void 0;
-	  this.msg = void 0;
-	  this.pos = void 0;
-	  !isBool(capturable) && (capturable = rule.capturable);
-	  this.capturable = capturable && source ? source.capturable : capturable;
-	  this.msg = msg;
-	  this.source = source;
-	  this.context = context;
-	  this.rule = rule;
-	  this.pos = context.currPos();
-	};
+	var MatchError =
+	/*#__PURE__*/
+	function () {
+	  function MatchError(msg, capturable, source, context, rule) {
+	    this.$ruleErr = true;
+	    this.rule = void 0;
+	    this.context = void 0;
+	    this.source = void 0;
+	    this.capturable = void 0;
+	    this.msg = void 0;
+	    this.pos = void 0;
+	    !isBool(capturable) && (capturable = rule.capturable);
+	    this.capturable = capturable && source ? source.capturable : capturable;
+	    this.msg = msg;
+	    this.source = source;
+	    this.context = context;
+	    this.rule = rule;
+	    this.pos = context.startPos();
+	  }
+
+	  var _proto = MatchError.prototype;
+
+	  _proto.position = function position() {
+	    return this.context.source.position(this.pos);
+	  };
+
+	  return MatchError;
+	}();
 
 	function defaultErr(err) {
 	  return err;
@@ -2923,6 +2935,18 @@
 	  context.add(data);
 	}
 
+	function discardMatch() {}
+	function appendMatch(data, len, context) {
+	  context.addAll(data);
+	}
+	function attachMatch(val) {
+	  var fn = isFn(val) ? val : function () {
+	    return val;
+	  };
+	  return function (data, len, context) {
+	    context.add(fn(data, len, context));
+	  };
+	}
 	var idGen = 0;
 	/**
 	 * Abstract Rule
@@ -2950,6 +2974,8 @@
 	    this.$rule = true;
 	    this.type = void 0;
 	    this.id = void 0;
+	    this.name = void 0;
+	    this.capturable = void 0;
 	    this.expr = void 0;
 	    this.EXPECT = void 0;
 	    this.onMatch = void 0;
@@ -2957,6 +2983,8 @@
 	    this.startCodeIdx = void 0;
 	    this.startCodes = void 0;
 	    this.id = idGen++;
+	    this.name = name;
+	    this.capturable = capturable !== false;
 	    this.onMatch = onMatch || defaultMatch;
 	    this.onErr = onErr || defaultErr;
 	  }
@@ -2969,9 +2997,9 @@
 	   */
 
 
-	  var _proto = Rule.prototype;
+	  var _proto2 = Rule.prototype;
 
-	  _proto.mkErr = function mkErr(msg, context, source, capturable) {
+	  _proto2.mkErr = function mkErr(msg, context, source, capturable) {
 	    return new MatchError(msg, capturable, source, context, this);
 	  };
 	  /**
@@ -2984,7 +3012,7 @@
 	   */
 
 
-	  _proto.error = function error(msg, context, src, capturable) {
+	  _proto2.error = function error(msg, context, src, capturable) {
 	    var err = this.mkErr(msg, context, src, capturable);
 	    var userErr = this.onErr(err, context, this);
 	    if (userErr) return isStr(userErr) ? (err[0] = userErr, err) : userErr;
@@ -2999,7 +3027,7 @@
 	   */
 
 
-	  _proto.matched = function matched(data, len, context) {
+	  _proto2.matched = function matched(data, len, context) {
 	    var err = this.onMatch(data, len, context, this);
 	    if (err) return err.$ruleErr ? err : this.mkErr(String(err), context, null, false);
 	  };
@@ -3009,7 +3037,7 @@
 	   */
 
 
-	  _proto.match = function match() {
+	  _proto2.match = function match() {
 	    return assert();
 	  };
 	  /**
@@ -3017,7 +3045,7 @@
 	   */
 
 
-	  _proto.getStart = function getStart() {
+	  _proto2.getStart = function getStart() {
 	    return this.startCodes;
 	  };
 	  /**
@@ -3025,16 +3053,16 @@
 	   */
 
 
-	  _proto.test = function test(context) {
-	    return context.nextCode() !== 0;
+	  _proto2.test = function test() {
+	    return true; //return context.nextCode() !== 0
 	  };
 
-	  _proto.startCodeTest = function startCodeTest(context) {
+	  _proto2.startCodeTest = function startCodeTest(context) {
 	    var code = context.nextCode();
 	    return code !== 0 && !!this.startCodeIdx[code];
 	  };
 
-	  _proto.setStartCodes = function setStartCodes(start, ignoreCase) {
+	  _proto2.setStartCodes = function setStartCodes(start, ignoreCase) {
 	    var codes = [],
 	        index = [];
 	    eachCharCodes(start, ignoreCase, function (code) {
@@ -3047,7 +3075,7 @@
 	    this.setCodeIdx(index);
 	  };
 
-	  _proto.setCodeIdx = function setCodeIdx(index) {
+	  _proto2.setCodeIdx = function setCodeIdx(index) {
 	    this.startCodeIdx = index;
 	    this.test = index && index.length > 1 ? this.startCodeTest : Rule[PROTOTYPE].test;
 	  }; //──── for debug ─────────────────────────────────────────────────────────────────────────
@@ -3058,7 +3086,7 @@
 	   */
 
 
-	  _proto.mkExpr = function mkExpr(expr) {
+	  _proto2.mkExpr = function mkExpr(expr) {
 	    return "<" + this.type + ": " + expr + ">";
 	  };
 	  /**
@@ -3068,12 +3096,12 @@
 	   */
 
 
-	  _proto.setExpr = function setExpr(expr) {
+	  _proto2.setExpr = function setExpr(expr) {
 	    this.expr = this.mkExpr(expr);
 	    this.EXPECT = "Expect: " + expr;
 	  };
 
-	  _proto.getExpr = function getExpr() {
+	  _proto2.getExpr = function getExpr() {
 	    return this.name || this.expr;
 	  };
 	  /**
@@ -3081,7 +3109,7 @@
 	   */
 
 
-	  _proto.toString = function toString() {
+	  _proto2.toString = function toString() {
 	    return this.getExpr();
 	  };
 
@@ -3115,7 +3143,6 @@
 	  function MatchRule(name, start, ignoreCase, capturable, onMatch, onErr) {
 	    var _this = _Rule.call(this, name, capturable, onMatch, onErr) || this;
 
-	    _this.start = void 0;
 	    _this.index = void 0;
 	    _this.ignoreCase = void 0;
 	    _this.ignoreCase = ignoreCase;
@@ -3168,7 +3195,7 @@
 	    var _this = _MatchRule.call(this, name, allows, ignoreCase, capturable, onMatch, onErr) || this;
 
 	    _this.type = 'Character';
-	    var codes = _this.start;
+	    var codes = _this.startCodes;
 	    var i = codes.length,
 	        expr = '*';
 
@@ -3330,6 +3357,264 @@
 	}(RegMatchRule);
 
 	/**
+	 * @module utility/AST
+	 * @author Tao Zeng <tao.zeng.zt@qq.com>
+	 * @created Tue Dec 11 2018 15:36:42 GMT+0800 (China Standard Time)
+	 * @modified Mon Dec 17 2018 17:28:52 GMT+0800 (China Standard Time)
+	 */
+	/**
+	 * Match Context of Rule
+	 */
+
+	var MatchContext =
+	/*#__PURE__*/
+	function () {
+	  // matched data list
+	  // start offset of original buff
+	  // start offset of original buff
+	  // template buff
+	  // current offset of template buff
+	  // advanced characters
+	  // cached character
+	  // parent context
+	  function MatchContext(source, buff, offset, orgPos, parent, code) {
+	    this.data = void 0;
+	    this.source = void 0;
+	    this.orgPos = void 0;
+	    this.buff = void 0;
+	    this.offset = void 0;
+	    this.advanced = void 0;
+	    this.codeCache = void 0;
+	    this.parent = void 0;
+	    this.source = source;
+	    this.buff = buff;
+	    this.offset = offset;
+	    this.orgPos = orgPos;
+	    this.parent = parent;
+	    this.data = [];
+	    this.advanced = 0;
+	    code ? this.codeCache = code : this.flushCache();
+	  }
+
+	  var _proto = MatchContext.prototype;
+
+	  _proto.flushCache = function flushCache() {
+	    var buff = this.buff,
+	        offset = this.offset;
+	    this.codeCache = offset < buff.length ? charCode(buff, offset) : 0;
+	  };
+	  /**
+	   * create sub Context
+	   */
+
+
+	  _proto.create = function create() {
+	    return new MatchContext(this.source, this.buff, this.offset, this.orgPos + this.advanced, this, this.codeCache);
+	  };
+	  /**
+	   * commit context states to parent context
+	   * @param margeData is marge data to parent
+	   */
+
+
+	  _proto.commit = function commit() {
+	    var advanced = this.advanced;
+	    this.parent.advance(advanced);
+	    this.orgPos += advanced;
+	    this.advanced = 0;
+	  };
+	  /**
+	   *
+	   * @param len 		reset buff length
+	   * @param dataLen 	reset data length
+	   */
+
+
+	  _proto.reset = function reset(len, dataLen) {
+	    len || (len = 0);
+	    assert.range(len, 0, this.advanced + 1);
+	    this.advance(-(this.advanced - len));
+	    this.resetData(dataLen || 0);
+	  };
+
+	  _proto.len = function len() {
+	    return this.advanced;
+	  };
+	  /**
+	   * advance buffer position
+	   */
+
+
+	  _proto.advance = function advance(i) {
+	    this.offset += i;
+	    this.advanced += i;
+
+	    if (this.offset < 0) {
+	      this.buff = this.source.buff;
+	      this.offset = this.orgPos + this.advanced;
+	    }
+
+	    this.flushCache();
+	  };
+	  /**
+	   * get buffer
+	   * @param reset reset buffer string from 0
+	   */
+
+
+	  _proto.getBuff = function getBuff(reset) {
+	    if (reset) {
+	      var offset = this.offset;
+	      this.buff = this.buff.substring(offset);
+	      this.offset = 0;
+	    }
+
+	    return this.buff;
+	  };
+
+	  _proto.getOffset = function getOffset() {
+	    return this.offset;
+	  };
+
+	  _proto.startPos = function startPos() {
+	    return this.orgPos;
+	  };
+
+	  _proto.currPos = function currPos() {
+	    return this.orgPos + this.advanced;
+	  };
+
+	  _proto.pos = function pos() {
+	    var orgPos = this.orgPos;
+	    return [orgPos, orgPos + this.advanced];
+	  };
+	  /**
+	   * get next char code
+	   * @return number char code number
+	   */
+
+
+	  _proto.nextCode = function nextCode() {
+	    return this.codeCache;
+	  };
+
+	  _proto.nextChar = function nextChar() {
+	    return char(this.codeCache);
+	  };
+
+	  _proto.eof = function eof() {
+	    return this.codeCache === 0;
+	  }; //──── data opeartions ───────────────────────────────────────────────────────────────────
+
+	  /**
+	   * append data
+	   */
+
+
+	  _proto.add = function add(data) {
+	    this.data.push(data);
+	  };
+	  /**
+	   * append datas
+	   */
+
+
+	  _proto.addAll = function addAll(datas) {
+	    var data = this.data;
+	    var len = data.length;
+	    var i = datas.length;
+
+	    while (i--) {
+	      data[len + i] = datas[i];
+	    }
+	  };
+	  /**
+	   * reset result data size
+	   */
+
+
+	  _proto.resetData = function resetData(len) {
+	    var data = this.data;
+	    len = len || 0;
+	    if (data.length > len) data.length = len;
+	  };
+
+	  _proto.dataLen = function dataLen() {
+	    return this.data.length;
+	  };
+
+	  return MatchContext;
+	}();
+
+	var LINE_REG = /([^\n]+)?(\n|$)/g;
+	var Source =
+	/*#__PURE__*/
+	function () {
+	  function Source(buff) {
+	    this.buff = void 0;
+	    this.len = void 0;
+	    this.lines = void 0;
+	    this.linePos = void 0;
+	    this.buff = buff;
+	    this.len = buff.length;
+	    this.lines = [];
+	    this.linePos = 0;
+	  }
+
+	  var _proto = Source.prototype;
+
+	  _proto.position = function position(offset) {
+	    var buff = this.buff,
+	        len = this.len,
+	        lines = this.lines,
+	        linePos = this.linePos;
+	    var i = lines.length,
+	        p;
+
+	    if (offset < linePos) {
+	      while (i--) {
+	        p = offset - lines[i][0];
+	        if (p >= 0) return [i + 1, p, lines[i][1]];
+	      }
+	    } else {
+	      if (linePos < len) {
+	        var m;
+	        LINE_REG.lastIndex = p = linePos;
+
+	        while (m = LINE_REG.exec(buff)) {
+	          lines[i++] = [p, m[1] || ''];
+	          p = LINE_REG.lastIndex;
+	          if (!p || offset < p) break;
+	        }
+
+	        this.linePos = p || len;
+	      }
+
+	      return i ? [i, (offset > len ? len : offset) - lines[i - 1][0], lines[i - 1][1]] : [1, 0, ''];
+	    }
+	  };
+
+	  _proto.source = function source(escape) {
+	    var buff = this.buff;
+	    var line = 1,
+	        toSourceStr = escape ? escapeSourceStr : sourceStr;
+	    return buff.replace(LINE_REG, function (m, s, t) {
+	      return pad(String(line++), 3) + ': ' + toSourceStr(m, s, t);
+	    });
+	  };
+
+	  return Source;
+	}();
+
+	function sourceStr(m) {
+	  return m || '';
+	}
+
+	function escapeSourceStr(m, s, t) {
+	  return s ? escapeStr(s) + t : t;
+	}
+
+	/**
 	 * complex rule interface
 	 *
 	 */
@@ -3361,9 +3646,8 @@
 	    assert.notGreater(repeat[0], repeat[1]);
 	    _this.repeat = [repeat[0], repeat[1]];
 
-	    if (repeat[0] === repeat[1] && repeat[0] === 1) {
+	    if (repeat[0] !== repeat[1] || repeat[0] !== 1) {
 	      _this.match = _this.repeatMatch;
-	    } else {
 	      type = type + "[" + repeat[0] + (repeat[0] === repeat[1] ? '' : " - " + (repeat[1] === 1e5 ? 'MAX' : repeat[1])) + "]";
 	    }
 
@@ -3372,6 +3656,26 @@
 	  }
 
 	  var _proto = ComplexRule.prototype;
+
+	  _proto.parse = function parse(buff, errSource) {
+	    var ctx = new MatchContext(new Source(buff), buff, 0, 0);
+	    var err = this.match(ctx);
+
+	    if (err) {
+	      var msg = [];
+	      var pos;
+
+	      do {
+	        pos = err.position();
+	        msg.unshift("[" + pad(String(pos[0]), 3) + ":" + pad(String(pos[1]), 2) + "] - " + err.rule.toString() + ": " + err.msg + " on \"" + escapeStr(pos[2]) + "\"");
+	      } while (err = err.source);
+
+	      if (errSource !== false) msg.push('[Source]', ctx.source.source());
+	      throw new SyntaxError(msg.join('\n'));
+	    }
+
+	    return ctx.data;
+	  };
 
 	  _proto.repeatMatch = function repeatMatch() {
 	    return assert();
@@ -3394,6 +3698,10 @@
 	    return rules;
 	  };
 
+	  _proto.setCodeIdx = function setCodeIdx(index) {
+	    if (this.repeat[0]) _Rule.prototype.setCodeIdx.call(this, index);
+	  };
+
 	  _proto.getRules = function getRules() {
 	    return this.rules || this.init();
 	  };
@@ -3405,7 +3713,7 @@
 	  };
 
 	  _proto.consume = function consume(context) {
-	    var err = this.matched(context.data, context.len(), context);
+	    var err = this.matched(context.data, context.len(), context.parent);
 	    !err && context.commit();
 	    return err;
 	  };
@@ -3445,8 +3753,7 @@
 	  function AndRule(name, repeat, builder, capturable, onMatch, onErr) {
 	    var _this = _ComplexRule.call(this, name, 'And', repeat, builder, capturable, onMatch, onErr) || this;
 
-	    _this.type = void 0;
-	    _this.split = void 0;
+	    _this.split = ' ';
 	    return _this;
 	  }
 
@@ -3521,11 +3828,10 @@
 	  _inheritsLoose(OrRule, _ComplexRule);
 
 	  function OrRule(name, repeat, builder, capturable, onMatch, onErr) {
-	    var _this = _ComplexRule.call(this, name, 'And', repeat, builder, capturable, onMatch, onErr) || this;
+	    var _this = _ComplexRule.call(this, name, 'Or', repeat, builder, capturable, onMatch, onErr) || this;
 
 	    _this.startCodeIdx = void 0;
-	    _this.type = void 0;
-	    _this.split = void 0;
+	    _this.split = ' | ';
 	    _this.index = void 0;
 	    return _this;
 	  }
@@ -3611,7 +3917,7 @@
 	      }
 
 	      if (!upErr || err.pos >= upErr.pos) upErr = err;
-	      ctx.reset(0, 0);
+	      ctx.reset();
 	    }
 
 	    return this.error(this.EXPECT, ctx, upErr);
@@ -3634,6 +3940,7 @@
 
 	    if (!index) {
 	      rules = this.getRules();
+	      index = this.index;
 	      len = rules.length;
 	    }
 
@@ -3676,7 +3983,7 @@
 	 * @module common/AST
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Tue Nov 06 2018 10:58:52 GMT+0800 (China Standard Time)
-	 * @modified Sat Dec 15 2018 20:18:48 GMT+0800 (China Standard Time)
+	 * @modified Mon Dec 17 2018 20:22:08 GMT+0800 (China Standard Time)
 	 */
 
 	/*                                                                                      *
@@ -3684,12 +3991,18 @@
 	 *                                                                                      */
 	//========================================================================================
 	//──── named regexp match api ────────────────────────────────────────────────────────────
+	// pick, start, cap
+	// pick, cap
+	// pick, start
+	// pick
+	// start, cap
+	// start
 
-	function match(o) {
-	  return mkMatch(isObj(o) ? o : arguments);
+	function match() {
+	  return mkMatch(arguments);
 	}
 
-	function mkMatch(args) {
+	function mkMatch(args, defaultPick, defaultOnMatch) {
 	  var name,
 	      pattern,
 	      regexp,
@@ -3700,29 +4013,8 @@
 	      onMatch,
 	      onErr;
 
-	  if (isArrayLike(args)) {
-	    var i = 2;
-
-	    if (isMatchPattern(args[1])) {
-	      name = args[0];
-	      isReg(args[1]) ? regexp = args[1] : pattern = args[1];
-	    } else if (isMatchPattern(args[0])) {
-	      i = 1;
-	      isReg(args[0]) ? regexp = args[0] : pattern = args[0];
-	    }
-
-	    if (regexp) {
-	      if (isBool(args[i]) || isInt(args[i])) pick = args[i++];
-	      if (isStrOrCodes(pattern)) startCodes = args[i++];
-	    } else {
-	      if (isBool(args[i])) ignoreCase = args[i++];
-	    }
-
-	    if (isBool(args[i])) capturable = args[i++];
-	    onMatch = args[i++];
-	    onErr = args[i++];
-	  } else if (isObj(args)) {
-	    var _desc = args,
+	  if (isObj(args[0])) {
+	    var _desc = args[0],
 	        p = _desc.pattern;
 
 	    if (isReg(p)) {
@@ -3738,9 +4030,31 @@
 	    capturable = _desc.capturable;
 	    onMatch = _desc.onMatch;
 	    onErr = _desc.onErr;
+	  } else {
+	    var i = 2;
+
+	    if (isMatchPattern(args[1])) {
+	      name = args[0];
+	      isReg(args[1]) ? regexp = args[1] : pattern = args[1];
+	    } else if (isMatchPattern(args[0])) {
+	      i = 1;
+	      isReg(args[0]) ? regexp = args[0] : pattern = args[0];
+	    }
+
+	    if (regexp) {
+	      if (isBool(args[i]) || isInt(args[i])) pick = args[i++];
+	      if (isStrOrCodes(args[i])) startCodes = args[i++];
+	    } else {
+	      if (isBool(args[i])) ignoreCase = args[i++];
+	    }
+
+	    if (isBool(args[i])) capturable = args[i++];
+	    onMatch = args[i++];
+	    onErr = args[i++];
 	  }
 
-	  return regexp ? regMatch(name, regexp, pick, startCodes, capturable, onMatch, onErr) : pattern ? strMatch(name, pattern, ignoreCase, capturable, onMatch, onErr) : null;
+	  onMatch = onMatch || defaultOnMatch;
+	  return regexp ? regMatch(name, regexp, isBool(args[i]) || isInt(args[i]) ? pick : defaultPick, startCodes, capturable, onMatch, onErr) : pattern ? strMatch(name, pattern, ignoreCase, capturable, onMatch, onErr) : null;
 	}
 
 	function isStrOrCodes(pattern) {
@@ -3752,7 +4066,7 @@
 	}
 
 	function strMatch(name, pattern, ignoreCase, capturable, onMatch, onErr) {
-	  var C = isStr(pattern) && pattern.length <= 1 ? StringMatchRule : CharMatchRule;
+	  var C = isStr(pattern) && pattern.length > 1 ? StringMatchRule : CharMatchRule;
 	  return new C(name, pattern, ignoreCase, capturable, onMatch, onErr);
 	}
 
@@ -3784,13 +4098,16 @@
 
 	function and() {
 	  return mkComplexRule(arguments, AndRule, [1, 1]);
-	}
+	} //──── and any ───────────────────────────────────────────────────────────────────────────
+
 	function any() {
-	  return mkComplexRule(arguments, AndRule, [1, -1]);
-	}
-	function many() {
 	  return mkComplexRule(arguments, AndRule, [0, -1]);
-	}
+	} //──── and many ──────────────────────────────────────────────────────────────────────────
+
+	function many() {
+	  return mkComplexRule(arguments, AndRule, [1, -1]);
+	} //──── and option ────────────────────────────────────────────────────────────────────────
+
 	function option() {
 	  return mkComplexRule(arguments, AndRule, [0, 1]);
 	} //========================================================================================
@@ -3802,13 +4119,16 @@
 
 	function or() {
 	  return mkComplexRule(arguments, OrRule, [1, 1]);
-	}
+	} //──── or any ────────────────────────────────────────────────────────────────────────────
+
 	function anyOne() {
-	  return mkComplexRule(arguments, OrRule, [1, -1]);
-	}
-	function manyOne() {
 	  return mkComplexRule(arguments, OrRule, [0, -1]);
-	}
+	} //──── or many ───────────────────────────────────────────────────────────────────────────
+
+	function manyOne() {
+	  return mkComplexRule(arguments, OrRule, [1, -1]);
+	} //──── or option ─────────────────────────────────────────────────────────────────────────
+
 	function optionOne() {
 	  return mkComplexRule(arguments, OrRule, [0, 1]);
 	} //========================================================================================
@@ -3818,22 +4138,22 @@
 	 *                                                                                      */
 	//========================================================================================
 
-	function mkComplexRule(args, Rule, defaultRepeat) {
+	function mkComplexRule(args, Rule$$1, defaultRepeat) {
 	  var name, builder, rules, repeat, capturable, onMatch, onErr;
 
 	  if (isObj(args[0])) {
 	    var _desc2 = args[0],
 	        r = _desc2.rules;
-	    if (isArray(r)) rules = r;else if (isFn(r)) builder = r;
+	    if (isArray(r) || isFn(r)) rules = r;
 	    repeat = _desc2.repeat;
 	    name = _desc2.name;
 	    capturable = _desc2.capturable;
 	    onMatch = _desc2.onMatch;
 	    onErr = _desc2.onErr;
-	  } else if (isArrayLike(args)) {
+	  } else {
 	    var i = 0;
 	    if (isStr(args[i])) name = args[i++];
-	    if (isArray(args[i])) rules = args[i++];else if (isFn(args[i])) builder = args[i++];
+	    if (isArray(args[i]) || isFn(args[i])) rules = args[i++];
 	    if (isArray(args[i])) repeat = args[i++];
 	    if (isBool(args[i])) capturable = args[i++];
 	    onMatch = args[i++];
@@ -3842,23 +4162,184 @@
 
 	  if (!repeat) repeat = defaultRepeat;
 
-	  if (!builder && rules) {
+	  if (rules) {
 	    builder = rulesBuilder(rules);
+	    return new Rule$$1(name, repeat, builder, capturable, onMatch, onErr);
 	  }
-
-	  if (builder) if (isBool(args[i])) capturable = args[i++];
-	  return new Rule(name, repeat, builder, capturable, onMatch, onErr);
 	}
 
 	function rulesBuilder(rules) {
-	  return function () {
-	    return mapArray(rules, function (r, i) {
+	  return function (_rule) {
+	    return mapArray(isFn(rules) ? rules(_rule) : rules, function (r, i) {
 	      if (!r) return SKIP;
-	      var rule = isArray(r) || isObj(r) ? mkMatch(r) : r.$rule ? r : null;
-	      assert.is(rule, 'Invalid Rule Configuration on index {d}: {:.20="..."j}', i, r);
+	      var rule = r.$rule ? r : isArray(r) ? mkMatch(r) : mkMatch([r], false, discardMatch);
+	      assert.is(rule, '{}: Invalid Rule Configuration on index {d}: {:.80="..."j}', _rule, i, r);
 	      return rule;
 	    });
 	  };
+	}
+
+	var EXPR_START = '{',
+	    EXPR_END = '}';
+	var AutoCloseElems = makeMap('input'),
+	    ContentElems = makeMap('textarea');
+	var EXPR_START_LEN = EXPR_START.length,
+	    EXPR_END_LEN = EXPR_END.length;
+	var EXPR_KEY_WORDS = "\"'`[{";
+	and('a', function () {
+	  return [];
+	}, discardMatch);
+	var EXPR_KEYS = match(EXPR_KEY_WORDS.split(''), discardMatch),
+	    EXPR_STR = match(/"(?:[^\\"\n]|\\.)*"|'(?:[^\\'\n]|\\.)*'|`(?:[^\\`]|\\.)*`/, "'\"`", false, discardMatch),
+	    ExprObject = and('ExprObject', function () {
+	  return ['{', anyOne('ObjBody', [EXPR_STR, ExprObject, ExprArray, EXPR_KEYS, // consume start char when EXPR_STR | ExprObject | ExprArray match failed
+	  new RegExp("[^" + reEscape(EXPR_KEY_WORDS + '}') + "]+") // consume chars which before start codes of EXPR_STR | ExprObject | ExprArray and "}"
+	  ], discardMatch), '}'];
+	}, discardMatch),
+	    ExprArray = and('ExprArray', function () {
+	  return ['[', anyOne('ArrayBody', [EXPR_STR, ExprObject, ExprArray, EXPR_KEYS, new RegExp("[^" + reEscape(EXPR_KEY_WORDS + ']') + "]+")], discardMatch), ']'];
+	}),
+	    Expr = and('Expr', [['ExprStart', EXPR_START, attachOffset], anyOne('ExprBody', [EXPR_STR, ExprObject, ExprArray, match((EXPR_KEY_WORDS + EXPR_START[0]).split(''), discardMatch), new RegExp("[^" + reEscape(EXPR_KEY_WORDS + EXPR_START[0] + EXPR_END[0]) + "]+")], discardMatch), ['ExprEnd', EXPR_END, attachOffset]], function (data, len, ctx) {
+	  var content_start = data[0],
+	      expr_end = data[1];
+	  ctx.add([ctx.source.buff.substring(content_start, expr_end - EXPR_END_LEN), content_start - EXPR_START_LEN, expr_end]);
+	});
+
+	function createStringRule(name, mask, mline) {
+	  return and(name, [match(mask, attachOffset), anyOne([Expr, EXPR_START[0], // consume expr start char when parse expr failed
+	  new RegExp("(?:[^\\\\" + (mline ? '' : '\\n') + mask + reEscape(EXPR_START[0]) + "]|\\\\.)+") // string fragment
+	  ]), match(mask, attachOffset)], function (data, len, ctx) {
+	    var buff = ctx.source.buff;
+	    var start = data[0],
+	        end = data[2] - 1,
+	        exprs = data[1];
+
+	    if (exprs.length) {
+	      var offset = start - 1;
+	      var i = 0,
+	          l = exprs.length,
+	          estart;
+	      var expr = [];
+
+	      for (; i < l; i++) {
+	        estart = exprs[i][1];
+	        if (start < estart) expr.push(exprStr(buff, start, estart));
+	        expr.push("(" + exprs[i][0] + ")");
+	        start = exprs[i][2];
+	      }
+
+	      if (start < end) expr.push(exprStr(buff, start, end));
+	      ctx.add(['expr', expr.join(' + '), offset, end + 1]);
+	    } else {
+	      ctx.add(['string', buff.substring(start, end)]);
+	    }
+	  });
+
+	  function exprStr(buff, start, end) {
+	    return "\"" + escapeStr(buff.substring(start, end)) + "\"";
+	  }
+	}
+
+	var ATTR_NAME = match('AttrName', /([@:$_a-zA-Z][\w-\.]*)\s*/, 1),
+	    AttrValue = or('AttrValue', [createStringRule('SQString', "'"), createStringRule('DQString', '"'), createStringRule('MString', '`', true), and([Expr], attachValue('expr', function (expr) {
+	  return expr[0][0];
+	})), match('Number', /-?(0|[1-9]\d*)(\.\d+)?([eE][+-]?\d+)?/, '-0123456789', attachValue('number', function (num) {
+	  return +num;
+	})), match('NaN', attachStaticValue('number', NaN)), match('undefined', attachStaticValue('undefined', undefined)), match('null', attachStaticValue('null', undefined)), match('true', attachStaticValue('boolean', true)), match('false', attachStaticValue('boolean', false))], false, function (data, len, ctx) {
+	  return ctx.add(data[0]);
+	}),
+	    Attrs = any('Attrs', [ATTR_NAME, option('AttrValue', [[/=\s*/, false, '=', discardMatch], AttrValue, /\s*/])], function (data, length, ctx) {
+	  var attrs = {};
+
+	  for (var i = 0, l = data.length; i < l; i += 2) {
+	    attrs[data[i]] = data[i + 1][0];
+	  }
+
+	  ctx.add(attrs);
+	});
+	var ELEM_NAME_REG = '[_a-zA-Z][\\w-]*',
+	    ELEM_NAME = match('ElemName', new RegExp("<(" + ELEM_NAME_REG + ")\\s*"), 1, '<'),
+	    NodeCollection = anyOne('NodeCollection', function () {
+	  return [Elem, and([Expr], function (data, len, ctx) {
+	    ctx.add({
+	      type: 'expr',
+	      data: data[0][0]
+	    });
+	  }), match('<', function (data, len, ctx, rule) {
+	    //consume one char when Elem match failed
+	    if (ctx.nextCode() === 47) // is close element
+	      return rule.mkErr('expect: /<[^/]/', ctx);
+	    attachText(data, len, ctx); // not element
+	  }), match(EXPR_START[0], attachText), // consume one char when Expr match failed
+	  match(new RegExp("[^\\\\<" + reEscape(EXPR_START[0]) + "]+|\\\\" + reEscape(EXPR_START[0])), attachText)];
+	}),
+	    Elem = and('Elem', [ELEM_NAME, Attrs, or('ElemBody', [match(/\/>\s*/, false, '/', discardMatch), and('childNodes', [match(/>/, false, '>', discardMatch), NodeCollection, option([match('ElemClose', new RegExp("</(" + ELEM_NAME_REG + ")>\\s*"), 1, '<')], function (data, len, ctx) {
+	  var closeTag = data[0],
+	      pctx = ctx.parent.parent,
+	      tag = pctx.data[0];
+
+	  if (closeTag) {
+	    if (closeTag !== tag) {
+	      if (AutoCloseElems[tag]) {
+	        ctx.reset();
+	      } else {
+	        return "expect: </" + tag + ">";
+	      }
+	    }
+	  } else if (!AutoCloseElems[tag]) {
+	    return "expect: </" + tag + ">";
+	  }
+	})])])], function (data, len, ctx) {
+	  var tag = data[0],
+	      children = data[2][0] && data[2][0][0],
+	      elem = {
+	    type: 'elem',
+	    tag: tag,
+	    attrs: data[1],
+	    children: children
+	  };
+	  ctx.add(elem);
+
+	  if (children && AutoCloseElems[tag]) {
+	    ctx.addAll(children);
+	    children.length = 0;
+	  }
+	});
+
+	function attachText(text, length, ctx) {
+	  var data = ctx.data,
+	      len = data.length;
+	  var prev;
+
+	  if (len && (prev = data[len - 1]) && prev.type === 'text') {
+	    prev.data += text;
+	  } else {
+	    ctx.add({
+	      type: 'text',
+	      data: text
+	    });
+	  }
+	}
+
+	var ElemContent = and('Elem-Content', [/\s*/, many([Elem]), match('EOF', /\s*$/, discardMatch)], function (data, len, ctx) {
+	  ctx.addAll(data[0]);
+	});
+	ElemContent.init();
+
+	function attachValue(type, valHandler) {
+	  return function (data, len, ctx) {
+	    ctx.add([type, valHandler(data)]);
+	  };
+	}
+
+	function attachStaticValue(type) {
+	  return attachValue(type, function (v) {
+	    return v;
+	  });
+	}
+
+	function attachOffset(data, len, ctx) {
+	  ctx.add(ctx.currPos());
 	}
 
 	/**
@@ -3867,7 +4348,7 @@
 	 * @preferred
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Wed Nov 21 2018 10:21:41 GMT+0800 (China Standard Time)
-	 * @modified Tue Dec 11 2018 09:21:05 GMT+0800 (China Standard Time)
+	 * @modified Mon Dec 17 2018 14:47:42 GMT+0800 (China Standard Time)
 	 */
 
 	/**
@@ -3994,6 +4475,9 @@
 	exports.manyOne = manyOne;
 	exports.optionOne = optionOne;
 	exports.MatchError = MatchError;
+	exports.discardMatch = discardMatch;
+	exports.appendMatch = appendMatch;
+	exports.attachMatch = attachMatch;
 	exports.Rule = Rule;
 	exports.MatchRule = MatchRule;
 	exports.CharMatchRule = CharMatchRule;
@@ -4002,6 +4486,7 @@
 	exports.ComplexRule = ComplexRule;
 	exports.AndRule = AndRule;
 	exports.OrRule = OrRule;
+	exports.ElemContent = ElemContent;
 
 	Object.defineProperty(exports, '__esModule', { value: true });
 

@@ -2,12 +2,12 @@
  * @module common/AST
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Tue Nov 06 2018 10:06:22 GMT+0800 (China Standard Time)
- * @modified Sat Dec 15 2018 20:24:10 GMT+0800 (China Standard Time)
+ * @modified Mon Dec 17 2018 20:03:32 GMT+0800 (China Standard Time)
  */
 import { MatchContext } from './MatchContext'
 import { eachCharCodes } from './util'
 import { assert } from '../assert'
-import { isStr, isBool } from '../is'
+import { isStr, isBool, isFn } from '../is'
 import { PROTOTYPE, CONSTRUCTOR } from '../consts'
 
 export class MatchError {
@@ -25,7 +25,10 @@ export class MatchError {
 		this.source = source
 		this.context = context
 		this.rule = rule
-		this.pos = context.currPos()
+		this.pos = context.startPos()
+	}
+	position(): [number, number, string] {
+		return this.context.source.position(this.pos)
 	}
 }
 
@@ -42,6 +45,15 @@ function defaultMatch(data: any, len: number, context: MatchContext) {
 
 export function discardMatch(data: any, len: number, context: MatchContext) {}
 
+export function appendMatch(data: any, len: number, context: MatchContext) {
+	context.addAll(data)
+}
+export function attachMatch(val) {
+	const fn = isFn(val) ? val : () => val
+	return (data: any, len: number, context: MatchContext) => {
+		context.add(fn(data, len, context))
+	}
+}
 let idGen = 0
 /**
  * Abstract Rule
@@ -52,6 +64,8 @@ export class Rule {
 	protected type: string
 	// rule id
 	readonly id: number
+	readonly name: string
+	readonly capturable: boolean
 	// rule expression (for debug)
 	protected expr: string
 	// rule EXPECT content (for debug)
@@ -71,13 +85,10 @@ export class Rule {
 	 * @param onMatch		callback on matched, allow modify the match result or return an error
 	 * @param onErr			callback on Error, allow to ignore error or modify error message or return new error
 	 */
-	constructor(
-		public readonly name: string,
-		public readonly capturable: boolean,
-		onMatch: onMatchCallback,
-		onErr: onErrorCallback
-	) {
+	constructor(name: string, capturable: boolean, onMatch: onMatchCallback, onErr: onErrorCallback) {
 		this.id = idGen++
+		this.name = name
+		this.capturable = capturable !== false
 		this.onMatch = onMatch || defaultMatch
 		this.onErr = onErr || defaultErr
 	}
@@ -139,7 +150,7 @@ export class Rule {
 	 * prepare test before match
 	 */
 	test(context: MatchContext): boolean {
-		return context.nextCode() !== 0
+		return true //return context.nextCode() !== 0
 	}
 
 	protected startCodeTest(context: MatchContext): boolean {

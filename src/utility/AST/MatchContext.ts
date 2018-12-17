@@ -2,9 +2,9 @@
  * @module utility/AST
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Tue Dec 11 2018 15:36:42 GMT+0800 (China Standard Time)
- * @modified Sat Dec 15 2018 17:31:42 GMT+0800 (China Standard Time)
+ * @modified Mon Dec 17 2018 17:28:52 GMT+0800 (China Standard Time)
  */
-
+import { Source } from './Source'
 import { char, charCode } from '../string'
 import { assert } from '../assert'
 /**
@@ -15,7 +15,7 @@ export class MatchContext {
 	data: any[]
 
 	// start offset of original buff
-	readonly orgBuff: string
+	readonly source: Source
 
 	// start offset of original buff
 	private orgPos: number
@@ -33,16 +33,16 @@ export class MatchContext {
 	private codeCache: number
 
 	// parent context
-	private readonly parent: MatchContext
+	readonly parent: MatchContext
 
-	constructor(buff: string, offset: number, orgBuff: string, orgPos: number, parent?: MatchContext, code?: number) {
-		this.data = []
-		this.advanced = 0
+	constructor(source: Source, buff: string, offset: number, orgPos: number, parent?: MatchContext, code?: number) {
+		this.source = source
 		this.buff = buff
 		this.offset = offset
-		this.orgBuff = orgBuff
 		this.orgPos = orgPos
 		this.parent = parent
+		this.data = []
+		this.advanced = 0
 		code ? (this.codeCache = code) : this.flushCache()
 	}
 
@@ -55,35 +55,53 @@ export class MatchContext {
 	 * create sub Context
 	 */
 	create() {
-		return new MatchContext(this.buff, this.offset, this.orgBuff, this.orgPos + this.advanced, this, this.codeCache)
+		return new MatchContext(this.source, this.buff, this.offset, this.orgPos + this.advanced, this, this.codeCache)
 	}
 
-	commit(margeData?: boolean) {
-		const { parent, advanced } = this
-		if (parent) {
-			parent.advance(advanced)
-			this.orgPos += advanced
-			this.advanced = 0
-			margeData ? parent.addAll(this.data) : parent.add(this.data)
-		}
+	/**
+	 * commit context states to parent context
+	 * @param margeData is marge data to parent
+	 */
+	commit() {
+		const { advanced } = this
+		this.parent.advance(advanced)
+		this.orgPos += advanced
+		this.advanced = 0
 	}
 
+	/**
+	 *
+	 * @param len 		reset buff length
+	 * @param dataLen 	reset data length
+	 */
 	reset(len?: number, dataLen?: number) {
+		len || (len = 0)
 		assert.range(len, 0, this.advanced + 1)
 		this.advance(-(this.advanced - len))
-		dataLen >= 0 && this.resetData(dataLen)
+		this.resetData(dataLen || 0)
 	}
 
+	len(): number {
+		return this.advanced
+	}
+
+	/**
+	 * advance buffer position
+	 */
 	advance(i: number) {
 		this.offset += i
 		this.advanced += i
 		if (this.offset < 0) {
-			this.buff = this.orgBuff
+			this.buff = this.source.buff
 			this.offset = this.orgPos + this.advanced
 		}
 		this.flushCache()
 	}
 
+	/**
+	 * get buffer
+	 * @param reset reset buffer string from 0
+	 */
 	getBuff(reset?: boolean): string {
 		if (reset) {
 			const { offset } = this
@@ -92,6 +110,7 @@ export class MatchContext {
 		}
 		return this.buff
 	}
+
 	getOffset(): number {
 		return this.offset
 	}
@@ -104,13 +123,11 @@ export class MatchContext {
 		return this.orgPos + this.advanced
 	}
 
-	position(): [number, number] {
+	pos(): [number, number] {
 		const { orgPos } = this
 		return [orgPos, orgPos + this.advanced]
 	}
-	len(): number {
-		return this.advanced
-	}
+
 	/**
 	 * get next char code
 	 * @return number char code number
