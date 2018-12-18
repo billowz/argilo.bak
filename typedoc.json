@@ -2,7 +2,7 @@
 	"name": "Argilo",
 	"out": "./doc",
 	"readme": "./README.md",
-	"exclude": ["**/*.spec.ts", "**/*.perf.ts"],
+	"exclude": ["**/__spec__/**", "**/__perf__/**"],
 	"mode": "modules",
 	"module": "commonjs",
 	"target": "es6",

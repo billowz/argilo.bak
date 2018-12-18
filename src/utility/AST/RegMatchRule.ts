@@ -2,7 +2,7 @@
  * @module utility/AST
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Tue Dec 11 2018 15:36:42 GMT+0800 (China Standard Time)
- * @modified Sat Dec 15 2018 11:53:49 GMT+0800 (China Standard Time)
+ * @modified Tue Dec 18 2018 18:57:41 GMT+0800 (China Standard Time)
  */
 
 import { MatchError, onMatchCallback, onErrorCallback } from './Rule'
@@ -12,14 +12,16 @@ import { regStickySupport } from '../reg'
 import { isInt } from '../is'
 import { createFn } from '../fn'
 import { map, mapArray } from '../collection'
+import { mixin } from '../mixin'
 
 /**
  * match string by RegExp
  *
  * optimization:
  * - Priority use sticky mode {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp/sticky}
-
+ *
  */
+@mixin({ type: 'RegExp' })
 export class RegMatchRule extends MatchRule {
 	readonly regexp: RegExp
 	readonly pick: boolean | number
@@ -68,7 +70,6 @@ export class RegMatchRule extends MatchRule {
 		)
 
 		super(name, start, ignoreCase, capturable, onMatch, onErr)
-		this.type = 'RegExp'
 		this.regexp = regexp
 		this.pick = pick
 		this.match = sticky ? this.stickyMatch : this.execMatch

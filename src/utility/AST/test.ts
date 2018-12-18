@@ -1,5 +1,5 @@
 import { makeMap } from '../collection'
-import { match, discardMatch, and, anyOne, many, option, or, any } from '.'
+import { match, discardMatch, and, anyOne, many, option, or, any } from './api'
 import { reEscape } from '../reg'
 import { escapeStr } from '../string'
 import { MatchContext } from './MatchContext'
@@ -229,7 +229,6 @@ export const ElemContent = and(
 )
 
 ElemContent.init()
-
 
 function attachValue(type, valHandler) {
 	return function(data: any, len: number, ctx: MatchContext) {

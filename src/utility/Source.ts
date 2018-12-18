@@ -1,5 +1,12 @@
-import { pad } from '../format'
-import { escapeStr } from '../string'
+/**
+ * @module utility/Source
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Mon Dec 17 2018 10:41:21 GMT+0800 (China Standard Time)
+ * @modified Tue Dec 18 2018 19:00:14 GMT+0800 (China Standard Time)
+ */
+
+import { pad } from './format'
+import { escapeStr } from './string'
 
 const LINE_REG = /([^\n]+)?(\n|$)/g
 export class Source {

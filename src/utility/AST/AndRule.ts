@@ -1,36 +1,24 @@
 /**
  *
- * @module common/AST
+ * @module utility/AST
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Tue Nov 27 2018 19:05:48 GMT+0800 (China Standard Time)
- * @modified Mon Dec 17 2018 17:08:28 GMT+0800 (China Standard Time)
+ * @modified Tue Dec 18 2018 18:56:20 GMT+0800 (China Standard Time)
  */
 
-import { Rule, onMatchCallback, onErrorCallback, MatchError } from './Rule'
+import { Rule, MatchError } from './Rule'
 import { MatchContext } from './MatchContext'
-import { ComplexRule, ruleBuilder } from './ComplexRule'
+import { ComplexRule } from './ComplexRule'
+import { mixin } from '../mixin'
 
 /**
- * and complex rule interface
+ * AND Complex Rule
  *
  */
+@mixin({ type: 'And', split: ' ' })
 export class AndRule extends ComplexRule {
-	split = ' '
-	constructor(
-		name: string,
-		repeat: [number, number],
-		builder: ruleBuilder,
-		capturable: boolean,
-		onMatch: onMatchCallback,
-		onErr: onErrorCallback
-	) {
-		super(name, 'And', repeat, builder, capturable, onMatch, onErr)
-	}
-	init(): Rule[] {
-		const rules = super.init()
-
+	__init(rules: Rule[]) {
 		this.setStartCodes(rules[0].getStart([this.id]))
-		return rules
 	}
 	match(context: MatchContext): MatchError {
 		const rules = this.getRules(),

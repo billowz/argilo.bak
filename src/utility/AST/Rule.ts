@@ -1,23 +1,25 @@
 /**
- * @module common/AST
+ * @module utility/AST
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Tue Nov 06 2018 10:06:22 GMT+0800 (China Standard Time)
- * @modified Mon Dec 17 2018 20:03:32 GMT+0800 (China Standard Time)
+ * @modified Tue Dec 18 2018 18:57:47 GMT+0800 (China Standard Time)
  */
 import { MatchContext } from './MatchContext'
 import { eachCharCodes } from './util'
 import { assert } from '../assert'
-import { isStr, isBool, isFn } from '../is'
-import { PROTOTYPE, CONSTRUCTOR } from '../consts'
+import { isStr, isBool } from '../is'
+import { PROTOTYPE } from '../consts'
+import { mixin } from '../mixin'
 
+@mixin({ $ruleErr: true })
 export class MatchError {
-	readonly $ruleErr: boolean = true
+	readonly $ruleErr: boolean
 	readonly rule: Rule
 	readonly context: MatchContext
-	source: MatchError
+	readonly source: MatchError
 	readonly capturable: boolean
+	readonly pos: number
 	msg: string
-	pos: number
 	constructor(msg: string, capturable: boolean, source: MatchError, context: MatchContext, rule: Rule) {
 		!isBool(capturable) && (capturable = rule.capturable)
 		this.capturable = capturable && source ? source.capturable : capturable
@@ -43,25 +45,15 @@ function defaultMatch(data: any, len: number, context: MatchContext) {
 	context.add(data)
 }
 
-export function discardMatch(data: any, len: number, context: MatchContext) {}
-
-export function appendMatch(data: any, len: number, context: MatchContext) {
-	context.addAll(data)
-}
-export function attachMatch(val) {
-	const fn = isFn(val) ? val : () => val
-	return (data: any, len: number, context: MatchContext) => {
-		context.add(fn(data, len, context))
-	}
-}
 let idGen = 0
 /**
  * Abstract Rule
  */
+@mixin({ $rule: true })
 export class Rule {
-	readonly $rule: boolean = true
+	readonly $rule: boolean
 	// rule type (for debug)
-	protected type: string
+	type: string
 	// rule id
 	readonly id: number
 	readonly name: string

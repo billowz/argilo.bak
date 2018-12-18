@@ -3,12 +3,13 @@
  * @module utility/List
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
- * @modified Mon Dec 10 2018 19:07:47 GMT+0800 (China Standard Time)
+ * @modified Tue Dec 18 2018 19:25:11 GMT+0800 (China Standard Time)
  */
 
 import { bind } from '../fn'
 import { defPropValue } from '../prop'
 import { assert } from '../assert'
+import { EMPTY_FN } from '../consts'
 
 const DEFAULT_BINDING = '__this__'
 
@@ -17,6 +18,7 @@ interface ListNode<T> extends Array<any> {
 	1?: ListNode<T>
 	2?: ListNode<T>
 	3?: List<T>
+	toJSON?: () => any
 }
 //type ListNode = [ListElement, IListNode, IListNode, List]
 
@@ -104,9 +106,7 @@ export class List<T> {
 	remove(obj: T): number {
 		return this.__remove(this.__getNode(obj))
 	}
-	pop(){
-
-	}
+	pop() {}
 	clean() {
 		if (this.length) {
 			if (this.scaning) {
@@ -121,7 +121,6 @@ export class List<T> {
 			}
 		}
 	}
-	toJSON(){}
 
 	protected __initNode(obj: T): ListNode<T> {
 		const { binding } = this
@@ -135,6 +134,7 @@ export class List<T> {
 			}
 		} else {
 			node = [obj]
+			node.toJSON = EMPTY_FN
 			defPropValue(obj, binding, node, false)
 		}
 		node[3] = this

@@ -32,6 +32,8 @@ export const GLOBAL: any =
 		: {}
 
 export interface ObjArray {
-	length: number;
+	length: number
 }
-export  type IArray = any[] |string | IArguments | ObjArray
+export type IArray = any[] | string | IArguments | ObjArray
+
+export function EMPTY_FN() {}

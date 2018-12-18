@@ -2,9 +2,9 @@
  * @module utility/AST
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Tue Dec 11 2018 15:36:42 GMT+0800 (China Standard Time)
- * @modified Mon Dec 17 2018 17:28:52 GMT+0800 (China Standard Time)
+ * @modified Tue Dec 18 2018 19:00:01 GMT+0800 (China Standard Time)
  */
-import { Source } from './Source'
+import { Source } from '../Source'
 import { char, charCode } from '../string'
 import { assert } from '../assert'
 /**

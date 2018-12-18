@@ -1,8 +1,8 @@
 /**
- * @module common/AST
+ * @module utility/AST
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Tue Nov 06 2018 10:06:22 GMT+0800 (China Standard Time)
- * @modified Mon Dec 17 2018 14:33:00 GMT+0800 (China Standard Time)
+ * @modified Tue Dec 18 2018 18:57:32 GMT+0800 (China Standard Time)
  */
 
 import { Rule, MatchError, onMatchCallback, onErrorCallback } from './Rule'
@@ -12,7 +12,6 @@ import { MatchContext } from './MatchContext'
  * Match Rule Interface
  */
 export class MatchRule extends Rule {
-	protected readonly index: number[]
 	protected readonly ignoreCase: boolean
 	/**
 	 * @param name 			match name

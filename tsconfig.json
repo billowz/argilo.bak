@@ -16,7 +16,8 @@
 		"noImplicitUseStrict": true,
 		"allowUnusedLabels": true,
 		"allowJs": false,
-		"pretty": true
+		"pretty": true,
+		"resolveJsonModule": true
 	},
 	"include": ["src/**/*", "types/*"],
 	"exclude": ["node_modules"]

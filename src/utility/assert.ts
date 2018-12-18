@@ -2,7 +2,7 @@
  * @module utility/assert
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Nov 28 2018 11:01:45 GMT+0800 (China Standard Time)
- * @modified Sat Dec 15 2018 16:33:50 GMT+0800 (China Standard Time)
+ * @modified Tue Dec 18 2018 20:34:46 GMT+0800 (China Standard Time)
  */
 
 import {
@@ -33,6 +33,7 @@ import { createFn } from '../utility/fn'
 import { eachObj, makeArray } from '../utility/collection'
 import { formatter } from './format'
 import { isError } from 'util'
+import { deepEq } from './deepEq'
 
 const formatters = [],
 	formatArgHandlers: ((args: any[] | IArguments, offset: number) => any)[] = []
@@ -51,6 +52,7 @@ export interface assert {
 	is(actual: any, msg?: string, ...args: any[]): assert
 	not(actual: any, msg?: string, ...args: any[]): assert
 	eq(actual: any, expect: any, msg?: string, ...args: any[]): assert
+	eql(actual: any, expect: any, msg?: string, ...args: any[]): assert
 	blank(actual: any, msg?: string, ...args: any[]): assert
 	nul(actual: any, msg?: string, ...args: any[]): assert
 	nil(actual: any, msg?: string, ...args: any[]): assert
@@ -78,6 +80,7 @@ export interface assert {
 	range(actual: number, start: number, end: number, msg?: string, ...args: any[]): assert
 
 	notEq(actual: any, expect: any, msg?: string, ...args: any[]): assert
+	notEql(actual: any, expect: any, msg?: string, ...args: any[]): assert
 	notBlank(actual: any, msg?: string, ...args: any[]): assert
 	notNul(actual: any, msg?: string, ...args: any[]): assert
 	notNil(actual: any, msg?: string, ...args: any[]): assert
@@ -150,7 +153,7 @@ function extendAssert<T extends Function>(
 	condition: string | ((...args: any) => boolean) | [string | ((...args: any) => boolean), string?],
 	args: string | number | string[],
 	dmsg: string,
-	Err?: typeof Error | typeof TypeError | typeof SyntaxError
+	Err?: { new (message?: string): Error }
 ): T {
 	const params: string[] = isStr(args)
 			? (args as string).split(/,/g)
@@ -175,7 +178,7 @@ type APIDescriptor = [
 	string | ((...args: any) => boolean), // condition
 	string | number | string[], // arguments
 	[string, string], // expect or [err msg, not err msg]
-	(typeof Error | typeof TypeError | typeof SyntaxError)?
+	({ new (message?: string): Error })?
 ]
 
 // [condition, argcount?, [msg, not msg], Error]
@@ -205,6 +208,7 @@ extendAssert('is', '!o', 'o', expectMsg('Exist'))
 extendAssert('not', 'o', 'o', expectMsg('Not Exist'))
 extendAsserts({
 	eq: [eq, 2, mkMsg(objFormatter(1))],
+	eql: [deepEq, 2, mkMsg(objFormatter(1))],
 	nul: [isNull, 1, mkMsg(NULL)],
 	nil: [isNil, 1, mkMsg(typeExpect(NULL, UNDEFINED))],
 	undef: [isUndef, 1, mkMsg(UNDEFINED)],
@@ -248,7 +252,7 @@ function expectMsg(expect: string, not?: boolean, to?: string): string {
 }
 
 function objFormatter(idx) {
-	return `{${idx}:.20="..."j}`
+	return `{${idx}:.80="..."j}`
 }
 
 function packTypeExpect(base: string, all?: boolean): string {

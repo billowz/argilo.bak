@@ -1,38 +1,27 @@
 /**
  *
- * @module common/AST
+ * @module utility/AST
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Tue Nov 27 2018 19:05:48 GMT+0800 (China Standard Time)
- * @modified Mon Dec 17 2018 19:49:49 GMT+0800 (China Standard Time)
+ * @modified Tue Dec 18 2018 18:50:33 GMT+0800 (China Standard Time)
  */
 
-import { Rule, onMatchCallback, onErrorCallback, MatchError } from './Rule'
+import { Rule, MatchError } from './Rule'
 import { MatchContext } from './MatchContext'
-import { ComplexRule, ruleBuilder } from './ComplexRule'
+import { ComplexRule } from './ComplexRule'
 import { eachCharCodes } from './util'
+import { mixin } from '../mixin'
 
 /**
- * and complex rule interface
- *
+ * OR Complex Rule
  */
+@mixin({ type: 'Or', split: ' | ' })
 export class OrRule extends ComplexRule {
 	startCodeIdx: Rule[][]
-	split = ' | '
 	index: Rule[][]
-	constructor(
-		name: string,
-		repeat: [number, number],
-		builder: ruleBuilder,
-		capturable: boolean,
-		onMatch: onMatchCallback,
-		onErr: onErrorCallback
-	) {
-		super(name, 'Or', repeat, builder, capturable, onMatch, onErr)
-	}
-	init(): Rule[] {
-		const rules = super.init(),
-			len = rules.length,
-			id = this.id,
+	__init(rules: Rule[]) {
+		const { id } = this
+		const len = rules.length,
 			starts: number[] = [], // all distinct start codes
 			rStarts: number[][] = [], // start codes per rule
 			index: Rule[][] = [
@@ -79,8 +68,8 @@ export class OrRule extends ComplexRule {
 
 		this.index = starts.length && index
 		starts.length && !index[0].length && this.setCodeIdx(index)
-		return rules
 	}
+
 	match(context: MatchContext): MatchError {
 		const { index } = this
 		const rules: Rule[] = index ? index[context.nextCode()] || index[0] : this.getRules(),

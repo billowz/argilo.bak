@@ -3,7 +3,7 @@
  * @module utility/List
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
- * @modified Mon Dec 10 2018 18:48:02 GMT+0800 (China Standard Time)
+ * @modified Tue Dec 18 2018 19:32:10 GMT+0800 (China Standard Time)
  */
 
 import { List } from './List'
@@ -13,7 +13,7 @@ import { defPropValue } from '../prop'
 const DEFAULT_FN_BINDING = '__id__'
 const DEFAULT_SCOPE_BINDING = '__id__'
 
-type FnNode<T extends Function> = [string, T, any, any]
+type FnNode<T extends Function> = [string, T, any]
 export class FnList<T extends Function> {
 	static readonly fnBinding: string = DEFAULT_FN_BINDING
 	static readonly scopeBinding: string = DEFAULT_SCOPE_BINDING
@@ -29,13 +29,13 @@ export class FnList<T extends Function> {
 		this.fnBinding = fnBinding || DEFAULT_FN_BINDING
 		this.scopeBinding = scopeBinding || DEFAULT_SCOPE_BINDING
 	}
-	add(fn: T, scope?: any, data?: any): number {
+	add(fn: T, scope?: any): number {
 		scope = parseScope(scope)
 		const { list, nodeMap } = this
 		const id = nodeId(this, fn, scope)
 		let node = nodeMap[id]
 		if (!node) {
-			node = [id, fn, scope, data]
+			node = [id, fn, scope]
 			var ret = list.add(node)
 			if (ret) nodeMap[id] = node
 			return ret
@@ -62,11 +62,10 @@ export class FnList<T extends Function> {
 		this.nodeMap = create(null)
 		this.list.clean()
 	}
-	each(cb: (fn: T, scope: any, data: any) => boolean | void, scope?: any) {
+	each(cb: (fn: T, scope: any) => boolean | void, scope?: any) {
 		cb = cb.bind(scope)
-		this.list.each(node => cb(node[1], node[2], node[3]))
+		this.list.each(node => cb(node[1], node[2]))
 	}
-	toJSON(){}
 }
 
 const DEFAULT_SCOPE_ID = 1

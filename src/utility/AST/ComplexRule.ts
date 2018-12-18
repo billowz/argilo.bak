@@ -1,29 +1,27 @@
 /**
- * @module common/AST
+ * @module utility/AST
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Tue Nov 06 2018 10:06:22 GMT+0800 (China Standard Time)
- * @modified Mon Dec 17 2018 17:28:14 GMT+0800 (China Standard Time)
+ * @modified Tue Dec 18 2018 18:57:10 GMT+0800 (China Standard Time)
  */
 
 import { Rule, MatchError, onMatchCallback, onErrorCallback } from './Rule'
 import { MatchContext } from './MatchContext'
 import { assert } from '../assert'
 import { idxOfArray } from '../collection'
-import { PROTOTYPE } from '../consts'
 import { pad } from '../format'
 import { escapeStr } from '../string'
-import { Source } from './Source'
+import { Source } from '../Source'
 
 export type ruleBuilder = (rule: Rule) => Rule[]
 
 /**
- * complex rule interface
- *
+ * Abstract Complex Rule
  */
 export class ComplexRule extends Rule {
-	protected split: string
-	protected EXPECTS: string[]
+	readonly split: string
 	private builder: ruleBuilder
+	protected EXPECTS: string[]
 	protected rules: Rule[]
 	protected readonly repeat: [number, number]
 	/**
@@ -35,7 +33,6 @@ export class ComplexRule extends Rule {
 	 */
 	constructor(
 		name: string,
-		type: string,
 		repeat: [number, number],
 		builder: ruleBuilder,
 		capturable: boolean,
@@ -51,11 +48,10 @@ export class ComplexRule extends Rule {
 		this.repeat = [repeat[0], repeat[1]]
 		if (repeat[0] !== repeat[1] || repeat[0] !== 1) {
 			this.match = this.repeatMatch
-			type = `${type}[${repeat[0]}${
+			this.type = `${this.type}[${repeat[0]}${
 				repeat[0] === repeat[1] ? '' : ` - ${repeat[1] === 1e5 ? 'MAX' : repeat[1]}`
 			}]`
 		}
-		this.type = type
 	}
 	parse(buff: string, errSource?: boolean): any[] {
 		const ctx = new MatchContext(new Source(buff), buff, 0, 0)
@@ -79,14 +75,13 @@ export class ComplexRule extends Rule {
 	protected repeatMatch(context: MatchContext): MatchError {
 		return assert()
 	}
-	init(): Rule[] {
+	init(): ComplexRule {
 		const rules = this.builder(this)
 		let i = rules && rules.length
 
 		assert.is(i, `Require Complex Rules`)
 
 		this.rules = rules
-		this.builder = null
 
 		const names = this.rnames(rules)
 
@@ -95,14 +90,19 @@ export class ComplexRule extends Rule {
 		while (i--) names[i] = `Expect[${i}]: ${names[i]}`
 		this.EXPECTS = names
 
-		return rules
+		this.__init(rules)
+
+		this.builder = null
+
+		return this
 	}
+	__init(rules: Rule[]) {}
 
 	protected setCodeIdx(index: any[]) {
 		if (this.repeat[0]) super.setCodeIdx(index)
 	}
 	getRules(): Rule[] {
-		return this.rules || this.init()
+		return this.rules || (this.init(), this.rules)
 	}
 
 	getStart(stack?: number[]): number[] {
