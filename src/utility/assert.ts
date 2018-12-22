@@ -2,7 +2,7 @@
  * @module utility/assert
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Nov 28 2018 11:01:45 GMT+0800 (China Standard Time)
- * @modified Tue Dec 18 2018 20:34:46 GMT+0800 (China Standard Time)
+ * @modified Fri Dec 21 2018 14:17:26 GMT+0800 (China Standard Time)
  */
 
 import {
@@ -32,18 +32,16 @@ import { upperFirst, escapeStr } from '../utility/string'
 import { createFn } from '../utility/fn'
 import { eachObj, makeArray } from '../utility/collection'
 import { formatter } from './format'
-import { isError } from 'util'
 import { deepEq } from './deepEq'
 
 const formatters = [],
 	formatArgHandlers: ((args: any[] | IArguments, offset: number) => any)[] = []
 function parseMessage(msg: string, args: any[] | IArguments, msgIdx: number): string {
-	const fs =
-		formatters[msgIdx] ||
-		((formatArgHandlers[msgIdx] = (args, offset) => {
-			return args[0][offset >= msgIdx ? offset + 1 : offset]
-		}),
-		(formatters[msgIdx] = create(null)))
+	let fs = formatters[msgIdx]
+	if (!fs) {
+		formatArgHandlers[msgIdx] = (args, offset) => args[0][offset >= msgIdx ? offset + 1 : offset]
+		formatters[msgIdx] = fs = create(null)
+	}
 	return (fs[msg] || (fs[msg] = formatter(msg, msgIdx, formatArgHandlers[msgIdx])))(args)
 }
 
@@ -114,7 +112,7 @@ export const assert = <assert>function assert(msg?: string): never {
 	throw new Error(parseMessage(msg || 'Error', arguments, 0))
 }
 
-function catchErr(fn): Error {
+function catchErr(fn: () => any): Error {
 	try {
 		fn()
 	} catch (e) {
@@ -251,7 +249,7 @@ function expectMsg(expect: string, not?: boolean, to?: string): string {
 	return `Expected ${objFormatter(0)} ${not ? 'not ' : ''}${to || 'to'} ${expect}`
 }
 
-function objFormatter(idx) {
+function objFormatter(idx: number): string {
 	return `{${idx}:.80="..."j}`
 }
 

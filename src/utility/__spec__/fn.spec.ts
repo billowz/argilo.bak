@@ -2,7 +2,7 @@ import expect from 'expect.js'
 import { apply, applyN, applyNoScope, applyNoScopeN, applyScope, applyScopeN, createFn, fnName } from '../fn'
 
 describe('utility/fn', function() {
-	describe('bind', function(){
+	describe('bind', function() {
 		it('bind scope')
 		it('bind arguments')
 		it('bind scope + arguments')

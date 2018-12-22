@@ -125,7 +125,7 @@ function output(options) {
 	return Object.assign(
 		{
 			banner,
-			sourcemap: true
+			sourcemap: false
 		},
 		options
 	)

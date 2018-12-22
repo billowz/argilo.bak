@@ -2,10 +2,10 @@
  * @module utility/AST
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Tue Nov 06 2018 10:06:22 GMT+0800 (China Standard Time)
- * @modified Tue Dec 18 2018 18:57:10 GMT+0800 (China Standard Time)
+ * @modified Sat Dec 22 2018 15:24:21 GMT+0800 (China Standard Time)
  */
 
-import { Rule, MatchError, onMatchCallback, onErrorCallback } from './Rule'
+import { Rule, MatchError, onMatchCallback, onErrorCallback, RuleOptions } from './Rule'
 import { MatchContext } from './MatchContext'
 import { assert } from '../assert'
 import { idxOfArray } from '../collection'
@@ -13,48 +13,50 @@ import { pad } from '../format'
 import { escapeStr } from '../string'
 import { Source } from '../Source'
 
-export type ruleBuilder = (rule: Rule) => Rule[]
+export type ComplexRuleBuilder = (rule: Rule) => Rule[]
 
+const MAX = -1 >>> 0
 /**
  * Abstract Complex Rule
  */
 export class ComplexRule extends Rule {
 	readonly split: string
-	private builder: ruleBuilder
+	private builder: ComplexRuleBuilder
 	protected EXPECTS: string[]
 	protected rules: Rule[]
-	protected readonly repeat: [number, number]
+	protected readonly rMin: number
+	protected readonly rMax: number
+
 	/**
 	 * @param name 			match name
 	 * @param builder 		callback of build rules
-	 * @param capturable	error is capturable
-	 * @param onMatch		match callback
-	 * @param onErr			error callback
+	 * @param options		Rule Options
 	 */
-	constructor(
-		name: string,
-		repeat: [number, number],
-		builder: ruleBuilder,
-		capturable: boolean,
-		onMatch: onMatchCallback,
-		onErr: onErrorCallback
-	) {
-		super(name, capturable, onMatch, onErr)
+	constructor(name: string, repeat: [number, number], builder: ComplexRuleBuilder, options: RuleOptions) {
+		super(name, options)
+
+		let [rMin, rMax] = repeat
+
+		rMin < 0 && (rMin = 0)
+		rMax <= 0 && (rMax = MAX)
+
+		assert.notGreater(rMin, rMax)
+
+		this.rMin = rMin
+		this.rMax = rMax
+
 		this.builder = builder
 
-		if (!(repeat[0] >= 0)) repeat[0] = 0
-		if (!(repeat[1] > 0)) repeat[1] = 1e5
-		assert.notGreater(repeat[0], repeat[1])
-		this.repeat = [repeat[0], repeat[1]]
-		if (repeat[0] !== repeat[1] || repeat[0] !== 1) {
+		if (rMin !== rMax || rMin !== 1) {
 			this.match = this.repeatMatch
-			this.type = `${this.type}[${repeat[0]}${
-				repeat[0] === repeat[1] ? '' : ` - ${repeat[1] === 1e5 ? 'MAX' : repeat[1]}`
-			}]`
+
+			// for debug
+			this.type = `${this.type}[${rMin}${rMin === rMax ? '' : ` - ${rMax === MAX ? 'MAX' : rMax}`}]`
 		}
 	}
-	parse(buff: string, errSource?: boolean): any[] {
+	parse(buff: string, data?: any): any[] {
 		const ctx = new MatchContext(new Source(buff), buff, 0, 0)
+		ctx.data = data
 		let err = this.match(ctx)
 		if (err) {
 			const msg = []
@@ -67,13 +69,10 @@ export class ComplexRule extends Rule {
 					} on "${escapeStr(pos[2])}"`
 				)
 			} while ((err = err.source))
-			if (errSource !== false) msg.push('[Source]', ctx.source.source())
+			msg.push('[Source]', ctx.source.source())
 			throw new SyntaxError(msg.join('\n'))
 		}
-		return ctx.data
-	}
-	protected repeatMatch(context: MatchContext): MatchError {
-		return assert()
+		return ctx.result
 	}
 	init(): ComplexRule {
 		const rules = this.builder(this)
@@ -83,10 +82,9 @@ export class ComplexRule extends Rule {
 
 		this.rules = rules
 
+		// generate expression and expect string for debug
 		const names = this.rnames(rules)
-
 		this.setExpr(names.join(this.split))
-
 		while (i--) names[i] = `Expect[${i}]: ${names[i]}`
 		this.EXPECTS = names
 
@@ -98,9 +96,14 @@ export class ComplexRule extends Rule {
 	}
 	__init(rules: Rule[]) {}
 
-	protected setCodeIdx(index: any[]) {
-		if (this.repeat[0]) super.setCodeIdx(index)
+	protected repeatMatch(context: MatchContext): MatchError {
+		return assert()
 	}
+
+	protected setCodeIdx(index: any[]) {
+		this.rMin && super.setCodeIdx(index)
+	}
+
 	getRules(): Rule[] {
 		return this.rules || (this.init(), this.rules)
 	}
@@ -115,11 +118,12 @@ export class ComplexRule extends Rule {
 	}
 
 	consume(context: MatchContext): MatchError {
-		const err = this.matched(context.data, context.len(), context.parent)
+		const err = this.matched(context.result, context.advanced(), context.parent)
 		!err && context.commit()
 		return err
 	}
 
+	// for debug
 	private rnames(rules: Rule[], stack?: number[]): string[] {
 		let i = rules.length
 		const names: string[] = new Array(i),
@@ -135,7 +139,7 @@ export class ComplexRule extends Rule {
 		return name
 			? name
 			: stack
-			? ((i = idxOfArray(stack, id)), ~i)
+			? ~(i = idxOfArray(stack, id))
 				? `<${this.type} -> $${stack[i]}>`
 				: this.mkExpr(this.rnames(this.getRules(), stack).join(this.split))
 			: this.expr

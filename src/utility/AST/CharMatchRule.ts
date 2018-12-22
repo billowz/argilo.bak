@@ -3,13 +3,14 @@
  * @module utility/AST
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Tue Dec 11 2018 15:36:42 GMT+0800 (China Standard Time)
- * @modified Tue Dec 18 2018 18:56:48 GMT+0800 (China Standard Time)
+ * @modified Sat Dec 22 2018 14:53:49 GMT+0800 (China Standard Time)
  */
 
-import { onMatchCallback, onErrorCallback } from './Rule'
+import { RuleOptions } from './Rule'
 import { MatchContext } from './MatchContext'
 import { MatchRule } from './MatchRule'
 import { char } from '../string'
+import { mixin } from '../mixin'
 
 /**
  * match a character in the allowed list
@@ -17,28 +18,20 @@ import { char } from '../string'
  *
  * > must call test() before match
  */
+@mixin({ type: 'Character' })
 export class CharMatchRule extends MatchRule {
-	type: string = 'Character'
 	/**
 	 * @param name 			match name
 	 * @param allows 		allowed character codes for match
 	 * 						well match any character if the allowed list is empty
 	 * @param ignoreCase	ignore case for the allowed character codes
-	 * @param capturable	error is capturable
-	 * @param onMatch		match callback
-	 * @param onErr			error callback
+	 * @param options		Rule Options
 	 */
-	constructor(
-		name: string,
-		allows: number | string | any[],
-		ignoreCase: boolean,
-		capturable: boolean,
-		onMatch: onMatchCallback,
-		onErr: onErrorCallback
-	) {
-		super(name, allows, ignoreCase, capturable, onMatch, onErr)
-		const codes = this.startCodes
+	constructor(name: string, allows: number | string | any[], ignoreCase: boolean, options: RuleOptions) {
+		super(name, allows, ignoreCase, options)
 
+		// generate expression for debug
+		const codes = this.startCodes
 		let i = codes.length,
 			expr = '*'
 		if (i) {

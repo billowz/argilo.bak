@@ -3,7 +3,7 @@
  * @module utility/reg
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Thu Sep 06 2018 18:27:51 GMT+0800 (China Standard Time)
- * @modified Tue Nov 27 2018 20:00:44 GMT+0800 (China Standard Time)
+ * @modified Sat Dec 22 2018 17:58:01 GMT+0800 (China Standard Time)
  */
 
 import { isBool } from './is'
@@ -11,7 +11,7 @@ import { isBool } from './is'
 /**
  * is support sticky on RegExp
  */
-export const regStickySupport = isBool(/(?:)/.sticky)
+export const regStickySupport = false //isBool(/(?:)/.sticky)
 
 /**
  * is support unicode on RegExp

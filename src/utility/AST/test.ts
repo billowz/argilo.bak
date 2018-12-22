@@ -178,12 +178,12 @@ const ELEM_NAME_REG = '[_a-zA-Z][\\w-]*',
 					option([match('ElemClose', new RegExp(`<\/(${ELEM_NAME_REG})>\\s*`), 1, '<')], (data, len, ctx) => {
 						const closeTag = data[0],
 							pctx = ctx.parent.parent,
-							tag = pctx.data[0]
+							tag = pctx.result[0]
 
 						if (closeTag) {
 							if (closeTag !== tag) {
 								if (AutoCloseElems[tag]) {
-									ctx.reset()
+									ctx.rollback()
 								} else {
 									return `expect: </${tag}>`
 								}
@@ -210,7 +210,7 @@ const ELEM_NAME_REG = '[_a-zA-Z][\\w-]*',
 	)
 
 function attachText(text: string, length: number, ctx: MatchContext) {
-	const data = ctx.data,
+	const data = ctx.result,
 		len = data.length
 	let prev
 	if (len && (prev = data[len - 1]) && prev.type === 'text') {

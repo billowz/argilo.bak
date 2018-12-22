@@ -2,17 +2,19 @@
  * @module utility/AST
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Tue Dec 11 2018 15:36:42 GMT+0800 (China Standard Time)
- * @modified Tue Dec 18 2018 18:57:41 GMT+0800 (China Standard Time)
+ * @modified Sat Dec 22 2018 15:09:12 GMT+0800 (China Standard Time)
  */
 
-import { MatchError, onMatchCallback, onErrorCallback } from './Rule'
+import { MatchError, RuleOptions } from './Rule'
 import { MatchContext } from './MatchContext'
 import { MatchRule } from './MatchRule'
 import { regStickySupport } from '../reg'
 import { isInt } from '../is'
 import { createFn } from '../fn'
-import { map, mapArray } from '../collection'
+import { mapArray } from '../collection'
 import { mixin } from '../mixin'
+import { create } from '../create'
+import { cutStrLen } from '../string'
 
 /**
  * match string by RegExp
@@ -46,9 +48,7 @@ export class RegMatchRule extends MatchRule {
 		regexp: RegExp,
 		pick: boolean | number,
 		start: number | string | any[],
-		capturable: boolean,
-		onMatch: onMatchCallback,
-		onErr: onErrorCallback
+		options: RuleOptions
 	) {
 		pick = pick === false || isInt(pick) ? pick : !!pick || 0
 
@@ -69,7 +69,8 @@ export class RegMatchRule extends MatchRule {
 			(ignoreCase ? 'i' : '') + (regexp.multiline ? 'm' : '') + (sticky ? 'y' : '')
 		)
 
-		super(name, start, ignoreCase, capturable, onMatch, onErr)
+		super(name, start, ignoreCase, options)
+
 		this.regexp = regexp
 		this.pick = pick
 		this.match = sticky ? this.stickyMatch : this.execMatch
@@ -78,41 +79,45 @@ export class RegMatchRule extends MatchRule {
 
 		this.setExpr(pattern)
 	}
-	match(context: MatchContext) {
-		return this.comsume(context.nextChar(), 1, context)
-	}
 	/**
 	 * match on sticky mode
 	 */
 	stickyMatch(context: MatchContext): MatchError {
 		const reg = this.regexp,
-			buff = context.getBuff(),
-			start = context.getOffset()
+			buff = context.buff(),
+			start = context.offset()
 		reg.lastIndex = start
+		let len: number
 		return reg.test(buff)
-			? this.comsume(this.spicker(buff, start, reg.lastIndex), reg.lastIndex - start, context)
+			? ((len = reg.lastIndex - start), this.comsume(this.spicker(buff, start, len), len, context))
 			: this.error(this.EXPECT, context)
 	}
 	/**
 	 * match on exec mode
 	 */
 	execMatch(context: MatchContext): MatchError {
-		const m = this.regexp.exec(context.getBuff(true))
-		if (m) {
-			return this.comsume(this.picker(m), m[0].length, context)
-		}
-		return this.error(this.EXPECT, context)
+		const m = this.regexp.exec(context.buff(true))
+		return m ? this.comsume(this.picker(m), m[0].length, context) : this.error(this.EXPECT, context)
 	}
 }
 
+const cache = create(null)
 function mkPicker(pick: number | boolean): (m: string[]) => string | string[] {
-	return pick === false
-		? pickNone
-		: pick === true
-		? pickAll
-		: pick >= 0
-		? (m: string[]): string => m[pick as number]
-		: createFn(`return ${mapArray(new Array(-pick), (v, i) => `m[${i + 1}]`).join(' || ')}`, ['m'])
+	return (
+		cache[pick as any] ||
+		(cache[pick as any] =
+			pick === false
+				? pickNone
+				: pick === true
+				? pickAll
+				: pick >= 0
+				? createFn(`return m[${pick}]`, ['m'], `pick_${pick}`)
+				: createFn(
+						`return ${mapArray(new Array(-pick), (v, i) => `m[${i + 1}]`).join(' || ')}`,
+						['m'],
+						`pick_1_${-pick}`
+				  ))
+	)
 }
 
 function pickNone(): string {
@@ -124,5 +129,5 @@ function pickAll(m: string[]): string[] {
 }
 
 function pickTestStr(buff: string, start: number, end: number): string {
-	return buff.substring(start, end)
+	return cutStrLen(buff, start, end)
 }

@@ -2,13 +2,13 @@
  * @module utility/collection
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Jul 25 2018 17:12:06 GMT+0800 (China Standard Time)
- * @modified Tue Nov 27 2018 13:54:35 GMT+0800 (China Standard Time)
+ * @modified Fri Dec 21 2018 14:09:49 GMT+0800 (China Standard Time)
  */
 
 import { Control } from './control'
 import { STOP, eachArray, reachArray, eachObj } from './each'
 import { IArray } from '../consts'
-import {create} from '../create'
+import { create } from '../create'
 import { bind } from '../fn'
 import { isArrayLike, isBool } from '../is'
 

@@ -4,6 +4,7 @@
 		"module": "commonjs",
 		"lib": ["es6", "es2015", "dom"],
 		"moduleResolution": "node",
+		"outDir":"./build",
 		"sourceMap": true,
 		"charset": "utf-8",
 		"newLine": "LF",

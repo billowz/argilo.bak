@@ -2,18 +2,18 @@
  * @module utility/format
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 03 2018 19:46:41 GMT+0800 (China Standard Time)
- * @modified Mon Dec 17 2018 19:24:20 GMT+0800 (China Standard Time)
+ * @modified Sat Dec 22 2018 15:08:24 GMT+0800 (China Standard Time)
  */
 
 import { createFn } from './fn'
 import { isFn } from './is'
 import { get, parsePath } from './propPath'
 import { create } from './create'
-import { charCode, upper, escapeStr } from './string'
+import { charCode, upper, escapeStr, cutStr } from './string'
 
 //========================================================================================
 /*                                                                                      *
- *                                       pad & cut                                      *
+ *                                     pad & shorten                                    *
  *                                                                                      */
 //========================================================================================
 
@@ -21,7 +21,7 @@ export function pad(str: string, len: number, chr?: string, leftAlign?: boolean 
 	return len > str.length ? __pad(str, len, chr, leftAlign) : str
 }
 
-export function cut(str: string, len: number, suffix?: string): string {
+export function shorten(str: string, len: number, suffix?: string): string {
 	return len < str.length ? ((suffix = suffix || ''), str.substr(0, len - suffix.length) + suffix) : str
 }
 
@@ -114,14 +114,14 @@ function parseFlags(f: string): FormatFlags {
 //========================================================================================
 
 //   0      1      2     3     4       5       6           7         8      9           10             11             12        13
-// [match, expr, index, prop, flags, width, width-idx, width-prop, fill, precision, precision-idx, precision-prop, cut-suffix, type]
+// [match, expr, index, prop, flags, width, width-idx, width-prop, fill, precision, precision-idx, precision-prop, shorten-suffix, type]
 const paramIdxR = `(\\d+|\\$|@)`,
 	paramPropR = `(?:\\{((?:[a-zA-Z$_][\\w$_]*|\\[(?:\\d+|"(?:[^\\\\"]|\\\\.)*"|'(?:[^\\\\']|\\\\.)*')\\])(?:\\.[a-zA-Z$_][\\w$_]*|\\[(?:\\d+|"(?:[^\\\\"]|\\\\.)*"|'(?:[^\\\\']|\\\\.)*')\\])*)\\})`,
 	widthR = `(?:([1-9]\\d*)|&${paramIdxR}${paramPropR})`,
 	fillR = `(?:=(.))`,
-	cutSuffixR = `(?:="((?:[^\\\\"]|\\\\.)*)")`,
+	shortenSuffixR = `(?:="((?:[^\\\\"]|\\\\.)*)")`,
 	formatReg = new RegExp(
-		`\\\\.|(\\{${paramIdxR}?${paramPropR}?(?::([#,+\\- 0]*)(?:${widthR}${fillR}?)?(?:\\.${widthR}${cutSuffixR}?)?)?([a-zA-Z_][a-zA-Z0-9_$]*)?\\})`,
+		`\\\\.|(\\{${paramIdxR}?${paramPropR}?(?::([#,+\\- 0]*)(?:${widthR}${fillR}?)?(?:\\.${widthR}${shortenSuffixR}?)?)?([a-zA-Z_][a-zA-Z0-9_$]*)?\\})`,
 		'g'
 	)
 
@@ -137,7 +137,7 @@ type FormatCallback = (
 	width: number,
 	fill: string,
 	precision: number,
-	cutSuffix: string
+	shortenSuffix: string
 ) => string
 
 const formatters: {
@@ -177,7 +177,7 @@ export function getFormatter(name: string): FormatCallback {
  * 			)?
  * 			(
  * 				'.'
- * 				<precision> ('=' '"' <cut-suffix> '"')?
+ * 				<precision> ('=' '"' <shorten-suffix> '"')?
  * 			)?
  * 		)?
  * 		(<type>)?
@@ -273,7 +273,7 @@ export function getFormatter(name: string): FormatCallback {
  * 			{:.&@{<prop>}}
  * 			{:.&${<prop>}}
  * 			{:.&<number>{<prop>}}
- * 		- cut suffix
+ * 		- shorten suffix
  * 			{:.&@="<suffix>"}
  * 			{:.&$="<suffix>"}
  * 			{:.&<number>="<suffix>"}
@@ -360,7 +360,7 @@ export function getFormatter(name: string): FormatCallback {
  * 						(?:
  * 							=
  * 							"
- * 							((?:[^\\"]|\\.)*)					// 12: cut su
+ * 							((?:[^\\"]|\\.)*)					// 12: shorten su
  * 							"
  * 						)
  * 					)?
@@ -390,7 +390,7 @@ export function vformat<T>(fmt: string, args: T, offset?: number, getParam?: (ar
 		precision,
 		pidx,
 		pprop,
-		cutSuffix,
+		shortenSuffix,
 		type
 	) {
 		if (!m) return s.charAt(1)
@@ -400,7 +400,7 @@ export function vformat<T>(fmt: string, args: T, offset?: number, getParam?: (ar
 			parseWidth(width, widx, wprop) || 0,
 			fill,
 			parseWidth(precision, pidx, pprop),
-			cutSuffix
+			shortenSuffix
 		)
 	})
 
@@ -516,7 +516,7 @@ export function formatter(
 	while ((m = formatReg.exec(fmt))) {
 		mEnd = formatReg.lastIndex
 		mStart = mEnd - m[0].length
-		lastIdx < mStart && pushStr(fmt.substring(lastIdx, mStart), 0)
+		lastIdx < mStart && pushStr(cutStr(fmt, lastIdx, mStart), 0)
 		if (m[1]) {
 			codes[i] = `arr[${i}](arguments, ${STATE_VAR})`
 			arr[i++] = createFormatter(m, getParam || defaultGetParam)
@@ -525,7 +525,7 @@ export function formatter(
 		}
 		lastIdx = mEnd
 	}
-	lastIdx < fmt.length && pushStr(fmt.substring(lastIdx), i)
+	lastIdx < fmt.length && pushStr(cutStr(fmt, lastIdx), i)
 	return createFn(`return function(){var ${STATE_VAR} = [${offset}, ${offset}]; return ${codes.join(' + ')}}`, [
 		'arr'
 	])(arr)
@@ -567,9 +567,11 @@ setTimeout(() => {
 //========================================================================================
 
 function strFormatter(toStr: (val: any, flags: FormatFlags) => string): FormatCallback {
-	return function(val, flags, width, fill, precision, cutSuffix) {
+	return function(val, flags, width, fill, precision, shortenSuffix) {
 		const str = toStr(val, flags)
-		return width > str.length ? __pad(str, width, fill, flags & FORMAT_LEFT) : cut(str, precision, cutSuffix)
+		return width > str.length
+			? __pad(str, width, fill, flags & FORMAT_LEFT)
+			: shorten(str, precision, shortenSuffix)
 	}
 }
 

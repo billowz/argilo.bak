@@ -2,35 +2,24 @@
  * @module utility/AST
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Tue Nov 06 2018 10:06:22 GMT+0800 (China Standard Time)
- * @modified Tue Dec 18 2018 18:57:32 GMT+0800 (China Standard Time)
+ * @modified Sat Dec 22 2018 15:11:19 GMT+0800 (China Standard Time)
  */
 
-import { Rule, MatchError, onMatchCallback, onErrorCallback } from './Rule'
+import { Rule, MatchError, RuleOptions } from './Rule'
 import { MatchContext } from './MatchContext'
 
 /**
  * Match Rule Interface
  */
 export class MatchRule extends Rule {
-	protected readonly ignoreCase: boolean
 	/**
 	 * @param name 			match name
 	 * @param start 		start char codes, prepare test by start char codes before match
 	 * @param ignoreCase	ignore case for the start char codes
-	 * @param capturable	error is capturable
-	 * @param onMatch		match callback
-	 * @param onErr			error callback
+	 * @param options		Rule Options
 	 */
-	constructor(
-		name: string,
-		start: number | string | any[],
-		ignoreCase: boolean,
-		capturable: boolean,
-		onMatch: onMatchCallback,
-		onErr: onErrorCallback
-	) {
-		super(name, capturable, onMatch, onErr)
-		this.ignoreCase = ignoreCase
+	constructor(name: string, start: number | string | any[], ignoreCase: boolean, options: RuleOptions) {
+		super(name, options)
 		this.setStartCodes(start, ignoreCase)
 	}
 

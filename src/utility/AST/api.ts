@@ -3,16 +3,16 @@
  * @module utility/AST
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Tue Nov 06 2018 10:58:52 GMT+0800 (China Standard Time)
- * @modified Tue Dec 18 2018 19:27:42 GMT+0800 (China Standard Time)
+ * @modified Sat Dec 22 2018 15:45:10 GMT+0800 (China Standard Time)
  */
 
-import { ruleBuilder } from './ComplexRule'
+import { ComplexRuleBuilder } from './ComplexRule'
 import { isObj, isReg, isStr, isBool, isNum, isInt, isArray, isArrayLike, isFn } from '../is'
 import { makeMap, mapArray, SKIP } from '../collection'
 import { CharMatchRule } from './CharMatchRule'
 import { StringMatchRule } from './StringMatchRule'
 import { RegMatchRule } from './RegMatchRule'
-import { onMatchCallback, onErrorCallback, Rule, MatchError } from './Rule'
+import { onMatchCallback, onErrorCallback, Rule, MatchError, RuleOptions } from './Rule'
 import { MatchRule } from './MatchRule'
 import { AndRule } from './AndRule'
 import { OrRule } from './OrRule'
@@ -26,21 +26,25 @@ import { EMPTY_FN } from '../consts'
  *                                                                                      */
 //========================================================================================
 
-export const discardMatch: (data: any, len: number, context: MatchContext) => void = EMPTY_FN
+export const discardMatch: onMatchCallback = EMPTY_FN
 
 export function appendMatch(data: any, len: number, context: MatchContext) {
 	context.addAll(data)
 }
-export function attachMatch(val) {
-	const fn = isFn(val) ? val : () => val
-	return (data: any, len: number, context: MatchContext) => {
-		context.add(fn(data, len, context))
+export function attachMatch(
+	callback: (data: any, len: number, context: MatchContext, rule: Rule) => any
+): onMatchCallback
+export function attachMatch(val: any): onMatchCallback
+export function attachMatch(val: any) {
+	const callback: (data: any, len: number, context: MatchContext, rule: Rule) => any = isFn(val) ? val : () => val
+	return (data: any, len: number, context: MatchContext, rule: Rule) => {
+		context.add(callback(data, len, context, rule))
 	}
 }
 
 //========================================================================================
 /*                                                                                      *
- *                                  match rule builder                                  *
+ *                                       match api                                      *
  *                                                                                      */
 //========================================================================================
 
@@ -193,118 +197,13 @@ export function match(): MatchRule {
 	return mkMatch(arguments)
 }
 
-export type MatchRuleDescriptor = {
-	name?: string
-	pattern: RegExp | number | string | any[]
-	pick?: boolean | number
-	startCodes?: number | string | any[]
-	ignoreCase?: boolean
-	capturable?: boolean
-	onMatch?: onMatchCallback
-	onErr?: onErrorCallback
-}
-function mkMatch(args: IArguments | any[] | MatchRuleDescriptor, defaultOnMatch?: onMatchCallback): MatchRule {
-	let name: string,
-		pattern: number | string | any[],
-		regexp: RegExp,
-		pick: boolean | number = 0,
-		startCodes: number | string | any[],
-		ignoreCase: boolean = false,
-		capturable: boolean,
-		onMatch: onMatchCallback,
-		onErr: onErrorCallback
-	if (isObj(args[0])) {
-		const desc = args[0] as MatchRuleDescriptor,
-			p = desc.pattern
-		if (isReg(p)) {
-			regexp = p as RegExp
-			pick = desc.pick
-			startCodes = desc.startCodes
-		} else if (isMatchPattern(p)) {
-			pattern = p as number | string | any[]
-			ignoreCase = desc.ignoreCase
-		}
-		name = desc.name
-		capturable = desc.capturable
-		onMatch = desc.onMatch
-		onErr = desc.onErr
-	} else {
-		var i = 2
-
-		if (isMatchPattern(args[1])) {
-			name = args[0]
-			isReg(args[1]) ? (regexp = args[1]) : (pattern = args[1])
-		} else if (isMatchPattern(args[0])) {
-			i = 1
-			isReg(args[0]) ? (regexp = args[0]) : (pattern = args[0])
-		}
-
-		if (regexp) {
-			if (isBool(args[i]) || isInt(args[i])) pick = args[i++]
-			if (isStrOrCodes(args[i])) startCodes = args[i++]
-		} else {
-			if (isBool(args[i])) ignoreCase = args[i++]
-		}
-		if (isBool(args[i])) capturable = args[i++]
-		onMatch = args[i++]
-		onErr = args[i++]
-	}
-	onMatch = onMatch || defaultOnMatch
-	return regexp
-		? regMatch(name, regexp, onMatch === discardMatch ? false : pick, startCodes, capturable, onMatch, onErr)
-		: pattern
-		? strMatch(name, pattern, ignoreCase, capturable, onMatch, onErr)
-		: null
-}
-
-function isStrOrCodes(pattern): boolean {
-	return isStr(pattern) || isNum(pattern) || isArray(pattern)
-}
-function isMatchPattern(pattern): boolean {
-	return isReg(pattern) || isStrOrCodes(pattern)
-}
-
-function strMatch(
-	name: string,
-	pattern: string | number | any[],
-	ignoreCase: boolean,
-	capturable: boolean,
-	onMatch: onMatchCallback,
-	onErr: onErrorCallback
-) {
-	const C = isStr(pattern) && (pattern as string).length > 1 ? StringMatchRule : CharMatchRule
-	return new C(name, pattern, ignoreCase, capturable, onMatch, onErr)
-}
-
-const REG_ESPEC_CHARS = makeMap('dDsStrnt0cbBfvwW', 1, '')
-
-function regMatch(
-	name: string,
-	pattern: RegExp,
-	pick: boolean | number,
-	startCodes: number | string | any[],
-	capturable: boolean,
-	onMatch: onMatchCallback,
-	onErr: onErrorCallback
-) {
-	const source = pattern.source
-	if (!pick) {
-		var c: string | 0 = 0
-		if (source.length == 1 && source !== '^' && source !== '$') {
-			c = source === '.' ? '' : source
-		} else if (source.length == 2 && source[0] === '\\' && REG_ESPEC_CHARS[source[1]]) {
-			c = source[1]
-		}
-		if (c != 0) return strMatch(name, c as string, pattern.ignoreCase, capturable, onMatch, onErr)
-	}
-	return new RegMatchRule(name, pattern, pick, startCodes, capturable, onMatch, onErr)
-}
 //========================================================================================
 /*                                                                                      *
- *                                   and rule builder                                   *
+ *                                     and rule api                                     *
  *                                                                                      */
 //========================================================================================
 
+//──── and ───────────────────────────────────────────────────────────────────────────────
 export function and(desc: ComplexRuleDescriptor): AndRule
 export function and(
 	name: string,
@@ -327,7 +226,6 @@ export function and(
 	onMatch: onMatchCallback,
 	onErr?: onErrorCallback
 ): AndRule
-
 export function and(
 	rules: ((rule: Rule) => any[]) | any[],
 	repeat?: [number, number],
@@ -342,7 +240,6 @@ export function and(
 	onErr?: onErrorCallback
 ): AndRule
 export function and(rules: ((rule: Rule) => any[]) | any[], onMatch: onMatchCallback, onErr?: onErrorCallback): AndRule
-
 export function and(): AndRule {
 	return mkComplexRule(arguments, AndRule, [1, 1])
 }
@@ -362,7 +259,6 @@ export function any(
 	onMatch: onMatchCallback,
 	onErr?: onErrorCallback
 ): AndRule
-
 export function any(
 	rules: ((rule: Rule) => any[]) | any[],
 	capturable?: boolean,
@@ -373,6 +269,7 @@ export function any(rules: ((rule: Rule) => any[]) | any[], onMatch: onMatchCall
 export function any(): AndRule {
 	return mkComplexRule(arguments, AndRule, [0, -1])
 }
+
 //──── and many ──────────────────────────────────────────────────────────────────────────
 export function many(desc: ComplexRuleDescriptor): AndRule
 export function many(
@@ -388,7 +285,6 @@ export function many(
 	onMatch: onMatchCallback,
 	onErr?: onErrorCallback
 ): AndRule
-
 export function many(
 	rules: ((rule: Rule) => any[]) | any[],
 	capturable?: boolean,
@@ -415,7 +311,6 @@ export function option(
 	onMatch: onMatchCallback,
 	onErr?: onErrorCallback
 ): AndRule
-
 export function option(
 	rules: ((rule: Rule) => any[]) | any[],
 	capturable?: boolean,
@@ -433,10 +328,11 @@ export function option(): AndRule {
 
 //========================================================================================
 /*                                                                                      *
- *                                   OR Rule Builders                                   *
+ *                                      or rule api                                     *
  *                                                                                      */
 //========================================================================================
 
+//──── or ────────────────────────────────────────────────────────────────────────────────
 export function or(desc: ComplexRuleDescriptor): OrRule
 export function or(
 	name: string,
@@ -459,7 +355,6 @@ export function or(
 	onMatch: onMatchCallback,
 	onErr?: onErrorCallback
 ): OrRule
-
 export function or(
 	rules: ((rule: Rule) => any[]) | any[],
 	repeat?: [number, number],
@@ -474,7 +369,6 @@ export function or(
 	onErr?: onErrorCallback
 ): OrRule
 export function or(rules: ((rule: Rule) => any[]) | any[], onMatch: onMatchCallback, onErr?: onErrorCallback): OrRule
-
 export function or(): OrRule {
 	return mkComplexRule(arguments, OrRule, [1, 1])
 }
@@ -494,7 +388,6 @@ export function anyOne(
 	onMatch: onMatchCallback,
 	onErr?: onErrorCallback
 ): OrRule
-
 export function anyOne(
 	rules: ((rule: Rule) => any[]) | any[],
 	capturable?: boolean,
@@ -525,7 +418,6 @@ export function manyOne(
 	onMatch: onMatchCallback,
 	onErr?: onErrorCallback
 ): OrRule
-
 export function manyOne(
 	rules: ((rule: Rule) => any[]) | any[],
 	capturable?: boolean,
@@ -556,7 +448,6 @@ export function optionOne(
 	onMatch?: onMatchCallback,
 	onErr?: onErrorCallback
 ): OrRule
-
 export function optionOne(
 	rules: ((rule: Rule) => any[]) | any[],
 	capturable?: boolean,
@@ -574,6 +465,82 @@ export function optionOne(): OrRule {
 
 //========================================================================================
 /*                                                                                      *
+ *                                  Match Rule Builder                                  *
+ *                                                                                      */
+//========================================================================================
+
+export type MatchRuleDescriptor = {
+	name?: string
+	pattern: RegExp | number | string | any[]
+	pick?: boolean | number
+	startCodes?: number | string | any[]
+	ignoreCase?: boolean
+} & RuleOptions
+
+function mkMatch(args: IArguments | any[], defaultMatchCallback?: onMatchCallback): MatchRule {
+	let name: string,
+		pattern: number | string | any[],
+		regexp: RegExp,
+		pick: boolean | number = 0,
+		startCodes: number | string | any[],
+		ignoreCase: boolean = false,
+		options: RuleOptions
+	if (isObj(args[0])) {
+		const desc = args[0] as MatchRuleDescriptor,
+			p = desc.pattern
+		if (isReg(p)) {
+			regexp = p as RegExp
+			pick = desc.pick
+			startCodes = desc.startCodes
+		} else if (isStrOrCodes(p)) {
+			pattern = p as number | string | any[]
+			ignoreCase = desc.ignoreCase
+		}
+		name = desc.name
+		options = desc
+	} else {
+		var i = 1
+		if (isStr(args[0]) && isMatchPattern(args[1])) {
+			name = args[0]
+			isReg(args[1]) ? (regexp = args[1]) : (pattern = args[1])
+			i = 2
+		} else if (isMatchPattern(args[0])) {
+			isReg(args[0]) ? (regexp = args[0]) : (pattern = args[0])
+		}
+
+		if (regexp) {
+			if (isBool(args[i]) || isInt(args[i])) pick = args[i++]
+			if (isStrOrCodes(args[i])) startCodes = args[i++]
+		} else {
+			if (isBool(args[i])) ignoreCase = args[i++]
+		}
+		options = parseRuleOptions(args, i)
+	}
+
+	!options.match && (options.match = defaultMatchCallback)
+
+	return regexp
+		? new RegMatchRule(name, regexp, options.match === discardMatch ? false : pick, startCodes, options)
+		: pattern
+		? strMatch(name, pattern, ignoreCase, options)
+		: assert('invalid match rule {j}', args)
+}
+
+function isStrOrCodes(pattern): boolean {
+	return isStr(pattern) || isNum(pattern) || isArray(pattern)
+}
+
+function isMatchPattern(pattern): boolean {
+	return isReg(pattern) || isStrOrCodes(pattern)
+}
+
+function strMatch(name: string, pattern: string | number | any[], ignoreCase: boolean, options: RuleOptions) {
+	const C = isStr(pattern) && (pattern as string).length > 1 ? StringMatchRule : CharMatchRule
+	return new C(name, pattern, ignoreCase, options)
+}
+
+//========================================================================================
+/*                                                                                      *
  *                                 complex rule builder                                 *
  *                                                                                      */
 //========================================================================================
@@ -585,41 +552,36 @@ export type ComplexRuleDescriptor = {
 	capturable?: boolean
 	onMatch?: onMatchCallback
 	onErr?: onErrorCallback
-}
+} & RuleOptions
+
 function mkComplexRule<T extends AndRule | OrRule>(
 	args: IArguments,
 	Rule: typeof AndRule | typeof OrRule,
 	defaultRepeat: [number, number]
 ): T {
 	let name: string,
-		builder: ruleBuilder,
+		builder: ComplexRuleBuilder,
 		rules: ((rule: Rule) => any[]) | any[],
 		repeat: [number, number],
-		capturable: boolean,
-		onMatch: onMatchCallback,
-		onErr: onErrorCallback
+		options: RuleOptions
 	if (isObj(args[0])) {
 		const desc = args[0] as ComplexRuleDescriptor,
 			r = desc.rules
 		if (isArray(r) || isFn(r)) rules = r
 		repeat = desc.repeat
 		name = desc.name
-		capturable = desc.capturable
-		onMatch = desc.onMatch
-		onErr = desc.onErr
+		options = desc
 	} else {
 		var i = 0
 		if (isStr(args[i])) name = args[i++]
 		if (isArray(args[i]) || isFn(args[i])) rules = args[i++]
 		if (isArray(args[i])) repeat = args[i++]
-		if (isBool(args[i])) capturable = args[i++]
-		onMatch = args[i++]
-		onErr = args[i++]
+		options = parseRuleOptions(args, i)
 	}
 	if (!repeat) repeat = defaultRepeat
 	if (rules) {
 		builder = rulesBuilder(rules)
-		return new Rule(name, repeat, builder, capturable, onMatch, onErr) as T
+		return new Rule(name, repeat, builder, options) as T
 	}
 }
 
@@ -627,9 +589,23 @@ function rulesBuilder(rules: ((rule: Rule) => any[]) | any[]): (rule: Rule) => R
 	return function(_rule) {
 		return mapArray(isFn(rules) ? (rules as ((rule: Rule) => any[]))(_rule) : rules, (r, i) => {
 			if (!r) return SKIP
-			let rule: Rule = r.$rule ? r : isArray(r) ? mkMatch(r) : mkMatch([r], discardMatch)
-			assert.is(rule, '{}: Invalid Rule Configuration on index {d}: {:.80="..."j}', _rule, i, r)
+			let rule: Rule = r.$rule ? r : mkMatch(isArray(r) ? r : [r], discardMatch)
+			assert.is(rule, '{}: Invalid Rule Configuration on index {d}: {j}', _rule, i, r)
 			return rule
 		})
 	}
+}
+
+//========================================================================================
+/*                                                                                      *
+ *                                         tools                                        *
+ *                                                                                      */
+//========================================================================================
+
+function parseRuleOptions(args: IArguments | any[], i: number) {
+	const options: RuleOptions = {}
+	if (isBool(args[i])) options.capturable = args[i++]
+	options.match = args[i++]
+	options.err = args[i]
+	return options
 }

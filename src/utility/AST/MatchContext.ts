@@ -2,130 +2,167 @@
  * @module utility/AST
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Tue Dec 11 2018 15:36:42 GMT+0800 (China Standard Time)
- * @modified Tue Dec 18 2018 19:00:01 GMT+0800 (China Standard Time)
+ * @modified Sat Dec 22 2018 16:32:31 GMT+0800 (China Standard Time)
  */
 import { Source } from '../Source'
-import { char, charCode } from '../string'
+import { char, charCode, cutStr } from '../string'
 import { assert } from '../assert'
+
+export type CheckPoint = [number, number]
 /**
  * Match Context of Rule
  */
 export class MatchContext {
-	// matched data list
-	data: any[]
-
 	// start offset of original buff
 	readonly source: Source
-
-	// start offset of original buff
-	private orgPos: number
-
-	// template buff
-	private buff: string
-
-	// current offset of template buff
-	private offset: number
-
-	// advanced characters
-	private advanced: number
-
-	// cached character
-	private codeCache: number
 
 	// parent context
 	readonly parent: MatchContext
 
-	constructor(source: Source, buff: string, offset: number, orgPos: number, parent?: MatchContext, code?: number) {
+	// matched result list
+	result: any[]
+
+	data: any
+
+	// template buff
+	private __buff: string
+
+	// current offset of template buff
+	private __offset: number
+
+	// current offset of original buff
+	private __orgOffset: number
+
+	// advanced characters
+	private __advanced: number
+
+	// cached character
+	private __code: number
+
+	constructor(source: Source, buff: string, offset: number, orgOffset: number, parent?: MatchContext) {
 		this.source = source
-		this.buff = buff
-		this.offset = offset
-		this.orgPos = orgPos
 		this.parent = parent
-		this.data = []
-		this.advanced = 0
-		code ? (this.codeCache = code) : this.flushCache()
+		this.result = []
+		this.__buff = buff
+		this.__offset = offset
+		this.__orgOffset = orgOffset
+		this.__advanced = 0
+		parent ? ((this.__code = parent.__code), (this.data = parent.data)) : this.__flushCode()
 	}
 
-	private flushCache() {
-		const { buff, offset } = this
-		this.codeCache = offset < buff.length ? charCode(buff, offset) : 0
+	private __flushCode() {
+		const { __buff: buff, __offset: offset } = this
+		this.__code = offset < buff.length ? charCode(buff, offset) : 0
 	}
 
 	/**
 	 * create sub Context
 	 */
 	create() {
-		return new MatchContext(this.source, this.buff, this.offset, this.orgPos + this.advanced, this, this.codeCache)
+		return new MatchContext(this.source, this.__buff, this.__offset, this.__orgOffset + this.__advanced, this)
+	}
+
+	private __setAdvanced(advanced: number) {
+		assert.notLess(advanced, 0)
+
+		const offset = this.__offset - this.__advanced + advanced
+		if (offset < 0) {
+			this.__buff = this.source.buff
+			this.__offset = this.__orgOffset + advanced
+		}
+		this.__advanced = advanced
+		this.__offset = offset
 	}
 
 	/**
-	 * commit context states to parent context
-	 * @param margeData is marge data to parent
+	 * commit context state to parent context
 	 */
 	commit() {
-		const { advanced } = this
+		const { __advanced: advanced } = this
 		this.parent.advance(advanced)
-		this.orgPos += advanced
-		this.advanced = 0
+		this.__orgOffset += advanced
+		this.__advanced = 0
+		this.data = null
 	}
 
 	/**
-	 *
-	 * @param len 		reset buff length
-	 * @param dataLen 	reset data length
+	 * marge context state
 	 */
-	reset(len?: number, dataLen?: number) {
-		len || (len = 0)
-		assert.range(len, 0, this.advanced + 1)
-		this.advance(-(this.advanced - len))
-		this.resetData(dataLen || 0)
+	margeState(context: MatchContext) {
+		this.__setAdvanced(context.__orgOffset + context.__advanced - this.__orgOffset)
 	}
 
-	len(): number {
-		return this.advanced
+	/**
+	 * rollback state and result
+	 * @param checkpoint 	rollback to checkpoint
+	 */
+	rollback(checkpoint?: CheckPoint) {
+		let advanced = 0,
+			resultLen = 0
+
+		checkpoint && ((advanced = checkpoint[0]), (resultLen = checkpoint[1]))
+
+		this.__setAdvanced(advanced)
+
+		const { result } = this
+		if (result.length > resultLen) result.length = resultLen
+	}
+
+	/**
+	 * get a check point
+	 */
+	checkpoint(): CheckPoint {
+		return [this.__advanced, this.result.length]
 	}
 
 	/**
 	 * advance buffer position
 	 */
 	advance(i: number) {
-		this.offset += i
-		this.advanced += i
-		if (this.offset < 0) {
-			this.buff = this.source.buff
-			this.offset = this.orgPos + this.advanced
-		}
-		this.flushCache()
+		this.__offset += i
+		this.__advanced += i
+		this.__flushCode()
+	}
+
+	/**
+	 * advanced buff length
+	 */
+	advanced(): number {
+		return this.__advanced
 	}
 
 	/**
 	 * get buffer
 	 * @param reset reset buffer string from 0
 	 */
-	getBuff(reset?: boolean): string {
+	buff(reset?: boolean): string {
+		let { __buff: buff } = this
 		if (reset) {
-			const { offset } = this
-			this.buff = this.buff.substring(offset)
-			this.offset = 0
+			this.__buff = buff = cutStr(buff, this.__offset)
+			this.__offset = 0
 		}
-		return this.buff
+		return buff
 	}
 
-	getOffset(): number {
-		return this.offset
+	orgBuff() {
+		return this.source.buff
+	}
+
+	offset(): number {
+		return this.__offset
 	}
 
 	startPos(): number {
-		return this.orgPos
+		return this.__orgOffset
 	}
 
 	currPos(): number {
-		return this.orgPos + this.advanced
+		return this.__orgOffset + this.__advanced
 	}
 
 	pos(): [number, number] {
-		const { orgPos } = this
-		return [orgPos, orgPos + this.advanced]
+		const { __orgOffset: offset } = this
+		return [offset, offset + this.__advanced]
 	}
 
 	/**
@@ -133,42 +170,36 @@ export class MatchContext {
 	 * @return number char code number
 	 */
 	nextCode() {
-		return this.codeCache
+		return this.__code
 	}
 
 	nextChar() {
-		return char(this.codeCache)
+		return char(this.__code)
 	}
 
-	eof(): boolean {
-		return this.codeCache === 0
-	}
-
-	//──── data opeartions ───────────────────────────────────────────────────────────────────
+	//──── result opeartions ───────────────────────────────────────────────────────────────────
 	/**
-	 * append data
+	 * append result
 	 */
 	add(data: any) {
-		this.data.push(data)
+		const { result } = this
+		result[result.length] = data
 	}
+
 	/**
-	 * append datas
+	 * append resultset
 	 */
-	addAll(datas: any[]) {
-		const { data } = this
-		const len = data.length
-		let i = datas.length
-		while (i--) data[len + i] = datas[i]
+	addAll(data: any[]) {
+		const { result } = this
+		const len = result.length
+		let i = data.length
+		while (i--) result[len + i] = data[i]
 	}
+
 	/**
-	 * reset result data size
+	 * get result size
 	 */
-	resetData(len?: number) {
-		const { data } = this
-		len = len || 0
-		if (data.length > len) data.length = len
-	}
-	dataLen() {
-		return this.data.length
+	resultSize() {
+		return this.result.length
 	}
 }

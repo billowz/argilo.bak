@@ -2,13 +2,12 @@
  * @module utility/AST
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Tue Nov 06 2018 10:06:22 GMT+0800 (China Standard Time)
- * @modified Tue Dec 18 2018 18:57:47 GMT+0800 (China Standard Time)
+ * @modified Sat Dec 22 2018 17:53:14 GMT+0800 (China Standard Time)
  */
 import { MatchContext } from './MatchContext'
 import { eachCharCodes } from './util'
 import { assert } from '../assert'
-import { isStr, isBool } from '../is'
-import { PROTOTYPE } from '../consts'
+import { isBool } from '../is'
 import { mixin } from '../mixin'
 
 @mixin({ $ruleErr: true })
@@ -17,7 +16,8 @@ export class MatchError {
 	readonly rule: Rule
 	readonly context: MatchContext
 	readonly source: MatchError
-	readonly capturable: boolean
+	readonly target: MatchError
+	capturable: boolean
 	readonly pos: number
 	msg: string
 	constructor(msg: string, capturable: boolean, source: MatchError, context: MatchContext, rule: Rule) {
@@ -25,6 +25,7 @@ export class MatchError {
 		this.capturable = capturable && source ? source.capturable : capturable
 		this.msg = msg
 		this.source = source
+		this.target = source ? source.target : this
 		this.context = context
 		this.rule = rule
 		this.pos = context.startPos()
@@ -45,6 +46,21 @@ function defaultMatch(data: any, len: number, context: MatchContext) {
 	context.add(data)
 }
 
+export type RuleOptions = {
+	/**
+	 * error is capturable
+	 */
+	capturable?: boolean
+	/**
+	 * matched callback
+	 */
+	match?: (data: any, len: number, context: MatchContext, rule: Rule) => MatchError | string | void
+	/**
+	 * error callback
+	 */
+	err?: (err: MatchError, context: MatchContext, rule: Rule) => MatchError | string | void
+}
+
 let idGen = 0
 /**
  * Abstract Rule
@@ -56,7 +72,9 @@ export class Rule {
 	type: string
 	// rule id
 	readonly id: number
+	// rule name
 	readonly name: string
+	// error is capturable
 	readonly capturable: boolean
 	// rule expression (for debug)
 	protected expr: string
@@ -77,12 +95,12 @@ export class Rule {
 	 * @param onMatch		callback on matched, allow modify the match result or return an error
 	 * @param onErr			callback on Error, allow to ignore error or modify error message or return new error
 	 */
-	constructor(name: string, capturable: boolean, onMatch: onMatchCallback, onErr: onErrorCallback) {
+	constructor(name: string, options: RuleOptions) {
 		this.id = idGen++
 		this.name = name
-		this.capturable = capturable !== false
-		this.onMatch = onMatch || defaultMatch
-		this.onErr = onErr || defaultErr
+		this.capturable = options.capturable !== false
+		this.onMatch = options.match || defaultMatch
+		this.onErr = options.err || defaultErr
 	}
 
 	/**
@@ -92,7 +110,7 @@ export class Rule {
 	 * @param capturable 	is capturable error
 	 * @param src 			source error
 	 */
-	mkErr(msg: string, context: MatchContext, source?: MatchError, capturable?: boolean): MatchError {
+	mkErr(msg: string, context: MatchContext, capturable?: boolean, source?: MatchError): MatchError {
 		return new MatchError(msg, capturable, source, context, this)
 	}
 
@@ -105,9 +123,9 @@ export class Rule {
 	 * @return Error|void: may ignore Error in the error callback
 	 */
 	protected error(msg: string, context: MatchContext, src?: MatchError, capturable?: boolean): MatchError {
-		const err = this.mkErr(msg, context, src, capturable)
+		const err = this.mkErr(msg, context, capturable, src)
 		const userErr = this.onErr(err, context, this)
-		if (userErr) return isStr(userErr) ? ((err[0] = userErr as string), err) : (userErr as MatchError)
+		if (userErr) return (userErr as any).$ruleErr ? (userErr as MatchError) : ((err[0] = String(userErr)), err)
 	}
 
 	/**
@@ -120,7 +138,11 @@ export class Rule {
 	 */
 	protected matched(data: any, len: number, context: MatchContext): MatchError {
 		const err = this.onMatch(data, len, context, this)
-		if (err) return (err as any).$ruleErr ? (err as MatchError) : this.mkErr(String(err), context, null, false)
+		if (err) return (err as any).$ruleErr ? (err as MatchError) : this.mkErr(String(err), context, false)
+	}
+
+	protected enter(context: MatchContext) {
+		return context.create()
 	}
 
 	/**
@@ -142,12 +164,11 @@ export class Rule {
 	 * prepare test before match
 	 */
 	test(context: MatchContext): boolean {
-		return true //return context.nextCode() !== 0
+		return true
 	}
 
 	protected startCodeTest(context: MatchContext): boolean {
-		const code = context.nextCode()
-		return code !== 0 && !!this.startCodeIdx[code]
+		return this.startCodeIdx[context.nextCode()]
 	}
 
 	protected setStartCodes(start: number | string | any[], ignoreCase?: boolean) {
@@ -164,8 +185,10 @@ export class Rule {
 	}
 
 	protected setCodeIdx(index: any[]) {
-		this.startCodeIdx = index
-		this.test = index && index.length > 1 ? this.startCodeTest : Rule[PROTOTYPE].test
+		if (index.length > 1) {
+			this.startCodeIdx = index
+			this.test = this.startCodeTest
+		}
 	}
 
 	//──── for debug ─────────────────────────────────────────────────────────────────────────

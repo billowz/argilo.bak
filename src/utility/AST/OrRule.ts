@@ -3,11 +3,11 @@
  * @module utility/AST
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Tue Nov 27 2018 19:05:48 GMT+0800 (China Standard Time)
- * @modified Tue Dec 18 2018 18:50:33 GMT+0800 (China Standard Time)
+ * @modified Sat Dec 22 2018 17:47:30 GMT+0800 (China Standard Time)
  */
 
 import { Rule, MatchError } from './Rule'
-import { MatchContext } from './MatchContext'
+import { MatchContext, CheckPoint } from './MatchContext'
 import { ComplexRule } from './ComplexRule'
 import { eachCharCodes } from './util'
 import { mixin } from '../mixin'
@@ -17,7 +17,6 @@ import { mixin } from '../mixin'
  */
 @mixin({ type: 'Or', split: ' | ' })
 export class OrRule extends ComplexRule {
-	startCodeIdx: Rule[][]
 	index: Rule[][]
 	__init(rules: Rule[]) {
 		const { id } = this
@@ -64,20 +63,22 @@ export class OrRule extends ComplexRule {
 		}
 
 		// rule have unkown start code when got unkown start code from any rules
-		this.startCodes = index[0].length ? [] : starts
-
-		this.index = starts.length && index
-		starts.length && !index[0].length && this.setCodeIdx(index)
+		const startCodes = !index[0].length && starts
+		this.startCodes = startCodes || []
+		startCodes && this.setCodeIdx(index)
+		this.index = index
 	}
 
 	match(context: MatchContext): MatchError {
-		const { index } = this
-		const rules: Rule[] = index ? index[context.nextCode()] || index[0] : this.getRules(),
+		const index = this.index || (this.init(), this.index),
+			rules: Rule[] = index[context.nextCode()] || index[0],
 			len = rules.length,
 			ctx = context.create()
+
 		let err: MatchError,
 			upErr: MatchError,
 			i = 0
+
 		for (; i < len; i++) {
 			err = rules[i].match(ctx) || this.consume(ctx)
 			if (!err) return
@@ -86,13 +87,14 @@ export class OrRule extends ComplexRule {
 				break
 			}
 			if (!upErr || err.pos >= upErr.pos) upErr = err
-			ctx.reset()
+			ctx.rollback()
 		}
 		return this.error(this.EXPECT, ctx, upErr)
 	}
+
 	protected repeatMatch(context: MatchContext): MatchError {
-		let { index } = this
-		const [min, max] = this.repeat,
+		const { rMin, rMax } = this
+		const index = this.index || (this.init(), this.index),
 			ctx = context.create()
 
 		let rules: Rule[],
@@ -101,24 +103,13 @@ export class OrRule extends ComplexRule {
 			upErr: MatchError,
 			repeat: number = 0,
 			i: number,
-			mlen: number,
-			dlen: number
+			cp: CheckPoint
 
-		if (!index) {
-			rules = this.getRules()
-			index = this.index
-			len = rules.length
-		}
-
-		out: for (; repeat < max; repeat++) {
-			if (index) {
-				rules = index[ctx.nextCode()] || index[0]
-				len = rules.length
-			}
-			if (len) {
-				dlen = ctx.dataLen()
-				mlen = ctx.len()
-				upErr = null
+		out: for (; repeat < rMax; repeat++) {
+			rules = index[ctx.nextCode()] || index[0]
+			upErr = null
+			if ((len = rules.length)) {
+				cp = ctx.checkpoint()
 				for (i = 0; i < len; i++) {
 					err = rules[i].match(ctx)
 					if (!err) continue out
@@ -127,10 +118,11 @@ export class OrRule extends ComplexRule {
 						break
 					}
 					if (!upErr || err.pos >= upErr.pos) upErr = err
-					ctx.reset(mlen, dlen)
+					ctx.rollback(cp)
 				}
 			}
-			if (repeat < min) return this.error(this.EXPECT, ctx, upErr)
+			if (repeat < rMin || (upErr && !upErr.capturable)) return this.error(this.EXPECT, ctx, upErr)
+			break
 		}
 		return this.consume(ctx)
 	}

@@ -2,7 +2,7 @@
  * @module utility/collection
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Fri Nov 16 2018 16:29:04 GMT+0800 (China Standard Time)
- * @modified Fri Nov 30 2018 17:42:28 GMT+0800 (China Standard Time)
+ * @modified Fri Dec 21 2018 14:09:44 GMT+0800 (China Standard Time)
  */
 
 import { Control } from './control'
@@ -10,7 +10,7 @@ import { eachArray } from './each'
 import { IArray } from '../consts'
 import { bind } from '../fn'
 import { isFn, isStr, isArray } from '../is'
-import {create} from '../create'
+import { create } from '../create'
 
 /**
  * @return STOP or SKIP or [key: string, value: any]

@@ -3,12 +3,9 @@
  * @module utility/string
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 13:57:32 GMT+0800 (China Standard Time)
- * @modified Sat Dec 08 2018 16:16:42 GMT+0800 (China Standard Time)
+ * @modified Sat Dec 22 2018 15:06:34 GMT+0800 (China Standard Time)
  */
-import { createFn } from './fn'
-import { isNil, isFn, isNum } from './is'
-import { get } from './propPath'
-import {create} from './create'
+import { isNil } from './is'
 
 //========================================================================================
 /*                                                                                      *
@@ -30,6 +27,14 @@ export function charCode(str: string, index?: number): number {
  */
 export function char(code: number): string {
 	return String.fromCharCode(code)
+}
+
+export function cutStr(str: string, start: number, end?: number) {
+	return str.substring(start, end)
+}
+
+export function cutStrLen(str: string, start: number, len?: number) {
+	return str.substr(start, len)
 }
 
 //========================================================================================
