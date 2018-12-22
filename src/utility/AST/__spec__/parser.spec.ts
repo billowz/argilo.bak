@@ -54,12 +54,13 @@ describe('utility/AST', function() {
 						{
 							tag: 'input',
 							attrs: {
+								type: 'submit',
 								value: 'Submit'
 							}
 						}
 					]
 				}
-			], "\n{0j}\n{1j}")
+			], "invalid html:\nSource: {0j}\nTarget: {1j}")
 		})
 	})
 })
