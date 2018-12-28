@@ -72,24 +72,24 @@ const ELEM_NAME = match('elem-open', /<([_a-zA-Z][\w-]*)\s*/, 1, '<'),
 					const parent = ctx.parent,
 						tag: string = (ctx.data = parent.result[0]),
 						rule: Rule = CONTENT_ELEM[tag] ? ELEM_CONTENT : ELEM_CHILDREN,
-						err: MatchError = rule.match(ctx),
-						serr = err.target
-					if (serr.msg) return err
-					const sctx = serr.context
-					ctx.margeState(sctx)
-					ctx.addAll(sctx.result)
+						err: MatchError = rule.match(ctx)
+					const { target, context } = err
+					if (target.msg) return err
+					ctx.margeState(context)
+					ctx.add(context.result)
 				})
 			])
 		],
 		(d, l, ctx) => {
-			const tag = d[0]
-			const elem: Element = { tag, attrs: d[1] }
+			const tag = d[0],
+				children = d[2][0],
+				elem: Element = { tag, attrs: d[1] }
 			ctx.add(elem)
 			VOID_ELEM[tag]
-				? ctx.addAll(d[2])
+				? ctx.addAll(children)
 				: CONTENT_ELEM[tag]
-				? (elem.content = d[2][0] || '')
-				: d[2].length && (elem.children = d[2])
+				? (elem.content = children[0] || '')
+				: children.length && (elem.children = children)
 		}
 	)
 
@@ -126,7 +126,10 @@ function elemBody(name: string, rules: Rule[], onEnd: onMatchCallback) {
 // prettier-ignore
 export const html = and('html', [
 		/\s*/,
-		many('elems', [ELEM]),
+		many('elems', [or([
+			ELEM,
+			match('text', /.[^<]*/, attachText)
+		])], appendMatch),
 		['EOF', /\s*$/]
 	], (data: any, len: number, ctx: MatchContext) => {
 		ctx.addAll(data[0])

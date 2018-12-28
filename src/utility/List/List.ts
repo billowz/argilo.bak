@@ -3,7 +3,7 @@
  * @module utility/List
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
- * @modified Tue Dec 18 2018 19:25:11 GMT+0800 (China Standard Time)
+ * @modified Thu Dec 27 2018 14:00:33 GMT+0800 (China Standard Time)
  */
 
 import { bind } from '../fn'
@@ -11,7 +11,7 @@ import { defPropValue } from '../prop'
 import { assert } from '../assert'
 import { EMPTY_FN } from '../consts'
 
-const DEFAULT_BINDING = '__this__'
+const DEFAULT_BINDING = '__list__'
 
 interface ListNode<T> extends Array<any> {
 	0: T

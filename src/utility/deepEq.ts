@@ -20,14 +20,22 @@ export function deepEq(actual: any, expected: any): boolean {
 
 function eqProps(actual: any, expected: any, props: string[]): boolean {
 	let i = props.length
-	while (i--) if (actual[props[i]] !== expected[props[i]]) return false
+	while (i--)
+		if (actual[props[i]] !== expected[props[i]]) {
+			return false
+		}
 	return true
 }
 
 function eqArray(actual: any, expected: any, eq: (actual: any, expected: any) => boolean) {
 	let i = actual.length
-	if (i !== expected.length) return false
-	while (i--) if (!eq(actual[i], expected[i])) return false
+	if (i !== expected.length) {
+		return false
+	}
+	while (i--)
+		if (!eq(actual[i], expected[i])) {
+			return false
+		}
 	return true
 }
 
@@ -35,11 +43,15 @@ function eqObj(actual: any, expected: any): boolean {
 	const cache = create(null)
 	let k: string
 	for (k in actual) {
-		if (notEqObjKey(actual, expected, k)) return false
+		if (notEqObjKey(actual, expected, k)) {
+			return false
+		}
 		cache[k] = true
 	}
 	for (k in expected) {
-		if (!cache[k] && notEqObjKey(actual, expected, k)) return false
+		if (!cache[k] && notEqObjKey(actual, expected, k)) {
+			return false
+		}
 	}
 	return true
 }

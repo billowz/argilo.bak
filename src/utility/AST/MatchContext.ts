@@ -72,6 +72,7 @@ export class MatchContext {
 		}
 		this.__advanced = advanced
 		this.__offset = offset
+		this.__flushCode()
 	}
 
 	/**

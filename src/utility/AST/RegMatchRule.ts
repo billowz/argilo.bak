@@ -2,13 +2,13 @@
  * @module utility/AST
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Tue Dec 11 2018 15:36:42 GMT+0800 (China Standard Time)
- * @modified Sat Dec 22 2018 15:09:12 GMT+0800 (China Standard Time)
+ * @modified Fri Dec 28 2018 20:09:06 GMT+0800 (China Standard Time)
  */
 
 import { MatchError, RuleOptions } from './Rule'
 import { MatchContext } from './MatchContext'
 import { MatchRule } from './MatchRule'
-import { regStickySupport } from '../reg'
+import { stickyReg } from '../reg'
 import { isInt } from '../is'
 import { createFn } from '../fn'
 import { mapArray } from '../collection'
@@ -52,7 +52,7 @@ export class RegMatchRule extends MatchRule {
 	) {
 		pick = pick === false || isInt(pick) ? pick : !!pick || 0
 
-		const sticky = regStickySupport && !pick, // use exec mode when need pick match group data
+		const sticky = stickyReg && !pick, // use exec mode when need pick match group data
 			pattern = regexp.source,
 			ignoreCase = regexp.ignoreCase
 

@@ -12,6 +12,8 @@ export const PROTOTYPE = 'prototype'
 
 export const PROTO = '__proto__'
 
+export const HAS_OWN_PROP = 'hasOwnProperty'
+
 export const TYPE_BOOL = 'boolean'
 
 export const TYPE_FN = 'function'

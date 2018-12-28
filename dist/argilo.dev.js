@@ -11,7 +11,7 @@
  * Copyright (c) 2018 Tao Zeng <tao.zeng.zt@qq.com>
  * Released under the MIT license
  *
- * Date: Sat, 22 Dec 2018 08:36:29 GMT
+ * Date: Fri, 28 Dec 2018 12:19:13 GMT
  */
 (function (global, factory) {
 	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
@@ -28,6 +28,7 @@
 	var CONSTRUCTOR = 'constructor';
 	var PROTOTYPE = 'prototype';
 	var PROTO = '__proto__';
+	var HAS_OWN_PROP = 'hasOwnProperty';
 	var TYPE_BOOL = 'boolean';
 	var TYPE_FN = 'function';
 	var TYPE_NUM = 'number';
@@ -542,19 +543,19 @@
 	 * @module utility/reg
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Thu Sep 06 2018 18:27:51 GMT+0800 (China Standard Time)
-	 * @modified Sat Dec 22 2018 17:58:01 GMT+0800 (China Standard Time)
+	 * @modified Thu Dec 27 2018 16:22:16 GMT+0800 (China Standard Time)
 	 */
 	/**
-	 * is support sticky on RegExp
+	 * whether to support sticky on RegExp
 	 */
 
-	var regStickySupport = false; //isBool(/(?:)/.sticky)
+	var stickyReg = false; //isBool(/(?:)/.sticky)
 
 	/**
-	 * is support unicode on RegExp
+	 * whether to support unicode on RegExp
 	 */
 
-	var regUnicodeSupport = isBool(/(?:)/.unicode);
+	var unicodeReg = isBool(/(?:)/.unicode);
 	var REG_ESCAPE = /[-\/\\^$*+?.()|[\]{}]/g;
 	/**
 	 * escape string for RegExp
@@ -569,21 +570,21 @@
 	 * @module utility
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Wed Jul 25 2018 15:23:56 GMT+0800 (China Standard Time)
-	 * @modified Tue Nov 27 2018 20:00:18 GMT+0800 (China Standard Time)
+	 * @modified Thu Dec 27 2018 19:23:11 GMT+0800 (China Standard Time)
 	 */
-	var __hasOwn = Object[PROTOTYPE].hasOwnProperty;
+	var __hasOwn = Object[PROTOTYPE][HAS_OWN_PROP];
 	var __getProto = Object.getPrototypeOf,
 	    ____setProto = Object.setPrototypeOf;
 	/**
-	 * is support Object.getPrototypeOf and Object.setPrototypeOf
+	 * whether to support Object.getPrototypeOf and Object.setPrototypeOf
 	 */
 
-	var prototypeOfSupport = !!____setProto;
-	var protoPropSupport = {
+	var prototypeOf = !!____setProto;
+	var protoProp = {
 	  __proto__: []
 	} instanceof Array;
 	/**
-	 * Object.getPrototypeOf shim
+	 * get prototype
 	 */
 
 	var protoOf = ____setProto ? __getProto : __getProto ? function (obj) {
@@ -591,19 +592,23 @@
 	} : function (obj) {
 	  return (__hasOwn.call(obj, PROTO) ? obj[PROTO] : obj[CONSTRUCTOR][PROTOTYPE]) || null;
 	};
+	/**
+	 * set prototype
+	 * > properties on the prototype are not inherited on older browsers
+	 */
+
 	var __setProto = ____setProto || function (obj, proto) {
 	  obj[PROTO] = proto;
 	  return obj;
 	};
 	/**
-	 * Object.setPrototypeOf shim
+	 * set prototype
+	 * > the properties on the prototype will be copied on the older browser
 	 */
 
-	var setProto = ____setProto || (protoPropSupport ? __setProto : function (obj, proto) {
+	var setProto = ____setProto || (protoProp ? __setProto : function (obj, proto) {
 	  for (var p in proto) {
-	    if (__hasOwn.call(proto, p)) {
-	      obj[p] = proto[p];
-	    }
+	    if (__hasOwn.call(proto, p)) obj[p] = proto[p];
 	  }
 
 	  return __setProto(obj, proto);
@@ -614,14 +619,20 @@
 	 * @module utility
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Wed Jul 25 2018 15:22:57 GMT+0800 (China Standard Time)
-	 * @modified Mon Dec 10 2018 12:44:40 GMT+0800 (China Standard Time)
+	 * @modified Thu Dec 27 2018 19:23:34 GMT+0800 (China Standard Time)
 	 */
-	var __hasOwn$1 = Object[PROTOTYPE].hasOwnProperty;
+
+	/*                                                                                      *
+	 *                                     own property                                     *
+	 *                                                                                      */
+	//========================================================================================
+
+	var __hasOwn$1 = Object[PROTOTYPE][HAS_OWN_PROP];
 	/**
 	 * has own property
 	 */
 
-	var hasOwnProp = protoPropSupport ? function (obj, prop) {
+	var hasOwnProp = protoProp ? function (obj, prop) {
 	  return __hasOwn$1.call(obj, prop);
 	} : function (obj, prop) {
 	  return prop !== PROTO && __hasOwn$1.call(obj, prop);
@@ -634,13 +645,22 @@
 
 	function getOwnProp(obj, prop, defaultVal) {
 	  return hasOwnProp(obj, prop) ? obj[prop] : defaultVal;
-	}
+	} //========================================================================================
+
+	/*                                                                                      *
+	 *                                    define property                                   *
+	 *                                                                                      */
+	//========================================================================================
+
+	var _ref = Object[PROTOTYPE],
+	    __defineGetter__ = _ref.__defineGetter__,
+	    __defineSetter__ = _ref.__defineSetter__;
 	var __defProp = Object.defineProperty;
 	/**
-	 * is support Object.defineProperty
+	 * whether to support Object.defineProperty
 	 */
 
-	var defPropSupport = __defProp && function () {
+	var propDescriptor = __defProp && !!function () {
 	  try {
 	    var val,
 	        obj = {};
@@ -658,28 +678,33 @@
 	    return obj.s === val;
 	  } catch (e) {}
 	}();
+	/**
+	 * whether to support `__defineGetter__` and `__defineSetter__`
+	 */
 
-	if (!defPropSupport) {
-	  __defProp = function (obj, prop, desc) {
-	    if (desc.get || desc.set) {
-	      throw new Error('not support getter/setter on defineProperty');
-	    }
-
-	    obj[prop] = desc.value;
-	    return obj;
-	  };
-	}
+	var propAccessor = propDescriptor || !!__defineSetter__;
+	if (!propDescriptor) __defProp = __defineSetter__ ? function (obj, prop, desc) {
+	  var get = desc.get,
+	      set = desc.set;
+	  if ('value' in desc || !(prop in obj)) obj[prop] = desc.value;
+	  if (get) __defineGetter__.call(obj, prop, get);
+	  if (set) __defineSetter__.call(obj, prop, set);
+	  return obj;
+	} : function (obj, prop, desc) {
+	  if (desc.get || desc.set) throw new TypeError('Invalid property descriptor. Accessor descriptors are not supported.');
+	  if ('value' in desc || !(prop in obj)) obj[prop] = desc.value;
+	  return obj;
+	};
 	/**
 	 * define property
 	 */
-
 
 	var defProp = __defProp;
 	/**
 	 * define property by value
 	 */
 
-	var defPropValue = defPropSupport ? function (obj, prop, value, configurable, writable, enumerable) {
+	var defPropValue = propDescriptor ? function (obj, prop, value, configurable, writable, enumerable) {
 	  __defProp(obj, prop, {
 	    value: value,
 	    enumerable: enumerable !== false,
@@ -698,7 +723,7 @@
 	 * @module utility/create
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Wed Jul 25 2018 15:24:47 GMT+0800 (China Standard Time)
-	 * @modified Fri Dec 21 2018 14:10:27 GMT+0800 (China Standard Time)
+	 * @modified Fri Dec 28 2018 20:13:58 GMT+0800 (China Standard Time)
 	 */
 
 	function __() {}
@@ -1384,37 +1409,42 @@
 	 * @module utility/prop
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Fri Nov 30 2018 14:41:02 GMT+0800 (China Standard Time)
-	 * @modified Fri Dec 21 2018 14:15:13 GMT+0800 (China Standard Time)
+	 * @modified Fri Dec 28 2018 20:05:26 GMT+0800 (China Standard Time)
 	 */
 	var pathCache = create(null); // (^ | .) prop | (index | "string prop" | 'string prop')
 
 	var pathReg = /(?:^|\.)([a-zA-Z$_][\w$]*)|\[\s*(?:(\d+)|"((?:[^\\"]|\\.)*)"|'((?:[^\\']|\\.)*)')\s*\]/g;
-	function parsePath(path, cacheable) {
-	  if (isArray(path)) return path;
-	  var array = pathCache[path];
+	function parsePath(propPath, cacheable) {
+	  var path;
 
-	  if (!array) {
-	    array = [];
+	  if (isArray(propPath)) {
+	    path = propPath;
+	  } else if (path = pathCache[propPath]) {
+	    return path;
+	  } else {
+	    path = [];
 	    var match,
 	        idx = 0,
 	        cidx,
 	        i = 0;
 
-	    while (match = pathReg.exec(path)) {
+	    while (match = pathReg.exec(propPath)) {
 	      cidx = pathReg.lastIndex;
-	      if (cidx !== idx + match[0].length) throw new SyntaxError("Invalid Path: \"" + path + "\", unkown character[" + path.charAt(idx) + "] at offset:" + idx);
-	      array[i++] = match[1] || match[2] || match[3] || match[4];
+	      if (cidx !== idx + match[0].length) throw new SyntaxError("Invalid Path: \"" + propPath + "\", unkown character[" + propPath.charAt(idx) + "] at offset:" + idx);
+	      path[i++] = match[1] || match[2] || match[3] || match[4];
 	      idx = cidx;
 	    }
 
-	    if (cacheable === false) return array;
-	    pathCache[path] = array;
+	    if (cacheable !== false && i) {
+	      pathCache[propPath] = path;
+	    }
 	  }
 
-	  return array.slice();
+	  if (!path.length) throw new Error("Empty Path: " + propPath);
+	  return path;
 	}
 	function formatPath(path) {
-	  return isArray(path) ? mapArray(path, formatPathHandler).join('') : path;
+	  return isArray(path) ? path.path || (path.path = mapArray(path, formatPathHandler).join('')) : path;
 	}
 
 	function formatPathHandler(prop) {
@@ -2268,7 +2298,9 @@
 	  var i = props.length;
 
 	  while (i--) {
-	    if (actual[props[i]] !== expected[props[i]]) return false;
+	    if (actual[props[i]] !== expected[props[i]]) {
+	      return false;
+	    }
 	  }
 
 	  return true;
@@ -2276,10 +2308,15 @@
 
 	function eqArray(actual, expected, eq$$1) {
 	  var i = actual.length;
-	  if (i !== expected.length) return false;
+
+	  if (i !== expected.length) {
+	    return false;
+	  }
 
 	  while (i--) {
-	    if (!eq$$1(actual[i], expected[i])) return false;
+	    if (!eq$$1(actual[i], expected[i])) {
+	      return false;
+	    }
 	  }
 
 	  return true;
@@ -2289,12 +2326,17 @@
 	  var cache = create(null);
 
 	  for (var k in actual) {
-	    if (notEqObjKey(actual, expected, k)) return false;
+	    if (notEqObjKey(actual, expected, k)) {
+	      return false;
+	    }
+
 	    cache[k] = true;
 	  }
 
 	  for (k in expected) {
-	    if (!cache[k] && notEqObjKey(actual, expected, k)) return false;
+	    if (!cache[k] && notEqObjKey(actual, expected, k)) {
+	      return false;
+	    }
 	  }
 
 	  return true;
@@ -2459,9 +2501,9 @@
 	 * @module utility/List
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
-	 * @modified Tue Dec 18 2018 19:25:11 GMT+0800 (China Standard Time)
+	 * @modified Thu Dec 27 2018 14:00:33 GMT+0800 (China Standard Time)
 	 */
-	var DEFAULT_BINDING = '__this__'; //type ListNode = [ListElement, IListNode, IListNode, List]
+	var DEFAULT_BINDING = '__list__'; //type ListNode = [ListElement, IListNode, IListNode, List]
 
 	var List =
 	/*#__PURE__*/
@@ -2755,10 +2797,10 @@
 	 * @module utility/List
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
-	 * @modified Tue Dec 18 2018 19:32:10 GMT+0800 (China Standard Time)
+	 * @modified Thu Dec 27 2018 14:00:58 GMT+0800 (China Standard Time)
 	 */
-	var DEFAULT_FN_BINDING = '__id__';
-	var DEFAULT_SCOPE_BINDING = '__id__';
+	var DEFAULT_FN_BINDING = '__flist_id__';
+	var DEFAULT_SCOPE_BINDING = '__flist_id__';
 	var FnList =
 	/*#__PURE__*/
 	function () {
@@ -3545,6 +3587,8 @@
 
 	    this.__advanced = advanced;
 	    this.__offset = offset;
+
+	    this.__flushCode();
 	  };
 	  /**
 	   * commit context state to parent context
@@ -4284,21 +4328,22 @@
 	    var parent = ctx.parent,
 	        tag = ctx.data = parent.result[0],
 	        rule = CONTENT_ELEM[tag] ? ELEM_CONTENT : ELEM_CHILDREN,
-	        err = rule.match(ctx),
-	        serr = err.target;
-	    if (serr.msg) return err;
-	    var sctx = serr.context;
-	    ctx.margeState(sctx);
-	    ctx.addAll(sctx.result);
+	        err = rule.match(ctx);
+	    var target = err.target,
+	        context = err.context;
+	    if (target.msg) return err;
+	    ctx.margeState(context);
+	    ctx.add(context.result);
 	  })])];
 	}, function (d, l, ctx) {
-	  var tag = d[0];
-	  var elem = {
+	  var tag = d[0],
+	      children = d[2][0],
+	      elem = {
 	    tag: tag,
 	    attrs: d[1]
 	  };
 	  ctx.add(elem);
-	  VOID_ELEM[tag] ? ctx.addAll(d[2]) : CONTENT_ELEM[tag] ? elem.content = d[2][0] || '' : d[2].length && (elem.children = d[2]);
+	  VOID_ELEM[tag] ? ctx.addAll(children) : CONTENT_ELEM[tag] ? elem.content = children[0] || '' : children.length && (elem.children = children);
 	});
 	var ELEM_CHILDREN = elemBody('elem-children', [ELEM], function (m, l, ctx, rule) {
 	  var tag = ctx.data;
@@ -4316,7 +4361,7 @@
 	} // prettier-ignore
 
 
-	var html = and('html', [/\s*/, many('elems', [ELEM]), ['EOF', /\s*$/]], function (data, len, ctx) {
+	var html = and('html', [/\s*/, many('elems', [or([ELEM, match('text', /.[^<]*/, attachText)])], appendMatch), ['EOF', /\s*$/]], function (data, len, ctx) {
 	  ctx.addAll(data[0]);
 	}).init();
 
@@ -4383,17 +4428,18 @@
 	exports.isArrayLike = isArrayLike;
 	exports.isObj = isObj;
 	exports.isBlank = isBlank;
-	exports.regStickySupport = regStickySupport;
-	exports.regUnicodeSupport = regUnicodeSupport;
+	exports.stickyReg = stickyReg;
+	exports.unicodeReg = unicodeReg;
 	exports.reEscape = reEscape;
-	exports.prototypeOfSupport = prototypeOfSupport;
-	exports.protoPropSupport = protoPropSupport;
+	exports.prototypeOf = prototypeOf;
+	exports.protoProp = protoProp;
 	exports.protoOf = protoOf;
 	exports.__setProto = __setProto;
 	exports.setProto = setProto;
 	exports.hasOwnProp = hasOwnProp;
 	exports.getOwnProp = getOwnProp;
-	exports.defPropSupport = defPropSupport;
+	exports.propDescriptor = propDescriptor;
+	exports.propAccessor = propAccessor;
 	exports.defProp = defProp;
 	exports.defPropValue = defPropValue;
 	exports.parsePath = parsePath;

@@ -3,23 +3,23 @@
  * @module utility
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Jul 25 2018 15:23:56 GMT+0800 (China Standard Time)
- * @modified Tue Nov 27 2018 20:00:18 GMT+0800 (China Standard Time)
+ * @modified Thu Dec 27 2018 19:23:11 GMT+0800 (China Standard Time)
  */
-import { CONSTRUCTOR, PROTO, PROTOTYPE } from './consts'
+import { CONSTRUCTOR, PROTO, PROTOTYPE, HAS_OWN_PROP } from './consts'
 
-const __hasOwn = Object[PROTOTYPE].hasOwnProperty
+const __hasOwn = Object[PROTOTYPE][HAS_OWN_PROP]
 const __getProto = Object.getPrototypeOf,
 	____setProto = Object.setPrototypeOf
 
 /**
- * is support Object.getPrototypeOf and Object.setPrototypeOf
+ * whether to support Object.getPrototypeOf and Object.setPrototypeOf
  */
-export const prototypeOfSupport = !!____setProto
+export const prototypeOf = !!____setProto
 
-export const protoPropSupport = { __proto__: [] } instanceof Array
+export const protoProp = { __proto__: [] } instanceof Array
 
 /**
- * Object.getPrototypeOf shim
+ * get prototype
  */
 export const protoOf: (o: any) => any = ____setProto
 	? __getProto
@@ -31,6 +31,10 @@ export const protoOf: (o: any) => any = ____setProto
 			return (__hasOwn.call(obj, PROTO) ? obj[PROTO] : obj[CONSTRUCTOR][PROTOTYPE]) || null
 	  }
 
+/**
+ * set prototype
+ * > properties on the prototype are not inherited on older browsers
+ */
 export const __setProto: <T>(obj: any, proto: any) => any =
 	____setProto ||
 	function setPrototypeOf(obj, proto) {
@@ -39,17 +43,16 @@ export const __setProto: <T>(obj: any, proto: any) => any =
 	}
 
 /**
- * Object.setPrototypeOf shim
+ * set prototype
+ * > the properties on the prototype will be copied on the older browser
  */
 export const setProto: <T>(obj: any, proto: any) => any =
 	____setProto ||
-	(protoPropSupport
+	(protoProp
 		? __setProto
 		: function setPrototypeOf(obj, proto) {
 				for (let p in proto) {
-					if (__hasOwn.call(proto, p)) {
-						obj[p] = proto[p]
-					}
+					if (__hasOwn.call(proto, p)) obj[p] = proto[p]
 				}
 				return __setProto(obj, proto)
 		  })

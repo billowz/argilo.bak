@@ -11,7 +11,7 @@
  * Copyright (c) 2018 Tao Zeng <tao.zeng.zt@qq.com>
  * Released under the MIT license
  *
- * Date: Wed, 19 Dec 2018 05:51:22 GMT
+ * Date: Fri, 28 Dec 2018 12:19:13 GMT
  */
 (function (global, factory) {
 	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
@@ -28,6 +28,7 @@
 	var CONSTRUCTOR = 'constructor';
 	var PROTOTYPE = 'prototype';
 	var PROTO = '__proto__';
+	var HAS_OWN_PROP = 'hasOwnProperty';
 	var TYPE_BOOL = 'boolean';
 	var TYPE_FN = 'function';
 	var TYPE_NUM = 'number';
@@ -542,18 +543,19 @@
 	 * @module utility/reg
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Thu Sep 06 2018 18:27:51 GMT+0800 (China Standard Time)
-	 * @modified Tue Nov 27 2018 20:00:44 GMT+0800 (China Standard Time)
+	 * @modified Thu Dec 27 2018 16:22:16 GMT+0800 (China Standard Time)
 	 */
 	/**
-	 * is support sticky on RegExp
+	 * whether to support sticky on RegExp
 	 */
 
-	var regStickySupport = isBool(/(?:)/.sticky);
+	var stickyReg = false; //isBool(/(?:)/.sticky)
+
 	/**
-	 * is support unicode on RegExp
+	 * whether to support unicode on RegExp
 	 */
 
-	var regUnicodeSupport = isBool(/(?:)/.unicode);
+	var unicodeReg = isBool(/(?:)/.unicode);
 	var REG_ESCAPE = /[-\/\\^$*+?.()|[\]{}]/g;
 	/**
 	 * escape string for RegExp
@@ -568,21 +570,21 @@
 	 * @module utility
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Wed Jul 25 2018 15:23:56 GMT+0800 (China Standard Time)
-	 * @modified Tue Nov 27 2018 20:00:18 GMT+0800 (China Standard Time)
+	 * @modified Thu Dec 27 2018 19:23:11 GMT+0800 (China Standard Time)
 	 */
-	var __hasOwn = Object[PROTOTYPE].hasOwnProperty;
+	var __hasOwn = Object[PROTOTYPE][HAS_OWN_PROP];
 	var __getProto = Object.getPrototypeOf,
 	    ____setProto = Object.setPrototypeOf;
 	/**
-	 * is support Object.getPrototypeOf and Object.setPrototypeOf
+	 * whether to support Object.getPrototypeOf and Object.setPrototypeOf
 	 */
 
-	var prototypeOfSupport = !!____setProto;
-	var protoPropSupport = {
+	var prototypeOf = !!____setProto;
+	var protoProp = {
 	  __proto__: []
 	} instanceof Array;
 	/**
-	 * Object.getPrototypeOf shim
+	 * get prototype
 	 */
 
 	var protoOf = ____setProto ? __getProto : __getProto ? function (obj) {
@@ -590,19 +592,23 @@
 	} : function (obj) {
 	  return (__hasOwn.call(obj, PROTO) ? obj[PROTO] : obj[CONSTRUCTOR][PROTOTYPE]) || null;
 	};
+	/**
+	 * set prototype
+	 * > properties on the prototype are not inherited on older browsers
+	 */
+
 	var __setProto = ____setProto || function (obj, proto) {
 	  obj[PROTO] = proto;
 	  return obj;
 	};
 	/**
-	 * Object.setPrototypeOf shim
+	 * set prototype
+	 * > the properties on the prototype will be copied on the older browser
 	 */
 
-	var setProto = ____setProto || (protoPropSupport ? __setProto : function (obj, proto) {
+	var setProto = ____setProto || (protoProp ? __setProto : function (obj, proto) {
 	  for (var p in proto) {
-	    if (__hasOwn.call(proto, p)) {
-	      obj[p] = proto[p];
-	    }
+	    if (__hasOwn.call(proto, p)) obj[p] = proto[p];
 	  }
 
 	  return __setProto(obj, proto);
@@ -613,14 +619,20 @@
 	 * @module utility
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Wed Jul 25 2018 15:22:57 GMT+0800 (China Standard Time)
-	 * @modified Mon Dec 10 2018 12:44:40 GMT+0800 (China Standard Time)
+	 * @modified Thu Dec 27 2018 19:23:34 GMT+0800 (China Standard Time)
 	 */
-	var __hasOwn$1 = Object[PROTOTYPE].hasOwnProperty;
+
+	/*                                                                                      *
+	 *                                     own property                                     *
+	 *                                                                                      */
+	//========================================================================================
+
+	var __hasOwn$1 = Object[PROTOTYPE][HAS_OWN_PROP];
 	/**
 	 * has own property
 	 */
 
-	var hasOwnProp = protoPropSupport ? function (obj, prop) {
+	var hasOwnProp = protoProp ? function (obj, prop) {
 	  return __hasOwn$1.call(obj, prop);
 	} : function (obj, prop) {
 	  return prop !== PROTO && __hasOwn$1.call(obj, prop);
@@ -633,13 +645,22 @@
 
 	function getOwnProp(obj, prop, defaultVal) {
 	  return hasOwnProp(obj, prop) ? obj[prop] : defaultVal;
-	}
+	} //========================================================================================
+
+	/*                                                                                      *
+	 *                                    define property                                   *
+	 *                                                                                      */
+	//========================================================================================
+
+	var _ref = Object[PROTOTYPE],
+	    __defineGetter__ = _ref.__defineGetter__,
+	    __defineSetter__ = _ref.__defineSetter__;
 	var __defProp = Object.defineProperty;
 	/**
-	 * is support Object.defineProperty
+	 * whether to support Object.defineProperty
 	 */
 
-	var defPropSupport = __defProp && function () {
+	var propDescriptor = __defProp && !!function () {
 	  try {
 	    var val,
 	        obj = {};
@@ -657,28 +678,33 @@
 	    return obj.s === val;
 	  } catch (e) {}
 	}();
+	/**
+	 * whether to support `__defineGetter__` and `__defineSetter__`
+	 */
 
-	if (!defPropSupport) {
-	  __defProp = function (obj, prop, desc) {
-	    if (desc.get || desc.set) {
-	      throw new Error('not support getter/setter on defineProperty');
-	    }
-
-	    obj[prop] = desc.value;
-	    return obj;
-	  };
-	}
+	var propAccessor = propDescriptor || !!__defineSetter__;
+	if (!propDescriptor) __defProp = __defineSetter__ ? function (obj, prop, desc) {
+	  var get = desc.get,
+	      set = desc.set;
+	  if ('value' in desc || !(prop in obj)) obj[prop] = desc.value;
+	  if (get) __defineGetter__.call(obj, prop, get);
+	  if (set) __defineSetter__.call(obj, prop, set);
+	  return obj;
+	} : function (obj, prop, desc) {
+	  if (desc.get || desc.set) throw new TypeError('Invalid property descriptor. Accessor descriptors are not supported.');
+	  if ('value' in desc || !(prop in obj)) obj[prop] = desc.value;
+	  return obj;
+	};
 	/**
 	 * define property
 	 */
-
 
 	var defProp = __defProp;
 	/**
 	 * define property by value
 	 */
 
-	var defPropValue = defPropSupport ? function (obj, prop, value, configurable, writable, enumerable) {
+	var defPropValue = propDescriptor ? function (obj, prop, value, configurable, writable, enumerable) {
 	  __defProp(obj, prop, {
 	    value: value,
 	    enumerable: enumerable !== false,
@@ -697,7 +723,7 @@
 	 * @module utility/create
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Wed Jul 25 2018 15:24:47 GMT+0800 (China Standard Time)
-	 * @modified Mon Dec 10 2018 11:45:30 GMT+0800 (China Standard Time)
+	 * @modified Fri Dec 28 2018 20:13:58 GMT+0800 (China Standard Time)
 	 */
 
 	function __() {}
@@ -886,7 +912,7 @@
 	 * @module utility/collection
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Wed Jul 25 2018 17:12:06 GMT+0800 (China Standard Time)
-	 * @modified Tue Nov 27 2018 13:54:35 GMT+0800 (China Standard Time)
+	 * @modified Fri Dec 21 2018 14:09:49 GMT+0800 (China Standard Time)
 	 */
 	/**
 	 * SKIP Control
@@ -1321,7 +1347,7 @@
 	 * @module utility/collection
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Fri Nov 16 2018 16:29:04 GMT+0800 (China Standard Time)
-	 * @modified Fri Nov 30 2018 17:42:28 GMT+0800 (China Standard Time)
+	 * @modified Fri Dec 21 2018 14:09:44 GMT+0800 (China Standard Time)
 	 */
 	/**
 	 * @return STOP or SKIP or [key: string, value: any]
@@ -1383,37 +1409,42 @@
 	 * @module utility/prop
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Fri Nov 30 2018 14:41:02 GMT+0800 (China Standard Time)
-	 * @modified Wed Dec 19 2018 13:21:11 GMT+0800 (China Standard Time)
+	 * @modified Fri Dec 28 2018 20:05:26 GMT+0800 (China Standard Time)
 	 */
 	var pathCache = create(null); // (^ | .) prop | (index | "string prop" | 'string prop')
 
 	var pathReg = /(?:^|\.)([a-zA-Z$_][\w$]*)|\[\s*(?:(\d+)|"((?:[^\\"]|\\.)*)"|'((?:[^\\']|\\.)*)')\s*\]/g;
-	function parsePath(path, cacheable) {
-	  if (isArray(path)) return path;
-	  var array = pathCache[path];
+	function parsePath(propPath, cacheable) {
+	  var path;
 
-	  if (!array) {
-	    array = [];
+	  if (isArray(propPath)) {
+	    path = propPath;
+	  } else if (path = pathCache[propPath]) {
+	    return path;
+	  } else {
+	    path = [];
 	    var match,
 	        idx = 0,
 	        cidx,
 	        i = 0;
 
-	    while (match = pathReg.exec(path)) {
+	    while (match = pathReg.exec(propPath)) {
 	      cidx = pathReg.lastIndex;
-	      if (cidx !== idx + match[0].length) throw new SyntaxError("Invalid Path: \"" + path + "\", unkown character[" + path.charAt(idx) + "] at offset:" + idx);
-	      array[i++] = match[1] || match[2] || match[3] || match[4];
+	      if (cidx !== idx + match[0].length) throw new SyntaxError("Invalid Path: \"" + propPath + "\", unkown character[" + propPath.charAt(idx) + "] at offset:" + idx);
+	      path[i++] = match[1] || match[2] || match[3] || match[4];
 	      idx = cidx;
 	    }
 
-	    if (cacheable === false) return array;
-	    pathCache[path] = array;
+	    if (cacheable !== false && i) {
+	      pathCache[propPath] = path;
+	    }
 	  }
 
-	  return array.slice();
+	  if (!path.length) throw new Error("Empty Path: " + propPath);
+	  return path;
 	}
 	function formatPath(path) {
-	  return isArray(path) ? mapArray(path, formatPathHandler).join('') : path;
+	  return isArray(path) ? path.path || (path.path = mapArray(path, formatPathHandler).join('')) : path;
 	}
 
 	function formatPathHandler(prop) {
@@ -1426,7 +1457,7 @@
 	  var i = 0;
 
 	  for (; i < l; i++) {
-	    if (obj = obj[path[i]], obj === null || obj === undefined) return;
+	    if ((obj = obj[path[i]]) === null || obj === undefined) return;
 	  }
 
 	  if (obj && ~l) return obj[path[i]];
@@ -1448,7 +1479,7 @@
 	 * @module utility/string
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Mon Dec 11 2017 13:57:32 GMT+0800 (China Standard Time)
-	 * @modified Sat Dec 08 2018 16:16:42 GMT+0800 (China Standard Time)
+	 * @modified Sat Dec 22 2018 15:06:34 GMT+0800 (China Standard Time)
 	 */
 
 	/*                                                                                      *
@@ -1471,6 +1502,12 @@
 
 	function char(code) {
 	  return String.fromCharCode(code);
+	}
+	function cutStr(str, start, end) {
+	  return str.substring(start, end);
+	}
+	function cutStrLen(str, start, len) {
+	  return str.substr(start, len);
 	} //========================================================================================
 
 	/*                                                                                      *
@@ -1548,18 +1585,18 @@
 	 * @module utility/format
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Mon Dec 03 2018 19:46:41 GMT+0800 (China Standard Time)
-	 * @modified Mon Dec 17 2018 19:24:20 GMT+0800 (China Standard Time)
+	 * @modified Sat Dec 22 2018 15:08:24 GMT+0800 (China Standard Time)
 	 */
 
 	/*                                                                                      *
-	 *                                       pad & cut                                      *
+	 *                                     pad & shorten                                    *
 	 *                                                                                      */
 	//========================================================================================
 
 	function pad(str, len, chr, leftAlign) {
 	  return len > str.length ? __pad(str, len, chr, leftAlign) : str;
 	}
-	function cut(str, len, suffix) {
+	function shorten(str, len, suffix) {
 	  return len < str.length ? (suffix = suffix || '', str.substr(0, len - suffix.length) + suffix) : str;
 	}
 
@@ -1655,15 +1692,15 @@
 	 *                                                                                      */
 	//========================================================================================
 	//   0      1      2     3     4       5       6           7         8      9           10             11             12        13
-	// [match, expr, index, prop, flags, width, width-idx, width-prop, fill, precision, precision-idx, precision-prop, cut-suffix, type]
+	// [match, expr, index, prop, flags, width, width-idx, width-prop, fill, precision, precision-idx, precision-prop, shorten-suffix, type]
 
 
 	var paramIdxR = "(\\d+|\\$|@)",
 	    paramPropR = "(?:\\{((?:[a-zA-Z$_][\\w$_]*|\\[(?:\\d+|\"(?:[^\\\\\"]|\\\\.)*\"|'(?:[^\\\\']|\\\\.)*')\\])(?:\\.[a-zA-Z$_][\\w$_]*|\\[(?:\\d+|\"(?:[^\\\\\"]|\\\\.)*\"|'(?:[^\\\\']|\\\\.)*')\\])*)\\})",
 	    widthR = "(?:([1-9]\\d*)|&" + paramIdxR + paramPropR + ")",
 	    fillR = "(?:=(.))",
-	    cutSuffixR = "(?:=\"((?:[^\\\\\"]|\\\\.)*)\")",
-	    formatReg = new RegExp("\\\\.|(\\{" + paramIdxR + "?" + paramPropR + "?(?::([#,+\\- 0]*)(?:" + widthR + fillR + "?)?(?:\\." + widthR + cutSuffixR + "?)?)?([a-zA-Z_][a-zA-Z0-9_$]*)?\\})", 'g'); //========================================================================================
+	    shortenSuffixR = "(?:=\"((?:[^\\\\\"]|\\\\.)*)\")",
+	    formatReg = new RegExp("\\\\.|(\\{" + paramIdxR + "?" + paramPropR + "?(?::([#,+\\- 0]*)(?:" + widthR + fillR + "?)?(?:\\." + widthR + shortenSuffixR + "?)?)?([a-zA-Z_][a-zA-Z0-9_$]*)?\\})", 'g'); //========================================================================================
 
 	/*                                                                                      *
 	 *                                      Formatters                                      *
@@ -1703,7 +1740,7 @@
 	 * 			)?
 	 * 			(
 	 * 				'.'
-	 * 				<precision> ('=' '"' <cut-suffix> '"')?
+	 * 				<precision> ('=' '"' <shorten-suffix> '"')?
 	 * 			)?
 	 * 		)?
 	 * 		(<type>)?
@@ -1799,7 +1836,7 @@
 	 * 			{:.&@{<prop>}}
 	 * 			{:.&${<prop>}}
 	 * 			{:.&<number>{<prop>}}
-	 * 		- cut suffix
+	 * 		- shorten suffix
 	 * 			{:.&@="<suffix>"}
 	 * 			{:.&$="<suffix>"}
 	 * 			{:.&<number>="<suffix>"}
@@ -1886,7 +1923,7 @@
 	 * 						(?:
 	 * 							=
 	 * 							"
-	 * 							((?:[^\\"]|\\.)*)					// 12: cut su
+	 * 							((?:[^\\"]|\\.)*)					// 12: shorten su
 	 * 							"
 	 * 						)
 	 * 					)?
@@ -1904,9 +1941,9 @@
 	  offset = offset || 0;
 	  var start = offset;
 	  getParam = getParam || defaultGetParam;
-	  return fmt.replace(formatReg, function (s, m, param, paramProp, flags, width, widx, wprop, fill, precision, pidx, pprop, cutSuffix, type) {
+	  return fmt.replace(formatReg, function (s, m, param, paramProp, flags, width, widx, wprop, fill, precision, pidx, pprop, shortenSuffix, type) {
 	    if (!m) return s.charAt(1);
-	    return getFormatter(type)(parseParam(param || '$', paramProp), parseFlags(flags), parseWidth(width, widx, wprop) || 0, fill, parseWidth(precision, pidx, pprop), cutSuffix);
+	    return getFormatter(type)(parseParam(param || '$', paramProp), parseFlags(flags), parseWidth(width, widx, wprop) || 0, fill, parseWidth(precision, pidx, pprop), shortenSuffix);
 	  });
 
 	  function parseWidth(width, idx, prop) {
@@ -2003,7 +2040,7 @@
 	  while (m = formatReg.exec(fmt)) {
 	    mEnd = formatReg.lastIndex;
 	    mStart = mEnd - m[0].length;
-	    lastIdx < mStart && pushStr(fmt.substring(lastIdx, mStart), 0);
+	    lastIdx < mStart && pushStr(cutStr(fmt, lastIdx, mStart), 0);
 
 	    if (m[1]) {
 	      codes[i] = "arr[" + i + "](arguments, " + STATE_VAR + ")";
@@ -2015,7 +2052,7 @@
 	    lastIdx = mEnd;
 	  }
 
-	  lastIdx < fmt.length && pushStr(fmt.substring(lastIdx), i);
+	  lastIdx < fmt.length && pushStr(cutStr(fmt, lastIdx), i);
 	  return createFn("return function(){var " + STATE_VAR + " = [" + offset + ", " + offset + "]; return " + codes.join(' + ') + "}", ['arr'])(arr);
 
 	  function pushStr(str, append) {
@@ -2056,9 +2093,9 @@
 	//========================================================================================
 
 	function strFormatter(toStr) {
-	  return function (val, flags, width, fill, precision, cutSuffix) {
+	  return function (val, flags, width, fill, precision, shortenSuffix) {
 	    var str = toStr(val, flags);
-	    return width > str.length ? __pad(str, width, fill, flags & FORMAT_LEFT) : cut(str, precision, cutSuffix);
+	    return width > str.length ? __pad(str, width, fill, flags & FORMAT_LEFT) : shorten(str, precision, shortenSuffix);
 	  };
 	}
 
@@ -2261,7 +2298,9 @@
 	  var i = props.length;
 
 	  while (i--) {
-	    if (actual[props[i]] !== expected[props[i]]) return false;
+	    if (actual[props[i]] !== expected[props[i]]) {
+	      return false;
+	    }
 	  }
 
 	  return true;
@@ -2269,10 +2308,15 @@
 
 	function eqArray(actual, expected, eq$$1) {
 	  var i = actual.length;
-	  if (i !== expected.length) return false;
+
+	  if (i !== expected.length) {
+	    return false;
+	  }
 
 	  while (i--) {
-	    if (!eq$$1(actual[i], expected[i])) return false;
+	    if (!eq$$1(actual[i], expected[i])) {
+	      return false;
+	    }
 	  }
 
 	  return true;
@@ -2282,12 +2326,17 @@
 	  var cache = create(null);
 
 	  for (var k in actual) {
-	    if (notEqObjKey(actual, expected, k)) return false;
+	    if (notEqObjKey(actual, expected, k)) {
+	      return false;
+	    }
+
 	    cache[k] = true;
 	  }
 
 	  for (k in expected) {
-	    if (!cache[k] && notEqObjKey(actual, expected, k)) return false;
+	    if (!cache[k] && notEqObjKey(actual, expected, k)) {
+	      return false;
+	    }
 	  }
 
 	  return true;
@@ -2301,15 +2350,22 @@
 	 * @module utility/assert
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Wed Nov 28 2018 11:01:45 GMT+0800 (China Standard Time)
-	 * @modified Wed Dec 19 2018 13:45:36 GMT+0800 (China Standard Time)
+	 * @modified Fri Dec 21 2018 14:17:26 GMT+0800 (China Standard Time)
 	 */
 	var formatters$1 = [],
 	    formatArgHandlers = [];
 
 	function parseMessage(msg, args, msgIdx) {
-	  var fs = formatters$1[msgIdx] || (formatArgHandlers[msgIdx] = function (args, offset) {
-	    return args[0][offset >= msgIdx ? offset + 1 : offset];
-	  }, formatters$1[msgIdx] = create(null));
+	  var fs = formatters$1[msgIdx];
+
+	  if (!fs) {
+	    formatArgHandlers[msgIdx] = function (args, offset) {
+	      return args[0][offset >= msgIdx ? offset + 1 : offset];
+	    };
+
+	    formatters$1[msgIdx] = fs = create(null);
+	  }
+
 	  return (fs[msg] || (fs[msg] = formatter(msg, msgIdx, formatArgHandlers[msgIdx])))(args);
 	}
 
@@ -2445,9 +2501,9 @@
 	 * @module utility/List
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
-	 * @modified Tue Dec 18 2018 19:25:11 GMT+0800 (China Standard Time)
+	 * @modified Thu Dec 27 2018 14:00:33 GMT+0800 (China Standard Time)
 	 */
-	var DEFAULT_BINDING = '__this__'; //type ListNode = [ListElement, IListNode, IListNode, List]
+	var DEFAULT_BINDING = '__list__'; //type ListNode = [ListElement, IListNode, IListNode, List]
 
 	var List =
 	/*#__PURE__*/
@@ -2741,10 +2797,10 @@
 	 * @module utility/List
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
-	 * @modified Tue Dec 18 2018 19:32:10 GMT+0800 (China Standard Time)
+	 * @modified Thu Dec 27 2018 14:00:58 GMT+0800 (China Standard Time)
 	 */
-	var DEFAULT_FN_BINDING = '__id__';
-	var DEFAULT_SCOPE_BINDING = '__id__';
+	var DEFAULT_FN_BINDING = '__flist_id__';
+	var DEFAULT_SCOPE_BINDING = '__flist_id__';
 	var FnList =
 	/*#__PURE__*/
 	function () {
@@ -2893,7 +2949,7 @@
 	 * @module utility/Source
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Mon Dec 17 2018 10:41:21 GMT+0800 (China Standard Time)
-	 * @modified Wed Dec 19 2018 13:22:43 GMT+0800 (China Standard Time)
+	 * @modified Sat Dec 22 2018 14:37:32 GMT+0800 (China Standard Time)
 	 */
 	var LINE_REG = /([^\n]+)?(\n|$)/g;
 	var Source =
@@ -2902,8 +2958,8 @@
 	  function Source(buff) {
 	    this.buff = buff;
 	    this.len = buff.length;
-	    this.lines = [];
-	    this.linePos = 0;
+	    this.__lines = [];
+	    this.__linePos = 0;
 	  }
 
 	  var _proto = Source.prototype;
@@ -2911,8 +2967,8 @@
 	  _proto.position = function position(offset) {
 	    var buff = this.buff,
 	        len = this.len,
-	        lines = this.lines,
-	        linePos = this.linePos;
+	        lines = this.__lines,
+	        linePos = this.__linePos;
 	    var i = lines.length,
 	        p;
 
@@ -2932,7 +2988,7 @@
 	          if (!p || offset < p) break;
 	        }
 
-	        this.linePos = p || len;
+	        this.__linePos = p || len;
 	      }
 
 	      return i ? [i, (offset > len ? len : offset) - lines[i - 1][0], lines[i - 1][1]] : [1, 0, ''];
@@ -2973,19 +3029,43 @@
 	 * @created 2018-11-09 13:22:51
 	 * @modified 2018-11-09 13:22:51 by Tao Zeng (tao.zeng.zt@qq.com)
 	 */
+	function genCharCodes(start, end, ignoreCase) {
+	  var s = isNum(start) ? start : charCode(start),
+	      e = isNum(end) ? end : charCode(end),
+	      codes = new Array(e - s),
+	      i = 0;
+
+	  if (ignoreCase) {
+	    var c;
+
+	    for (; s <= e; s++) {
+	      codes[i++] = s;
+	      c = getAnotherCode(s);
+	      codes[i++] = c;
+	    }
+	  } else {
+	    for (; s <= e; s++) {
+	      codes[i++] = s;
+	    }
+	  }
+
+	  return codes;
+	}
 	/**
 	 * each char codes
 	 */
 
 	function eachCharCodes(codes, ignoreCase, cb) {
+	  var i;
+
 	  if (isStr(codes)) {
-	    var i = codes.length;
+	    i = codes.length;
 
 	    while (i--) {
-	      eachCharCode(codes.charCodeAt(i), ignoreCase, cb);
+	      eachCharCode(charCode(codes, i), ignoreCase, cb);
 	    }
 	  } else if (isArray(codes)) {
-	    var i = codes.length;
+	    i = codes.length;
 
 	    while (i--) {
 	      eachCharCodes(codes[i], ignoreCase, cb);
@@ -2999,19 +3079,20 @@
 	  cb(code);
 
 	  if (ignoreCase) {
-	    if (code <= 90) {
-	      if (code >= 65) cb(code + 32);
-	    } else if (code <= 122) {
-	      cb(code - 32);
-	    }
+	    var c = getAnotherCode(code);
+	    c && cb(c);
 	  }
+	}
+
+	function getAnotherCode(code) {
+	  return code <= 90 ? code >= 65 ? code + 32 : 0 : code <= 122 ? code - 32 : 0;
 	}
 
 	/**
 	 * @module utility/mixin
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Tue Dec 18 2018 16:41:03 GMT+0800 (China Standard Time)
-	 * @modified Tue Dec 18 2018 19:01:41 GMT+0800 (China Standard Time)
+	 * @modified Fri Dec 21 2018 10:24:24 GMT+0800 (China Standard Time)
 	 */
 	function mixin(behaviour) {
 	  return function (Class) {
@@ -3036,6 +3117,7 @@
 	    this.capturable = capturable && source ? source.capturable : capturable;
 	    this.msg = msg;
 	    this.source = source;
+	    this.target = source ? source.target : this;
 	    this.context = context;
 	    this.rule = rule;
 	    this.pos = context.startPos();
@@ -3070,6 +3152,8 @@
 	function () {
 	  // rule type (for debug)
 	  // rule id
+	  // rule name
+	  // error is capturable
 	  // rule expression (for debug)
 	  // rule EXPECT content (for debug)
 	  // matched callback
@@ -3083,12 +3167,12 @@
 	   * @param onMatch		callback on matched, allow modify the match result or return an error
 	   * @param onErr			callback on Error, allow to ignore error or modify error message or return new error
 	   */
-	  function Rule(name, capturable, onMatch, onErr) {
+	  function Rule(name, options) {
 	    this.id = idGen++;
 	    this.name = name;
-	    this.capturable = capturable !== false;
-	    this.onMatch = onMatch || defaultMatch;
-	    this.onErr = onErr || defaultErr;
+	    this.capturable = options.capturable !== false;
+	    this.onMatch = options.match || defaultMatch;
+	    this.onErr = options.err || defaultErr;
 	  }
 	  /**
 	   * create Error
@@ -3101,7 +3185,7 @@
 
 	  var _proto2 = Rule.prototype;
 
-	  _proto2.mkErr = function mkErr(msg, context, source, capturable) {
+	  _proto2.mkErr = function mkErr(msg, context, capturable, source) {
 	    return new MatchError(msg, capturable, source, context, this);
 	  };
 	  /**
@@ -3115,9 +3199,9 @@
 
 
 	  _proto2.error = function error(msg, context, src, capturable) {
-	    var err = this.mkErr(msg, context, src, capturable);
+	    var err = this.mkErr(msg, context, capturable, src);
 	    var userErr = this.onErr(err, context, this);
-	    if (userErr) return isStr(userErr) ? (err[0] = userErr, err) : userErr;
+	    if (userErr) return userErr.$ruleErr ? userErr : (err[0] = String(userErr), err);
 	  };
 	  /**
 	   * match success
@@ -3131,7 +3215,11 @@
 
 	  _proto2.matched = function matched(data, len, context) {
 	    var err = this.onMatch(data, len, context, this);
-	    if (err) return err.$ruleErr ? err : this.mkErr(String(err), context, null, false);
+	    if (err) return err.$ruleErr ? err : this.mkErr(String(err), context, false);
+	  };
+
+	  _proto2.enter = function enter(context) {
+	    return context.create();
 	  };
 	  /**
 	   * match
@@ -3156,12 +3244,11 @@
 
 
 	  _proto2.test = function test() {
-	    return true; //return context.nextCode() !== 0
+	    return true;
 	  };
 
 	  _proto2.startCodeTest = function startCodeTest(context) {
-	    var code = context.nextCode();
-	    return code !== 0 && !!this.startCodeIdx[code];
+	    return this.startCodeIdx[context.nextCode()];
 	  };
 
 	  _proto2.setStartCodes = function setStartCodes(start, ignoreCase) {
@@ -3178,8 +3265,10 @@
 	  };
 
 	  _proto2.setCodeIdx = function setCodeIdx(index) {
-	    this.startCodeIdx = index;
-	    this.test = index && index.length > 1 ? this.startCodeTest : Rule[PROTOTYPE].test;
+	    if (index.length > 1) {
+	      this.startCodeIdx = index;
+	      this.test = this.startCodeTest;
+	    }
 	  }; //──── for debug ─────────────────────────────────────────────────────────────────────────
 
 	  /**
@@ -3230,16 +3319,12 @@
 	   * @param name 			match name
 	   * @param start 		start char codes, prepare test by start char codes before match
 	   * @param ignoreCase	ignore case for the start char codes
-	   * @param capturable	error is capturable
-	   * @param onMatch		match callback
-	   * @param onErr			error callback
+	   * @param options		Rule Options
 	   */
 
 
-	  function MatchRule(name, start, ignoreCase, capturable, onMatch, onErr) {
-	    var _this = _Rule.call(this, name, capturable, onMatch, onErr) || this;
-
-	    _this.ignoreCase = ignoreCase;
+	  function MatchRule(name, start, ignoreCase, options) {
+	    var _this = _Rule.call(this, name, options) || this;
 
 	    _this.setStartCodes(start, ignoreCase);
 
@@ -3263,6 +3348,7 @@
 	  return MatchRule;
 	}(Rule);
 
+	var _dec$1, _class$1;
 	/**
 	 * match a character in the allowed list
 	 * > well match any character if the allowed list is empty
@@ -3270,7 +3356,9 @@
 	 * > must call test() before match
 	 */
 
-	var CharMatchRule =
+	var CharMatchRule = (_dec$1 = mixin({
+	  type: 'Character'
+	}), _dec$1(_class$1 =
 	/*#__PURE__*/
 	function (_MatchRule) {
 	  _inheritsLoose(CharMatchRule, _MatchRule);
@@ -3279,16 +3367,14 @@
 	   * @param allows 		allowed character codes for match
 	   * 						well match any character if the allowed list is empty
 	   * @param ignoreCase	ignore case for the allowed character codes
-	   * @param capturable	error is capturable
-	   * @param onMatch		match callback
-	   * @param onErr			error callback
+	   * @param options		Rule Options
 	   */
 
 
-	  function CharMatchRule(name, allows, ignoreCase, capturable, onMatch, onErr) {
-	    var _this = _MatchRule.call(this, name, allows, ignoreCase, capturable, onMatch, onErr) || this;
+	  function CharMatchRule(name, allows, ignoreCase, options) {
+	    var _this = _MatchRule.call(this, name, allows, ignoreCase, options) || this; // generate expression for debug
 
-	    _this.type = 'Character';
+
 	    var codes = _this.startCodes;
 	    var i = codes.length,
 	        expr = '*';
@@ -3315,9 +3401,9 @@
 	  };
 
 	  return CharMatchRule;
-	}(MatchRule);
+	}(MatchRule)) || _class$1);
 
-	var _dec$1, _class$1;
+	var _dec$2, _class$2;
 	/**
 	 * match string by RegExp
 	 *
@@ -3326,9 +3412,9 @@
 	 *
 	 */
 
-	var RegMatchRule = (_dec$1 = mixin({
+	var RegMatchRule = (_dec$2 = mixin({
 	  type: 'RegExp'
-	}), _dec$1(_class$1 =
+	}), _dec$2(_class$2 =
 	/*#__PURE__*/
 	function (_MatchRule) {
 	  _inheritsLoose(RegMatchRule, _MatchRule);
@@ -3348,12 +3434,11 @@
 	   */
 
 
-	  function RegMatchRule(name, regexp, pick, start, capturable, onMatch, onErr) {
+	  function RegMatchRule(name, regexp, pick, start, options) {
 	    var _this;
 
 	    pick = pick === false || isInt(pick) ? pick : !!pick || 0;
-	    var sticky = regStickySupport && !pick,
-	        // use exec mode when need pick match group data
+	    var // use exec mode when need pick match group data
 	    pattern = regexp.source,
 	        ignoreCase = regexp.ignoreCase; // always wrapping in a none capturing group preceded by '^' to make sure
 	    // matching can only work on start of input. duplicate/redundant start of
@@ -3363,34 +3448,31 @@
 	    // beginning of the input, or (if multiline is true) at the beginning of a
 	    // line.
 
-	    regexp = new RegExp(sticky ? pattern : "^(?:" + pattern + ")", (ignoreCase ? 'i' : '') + (regexp.multiline ? 'm' : '') + (sticky ? 'y' : ''));
-	    _this = _MatchRule.call(this, name, start, ignoreCase, capturable, onMatch, onErr) || this;
+	    regexp = new RegExp("^(?:" + pattern + ")", (ignoreCase ? 'i' : '') + (regexp.multiline ? 'm' : '') + (''));
+	    _this = _MatchRule.call(this, name, start, ignoreCase, options) || this;
 	    _this.regexp = regexp;
 	    _this.pick = pick;
-	    _this.match = sticky ? _this.stickyMatch : _this.execMatch;
-	    sticky ? _this.spicker = pick === false ? pickNone : pickTestStr : _this.picker = mkPicker(pick);
+	    _this.match = _this.execMatch;
+	    _this.picker = mkPicker(pick);
 
 	    _this.setExpr(pattern);
 
 	    return _this;
 	  }
-
-	  var _proto = RegMatchRule.prototype;
-
-	  _proto.match = function match(context) {
-	    return this.comsume(context.nextChar(), 1, context);
-	  };
 	  /**
 	   * match on sticky mode
 	   */
 
 
+	  var _proto = RegMatchRule.prototype;
+
 	  _proto.stickyMatch = function stickyMatch(context) {
 	    var reg = this.regexp,
-	        buff = context.getBuff(),
-	        start = context.getOffset();
+	        buff = context.buff(),
+	        start = context.offset();
 	    reg.lastIndex = start;
-	    return reg.test(buff) ? this.comsume(this.spicker(buff, start, reg.lastIndex), reg.lastIndex - start, context) : this.error(this.EXPECT, context);
+	    var len;
+	    return reg.test(buff) ? (len = reg.lastIndex - start, this.comsume(this.spicker(buff, start, len), len, context)) : this.error(this.EXPECT, context);
 	  };
 	  /**
 	   * match on exec mode
@@ -3398,24 +3480,18 @@
 
 
 	  _proto.execMatch = function execMatch(context) {
-	    var m = this.regexp.exec(context.getBuff(true));
-
-	    if (m) {
-	      return this.comsume(this.picker(m), m[0].length, context);
-	    }
-
-	    return this.error(this.EXPECT, context);
+	    var m = this.regexp.exec(context.buff(true));
+	    return m ? this.comsume(this.picker(m), m[0].length, context) : this.error(this.EXPECT, context);
 	  };
 
 	  return RegMatchRule;
-	}(MatchRule)) || _class$1);
+	}(MatchRule)) || _class$2);
+	var cache = create(null);
 
 	function mkPicker(pick) {
-	  return pick === false ? pickNone : pick === true ? pickAll : pick >= 0 ? function (m) {
-	    return m[pick];
-	  } : createFn("return " + mapArray(new Array(-pick), function (v, i) {
+	  return cache[pick] || (cache[pick] = pick === false ? pickNone : pick === true ? pickAll : pick >= 0 ? createFn("return m[" + pick + "]", ['m'], "pick_" + pick) : createFn("return " + mapArray(new Array(-pick), function (v, i) {
 	    return "m[" + (i + 1) + "]";
-	  }).join(' || '), ['m']);
+	  }).join(' || '), ['m'], "pick_1_" + -pick));
 	}
 
 	function pickNone() {
@@ -3426,20 +3502,23 @@
 	  return m;
 	}
 
-	function pickTestStr(buff, start, end) {
-	  return buff.substring(start, end);
-	}
-
-	var _dec$2, _class$2;
-	var StringMatchRule = (_dec$2 = mixin({
+	var _dec$3, _class$3;
+	var StringMatchRule = (_dec$3 = mixin({
 	  type: 'String'
-	}), _dec$2(_class$2 =
+	}), _dec$3(_class$3 =
 	/*#__PURE__*/
 	function (_RegMatchRule) {
 	  _inheritsLoose(StringMatchRule, _RegMatchRule);
+	  /**
+	   * @param name 			match name
+	   * @param str 			match string
+	   * @param ignoreCase	ignore case
+	   * @param options		Rule Options
+	   */
 
-	  function StringMatchRule(name, str, ignoreCase, capturable, onMatch, onErr) {
-	    var _this = _RegMatchRule.call(this, name, new RegExp(reEscape(str), ignoreCase ? 'i' : ''), 0, str.charCodeAt(0), capturable, onMatch, onErr) || this;
+
+	  function StringMatchRule(name, str, ignoreCase, options) {
+	    var _this = _RegMatchRule.call(this, name, new RegExp(reEscape(str), ignoreCase ? 'i' : ''), 0, charCode(str), options) || this;
 
 	    _this.setExpr(str);
 
@@ -3447,13 +3526,13 @@
 	  }
 
 	  return StringMatchRule;
-	}(RegMatchRule)) || _class$2);
+	}(RegMatchRule)) || _class$3);
 
 	/**
 	 * @module utility/AST
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Tue Dec 11 2018 15:36:42 GMT+0800 (China Standard Time)
-	 * @modified Tue Dec 18 2018 19:00:01 GMT+0800 (China Standard Time)
+	 * @modified Sat Dec 22 2018 16:32:31 GMT+0800 (China Standard Time)
 	 */
 	/**
 	 * Match Context of Rule
@@ -3462,31 +3541,31 @@
 	var MatchContext =
 	/*#__PURE__*/
 	function () {
-	  // matched data list
 	  // start offset of original buff
-	  // start offset of original buff
+	  // parent context
+	  // matched result list
 	  // template buff
 	  // current offset of template buff
+	  // current offset of original buff
 	  // advanced characters
 	  // cached character
-	  // parent context
-	  function MatchContext(source, buff, offset, orgPos, parent, code) {
+	  function MatchContext(source, buff, offset, orgOffset, parent) {
 	    this.source = source;
-	    this.buff = buff;
-	    this.offset = offset;
-	    this.orgPos = orgPos;
 	    this.parent = parent;
-	    this.data = [];
-	    this.advanced = 0;
-	    code ? this.codeCache = code : this.flushCache();
+	    this.result = [];
+	    this.__buff = buff;
+	    this.__offset = offset;
+	    this.__orgOffset = orgOffset;
+	    this.__advanced = 0;
+	    parent ? (this.__code = parent.__code, this.data = parent.data) : this.__flushCode();
 	  }
 
 	  var _proto = MatchContext.prototype;
 
-	  _proto.flushCache = function flushCache() {
-	    var buff = this.buff,
-	        offset = this.offset;
-	    this.codeCache = offset < buff.length ? charCode(buff, offset) : 0;
+	  _proto.__flushCode = function __flushCode() {
+	    var buff = this.__buff,
+	        offset = this.__offset;
+	    this.__code = offset < buff.length ? charCode(buff, offset) : 0;
 	  };
 	  /**
 	   * create sub Context
@@ -3494,36 +3573,66 @@
 
 
 	  _proto.create = function create() {
-	    return new MatchContext(this.source, this.buff, this.offset, this.orgPos + this.advanced, this, this.codeCache);
+	    return new MatchContext(this.source, this.__buff, this.__offset, this.__orgOffset + this.__advanced, this);
+	  };
+
+	  _proto.__setAdvanced = function __setAdvanced(advanced) {
+	    assert.notLess(advanced, 0);
+	    var offset = this.__offset - this.__advanced + advanced;
+
+	    if (offset < 0) {
+	      this.__buff = this.source.buff;
+	      this.__offset = this.__orgOffset + advanced;
+	    }
+
+	    this.__advanced = advanced;
+	    this.__offset = offset;
+
+	    this.__flushCode();
 	  };
 	  /**
-	   * commit context states to parent context
-	   * @param margeData is marge data to parent
+	   * commit context state to parent context
 	   */
 
 
 	  _proto.commit = function commit() {
-	    var advanced = this.advanced;
+	    var advanced = this.__advanced;
 	    this.parent.advance(advanced);
-	    this.orgPos += advanced;
-	    this.advanced = 0;
+	    this.__orgOffset += advanced;
+	    this.__advanced = 0;
+	    this.data = null;
 	  };
 	  /**
-	   *
-	   * @param len 		reset buff length
-	   * @param dataLen 	reset data length
+	   * marge context state
 	   */
 
 
-	  _proto.reset = function reset(len, dataLen) {
-	    len || (len = 0);
-	    assert.range(len, 0, this.advanced + 1);
-	    this.advance(-(this.advanced - len));
-	    this.resetData(dataLen || 0);
+	  _proto.margeState = function margeState(context) {
+	    this.__setAdvanced(context.__orgOffset + context.__advanced - this.__orgOffset);
 	  };
+	  /**
+	   * rollback state and result
+	   * @param checkpoint 	rollback to checkpoint
+	   */
 
-	  _proto.len = function len() {
-	    return this.advanced;
+
+	  _proto.rollback = function rollback(checkpoint) {
+	    var advanced = 0,
+	        resultLen = 0;
+	    checkpoint && (advanced = checkpoint[0], resultLen = checkpoint[1]);
+
+	    this.__setAdvanced(advanced);
+
+	    var result = this.result;
+	    if (result.length > resultLen) result.length = resultLen;
+	  };
+	  /**
+	   * get a check point
+	   */
+
+
+	  _proto.checkpoint = function checkpoint() {
+	    return [this.__advanced, this.result.length];
 	  };
 	  /**
 	   * advance buffer position
@@ -3531,15 +3640,18 @@
 
 
 	  _proto.advance = function advance(i) {
-	    this.offset += i;
-	    this.advanced += i;
+	    this.__offset += i;
+	    this.__advanced += i;
 
-	    if (this.offset < 0) {
-	      this.buff = this.source.buff;
-	      this.offset = this.orgPos + this.advanced;
-	    }
+	    this.__flushCode();
+	  };
+	  /**
+	   * advanced buff length
+	   */
 
-	    this.flushCache();
+
+	  _proto.advanced = function advanced() {
+	    return this.__advanced;
 	  };
 	  /**
 	   * get buffer
@@ -3547,31 +3659,36 @@
 	   */
 
 
-	  _proto.getBuff = function getBuff(reset) {
+	  _proto.buff = function (reset) {
+	    var buff = this.__buff;
+
 	    if (reset) {
-	      var offset = this.offset;
-	      this.buff = this.buff.substring(offset);
-	      this.offset = 0;
+	      this.__buff = buff = cutStr(buff, this.__offset);
+	      this.__offset = 0;
 	    }
 
-	    return this.buff;
+	    return buff;
 	  };
 
-	  _proto.getOffset = function getOffset() {
-	    return this.offset;
+	  _proto.orgBuff = function orgBuff() {
+	    return this.source.buff;
+	  };
+
+	  _proto.offset = function offset() {
+	    return this.__offset;
 	  };
 
 	  _proto.startPos = function startPos() {
-	    return this.orgPos;
+	    return this.__orgOffset;
 	  };
 
 	  _proto.currPos = function currPos() {
-	    return this.orgPos + this.advanced;
+	    return this.__orgOffset + this.__advanced;
 	  };
 
 	  _proto.pos = function pos() {
-	    var orgPos = this.orgPos;
-	    return [orgPos, orgPos + this.advanced];
+	    var offset = this.__orgOffset;
+	    return [offset, offset + this.__advanced];
 	  };
 	  /**
 	   * get next char code
@@ -3580,57 +3697,49 @@
 
 
 	  _proto.nextCode = function nextCode() {
-	    return this.codeCache;
+	    return this.__code;
 	  };
 
 	  _proto.nextChar = function nextChar() {
-	    return char(this.codeCache);
-	  };
-
-	  _proto.eof = function eof() {
-	    return this.codeCache === 0;
-	  }; //──── data opeartions ───────────────────────────────────────────────────────────────────
+	    return char(this.__code);
+	  }; //──── result opeartions ───────────────────────────────────────────────────────────────────
 
 	  /**
-	   * append data
+	   * append result
 	   */
 
 
 	  _proto.add = function add(data) {
-	    this.data.push(data);
+	    var result = this.result;
+	    result[result.length] = data;
 	  };
 	  /**
-	   * append datas
+	   * append resultset
 	   */
 
 
-	  _proto.addAll = function addAll(datas) {
-	    var data = this.data;
-	    var len = data.length;
-	    var i = datas.length;
+	  _proto.addAll = function addAll(data) {
+	    var result = this.result;
+	    var len = result.length;
+	    var i = data.length;
 
 	    while (i--) {
-	      data[len + i] = datas[i];
+	      result[len + i] = data[i];
 	    }
 	  };
 	  /**
-	   * reset result data size
+	   * get result size
 	   */
 
 
-	  _proto.resetData = function resetData(len) {
-	    var data = this.data;
-	    len = len || 0;
-	    if (data.length > len) data.length = len;
-	  };
-
-	  _proto.dataLen = function dataLen() {
-	    return this.data.length;
+	  _proto.resultSize = function resultSize() {
+	    return this.result.length;
 	  };
 
 	  return MatchContext;
 	}();
 
+	var MAX = -1 >>> 0;
 	/**
 	 * Abstract Complex Rule
 	 */
@@ -3642,24 +3751,26 @@
 	  /**
 	   * @param name 			match name
 	   * @param builder 		callback of build rules
-	   * @param capturable	error is capturable
-	   * @param onMatch		match callback
-	   * @param onErr			error callback
+	   * @param options		Rule Options
 	   */
 
 
-	  function ComplexRule(name, repeat, builder, capturable, onMatch, onErr) {
-	    var _this = _Rule.call(this, name, capturable, onMatch, onErr) || this;
+	  function ComplexRule(name, repeat, builder, options) {
+	    var _this = _Rule.call(this, name, options) || this;
 
+	    var rMin = repeat[0],
+	        rMax = repeat[1];
+	    rMin < 0 && (rMin = 0);
+	    rMax <= 0 && (rMax = MAX);
+	    assert.notGreater(rMin, rMax);
+	    _this.rMin = rMin;
+	    _this.rMax = rMax;
 	    _this.builder = builder;
-	    if (!(repeat[0] >= 0)) repeat[0] = 0;
-	    if (!(repeat[1] > 0)) repeat[1] = 1e5;
-	    assert.notGreater(repeat[0], repeat[1]);
-	    _this.repeat = [repeat[0], repeat[1]];
 
-	    if (repeat[0] !== repeat[1] || repeat[0] !== 1) {
-	      _this.match = _this.repeatMatch;
-	      _this.type = _this.type + "[" + repeat[0] + (repeat[0] === repeat[1] ? '' : " - " + (repeat[1] === 1e5 ? 'MAX' : repeat[1])) + "]";
+	    if (rMin !== rMax || rMin !== 1) {
+	      _this.match = _this.repeatMatch; // for debug
+
+	      _this.type = _this.type + "[" + rMin + (rMin === rMax ? '' : " - " + (rMax === MAX ? 'MAX' : rMax)) + "]";
 	    }
 
 	    return _this;
@@ -3667,8 +3778,9 @@
 
 	  var _proto = ComplexRule.prototype;
 
-	  _proto.parse = function parse(buff, errSource) {
+	  _proto.parse = function parse(buff, data) {
 	    var ctx = new MatchContext(new Source(buff), buff, 0, 0);
+	    ctx.data = data;
 	    var err = this.match(ctx);
 
 	    if (err) {
@@ -3680,22 +3792,19 @@
 	        msg.unshift("[" + pad(String(pos[0]), 3) + ":" + pad(String(pos[1]), 2) + "] - " + err.rule.toString() + ": " + err.msg + " on \"" + escapeStr(pos[2]) + "\"");
 	      } while (err = err.source);
 
-	      if (errSource !== false) msg.push('[Source]', ctx.source.source());
+	      msg.push('[Source]', ctx.source.source());
 	      throw new SyntaxError(msg.join('\n'));
 	    }
 
-	    return ctx.data;
-	  };
-
-	  _proto.repeatMatch = function repeatMatch() {
-	    return assert();
+	    return ctx.result;
 	  };
 
 	  _proto.init = function init() {
 	    var rules = this.builder(this);
 	    var i = rules && rules.length;
 	    assert.is(i, "Require Complex Rules");
-	    this.rules = rules;
+	    this.rules = rules; // generate expression and expect string for debug
+
 	    var names = this.rnames(rules);
 	    this.setExpr(names.join(this.split));
 
@@ -3713,8 +3822,12 @@
 
 	  _proto.__init = function __init() {};
 
+	  _proto.repeatMatch = function repeatMatch() {
+	    return assert();
+	  };
+
 	  _proto.setCodeIdx = function setCodeIdx(index) {
-	    if (this.repeat[0]) _Rule.prototype.setCodeIdx.call(this, index);
+	    this.rMin && _Rule.prototype.setCodeIdx.call(this, index);
 	  };
 
 	  _proto.getRules = function getRules() {
@@ -3728,10 +3841,11 @@
 	  };
 
 	  _proto.consume = function consume(context) {
-	    var err = this.matched(context.data, context.len(), context.parent);
+	    var err = this.matched(context.result, context.advanced(), context.parent);
 	    !err && context.commit();
 	    return err;
-	  };
+	  }; // for debug
+
 
 	  _proto.rnames = function rnames(rules, stack) {
 	    var i = rules.length;
@@ -3749,22 +3863,21 @@
 	    var id = this.id,
 	        name = this.name;
 	    var i;
-	    return name ? name : stack ? (i = idxOfArray(stack, id), ~i) ? "<" + this.type + " -> $" + stack[i] + ">" : this.mkExpr(this.rnames(this.getRules(), stack).join(this.split)) : this.expr;
+	    return name ? name : stack ? ~(i = idxOfArray(stack, id)) ? "<" + this.type + " -> $" + stack[i] + ">" : this.mkExpr(this.rnames(this.getRules(), stack).join(this.split)) : this.expr;
 	  };
 
 	  return ComplexRule;
 	}(Rule);
 
-	var _dec$3, _class$3;
+	var _dec$4, _class$4;
 	/**
 	 * AND Complex Rule
-	 *
 	 */
 
-	var AndRule = (_dec$3 = mixin({
+	var AndRule = (_dec$4 = mixin({
 	  type: 'And',
 	  split: ' '
-	}), _dec$3(_class$3 =
+	}), _dec$4(_class$4 =
 	/*#__PURE__*/
 	function (_ComplexRule) {
 	  _inheritsLoose(AndRule, _ComplexRule);
@@ -3794,26 +3907,23 @@
 	  };
 
 	  _proto.repeatMatch = function repeatMatch(context) {
+	    var rMin = this.rMin,
+	        rMax = this.rMax;
 	    var rules = this.getRules(),
 	        len = rules.length,
-	        _this$repeat = this.repeat,
-	        min = _this$repeat[0],
-	        max = _this$repeat[1],
 	        ctx = context.create();
 	    var err,
 	        repeat = 0,
 	        i,
-	        mlen,
-	        dlen;
+	        cp;
 
-	    out: for (; repeat < max; repeat++) {
-	      dlen = ctx.dataLen();
-	      mlen = ctx.len();
+	    out: for (; repeat < rMax; repeat++) {
+	      cp = ctx.checkpoint();
 
 	      for (i = 0; i < len; i++) {
 	        if (err = this.testRule(rules[i], i, ctx)) {
-	          if (repeat < min) return err;
-	          ctx.reset(mlen, dlen);
+	          if (repeat < rMin) return err;
+	          ctx.rollback(cp);
 	          break out;
 	        }
 	      }
@@ -3824,21 +3934,27 @@
 
 	  _proto.testRule = function testRule(rule, i, ctx) {
 	    var err;
-	    return (!rule.test(ctx) || (err = rule.match(ctx))) && (err = this.error(this.EXPECTS[i], ctx, err));
+
+	    if (!rule.test(ctx)) {
+	      return this.error(this.EXPECTS[i], ctx);
+	    } else if (err = rule.match(ctx)) {
+	      return this.error(this.EXPECTS[i], ctx, err);
+	    } // return (!rule.test(ctx) || (err = rule.match(ctx))) && (err = this.error(this.EXPECTS[i], ctx, err))
+
 	  };
 
 	  return AndRule;
-	}(ComplexRule)) || _class$3);
+	}(ComplexRule)) || _class$4);
 
-	var _dec$4, _class$4;
+	var _dec$5, _class$5;
 	/**
 	 * OR Complex Rule
 	 */
 
-	var OrRule = (_dec$4 = mixin({
+	var OrRule = (_dec$5 = mixin({
 	  type: 'Or',
 	  split: ' | '
-	}), _dec$4(_class$4 =
+	}), _dec$5(_class$5 =
 	/*#__PURE__*/
 	function (_ComplexRule) {
 	  _inheritsLoose(OrRule, _ComplexRule);
@@ -3901,14 +4017,15 @@
 	    } // rule have unkown start code when got unkown start code from any rules
 
 
-	    this.startCodes = index[0].length ? [] : starts;
-	    this.index = starts.length && index;
-	    starts.length && !index[0].length && this.setCodeIdx(index);
+	    var startCodes = !index[0].length && starts;
+	    this.startCodes = startCodes || [];
+	    startCodes && this.setCodeIdx(index);
+	    this.index = index;
 	  };
 
 	  _proto.match = function match(context) {
-	    var index = this.index;
-	    var rules = index ? index[context.nextCode()] || index[0] : this.getRules(),
+	    var index = this.index || (this.init(), this.index),
+	        rules = index[context.nextCode()] || index[0],
 	        len = rules.length,
 	        ctx = context.create();
 	    var err,
@@ -3925,17 +4042,16 @@
 	      }
 
 	      if (!upErr || err.pos >= upErr.pos) upErr = err;
-	      ctx.reset();
+	      ctx.rollback();
 	    }
 
 	    return this.error(this.EXPECT, ctx, upErr);
 	  };
 
 	  _proto.repeatMatch = function repeatMatch(context) {
-	    var index = this.index;
-	    var _this$repeat = this.repeat,
-	        min = _this$repeat[0],
-	        max = _this$repeat[1],
+	    var rMin = this.rMin,
+	        rMax = this.rMax;
+	    var index = this.index || (this.init(), this.index),
 	        ctx = context.create();
 	    var rules,
 	        len,
@@ -3943,25 +4059,14 @@
 	        upErr,
 	        repeat = 0,
 	        i,
-	        mlen,
-	        dlen;
+	        cp;
 
-	    if (!index) {
-	      rules = this.getRules();
-	      index = this.index;
-	      len = rules.length;
-	    }
+	    out: for (; repeat < rMax; repeat++) {
+	      rules = index[ctx.nextCode()] || index[0];
+	      upErr = null;
 
-	    out: for (; repeat < max; repeat++) {
-	      if (index) {
-	        rules = index[ctx.nextCode()] || index[0];
-	        len = rules.length;
-	      }
-
-	      if (len) {
-	        dlen = ctx.dataLen();
-	        mlen = ctx.len();
-	        upErr = null;
+	      if (len = rules.length) {
+	        cp = ctx.checkpoint();
 
 	        for (i = 0; i < len; i++) {
 	          err = rules[i].match(ctx);
@@ -3973,25 +4078,26 @@
 	          }
 
 	          if (!upErr || err.pos >= upErr.pos) upErr = err;
-	          ctx.reset(mlen, dlen);
+	          ctx.rollback(cp);
 	        }
 	      }
 
-	      if (repeat < min) return this.error(this.EXPECT, ctx, upErr);
+	      if (repeat < rMin || upErr && !upErr.capturable) return this.error(this.EXPECT, ctx, upErr);
+	      break;
 	    }
 
 	    return this.consume(ctx);
 	  };
 
 	  return OrRule;
-	}(ComplexRule)) || _class$4);
+	}(ComplexRule)) || _class$5);
 
 	/**
 	 * AST Parser API
 	 * @module utility/AST
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Tue Nov 06 2018 10:58:52 GMT+0800 (China Standard Time)
-	 * @modified Tue Dec 18 2018 19:27:42 GMT+0800 (China Standard Time)
+	 * @modified Sat Dec 22 2018 15:45:10 GMT+0800 (China Standard Time)
 	 */
 
 	/*                                                                                      *
@@ -4004,116 +4110,28 @@
 	  context.addAll(data);
 	}
 	function attachMatch(val) {
-	  var fn = isFn(val) ? val : function () {
+	  var callback = isFn(val) ? val : function () {
 	    return val;
 	  };
-	  return function (data, len, context) {
-	    context.add(fn(data, len, context));
+	  return function (data, len, context, rule) {
+	    context.add(callback(data, len, context, rule));
 	  };
 	} //========================================================================================
 
 	/*                                                                                      *
-	 *                                  match rule builder                                  *
+	 *                                       match api                                      *
 	 *                                                                                      */
 	//========================================================================================
 
 	function match() {
 	  return mkMatch(arguments);
-	}
-
-	function mkMatch(args, defaultOnMatch) {
-	  var name,
-	      pattern,
-	      regexp,
-	      pick = 0,
-	      startCodes,
-	      ignoreCase = false,
-	      capturable,
-	      onMatch,
-	      onErr;
-
-	  if (isObj(args[0])) {
-	    var _desc = args[0],
-	        p = _desc.pattern;
-
-	    if (isReg(p)) {
-	      regexp = p;
-	      pick = _desc.pick;
-	      startCodes = _desc.startCodes;
-	    } else if (isMatchPattern(p)) {
-	      pattern = p;
-	      ignoreCase = _desc.ignoreCase;
-	    }
-
-	    name = _desc.name;
-	    capturable = _desc.capturable;
-	    onMatch = _desc.onMatch;
-	    onErr = _desc.onErr;
-	  } else {
-	    var i = 2;
-
-	    if (isMatchPattern(args[1])) {
-	      name = args[0];
-	      isReg(args[1]) ? regexp = args[1] : pattern = args[1];
-	    } else if (isMatchPattern(args[0])) {
-	      i = 1;
-	      isReg(args[0]) ? regexp = args[0] : pattern = args[0];
-	    }
-
-	    if (regexp) {
-	      if (isBool(args[i]) || isInt(args[i])) pick = args[i++];
-	      if (isStrOrCodes(args[i])) startCodes = args[i++];
-	    } else {
-	      if (isBool(args[i])) ignoreCase = args[i++];
-	    }
-
-	    if (isBool(args[i])) capturable = args[i++];
-	    onMatch = args[i++];
-	    onErr = args[i++];
-	  }
-
-	  onMatch = onMatch || defaultOnMatch;
-	  return regexp ? regMatch(name, regexp, onMatch === discardMatch ? false : pick, startCodes, capturable, onMatch, onErr) : pattern ? strMatch(name, pattern, ignoreCase, capturable, onMatch, onErr) : null;
-	}
-
-	function isStrOrCodes(pattern) {
-	  return isStr(pattern) || isNum(pattern) || isArray(pattern);
-	}
-
-	function isMatchPattern(pattern) {
-	  return isReg(pattern) || isStrOrCodes(pattern);
-	}
-
-	function strMatch(name, pattern, ignoreCase, capturable, onMatch, onErr) {
-	  var C = isStr(pattern) && pattern.length > 1 ? StringMatchRule : CharMatchRule;
-	  return new C(name, pattern, ignoreCase, capturable, onMatch, onErr);
-	}
-
-	var REG_ESPEC_CHARS = makeMap('dDsStrnt0cbBfvwW', 1, '');
-
-	function regMatch(name, pattern, pick, startCodes, capturable, onMatch, onErr) {
-	  var source = pattern.source;
-
-	  if (!pick) {
-	    var c = 0;
-
-	    if (source.length == 1 && source !== '^' && source !== '$') {
-	      c = source === '.' ? '' : source;
-	    } else if (source.length == 2 && source[0] === '\\' && REG_ESPEC_CHARS[source[1]]) {
-	      c = source[1];
-	    }
-
-	    if (c != 0) return strMatch(name, c, pattern.ignoreCase, capturable, onMatch, onErr);
-	  }
-
-	  return new RegMatchRule(name, pattern, pick, startCodes, capturable, onMatch, onErr);
 	} //========================================================================================
 
 	/*                                                                                      *
-	 *                                   and rule builder                                   *
+	 *                                     and rule api                                     *
 	 *                                                                                      */
 	//========================================================================================
-
+	//──── and ───────────────────────────────────────────────────────────────────────────────
 
 	function and() {
 	  return mkComplexRule(arguments, AndRule, [1, 1]);
@@ -4132,9 +4150,10 @@
 	} //========================================================================================
 
 	/*                                                                                      *
-	 *                                   OR Rule Builders                                   *
+	 *                                      or rule api                                     *
 	 *                                                                                      */
 	//========================================================================================
+	//──── or ────────────────────────────────────────────────────────────────────────────────
 
 	function or() {
 	  return mkComplexRule(arguments, OrRule, [1, 1]);
@@ -4153,12 +4172,80 @@
 	} //========================================================================================
 
 	/*                                                                                      *
+	 *                                  Match Rule Builder                                  *
+	 *                                                                                      */
+	//========================================================================================
+
+	function mkMatch(args, defaultMatchCallback) {
+	  var name,
+	      pattern,
+	      regexp,
+	      pick = 0,
+	      startCodes,
+	      ignoreCase = false,
+	      options;
+
+	  if (isObj(args[0])) {
+	    var _desc = args[0],
+	        p = _desc.pattern;
+
+	    if (isReg(p)) {
+	      regexp = p;
+	      pick = _desc.pick;
+	      startCodes = _desc.startCodes;
+	    } else if (isStrOrCodes(p)) {
+	      pattern = p;
+	      ignoreCase = _desc.ignoreCase;
+	    }
+
+	    name = _desc.name;
+	    options = _desc;
+	  } else {
+	    var i = 1;
+
+	    if (isStr(args[0]) && isMatchPattern(args[1])) {
+	      name = args[0];
+	      isReg(args[1]) ? regexp = args[1] : pattern = args[1];
+	      i = 2;
+	    } else if (isMatchPattern(args[0])) {
+	      isReg(args[0]) ? regexp = args[0] : pattern = args[0];
+	    }
+
+	    if (regexp) {
+	      if (isBool(args[i]) || isInt(args[i])) pick = args[i++];
+	      if (isStrOrCodes(args[i])) startCodes = args[i++];
+	    } else {
+	      if (isBool(args[i])) ignoreCase = args[i++];
+	    }
+
+	    options = parseRuleOptions(args, i);
+	  }
+
+	  !options.match && (options.match = defaultMatchCallback);
+	  return regexp ? new RegMatchRule(name, regexp, options.match === discardMatch ? false : pick, startCodes, options) : pattern ? strMatch(name, pattern, ignoreCase, options) : assert('invalid match rule {j}', args);
+	}
+
+	function isStrOrCodes(pattern) {
+	  return isStr(pattern) || isNum(pattern) || isArray(pattern);
+	}
+
+	function isMatchPattern(pattern) {
+	  return isReg(pattern) || isStrOrCodes(pattern);
+	}
+
+	function strMatch(name, pattern, ignoreCase, options) {
+	  var C = isStr(pattern) && pattern.length > 1 ? StringMatchRule : CharMatchRule;
+	  return new C(name, pattern, ignoreCase, options);
+	} //========================================================================================
+
+	/*                                                                                      *
 	 *                                 complex rule builder                                 *
 	 *                                                                                      */
 	//========================================================================================
 
+
 	function mkComplexRule(args, Rule, defaultRepeat) {
-	  var name, builder, rules, repeat, capturable, onMatch, onErr;
+	  var name, builder, rules, repeat, options;
 
 	  if (isObj(args[0])) {
 	    var _desc2 = args[0],
@@ -4166,24 +4253,20 @@
 	    if (isArray(r) || isFn(r)) rules = r;
 	    repeat = _desc2.repeat;
 	    name = _desc2.name;
-	    capturable = _desc2.capturable;
-	    onMatch = _desc2.onMatch;
-	    onErr = _desc2.onErr;
+	    options = _desc2;
 	  } else {
 	    var i = 0;
 	    if (isStr(args[i])) name = args[i++];
 	    if (isArray(args[i]) || isFn(args[i])) rules = args[i++];
 	    if (isArray(args[i])) repeat = args[i++];
-	    if (isBool(args[i])) capturable = args[i++];
-	    onMatch = args[i++];
-	    onErr = args[i++];
+	    options = parseRuleOptions(args, i);
 	  }
 
 	  if (!repeat) repeat = defaultRepeat;
 
 	  if (rules) {
 	    builder = rulesBuilder(rules);
-	    return new Rule(name, repeat, builder, capturable, onMatch, onErr);
+	    return new Rule(name, repeat, builder, options);
 	  }
 	}
 
@@ -4191,11 +4274,109 @@
 	  return function (_rule) {
 	    return mapArray(isFn(rules) ? rules(_rule) : rules, function (r, i) {
 	      if (!r) return SKIP;
-	      var rule = r.$rule ? r : isArray(r) ? mkMatch(r) : mkMatch([r], discardMatch);
-	      assert.is(rule, '{}: Invalid Rule Configuration on index {d}: {:.80="..."j}', _rule, i, r);
+	      var rule = r.$rule ? r : mkMatch(isArray(r) ? r : [r], discardMatch);
+	      assert.is(rule, '{}: Invalid Rule Configuration on index {d}: {j}', _rule, i, r);
 	      return rule;
 	    });
 	  };
+	} //========================================================================================
+
+	/*                                                                                      *
+	 *                                         tools                                        *
+	 *                                                                                      */
+	//========================================================================================
+
+
+	function parseRuleOptions(args, i) {
+	  var options = {};
+	  if (isBool(args[i])) options.capturable = args[i++];
+	  options.match = args[i++];
+	  options.err = args[i];
+	  return options;
+	}
+
+	var VOID_ELEM = makeMap('input,br,hr', 1),
+	    CONTENT_ELEM = makeMap('script,style,textarea', 1);
+	var UNDEFINED$1 = match('undefined', attachMatch(undefined)),
+	    NULL$1 = match('null', attachMatch(null)),
+	    BOOLEAN$1 = match('boolean', /true|false/, 'tf', attachMatch(function (b) {
+	  return b === 'true';
+	})),
+	    NUMBER$1 = match('number', /[+-]?(?:0x[\da-f]+|0X[\dA-F]+|0[oO][0-7]+|0[bB][01]+|(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?)/, '+-0123456789', attachMatch(function (n) {
+	  return +n;
+	})),
+	    NAN = match('NaN', attachMatch(function () {
+	  return NaN;
+	})),
+	    STRING$1 = match('string', /"((?:[^\\"]|\\.)*)"|'((?:[^\\']|\\.)*)'/, -2, "'\"");
+	var ATTR_NAME = match('attr-name', /([@:$_a-zA-Z][\w-\.]*)\s*/, 1, ['@', ':', '$', '_'].concat(genCharCodes('a', 'z', true))),
+	    // prettier-ignore
+	ATTR_VALUE = or('attr-value', [UNDEFINED$1, BOOLEAN$1, NUMBER$1, NAN, STRING$1], appendMatch),
+	    // prettier-ignore
+	ATTRS = any('attrs', [ATTR_NAME, option([['attr-op', /=\s*/, '='], ATTR_VALUE, /\s*/])], function (data, l, ctx) {
+	  var attrs = {};
+
+	  for (var i = 0, _l = data.length; i < _l; i += 2) {
+	    attrs[data[i]] = data[i + 1][0];
+	  }
+
+	  ctx.add(attrs);
+	});
+	var ELEM_NAME = match('elem-open', /<([_a-zA-Z][\w-]*)\s*/, 1, '<'),
+	    ELEM = and('elem', function () {
+	  return [ELEM_NAME, ATTRS, or([['elem-slash-close', /\/>\s*/, '/'], match('elem-close', />\s*/, false, '>', function (d, l, ctx) {
+	    var parent = ctx.parent,
+	        tag = ctx.data = parent.result[0],
+	        rule = CONTENT_ELEM[tag] ? ELEM_CONTENT : ELEM_CHILDREN,
+	        err = rule.match(ctx);
+	    var target = err.target,
+	        context = err.context;
+	    if (target.msg) return err;
+	    ctx.margeState(context);
+	    ctx.add(context.result);
+	  })])];
+	}, function (d, l, ctx) {
+	  var tag = d[0],
+	      children = d[2][0],
+	      elem = {
+	    tag: tag,
+	    attrs: d[1]
+	  };
+	  ctx.add(elem);
+	  VOID_ELEM[tag] ? ctx.addAll(children) : CONTENT_ELEM[tag] ? elem.content = children[0] || '' : children.length && (elem.children = children);
+	});
+	var ELEM_CHILDREN = elemBody('elem-children', [ELEM], function (m, l, ctx, rule) {
+	  var tag = ctx.data;
+	  return rule.mkErr(tag === m[1] ? VOID_ELEM[tag] && ctx.resultSize() ? "<" + tag + "> have no children" : null : VOID_ELEM[tag] ? (ctx.advance(-l), null) : "expect: </" + tag + ">", ctx, false);
+	}),
+	    ELEM_CONTENT = elemBody('elem-content', [], function (m, l, ctx, rule) {
+	  if (ctx.data === m[1]) return rule.mkErr(null, ctx, false);
+	  attachText(m[0], l, ctx);
+	});
+
+	function elemBody(name, rules, onEnd) {
+	  return anyOne(name, rules.concat([match('elem-end', /<\/([_a-zA-Z][\w-]*)>\s*/, true, '<', onEnd), match('text', /.[^<]*/, 0, false, attachText, function (err, ctx) {
+	    return "expect: </" + ctx.data + ">";
+	  })]), appendMatch);
+	} // prettier-ignore
+
+
+	var html = and('html', [/\s*/, many('elems', [or([ELEM, match('text', /.[^<]*/, attachText)])], appendMatch), ['EOF', /\s*$/]], function (data, len, ctx) {
+	  ctx.addAll(data[0]);
+	}).init();
+
+	function attachText(text, length, ctx) {
+	  var data = ctx.result,
+	      len = data.length;
+	  var prev;
+
+	  if (len && (prev = data[len - 1]) && prev.text) {
+	    prev.text += text;
+	  } else {
+	    ctx.add({
+	      text: text
+	    });
+	  }
 	}
 
 	/**
@@ -4204,7 +4385,7 @@
 	 * @preferred
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Wed Nov 21 2018 10:21:41 GMT+0800 (China Standard Time)
-	 * @modified Tue Dec 18 2018 18:58:32 GMT+0800 (China Standard Time)
+	 * @modified Fri Dec 21 2018 20:35:04 GMT+0800 (China Standard Time)
 	 */
 
 	/**
@@ -4213,7 +4394,7 @@
 	 * @module main
 	 * @preferred
 	 * @created Wed Nov 21 2018 10:21:20 GMT+0800 (China Standard Time)
-	 * @modified Thu Nov 22 2018 09:32:01 GMT+0800 (China Standard Time)
+	 * @modified Fri Dec 21 2018 14:08:39 GMT+0800 (China Standard Time)
 	 */
 
 	exports.createFn = createFn;
@@ -4247,17 +4428,18 @@
 	exports.isArrayLike = isArrayLike;
 	exports.isObj = isObj;
 	exports.isBlank = isBlank;
-	exports.regStickySupport = regStickySupport;
-	exports.regUnicodeSupport = regUnicodeSupport;
+	exports.stickyReg = stickyReg;
+	exports.unicodeReg = unicodeReg;
 	exports.reEscape = reEscape;
-	exports.prototypeOfSupport = prototypeOfSupport;
-	exports.protoPropSupport = protoPropSupport;
+	exports.prototypeOf = prototypeOf;
+	exports.protoProp = protoProp;
 	exports.protoOf = protoOf;
 	exports.__setProto = __setProto;
 	exports.setProto = setProto;
 	exports.hasOwnProp = hasOwnProp;
 	exports.getOwnProp = getOwnProp;
-	exports.defPropSupport = defPropSupport;
+	exports.propDescriptor = propDescriptor;
+	exports.propAccessor = propAccessor;
 	exports.defProp = defProp;
 	exports.defPropValue = defPropValue;
 	exports.parsePath = parsePath;
@@ -4266,6 +4448,8 @@
 	exports.set = set;
 	exports.charCode = charCode;
 	exports.char = char;
+	exports.cutStr = cutStr;
+	exports.cutStrLen = cutStrLen;
 	exports.trim = trim;
 	exports.upperFirst = upperFirst;
 	exports.upper = upper;
@@ -4273,7 +4457,7 @@
 	exports.strval = strval;
 	exports.escapeStr = escapeStr;
 	exports.pad = pad;
-	exports.cut = cut;
+	exports.shorten = shorten;
 	exports.thousandSeparate = thousandSeparate;
 	exports.binarySeparate = binarySeparate;
 	exports.octalSeparate = octalSeparate;
@@ -4334,8 +4518,8 @@
 	exports.anyOne = anyOne;
 	exports.manyOne = manyOne;
 	exports.optionOne = optionOne;
+	exports.html = html;
 
 	Object.defineProperty(exports, '__esModule', { value: true });
 
 })));
-//# sourceMappingURL=argilo.js.map

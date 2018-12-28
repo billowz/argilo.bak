@@ -3,7 +3,7 @@
  * @module utility/create
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Jul 25 2018 15:24:47 GMT+0800 (China Standard Time)
- * @modified Fri Dec 21 2018 14:10:27 GMT+0800 (China Standard Time)
+ * @modified Fri Dec 28 2018 20:13:58 GMT+0800 (China Standard Time)
  */
 
 import { CONSTRUCTOR, PROTOTYPE } from './consts'
@@ -15,13 +15,12 @@ function __() {}
 /**
  * create shim
  */
-function doCreate(o: object | null, props?: PropertyDescriptorMap & ThisType<any>): object {
+function doCreate(o: object | null, props?: PropertyDescriptorMap & ThisType<any>): any {
 	__[PROTOTYPE] = o
 	const obj = new __()
 	__[PROTOTYPE] = null
 	if (props) {
-		var k, v
-		for (k in props) {
+		for (var k in props) {
 			if (hasOwnProp(props, k)) {
 				defProp(obj, k, props[k])
 			}
@@ -33,11 +32,11 @@ function doCreate(o: object | null, props?: PropertyDescriptorMap & ThisType<any
 /**
  * create object
  */
-export const create =
+export const create: (o: object | null, props?: PropertyDescriptorMap & ThisType<any>) => any =
 	Object.create ||
 	(Object.getPrototypeOf
 		? doCreate
-		: function create(o: object | null, props?: PropertyDescriptorMap & ThisType<any>): object {
+		: function create(o, props) {
 				const obj = doCreate(o, props)
 				__setProto(obj, o)
 				return obj

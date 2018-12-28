@@ -22,7 +22,7 @@ describe('utility/AST', function() {
 			<input type="submit" value="Submit">
 			</form>
 `)
-			assert.eq(rs, [
+			assert.eql(rs, [
 				{
 					tag: 'form',
 					attrs: {

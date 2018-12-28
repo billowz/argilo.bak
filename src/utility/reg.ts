@@ -3,20 +3,20 @@
  * @module utility/reg
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Thu Sep 06 2018 18:27:51 GMT+0800 (China Standard Time)
- * @modified Sat Dec 22 2018 17:58:01 GMT+0800 (China Standard Time)
+ * @modified Thu Dec 27 2018 16:22:16 GMT+0800 (China Standard Time)
  */
 
 import { isBool } from './is'
 
 /**
- * is support sticky on RegExp
+ * whether to support sticky on RegExp
  */
-export const regStickySupport = false //isBool(/(?:)/.sticky)
+export const stickyReg = false //isBool(/(?:)/.sticky)
 
 /**
- * is support unicode on RegExp
+ * whether to support unicode on RegExp
  */
-export const regUnicodeSupport = isBool(/(?:)/.unicode)
+export const unicodeReg = isBool(/(?:)/.unicode)
 
 const REG_ESCAPE = /[-\/\\^$*+?.()|[\]{}]/g
 
