@@ -2,7 +2,10 @@ import { List } from '../List'
 import { get } from '../../propPath'
 import { assert } from '../../assert'
 
-function createTestObjs(size) {
+const LIST_HEAD_PROP = '__head',
+	LIST_TAIL_PROP = '__tail'
+
+function createTestObjs(size: number) {
 	let objs = new Array(size),
 		i = 0
 	for (; i < size; i++)
@@ -12,7 +15,13 @@ function createTestObjs(size) {
 	return objs
 }
 
+/**
+ * @test {List}
+ */
 describe('List', () => {
+	/**
+	 * @test {List#add}
+	 */
 	it('add', () => {
 		let list = new List(),
 			objs = createTestObjs(10),
@@ -35,18 +44,18 @@ describe('List', () => {
 			})
 			assert.eq(num, l)
 
-			assert.eq(get(list, 'head[0]'), objs[0])
-			assert.eq(get(list, 'tail[0]'), objs[l - 1])
+			assert.eq(get(list, LIST_HEAD_PROP)[0], objs[0])
+			assert.eq(get(list, LIST_TAIL_PROP)[0], objs[l - 1])
 
-			let node = get(list, 'head')
+			let node = get(list, LIST_HEAD_PROP)
 			for (i = 0; i < l; i++) {
 				assert.eq(node[0], objs[i])
 				node = node[2]
 			}
 		}
 
-		assert.eq(get(list, 'head'), undefined)
-		assert.eq(get(list, 'tail'), undefined)
+		assert.eq(get(list, LIST_HEAD_PROP), undefined)
+		assert.eq(get(list, LIST_TAIL_PROP), undefined)
 		assert.eq(list.size(), 0)
 
 		// add
@@ -58,6 +67,9 @@ describe('List', () => {
 		checkList()
 	})
 
+	/**
+	 * @test {List#remove}
+	 */
 	it('remove', () => {
 		let list = new List(),
 			objs = createTestObjs(10),
@@ -88,11 +100,14 @@ describe('List', () => {
 			}
 			assert.eq(list.size(), l - removed)
 		}
-		assert.eq(get(list, 'head'), undefined)
-		assert.eq(get(list, 'tail'), undefined)
+		assert.eq(get(list, LIST_HEAD_PROP), undefined)
+		assert.eq(get(list, LIST_TAIL_PROP), undefined)
 		assert.eq(list.size(), 0)
 	})
 
+	/**
+	 * @test {List#remove}
+	 */
 	it('remove in scaning', () => {
 		let list = new List(),
 			objs = createTestObjs(10),
@@ -125,11 +140,14 @@ describe('List', () => {
 			assert.eq(list.has(obj), false)
 			assert.eq(list.size(), l - removed)
 		})
-		assert.eq(get(list, 'head'), undefined)
-		assert.eq(get(list, 'tail'), undefined)
+		assert.eq(get(list, LIST_HEAD_PROP), undefined)
+		assert.eq(get(list, LIST_TAIL_PROP), undefined)
 		assert.eq(list.size(), 0)
 	})
 
+	/**
+	 * @test {List#clean}
+	 */
 	it('clean', () => {
 		let list = new List(),
 			objs = createTestObjs(10),
@@ -143,11 +161,14 @@ describe('List', () => {
 
 		for (i = 0; i < l; i++) assert.eq(list.has(objs[i]), false)
 
-		assert.eq(get(list, 'head'), undefined)
-		assert.eq(get(list, 'tail'), undefined)
+		assert.eq(get(list, LIST_HEAD_PROP), undefined)
+		assert.eq(get(list, LIST_TAIL_PROP), undefined)
 		assert.eq(list.size(), 0)
 	})
 
+	/**
+	 * @test {List#clean}
+	 */
 	it('clean in scaning', () => {
 		let list = new List(),
 			objs = createTestObjs(10),
@@ -163,8 +184,8 @@ describe('List', () => {
 
 		for (i = 0; i < l; i++) assert.eq(list.has(objs[i]), false)
 
-		assert.eq(get(list, 'head'), undefined)
-		assert.eq(get(list, 'tail'), undefined)
+		assert.eq(get(list, LIST_HEAD_PROP), undefined)
+		assert.eq(get(list, LIST_TAIL_PROP), undefined)
 		assert.eq(list.size(), 0)
 	})
 })

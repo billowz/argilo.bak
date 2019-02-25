@@ -92,7 +92,7 @@ export class OrRule extends ComplexRule {
 		return this.error(this.EXPECT, ctx, upErr)
 	}
 
-	protected repeatMatch(context: MatchContext): MatchError {
+	protected rmatch(context: MatchContext): MatchError {
 		const { rMin, rMax } = this
 		const index = this.index || (this.init(), this.index),
 			ctx = context.create()

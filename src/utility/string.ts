@@ -3,9 +3,8 @@
  * @module utility/string
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 13:57:32 GMT+0800 (China Standard Time)
- * @modified Sat Dec 22 2018 15:06:34 GMT+0800 (China Standard Time)
+ * @modified Thu Jan 31 2019 10:04:55 GMT+0800 (China Standard Time)
  */
-import { isNil } from './is'
 
 //========================================================================================
 /*                                                                                      *
@@ -33,7 +32,7 @@ export function cutStr(str: string, start: number, end?: number) {
 	return str.substring(start, end)
 }
 
-export function cutStrLen(str: string, start: number, len?: number) {
+export function cutLStr(str: string, start: number, len?: number) {
 	return str.substr(start, len)
 }
 
@@ -58,39 +57,23 @@ export function trim(str: string): string {
  *                                                                                      */
 //========================================================================================
 
-const FIRST_LOWER_LETTER_REG = /^[a-z]/
+const FIRST_LOWER_LETTER_REG = /^[a-z]/,
+	FIRST_UPPER_LETTER_REG = /^[A-Z]/
 
-/**
- * upper first char
- */
+export function upper(str: string): string {
+	return str.toUpperCase()
+}
+
+export function lower(str: string): string {
+	return str.toLowerCase()
+}
+
 export function upperFirst(str: string): string {
 	return str.replace(FIRST_LOWER_LETTER_REG, upper)
 }
 
-export function upper(m: string): string {
-	return m.toUpperCase()
-}
-
-export function lower(m: string): string {
-	return m.toLowerCase()
-}
-
-//========================================================================================
-/*                                                                                      *
- *                                  parse string value                                  *
- *                                                                                      */
-//========================================================================================
-
-/**
- * convert any value to string
- * - undefined | null: ''
- * - NaN:
- * - Infinity:
- * - other: String(value)
- * TODO support NaN, Infinity
- */
-export function strval(obj: any): string {
-	return isNil(obj) ? '' : String(obj)
+export function lowerFirst(str: string): string {
+	return str.replace(FIRST_UPPER_LETTER_REG, lower)
 }
 
 //========================================================================================

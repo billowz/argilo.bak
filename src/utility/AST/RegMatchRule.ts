@@ -14,7 +14,7 @@ import { createFn } from '../fn'
 import { mapArray } from '../collection'
 import { mixin } from '../mixin'
 import { create } from '../create'
-import { cutStrLen } from '../string'
+import { cutLStr } from '../string'
 
 /**
  * match string by RegExp
@@ -129,5 +129,5 @@ function pickAll(m: string[]): string[] {
 }
 
 function pickTestStr(buff: string, start: number, end: number): string {
-	return cutStrLen(buff, start, end)
+	return cutLStr(buff, start, end)
 }

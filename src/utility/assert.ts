@@ -2,7 +2,7 @@
  * @module utility/assert
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Nov 28 2018 11:01:45 GMT+0800 (China Standard Time)
- * @modified Fri Dec 21 2018 14:17:26 GMT+0800 (China Standard Time)
+ * @modified Tue Feb 19 2019 10:38:22 GMT+0800 (China Standard Time)
  */
 
 import {
@@ -33,6 +33,7 @@ import { createFn } from '../utility/fn'
 import { eachObj, makeArray } from '../utility/collection'
 import { formatter } from './format'
 import { deepEq } from './deepEq'
+import { TYPE_UNDEF, TYPE_FN, TYPE_STRING, TYPE_NUM, TYPE_BOOL } from './consts'
 
 const formatters = [],
 	formatArgHandlers: ((args: any[] | IArguments, offset: number) => any)[] = []
@@ -108,9 +109,9 @@ export interface assert {
 	notRange(actual: number, start: number, end: number, msg?: string, ...args: any[]): assert
 }
 
-export const assert = <assert>function assert(msg?: string): never {
+export const assert = function assert(msg?: string): never {
 	throw new Error(parseMessage(msg || 'Error', arguments, 0))
-}
+} as assert
 
 function catchErr(fn: () => any): Error {
 	try {
@@ -192,15 +193,15 @@ function extendAsserts(apis: { [method: string]: APIDescriptor }) {
 	})
 }
 
-const NULL = 'null'
-const UNDEFINED = 'undefined'
-const BOOLEAN = 'boolean'
-const NUMBER = 'number'
-const INTEGER = 'integer'
-const STRING = 'string'
-const FUNCTION = 'function'
-const ARRAY = 'Array'
-const TYPED_ARRAY = 'TypedArray'
+const UNDEFINED = TYPE_UNDEF,
+	BOOLEAN = TYPE_BOOL,
+	NUMBER = TYPE_NUM,
+	STRING = TYPE_STRING,
+	FUNCTION = TYPE_FN,
+	NULL = 'null',
+	INTEGER = 'integer',
+	ARRAY = 'Array',
+	TYPED_ARRAY = 'TypedArray'
 
 extendAssert('is', '!o', 'o', expectMsg('Exist'))
 extendAssert('not', 'o', 'o', expectMsg('Not Exist'))

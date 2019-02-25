@@ -1,6 +1,7 @@
 const nodeResolve = require('rollup-plugin-node-resolve')
 const babel = require('rollup-plugin-babel')
 const commonjs = require('rollup-plugin-commonjs')
+const json = require('rollup-plugin-json')
 const pkg = require('./package.json')
 
 module.exports = function(config) {
@@ -32,7 +33,8 @@ module.exports = function(config) {
 						]
 					],
 					extensions: ['.js', '.ts']
-				})
+				}),
+				json()
 			],
 			treeshake: false,
 			external: ['expect.js'],

@@ -48,7 +48,7 @@ export class ComplexRule extends Rule {
 		this.builder = builder
 
 		if (rMin !== rMax || rMin !== 1) {
-			this.match = this.repeatMatch
+			this.match = this.rmatch
 
 			// for debug
 			this.type = `${this.type}[${rMin}${rMin === rMax ? '' : ` - ${rMax === MAX ? 'MAX' : rMax}`}]`
@@ -96,7 +96,7 @@ export class ComplexRule extends Rule {
 	}
 	__init(rules: Rule[]) {}
 
-	protected repeatMatch(context: MatchContext): MatchError {
+	protected rmatch(context: MatchContext): MatchError {
 		return assert()
 	}
 

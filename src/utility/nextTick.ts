@@ -3,14 +3,14 @@
  * @module utility/nextTick
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
- * @modified Mon Dec 10 2018 16:59:56 GMT+0800 (China Standard Time)
+ * @modified Thu Jan 31 2019 16:34:55 GMT+0800 (China Standard Time)
  */
 import { FnList } from './List'
-import { isFn } from './is'
+import { TYPE_FN } from './consts'
 
 const ticks = new FnList()
 let pending = false
-let next
+let next: () => void
 
 function executeTick(fn: Function, scope?: any) {
 	scope ? fn.call(scope) : fn()
@@ -22,7 +22,7 @@ function flush() {
 	pending = false
 }
 
-if (isFn(MutationObserver)) {
+if (typeof MutationObserver === TYPE_FN) {
 	// chrome18+, safari6+, firefox14+,ie11+,opera15
 	var counter = 0,
 		observer = new MutationObserver(flush),

@@ -10,11 +10,11 @@
 		]
 	],
 	"plugins": [
+		"babel-plugin-fix-class-properties-uninitialized",
 		["@babel/plugin-proposal-decorators", { "legacy": true }],
 		["@babel/plugin-proposal-class-properties", { "loose": true }],
 		"transform-es3-member-expression-literals",
-		"transform-es3-property-literals",
-		"minify-dead-code-elimination"
+		"transform-es3-property-literals"
 	],
 	"env": {
 		"test": {

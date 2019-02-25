@@ -134,6 +134,10 @@ describe('utility/is', () => {
 		})
 	})
 	each(isTests, function(test, name) {
+		/**
+		 * @test {isNull}
+		 * @test {isBool}
+		 */
 		it(name as string, function() {
 			each(test.vals, function(v, i) {
 				expect(test.is(v)).to.equal(true)
@@ -145,12 +149,18 @@ describe('utility/is', () => {
 	})
 
 	if (GLOBAL.document) {
+		/**
+		 * @test {isArrayLike}
+		 */
 		it('isArrayLike: dom collection', function() {
 			expect(isArrayLike(document.body.children)).to.equal(true)
 			expect(isArrayLike(document.body.childNodes)).to.equal(true)
 		})
 	}
 
+	/**
+	 * @test {is}
+	 */
 	it('is', function() {
 		each(typeTests, function(test, name) {
 			if (test.type) {
@@ -174,6 +184,9 @@ describe('utility/is', () => {
 		expect(is(/^1/, [Boolean, Number, String, Date])).to.equal(false)
 	})
 
+	/**
+	 * @test {eq}
+	 */
 	it('eq', function() {
 		expect(eq(NaN, NaN)).to.equal(true)
 		expect(eq(0, null)).to.equal(false)

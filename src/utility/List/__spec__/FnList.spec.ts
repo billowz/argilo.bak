@@ -16,7 +16,13 @@ function createTestObjs(size) {
 	return objs
 }
 
+/**
+ * @test {FnList}
+ */
 describe('FnList', () => {
+	/**
+	 * @test {FnList#add}
+	 */
 	it('add', () => {
 		let list = new FnList(),
 			objs = createTestObjs(10),
@@ -49,6 +55,9 @@ describe('FnList', () => {
 		checkList()
 	})
 
+	/**
+	 * @test {FnList#remove}
+	 */
 	it('remove', () => {
 		let list = new FnList(),
 			objs = createTestObjs(10),
@@ -83,6 +92,9 @@ describe('FnList', () => {
 		assert.eq(list.size(), 0)
 	})
 
+	/**
+	 * @test {FnList#remove}
+	 */
 	it('remove in scaning', () => {
 		let list = new FnList(),
 			objs = createTestObjs(10),
@@ -119,6 +131,9 @@ describe('FnList', () => {
 		assert.eq(list.size(), 0)
 	})
 
+	/**
+	 * @test {FnList#clean}
+	 */
 	it('clean', () => {
 		let list = new FnList(),
 			objs = createTestObjs(10),
@@ -135,6 +150,9 @@ describe('FnList', () => {
 		assert.eq(list.size(), 0)
 	})
 
+	/**
+	 * @test {FnList#clean}
+	 */
 	it('clean in scaning', () => {
 		let list = new FnList(),
 			objs = createTestObjs(10),

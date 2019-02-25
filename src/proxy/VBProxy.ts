@@ -3,7 +3,7 @@
  * @module observer
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
- * @modified Fri Dec 28 2018 10:46:58 GMT+0800 (China Standard Time)
+ * @modified Thu Jan 03 2019 15:17:36 GMT+0800 (China Standard Time)
  */
 import { assert } from '../utility/assert'
 import { Proxy, ProxyGetter, ProxySetter } from './Proxy'
@@ -94,7 +94,7 @@ function genAccessorScript(prop: string) {
 	On Error Goto 0
 	End Property
 
-	`
+`
 }
 
 function genClassScript(className: string, props: string[]) {

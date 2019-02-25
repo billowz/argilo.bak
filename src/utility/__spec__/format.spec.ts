@@ -69,12 +69,18 @@ const formatCases = [
 ]
 
 describe('utility/format', () => {
+	/**
+	 * @test {pad}
+	 */
 	it('pad', () => {
 		expect(pad('1', 3, '#')).to.equal('##1')
 		expect(pad('1', 3, '#', true)).to.equal('1##')
 		expect(pad('123', 3, '#')).to.equal('123')
 		expect(pad('123', 3, '#', true)).to.equal('123')
 	})
+	/**
+	 * @test {vformat}
+	 */
 	describe('vformat', function() {
 		eachArray(formatCases, t => {
 			it(`vformat: ${t[0]}`, () => {
@@ -82,6 +88,9 @@ describe('utility/format', () => {
 			})
 		})
 	})
+	/**
+	 * @test {format}
+	 */
 	describe('format', function() {
 		eachArray(formatCases, t => {
 			it(`format: ${t[0]}`, () => {
@@ -89,6 +98,9 @@ describe('utility/format', () => {
 			})
 		})
 	})
+	/**
+	 * @test {formatter}
+	 */
 	describe('formatter', function() {
 		eachArray(formatCases, t => {
 			it(`formatter: ${t[0]}`, () => {

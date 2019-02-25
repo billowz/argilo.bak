@@ -2,9 +2,9 @@
  * @module utility/collection
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Thu Jul 26 2018 10:47:47 GMT+0800 (China Standard Time)
- * @modified Tue Nov 27 2018 13:59:31 GMT+0800 (China Standard Time)
+ * @modified Sat Dec 29 2018 19:34:56 GMT+0800 (China Standard Time)
  */
-import { Control } from './control'
+import { Control } from './Control'
 import { STOP, eachObj, eachProps } from './each'
 import { SKIP } from './map'
 import { isBool, isFn } from '../is'

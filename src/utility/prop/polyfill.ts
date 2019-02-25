@@ -1,0 +1,107 @@
+/**
+ * prop utilities
+ * @module utility
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Wed Jul 25 2018 15:22:57 GMT+0800 (China Standard Time)
+ * @modified Sat Dec 29 2018 18:57:40 GMT+0800 (China Standard Time)
+ */
+import { PROTO, PROTOTYPE, HAS_OWN_PROP } from '../consts'
+import { protoProp } from '../proto'
+import { hasOwnProp as __hasOwnProp } from './hasOwnProp'
+
+//========================================================================================
+/*                                                                                      *
+ *                                     own property                                     *
+ *                                                                                      */
+//========================================================================================
+
+/**
+ * has own property
+ */
+export const hasOwnProp: (obj: any, prop: string) => boolean = protoProp
+	? __hasOwnProp
+	: function hasOwnProp(obj, prop) {
+			return prop !== PROTO && __hasOwnProp(obj, prop)
+	  }
+
+//========================================================================================
+/*                                                                                      *
+ *                                    define property                                   *
+ *                                                                                      */
+//========================================================================================
+
+let __defProp: (o: any, p: PropertyKey, attributes: PropertyDescriptor & ThisType<any>) => any = Object.defineProperty
+
+const { __defineGetter__, __defineSetter__ } = Object[PROTOTYPE] as any
+/**
+ * whether to support Object.defineProperty
+ */
+export const propDescriptor: boolean =
+	__defProp &&
+	!!(function() {
+		try {
+			var val: number,
+				obj: { s?: number } = {}
+			__defProp(obj, 's', {
+				get() {
+					return val
+				},
+				set(value) {
+					val = value
+				}
+			})
+			obj.s = 1
+			return obj.s === val
+		} catch (e) {}
+	})()
+
+/**
+ * whether to support `__defineGetter__` and `__defineSetter__`
+ */
+export const propAccessor: boolean = propDescriptor || !!__defineSetter__
+
+if (!propDescriptor)
+	__defProp = __defineSetter__
+		? function defineProperty(obj, prop, desc) {
+				const { get, set } = desc
+				if ('value' in desc || !(prop in obj)) obj[prop] = desc.value
+				if (get) __defineGetter__.call(obj, prop, get)
+				if (set) __defineSetter__.call(obj, prop, set)
+				return obj
+		  }
+		: function defineProperty(obj, prop, desc) {
+				if (desc.get || desc.set)
+					throw new TypeError('Invalid property descriptor. Accessor descriptors are not supported.')
+				if ('value' in desc || !(prop in obj)) obj[prop] = desc.value
+				return obj
+		  }
+
+/**
+ * define property
+ */
+export const defProp = __defProp
+
+/**
+ * define property by value
+ */
+export const defPropValue: <V>(
+	obj: any,
+	prop: string,
+	value: V,
+	enumerable?: boolean,
+	configurable?: boolean,
+	writable?: boolean
+) => V = propDescriptor
+	? function defPropValue(obj, prop, value, configurable, writable, enumerable) {
+			__defProp(obj, prop, {
+				value,
+				enumerable: enumerable !== false,
+				configurable: configurable !== false,
+				writable: writable !== false
+			})
+			return value
+	  }
+	: function defPropValue(obj, prop, value) {
+			obj[prop] = value
+			return value
+	  }

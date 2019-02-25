@@ -2,7 +2,7 @@
  * @module utility/format
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 03 2018 19:46:41 GMT+0800 (China Standard Time)
- * @modified Sat Dec 22 2018 15:08:24 GMT+0800 (China Standard Time)
+ * @modified Fri Feb 22 2019 11:37:25 GMT+0800 (China Standard Time)
  */
 
 import { createFn } from './fn'
@@ -26,8 +26,8 @@ export function shorten(str: string, len: number, suffix?: string): string {
 }
 
 function __pad(str: string, len: number, chr: string, leftAlign: boolean | number): string {
-	const padding = new Array(len - str.length + 1).join(chr || ' ')
-	return leftAlign ? str + padding : padding + str
+	const pad = new Array(len - str.length + 1).join(chr || ' ')
+	return leftAlign ? str + pad : pad + str
 }
 
 //========================================================================================
@@ -256,7 +256,6 @@ export function getFormatter(name: string): FormatCallback {
  * 			{:&${<prop>}=<pad-char>}
  * 			{:&<number>{<prop>}=<pad-char>}
  * @example
- *
  * - precision
  * 		For integer specifiers (d,  o, u, x, X): precision specifies the minimum number of digits to be written.
  * 		If the value to be written is shorter than this number, the result is padded with leading zeros.
@@ -489,8 +488,9 @@ function getParamCode(idx: string, prop: string): string {
 	if (prop) {
 		const path = parsePath(prop)
 		var i = path.length
-		while (i--) path[i] = `"${escapeStr(path[i])}"`
-		return `${GET_PROP_VAR}(${code}, [${path.join(', ')}])`
+		const strs = new Array(i)
+		while (i--) strs[i] = `"${escapeStr(path[i])}"`
+		return `${GET_PROP_VAR}(${code}, [${strs.join(', ')}])`
 	}
 	return code
 }

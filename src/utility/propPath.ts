@@ -2,7 +2,7 @@
  * @module utility/prop
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Fri Nov 30 2018 14:41:02 GMT+0800 (China Standard Time)
- * @modified Fri Dec 28 2018 20:05:26 GMT+0800 (China Standard Time)
+ * @modified Sat Feb 23 2019 10:45:54 GMT+0800 (China Standard Time)
  */
 
 import { create } from './create'

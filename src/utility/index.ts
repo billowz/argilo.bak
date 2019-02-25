@@ -4,7 +4,7 @@
  * @preferred
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Nov 21 2018 10:21:41 GMT+0800 (China Standard Time)
- * @modified Fri Dec 21 2018 20:35:04 GMT+0800 (China Standard Time)
+ * @modified Mon Feb 18 2019 14:52:12 GMT+0800 (China Standard Time)
  */
 
 export * from './fn'
@@ -22,4 +22,3 @@ export * from './List'
 export * from './nextTick'
 export * from './Source'
 export * from './AST/api'
-export * from './AST/__spec__/html'

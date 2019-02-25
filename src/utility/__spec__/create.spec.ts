@@ -3,7 +3,7 @@ import { create } from '../create'
 import { hasOwnProp } from '../prop'
 import { protoOf } from '../proto'
 
-describe('create', function() {
+describe('utility/create', function() {
 	it('create', () => {
 		const o = { a: 1 },
 			o2 = create(o)

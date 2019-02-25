@@ -5,7 +5,7 @@
  * @modified Tue Nov 27 2018 13:38:16 GMT+0800 (China Standard Time)
  */
 
-import { Control } from './control'
+import { Control } from './Control'
 import { STOP, eachArray, reachArray, eachObj } from './each'
 import { IArray } from '../consts'
 import { bind } from '../fn'

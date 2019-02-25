@@ -1,18 +1,3 @@
-/*
- *    __ _ _ __ __ _(_) | ___
- *   / _` | '__/ _` | | |/ _ \
- *  | (_| | | | (_| | | | (_) |
- *   \__,_|_|  \__, |_|_|\___/
- *             |___/
- *
- * argilo v1.0.0
- * https://github.com/tao-zeng/argilo
- *
- * Copyright (c) 2018 Tao Zeng <tao.zeng.zt@qq.com>
- * Released under the MIT license
- *
- * Date: Wed, 19 Dec 2018 05:51:22 GMT
- */
 'use strict';
 
 Object.defineProperty(exports, '__esModule', { value: true });
@@ -26,7 +11,7 @@ Object.defineProperty(exports, '__esModule', { value: true });
  */
 const CONSTRUCTOR = 'constructor';
 const PROTOTYPE = 'prototype';
-const PROTO = '__proto__';
+const HAS_OWN_PROP = 'hasOwnProperty';
 const TYPE_BOOL = 'boolean';
 const TYPE_FN = 'function';
 const TYPE_NUM = 'number';
@@ -39,7 +24,7 @@ function EMPTY_FN() {}
  * @module utility
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 13:57:32 GMT+0800 (China Standard Time)
- * @modified Wed Dec 19 2018 11:11:43 GMT+0800 (China Standard Time)
+ * @modified Sat Feb 16 2019 10:53:30 GMT+0800 (China Standard Time)
  */
 function getConstructor(o) {
   let C = o[CONSTRUCTOR];
@@ -51,7 +36,7 @@ function getConstructor(o) {
  * @module utility
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 13:57:32 GMT+0800 (China Standard Time)
- * @modified Wed Dec 19 2018 11:11:05 GMT+0800 (China Standard Time)
+ * @modified Sat Feb 23 2019 11:36:55 GMT+0800 (China Standard Time)
  */
 /**
  * is equals
@@ -142,7 +127,7 @@ function isPrimitive(o) {
 }
 
 function mkIsPrimitive(type) {
-  return function (o) {
+  return function is(o) {
     return typeof o === type;
   };
 } //========================================================================================
@@ -230,7 +215,7 @@ const isTypedArray = isFn(ArrayBuffer) ? ArrayBuffer.isView : () => false;
  */
 
 function isArrayLike(o) {
-  if (o) {
+  if (o && o[CONSTRUCTOR]) {
     switch (o[CONSTRUCTOR]) {
       case Array:
       case String:
@@ -263,7 +248,7 @@ function isObj(o) {
 }
 
 function mkIs(Type) {
-  return function (o) {
+  return function is(o) {
     return o !== undefined && o !== null && o[CONSTRUCTOR] === Type;
   };
 }
@@ -432,7 +417,7 @@ let _bind;
 const funcProto = Function[PROTOTYPE];
 
 if (funcProto.bind) {
-  _bind = function (fn, scope) {
+  _bind = function bind(fn, scope) {
     const args = arguments,
           argLen = args.length;
 
@@ -443,11 +428,11 @@ if (funcProto.bind) {
     return applyScopeN(fn.bind, fn, args, 1, argLen - 1);
   };
 } else {
-  funcProto.bind = function (scope) {
+  funcProto.bind = function bind(scope) {
     return bindPolyfill(this, scope, arguments, 1);
   };
 
-  _bind = function (fn, scope) {
+  _bind = function bind(fn, scope) {
     return bindPolyfill(fn, scope, arguments, 2);
   };
 }
@@ -501,7 +486,7 @@ function bindPolyfill(fn, scope, bindArgs, argOffset) {
 
   if (argLen > 0) {
     // bind with arguments
-    return function () {
+    return function bindProxy() {
       const args = arguments;
       let i = args.length;
 
@@ -531,12 +516,12 @@ function bindPolyfill(fn, scope, bindArgs, argOffset) {
 
   if (scope === GLOBAL) {
     // bind on GLOBAL
-    return function () {
+    return function bindProxy() {
       return applyNoScope(fn, arguments);
     };
   }
 
-  return function () {
+  return function bindProxy() {
     return applyScope(fn, scope, arguments);
   };
 }
@@ -546,18 +531,18 @@ function bindPolyfill(fn, scope, bindArgs, argOffset) {
  * @module utility/reg
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Thu Sep 06 2018 18:27:51 GMT+0800 (China Standard Time)
- * @modified Tue Nov 27 2018 20:00:44 GMT+0800 (China Standard Time)
+ * @modified Sat Dec 29 2018 19:29:00 GMT+0800 (China Standard Time)
  */
 /**
- * is support sticky on RegExp
+ * whether to support sticky on RegExp
  */
 
-const regStickySupport = isBool(/(?:)/.sticky);
+const stickyReg = isBool(/(?:)/.sticky);
 /**
- * is support unicode on RegExp
+ * whether to support unicode on RegExp
  */
 
-const regUnicodeSupport = isBool(/(?:)/.unicode);
+const unicodeReg = isBool(/(?:)/.unicode);
 const REG_ESCAPE = /[-\/\\^$*+?.()|[\]{}]/g;
 /**
  * escape string for RegExp
@@ -568,67 +553,66 @@ function reEscape(str) {
 }
 
 /**
- * prototype utilities
  * @module utility
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Jul 25 2018 15:23:56 GMT+0800 (China Standard Time)
- * @modified Tue Nov 27 2018 20:00:18 GMT+0800 (China Standard Time)
+ * @modified Thu Jan 31 2019 10:10:48 GMT+0800 (China Standard Time)
  */
-const __hasOwn = Object[PROTOTYPE].hasOwnProperty;
-const __getProto = Object.getPrototypeOf,
-      ____setProto = Object.setPrototypeOf;
-/**
- * is support Object.getPrototypeOf and Object.setPrototypeOf
- */
-
-const prototypeOfSupport = !!____setProto;
-const protoPropSupport = {
-  __proto__: []
-} instanceof Array;
-/**
- * Object.getPrototypeOf shim
- */
-
-const protoOf = ____setProto ? __getProto : __getProto ? function (obj) {
-  return obj[PROTO] || __getProto(obj);
-} : function (obj) {
-  return (__hasOwn.call(obj, PROTO) ? obj[PROTO] : obj[CONSTRUCTOR][PROTOTYPE]) || null;
-};
-const __setProto = ____setProto || function (obj, proto) {
-  obj[PROTO] = proto;
-  return obj;
-};
-/**
- * Object.setPrototypeOf shim
- */
-
-const setProto = ____setProto || (protoPropSupport ? __setProto : function (obj, proto) {
-  for (let p in proto) {
-    if (__hasOwn.call(proto, p)) {
-      obj[p] = proto[p];
-    }
-  }
-
-  return __setProto(obj, proto);
-});
+const prototypeOf = true;
+const protoProp = true;
+const protoOf = Object.getPrototypeOf;
+const __setProto = Object.setPrototypeOf;
+const setProto = __setProto;
 
 /**
- * prop utilities
+ * prototype utilities
+ * @module utility
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Wed Jul 25 2018 15:24:47 GMT+0800 (China Standard Time)
+ * @modified Thu Jan 31 2019 10:11:40 GMT+0800 (China Standard Time)
+ */
+
+/**
  * @module utility
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Jul 25 2018 15:22:57 GMT+0800 (China Standard Time)
- * @modified Mon Dec 10 2018 12:44:40 GMT+0800 (China Standard Time)
+ * @modified Sat Dec 29 2018 18:35:40 GMT+0800 (China Standard Time)
  */
-const __hasOwn$1 = Object[PROTOTYPE].hasOwnProperty;
+const __hasOwn = Object[PROTOTYPE][HAS_OWN_PROP];
 /**
  * has own property
  */
 
-const hasOwnProp = protoPropSupport ? function (obj, prop) {
-  return __hasOwn$1.call(obj, prop);
-} : function (obj, prop) {
-  return prop !== PROTO && __hasOwn$1.call(obj, prop);
-};
+function hasOwnProp(obj, prop) {
+  return __hasOwn.call(obj, prop);
+}
+
+/**
+ * @module utility
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Wed Jul 25 2018 15:22:57 GMT+0800 (China Standard Time)
+ * @modified Sat Dec 29 2018 18:57:32 GMT+0800 (China Standard Time)
+ */
+const propDescriptor = true;
+const propAccessor = true;
+const defProp = Object.defineProperty;
+function defPropValue(obj, prop, value, enumerable, configurable, writable) {
+  defProp(obj, prop, {
+    value,
+    enumerable: enumerable !== false,
+    configurable: configurable !== false,
+    writable: writable !== false
+  });
+  return value;
+}
+
+/**
+ * property utilities
+ * @module utility
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Wed Jul 25 2018 15:24:47 GMT+0800 (China Standard Time)
+ * @modified Thu Jan 31 2019 10:15:09 GMT+0800 (China Standard Time)
+ */
 /**
  * get owner property value
  * @param prop 			property name
@@ -638,121 +622,35 @@ const hasOwnProp = protoPropSupport ? function (obj, prop) {
 function getOwnProp(obj, prop, defaultVal) {
   return hasOwnProp(obj, prop) ? obj[prop] : defaultVal;
 }
-let __defProp = Object.defineProperty;
-/**
- * is support Object.defineProperty
- */
-
-const defPropSupport = __defProp && function () {
-  try {
-    var val,
-        obj = {};
-
-    __defProp(obj, 's', {
-      get() {
-        return val;
-      },
-
-      set(value) {
-        val = value;
-      }
-
-    });
-
-    obj.s = 1;
-    return obj.s === val;
-  } catch (e) {}
-}();
-
-if (!defPropSupport) {
-  __defProp = function (obj, prop, desc) {
-    if (desc.get || desc.set) {
-      throw new Error('not support getter/setter on defineProperty');
-    }
-
-    obj[prop] = desc.value;
-    return obj;
-  };
-}
-/**
- * define property
- */
-
-
-const defProp = __defProp;
-/**
- * define property by value
- */
-
-const defPropValue = defPropSupport ? function (obj, prop, value, configurable, writable, enumerable) {
-  __defProp(obj, prop, {
-    value,
-    enumerable: enumerable !== false,
-    configurable: configurable !== false,
-    writable: writable !== false
-  });
-
-  return value;
-} : function (obj, prop, value) {
-  obj[prop] = value;
-  return value;
-};
 
 /**
- * Object.create shim
  * @module utility/create
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Jul 25 2018 15:24:47 GMT+0800 (China Standard Time)
- * @modified Mon Dec 10 2018 11:45:30 GMT+0800 (China Standard Time)
+ * @modified Tue Feb 19 2019 11:52:42 GMT+0800 (China Standard Time)
  */
+const create = Object.create;
 
-function __() {}
 /**
- * create shim
+ * @module utility/create
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Wed Jul 25 2018 15:24:47 GMT+0800 (China Standard Time)
+ * @modified Thu Jan 31 2019 10:15:42 GMT+0800 (China Standard Time)
  */
-
-
-function doCreate(o, props) {
-  __[PROTOTYPE] = o;
-  const obj = new __();
-  __[PROTOTYPE] = null;
-
-  if (props) {
-    for (var k in props) {
-      if (hasOwnProp(props, k)) {
-        defProp(obj, k, props[k]);
-      }
-    }
-  }
-
-  return obj;
-}
-/**
- * create object
- */
-
-
-const create = Object.create || (Object.getPrototypeOf ? doCreate : function (o, props) {
-  const obj = doCreate(o, props);
-
-  __setProto(obj, o);
-
-  return obj;
-});
 
 /**
  * @module utility/collection
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Jul 25 2018 17:10:41 GMT+0800 (China Standard Time)
- * @modified Tue Nov 27 2018 14:17:32 GMT+0800 (China Standard Time)
+ * @modified Sat Dec 29 2018 19:37:44 GMT+0800 (China Standard Time)
  */
 class Control {
   constructor(desc) {
-    this.desc = desc;
+    this.__desc = desc;
   }
 
   toString() {
-    return this.desc;
+    return this.__desc;
   }
 
 }
@@ -761,7 +659,7 @@ class Control {
  * @module utility/collection
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Jul 25 2018 17:10:41 GMT+0800 (China Standard Time)
- * @modified Tue Nov 27 2018 13:39:11 GMT+0800 (China Standard Time)
+ * @modified Sat Dec 29 2018 19:34:51 GMT+0800 (China Standard Time)
  */
 /**
  * STOP Control
@@ -787,8 +685,10 @@ function eachProps(obj, callback, scope, own) {
     callback = bind(callback, scope);
   }
 
+  let k;
+
   if (own === false) {
-    for (var k in obj) if (callback(k, obj) === STOP) return k;
+    for (k in obj) if (callback(k, obj) === STOP) return k;
   } else {
     for (k in obj) if (hasOwnProp(obj, k) && callback(k, obj) === STOP) return k;
   }
@@ -814,8 +714,10 @@ function eachObj(obj, callback, scope, own) {
     callback = bind(callback, scope);
   }
 
+  let k;
+
   if (own === false) {
-    for (var k in obj) if (callback(obj[k], k, obj) === STOP) return k;
+    for (k in obj) if (callback(obj[k], k, obj) === STOP) return k;
   } else {
     for (k in obj) if (hasOwnProp(obj, k) && callback(obj[k], k, obj) === STOP) return k;
   }
@@ -879,7 +781,7 @@ function each(obj, callback, scope, own) {
  * @module utility/collection
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Jul 25 2018 17:12:06 GMT+0800 (China Standard Time)
- * @modified Tue Nov 27 2018 13:54:35 GMT+0800 (China Standard Time)
+ * @modified Sat Dec 29 2018 19:37:30 GMT+0800 (China Standard Time)
  */
 /**
  * SKIP Control
@@ -902,7 +804,7 @@ const SKIP = new Control('SKIP'); //============================================
  * @param obj	map target
  */
 
-function doMapObj(each$$1, obj, callback, scope, own) {
+function doMapObj(each, obj, callback, scope, own) {
   if (isBool(scope)) {
     own = scope;
   } else {
@@ -910,7 +812,7 @@ function doMapObj(each$$1, obj, callback, scope, own) {
   }
 
   const copy = create(null);
-  each$$1(obj, (value, prop, obj) => {
+  each(obj, (value, prop, obj) => {
     const v = callback(value, prop, obj);
     if (v === STOP) return STOP;
     if (v !== SKIP) copy[prop] = v;
@@ -945,11 +847,11 @@ function mapObj(obj, callback, scope, own) {
  * @param array	map target
  */
 
-function doMapArray(each$$1, array, callback, scope) {
+function doMapArray(each, array, callback, scope) {
   callback = bind(callback, scope);
   const copy = [];
   let j = 0;
-  each$$1(array, (data, index, array) => {
+  each(array, (data, index, array) => {
     const v = callback(data, index, array);
     if (v === STOP) return STOP;
     if (v !== SKIP) copy[j++] = v;
@@ -1003,7 +905,7 @@ function map(obj, callback, scope, own) {
 
 function parseCallback(value, scope) {
   if (isFn(value)) return bind(value, scope);
-  return function (data) {
+  return function defaultHandler(data, idx, obj) {
     return eq(data, value);
   };
 } //========================================================================================
@@ -1026,7 +928,7 @@ function parseCallback(value, scope) {
  */
 
 
-function doIdxOfObj(each$$1, obj, value, scope, own) {
+function doIdxOfObj(each, obj, value, scope, own) {
   if (isBool(scope)) {
     own = scope;
     scope = null;
@@ -1034,7 +936,7 @@ function doIdxOfObj(each$$1, obj, value, scope, own) {
 
   const callback = parseCallback(value, scope);
   let idx = -1;
-  each$$1(obj, (data, prop, obj) => {
+  each(obj, (data, prop, obj) => {
     const r = callback(data, prop, obj);
 
     if (r === true) {
@@ -1075,10 +977,10 @@ function idxOfObj(obj, value, scope, own) {
  * - STOP: stop find
  */
 
-function doIdxOfArray(each$$1, array, value, scope) {
+function doIdxOfArray(each, array, value, scope) {
   const callback = parseCallback(value, scope);
   let idx = -1;
-  each$$1(array, (data, index, array) => {
+  each(array, (data, index, array) => {
     const r = callback(data, index, array);
 
     if (r === true) {
@@ -1142,14 +1044,14 @@ function idxOf(obj, value, scope, own) {
  * - will stop reduce on return STOP
  */
 
-function doReduceObj(each$$1, obj, accumulator, callback, scope, own) {
+function doReduceObj(each, obj, accumulator, callback, scope, own) {
   if (isBool(scope)) {
     own = scope;
   } else {
     callback = bind(callback, scope);
   }
 
-  each$$1(obj, (value, prop, obj) => {
+  each(obj, (value, prop, obj) => {
     const rs = callback(accumulator, value, prop, obj);
     if (rs === STOP) return STOP;
     accumulator = rs;
@@ -1180,9 +1082,9 @@ function reduceObj(obj, accumulator, callback, scope, own) {
  * - will stop reduce on return STOP
  */
 
-function doReduceArray(each$$1, array, accumulator, callback, scope) {
+function doReduceArray(each, array, accumulator, callback, scope) {
   callback = bind(callback, scope);
-  each$$1(array, (data, index, array) => {
+  each(array, (data, index, array) => {
     const rs = callback(accumulator, data, index, array);
     if (rs === STOP) return STOP;
     accumulator = rs;
@@ -1229,7 +1131,7 @@ function reduce(obj, accumulator, callback, scope, own) {
  * @module utility/collection
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Thu Jul 26 2018 10:47:47 GMT+0800 (China Standard Time)
- * @modified Tue Nov 27 2018 13:59:31 GMT+0800 (China Standard Time)
+ * @modified Sat Dec 29 2018 19:34:56 GMT+0800 (China Standard Time)
  */
 
 /*                                                                                      *
@@ -1237,11 +1139,11 @@ function reduce(obj, accumulator, callback, scope, own) {
  *                                                                                      */
 //========================================================================================
 
-function defaultObjKeyHandler(prop) {
+function defaultObjKeyHandler(prop, obj) {
   return prop;
 }
 
-function doObjKeys(each$$1, obj) {
+function doObjKeys(each, obj) {
   const rs = [],
         args = arguments;
   let handler = defaultObjKeyHandler,
@@ -1253,7 +1155,7 @@ function doObjKeys(each$$1, obj) {
     if (!isBool(args[i])) handler = bind(handler, args[i++]);
   }
 
-  each$$1(obj, (prop, obj) => {
+  each(obj, (prop, obj) => {
     const val = handler(prop, obj);
     if (val === STOP) return STOP;
     if (val !== SKIP) rs[j++] = val;
@@ -1276,11 +1178,11 @@ function keys(obj, callback, scope, own) {
  *                                                                                      */
 //========================================================================================
 
-function defaultObjValueHandler(value) {
+function defaultObjValueHandler(value, prop, obj) {
   return value;
 }
 
-function doObjValues(each$$1, obj) {
+function doObjValues(each, obj) {
   const rs = [],
         args = arguments;
   let handler = defaultObjValueHandler,
@@ -1292,7 +1194,7 @@ function doObjValues(each$$1, obj) {
     if (!isBool(args[i])) handler = bind(handler, args[i++]);
   }
 
-  each$$1(obj, function (data, prop, obj) {
+  each(obj, function (data, prop, obj) {
     const val = handler(data, prop, obj);
     if (val === STOP) return STOP;
     if (val !== SKIP) rs[j++] = val;
@@ -1314,16 +1216,16 @@ function values(obj, callback, scope, own) {
  * @module utility/collection
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Fri Nov 16 2018 16:29:04 GMT+0800 (China Standard Time)
- * @modified Fri Nov 30 2018 17:42:28 GMT+0800 (China Standard Time)
+ * @modified Sat Dec 29 2018 19:33:49 GMT+0800 (China Standard Time)
  */
 /**
  * @return STOP or SKIP or [key: string, value: any]
  */
 
-function doArr2Obj(each$$1, array, callback, scope) {
+function doArr2Obj(each, array, callback, scope) {
   const obj = create(null);
   callback = bind(callback, scope);
-  each$$1(array, (data, index, array) => {
+  each(array, (data, index, array) => {
     const r = callback(data, index, array);
 
     if (isArray(r)) {
@@ -1372,37 +1274,42 @@ function makeArray(len, callback) {
  * @module utility/prop
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Fri Nov 30 2018 14:41:02 GMT+0800 (China Standard Time)
- * @modified Wed Dec 19 2018 13:21:11 GMT+0800 (China Standard Time)
+ * @modified Sat Feb 23 2019 10:45:54 GMT+0800 (China Standard Time)
  */
 const pathCache = create(null); // (^ | .) prop | (index | "string prop" | 'string prop')
 
 const pathReg = /(?:^|\.)([a-zA-Z$_][\w$]*)|\[\s*(?:(\d+)|"((?:[^\\"]|\\.)*)"|'((?:[^\\']|\\.)*)')\s*\]/g;
-function parsePath(path, cacheable) {
-  if (isArray(path)) return path;
-  let array = pathCache[path];
+function parsePath(propPath, cacheable) {
+  let path;
 
-  if (!array) {
-    array = [];
+  if (isArray(propPath)) {
+    path = propPath;
+  } else if (path = pathCache[propPath]) {
+    return path;
+  } else {
+    path = [];
     var match,
         idx = 0,
         cidx,
         i = 0;
 
-    while (match = pathReg.exec(path)) {
+    while (match = pathReg.exec(propPath)) {
       cidx = pathReg.lastIndex;
-      if (cidx !== idx + match[0].length) throw new SyntaxError(`Invalid Path: "${path}", unkown character[${path.charAt(idx)}] at offset:${idx}`);
-      array[i++] = match[1] || match[2] || match[3] || match[4];
+      if (cidx !== idx + match[0].length) throw new SyntaxError(`Invalid Path: "${propPath}", unkown character[${propPath.charAt(idx)}] at offset:${idx}`);
+      path[i++] = match[1] || match[2] || match[3] || match[4];
       idx = cidx;
     }
 
-    if (cacheable === false) return array;
-    pathCache[path] = array;
+    if (cacheable !== false && i) {
+      pathCache[propPath] = path;
+    }
   }
 
-  return array.slice();
+  if (!path.length) throw new Error(`Empty Path: ${propPath}`);
+  return path;
 }
 function formatPath(path) {
-  return isArray(path) ? mapArray(path, formatPathHandler).join('') : path;
+  return isArray(path) ? path.path || (path.path = mapArray(path, formatPathHandler).join('')) : path;
 }
 
 function formatPathHandler(prop) {
@@ -1414,7 +1321,7 @@ function get(obj, path) {
   const l = path.length - 1;
   let i = 0;
 
-  for (; i < l; i++) if (obj = obj[path[i]], obj === null || obj === undefined) return;
+  for (; i < l; i++) if ((obj = obj[path[i]]) === null || obj === undefined) return;
 
   if (obj && ~l) return obj[path[i]];
 }
@@ -1433,8 +1340,9 @@ function set(obj, path, value) {
  * @module utility/string
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 13:57:32 GMT+0800 (China Standard Time)
- * @modified Sat Dec 08 2018 16:16:42 GMT+0800 (China Standard Time)
+ * @modified Thu Jan 31 2019 10:04:55 GMT+0800 (China Standard Time)
  */
+//========================================================================================
 
 /*                                                                                      *
  *                                       char code                                      *
@@ -1445,7 +1353,6 @@ function set(obj, path, value) {
  * get char code
  * > string.charCodeAt
  */
-
 function charCode(str, index) {
   return str.charCodeAt(index || 0);
 }
@@ -1456,6 +1363,12 @@ function charCode(str, index) {
 
 function char(code) {
   return String.fromCharCode(code);
+}
+function cutStr(str, start, end) {
+  return str.substring(start, end);
+}
+function cutLStr(str, start, len) {
+  return str.substr(start, len);
 } //========================================================================================
 
 /*                                                                                      *
@@ -1477,37 +1390,19 @@ function trim(str) {
  *                                                                                      */
 //========================================================================================
 
-const FIRST_LOWER_LETTER_REG = /^[a-z]/;
-/**
- * upper first char
- */
-
+const FIRST_LOWER_LETTER_REG = /^[a-z]/,
+      FIRST_UPPER_LETTER_REG = /^[A-Z]/;
+function upper(str) {
+  return str.toUpperCase();
+}
+function lower(str) {
+  return str.toLowerCase();
+}
 function upperFirst(str) {
   return str.replace(FIRST_LOWER_LETTER_REG, upper);
 }
-function upper(m) {
-  return m.toUpperCase();
-}
-function lower(m) {
-  return m.toLowerCase();
-} //========================================================================================
-
-/*                                                                                      *
- *                                  parse string value                                  *
- *                                                                                      */
-//========================================================================================
-
-/**
- * convert any value to string
- * - undefined | null: ''
- * - NaN:
- * - Infinity:
- * - other: String(value)
- * TODO support NaN, Infinity
- */
-
-function strval(obj) {
-  return isNil(obj) ? '' : String(obj);
+function lowerFirst(str) {
+  return str.replace(FIRST_UPPER_LETTER_REG, lower);
 } //========================================================================================
 
 /*                                                                                      *
@@ -1531,24 +1426,24 @@ function escapeStr(str) {
  * @module utility/format
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 03 2018 19:46:41 GMT+0800 (China Standard Time)
- * @modified Mon Dec 17 2018 19:24:20 GMT+0800 (China Standard Time)
+ * @modified Fri Feb 22 2019 11:37:25 GMT+0800 (China Standard Time)
  */
 
 /*                                                                                      *
- *                                       pad & cut                                      *
+ *                                     pad & shorten                                    *
  *                                                                                      */
 //========================================================================================
 
 function pad(str, len, chr, leftAlign) {
   return len > str.length ? __pad(str, len, chr, leftAlign) : str;
 }
-function cut(str, len, suffix) {
+function shorten(str, len, suffix) {
   return len < str.length ? (suffix = suffix || '', str.substr(0, len - suffix.length) + suffix) : str;
 }
 
 function __pad(str, len, chr, leftAlign) {
-  const padding = new Array(len - str.length + 1).join(chr || ' ');
-  return leftAlign ? str + padding : padding + str;
+  const pad = new Array(len - str.length + 1).join(chr || ' ');
+  return leftAlign ? str + pad : pad + str;
 } //========================================================================================
 
 /*                                                                                      *
@@ -1634,15 +1529,15 @@ function parseFlags(f) {
  *                                                                                      */
 //========================================================================================
 //   0      1      2     3     4       5       6           7         8      9           10             11             12        13
-// [match, expr, index, prop, flags, width, width-idx, width-prop, fill, precision, precision-idx, precision-prop, cut-suffix, type]
+// [match, expr, index, prop, flags, width, width-idx, width-prop, fill, precision, precision-idx, precision-prop, shorten-suffix, type]
 
 
 const paramIdxR = `(\\d+|\\$|@)`,
       paramPropR = `(?:\\{((?:[a-zA-Z$_][\\w$_]*|\\[(?:\\d+|"(?:[^\\\\"]|\\\\.)*"|'(?:[^\\\\']|\\\\.)*')\\])(?:\\.[a-zA-Z$_][\\w$_]*|\\[(?:\\d+|"(?:[^\\\\"]|\\\\.)*"|'(?:[^\\\\']|\\\\.)*')\\])*)\\})`,
       widthR = `(?:([1-9]\\d*)|&${paramIdxR}${paramPropR})`,
       fillR = `(?:=(.))`,
-      cutSuffixR = `(?:="((?:[^\\\\"]|\\\\.)*)")`,
-      formatReg = new RegExp(`\\\\.|(\\{${paramIdxR}?${paramPropR}?(?::([#,+\\- 0]*)(?:${widthR}${fillR}?)?(?:\\.${widthR}${cutSuffixR}?)?)?([a-zA-Z_][a-zA-Z0-9_$]*)?\\})`, 'g'); //========================================================================================
+      shortenSuffixR = `(?:="((?:[^\\\\"]|\\\\.)*)")`,
+      formatReg = new RegExp(`\\\\.|(\\{${paramIdxR}?${paramPropR}?(?::([#,+\\- 0]*)(?:${widthR}${fillR}?)?(?:\\.${widthR}${shortenSuffixR}?)?)?([a-zA-Z_][a-zA-Z0-9_$]*)?\\})`, 'g'); //========================================================================================
 
 /*                                                                                      *
  *                                      Formatters                                      *
@@ -1682,7 +1577,7 @@ function getFormatter(name) {
  * 			)?
  * 			(
  * 				'.'
- * 				<precision> ('=' '"' <cut-suffix> '"')?
+ * 				<precision> ('=' '"' <shorten-suffix> '"')?
  * 			)?
  * 		)?
  * 		(<type>)?
@@ -1761,7 +1656,6 @@ function getFormatter(name) {
  * 			{:&${<prop>}=<pad-char>}
  * 			{:&<number>{<prop>}=<pad-char>}
  * @example
- *
  * - precision
  * 		For integer specifiers (d,  o, u, x, X): precision specifies the minimum number of digits to be written.
  * 		If the value to be written is shorter than this number, the result is padded with leading zeros.
@@ -1778,7 +1672,7 @@ function getFormatter(name) {
  * 			{:.&@{<prop>}}
  * 			{:.&${<prop>}}
  * 			{:.&<number>{<prop>}}
- * 		- cut suffix
+ * 		- shorten suffix
  * 			{:.&@="<suffix>"}
  * 			{:.&$="<suffix>"}
  * 			{:.&<number>="<suffix>"}
@@ -1865,7 +1759,7 @@ function getFormatter(name) {
  * 						(?:
  * 							=
  * 							"
- * 							((?:[^\\"]|\\.)*)					// 12: cut su
+ * 							((?:[^\\"]|\\.)*)					// 12: shorten su
  * 							"
  * 						)
  * 					)?
@@ -1883,9 +1777,9 @@ function vformat(fmt, args, offset, getParam) {
   offset = offset || 0;
   const start = offset;
   getParam = getParam || defaultGetParam;
-  return fmt.replace(formatReg, function (s, m, param, paramProp, flags, width, widx, wprop, fill, precision, pidx, pprop, cutSuffix, type) {
+  return fmt.replace(formatReg, function (s, m, param, paramProp, flags, width, widx, wprop, fill, precision, pidx, pprop, shortenSuffix, type) {
     if (!m) return s.charAt(1);
-    return getFormatter(type)(parseParam(param || '$', paramProp), parseFlags(flags), parseWidth(width, widx, wprop) || 0, fill, parseWidth(precision, pidx, pprop), cutSuffix);
+    return getFormatter(type)(parseParam(param || '$', paramProp), parseFlags(flags), parseWidth(width, widx, wprop) || 0, fill, parseWidth(precision, pidx, pprop), shortenSuffix);
   });
 
   function parseWidth(width, idx, prop) {
@@ -1958,10 +1852,11 @@ function getParamCode(idx, prop) {
   if (prop) {
     const path = parsePath(prop);
     var i = path.length;
+    const strs = new Array(i);
 
-    while (i--) path[i] = `"${escapeStr(path[i])}"`;
+    while (i--) strs[i] = `"${escapeStr(path[i])}"`;
 
-    return `${GET_PROP_VAR}(${code}, [${path.join(', ')}])`;
+    return `${GET_PROP_VAR}(${code}, [${strs.join(', ')}])`;
   }
 
   return code;
@@ -1987,7 +1882,7 @@ function formatter(fmt, offset, getParam) {
   while (m = formatReg.exec(fmt)) {
     mEnd = formatReg.lastIndex;
     mStart = mEnd - m[0].length;
-    lastIdx < mStart && pushStr(fmt.substring(lastIdx, mStart), 0);
+    lastIdx < mStart && pushStr(cutStr(fmt, lastIdx, mStart), 0);
 
     if (m[1]) {
       codes[i] = `arr[${i}](arguments, ${STATE_VAR})`;
@@ -1999,7 +1894,7 @@ function formatter(fmt, offset, getParam) {
     lastIdx = mEnd;
   }
 
-  lastIdx < fmt.length && pushStr(fmt.substring(lastIdx), i);
+  lastIdx < fmt.length && pushStr(cutStr(fmt, lastIdx), i);
   return createFn(`return function(){var ${STATE_VAR} = [${offset}, ${offset}]; return ${codes.join(' + ')}}`, ['arr'])(arr);
 
   function pushStr(str, append) {
@@ -2040,9 +1935,9 @@ setTimeout(() => {
 //========================================================================================
 
 function strFormatter(toStr) {
-  return function (val, flags, width, fill, precision, cutSuffix) {
+  return function (val, flags, width, fill, precision, shortenSuffix) {
     const str = toStr(val, flags);
-    return width > str.length ? __pad(str, width, fill, flags & FORMAT_LEFT) : cut(str, precision, cutSuffix);
+    return width > str.length ? __pad(str, width, fill, flags & FORMAT_LEFT) : shorten(str, precision, shortenSuffix);
   };
 }
 
@@ -2211,6 +2106,12 @@ function assignIfFilter(prop, target, override) {
   return hasOwnProp(override, prop) && !(prop in target);
 }
 
+/**
+ * @module utility
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Wed Jul 25 2018 15:24:47 GMT+0800 (China Standard Time)
+ * @modified Tue Feb 19 2019 11:53:18 GMT+0800 (China Standard Time)
+ */
 const REG_PROPS = ['source', 'global', 'ignoreCase', 'multiline'];
 function deepEq(actual, expected) {
   if (eq(actual, expected)) return true;
@@ -2230,30 +2131,43 @@ function deepEq(actual, expected) {
 function eqProps(actual, expected, props) {
   let i = props.length;
 
-  while (i--) if (actual[props[i]] !== expected[props[i]]) return false;
+  while (i--) if (actual[props[i]] !== expected[props[i]]) {
+    return false;
+  }
 
   return true;
 }
 
-function eqArray(actual, expected, eq$$1) {
+function eqArray(actual, expected, eq) {
   let i = actual.length;
-  if (i !== expected.length) return false;
 
-  while (i--) if (!eq$$1(actual[i], expected[i])) return false;
+  if (i !== expected.length) {
+    return false;
+  }
+
+  while (i--) if (!eq(actual[i], expected[i])) {
+    return false;
+  }
 
   return true;
 }
 
 function eqObj(actual, expected) {
   const cache = create(null);
+  let k;
 
-  for (var k in actual) {
-    if (notEqObjKey(actual, expected, k)) return false;
+  for (k in actual) {
+    if (notEqObjKey(actual, expected, k)) {
+      return false;
+    }
+
     cache[k] = true;
   }
 
   for (k in expected) {
-    if (!cache[k] && notEqObjKey(actual, expected, k)) return false;
+    if (!cache[k] && notEqObjKey(actual, expected, k)) {
+      return false;
+    }
   }
 
   return true;
@@ -2267,19 +2181,24 @@ function notEqObjKey(actual, expected, k) {
  * @module utility/assert
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Nov 28 2018 11:01:45 GMT+0800 (China Standard Time)
- * @modified Wed Dec 19 2018 13:45:36 GMT+0800 (China Standard Time)
+ * @modified Tue Feb 19 2019 10:38:22 GMT+0800 (China Standard Time)
  */
 const formatters$1 = [],
       formatArgHandlers = [];
 
 function parseMessage(msg, args, msgIdx) {
-  const fs = formatters$1[msgIdx] || (formatArgHandlers[msgIdx] = (args, offset) => {
-    return args[0][offset >= msgIdx ? offset + 1 : offset];
-  }, formatters$1[msgIdx] = create(null));
+  let fs = formatters$1[msgIdx];
+
+  if (!fs) {
+    formatArgHandlers[msgIdx] = (args, offset) => args[0][offset >= msgIdx ? offset + 1 : offset];
+
+    formatters$1[msgIdx] = fs = create(null);
+  }
+
   return (fs[msg] || (fs[msg] = formatter(msg, msgIdx, formatArgHandlers[msgIdx])))(args);
 }
 
-const assert = function (msg) {
+const assert = function assert(msg) {
   throw new Error(parseMessage(msg || 'Error', arguments, 0));
 };
 
@@ -2347,15 +2266,15 @@ function extendAsserts(apis) {
   });
 }
 
-const NULL = 'null';
-const UNDEFINED = 'undefined';
-const BOOLEAN = 'boolean';
-const NUMBER = 'number';
-const INTEGER = 'integer';
-const STRING = 'string';
-const FUNCTION = 'function';
-const ARRAY = 'Array';
-const TYPED_ARRAY = 'TypedArray';
+const UNDEFINED = TYPE_UNDEF,
+      BOOLEAN = TYPE_BOOL,
+      NUMBER = TYPE_NUM,
+      STRING = TYPE_STRING,
+      FUNCTION = TYPE_FN,
+      NULL = 'null',
+      INTEGER = 'integer',
+      ARRAY = 'Array',
+      TYPED_ARRAY = 'TypedArray';
 extendAssert('is', '!o', 'o', expectMsg('Exist'));
 extendAssert('not', 'o', 'o', expectMsg('Not Exist'));
 extendAsserts({
@@ -2413,44 +2332,74 @@ function typeExpect() {
  * @module utility/List
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
- * @modified Tue Dec 18 2018 19:25:11 GMT+0800 (China Standard Time)
+ * @modified Fri Feb 22 2019 16:45:27 GMT+0800 (China Standard Time)
  */
-const DEFAULT_BINDING = '__this__'; //type ListNode = [ListElement, IListNode, IListNode, List]
+const DEFAULT_BINDING = '__list__'; //type ListNode = [ListElement, IListNode, IListNode, List]
 
 class List {
   constructor(binding) {
-    this.length = 0;
-    this.scaning = false;
+    this.__length = 0;
+    this.__scaning = false;
     this.binding = binding || DEFAULT_BINDING;
   }
 
   size() {
-    return this.length;
+    return this.__length;
   }
 
   has(obj) {
     const node = obj[this.binding];
     return node ? node[0] === obj && node[3] === this : false;
   }
+  /**
+   *
+   * @param obj
+   * @return new length
+   */
+
 
   add(obj) {
-    return this.__insert(obj, this.tail);
+    return this.__insert(obj, this.__tail);
   }
+  /**
+   *
+   * @param obj
+   * @return new length
+   */
+
 
   addFirst(obj) {
     return this.__insert(obj);
   }
+  /**
+   *
+   * @param obj
+   * @return new length
+   */
+
 
   insertAfter(obj, target) {
     return this.__insert(obj, target && this.__getNode(target));
   }
+  /**
+   *
+   * @param obj
+   * @return new length
+   */
+
 
   insertBefore(obj, target) {
     return this.__insert(obj, target && this.__getNode(target)[1]);
   }
+  /**
+   *
+   * @param objs
+   * @return new length
+   */
+
 
   addAll(objs) {
-    return this.__insertAll(objs, this.tail);
+    return this.__insertAll(objs, this.__tail);
   }
 
   addFirstAll(objs) {
@@ -2474,21 +2423,21 @@ class List {
   }
 
   first() {
-    const node = this.head;
+    const node = this.__head;
     return node && node[0];
   }
 
   last() {
-    const node = this.tail;
+    const node = this.__tail;
     return node && node[0];
   }
 
   each(cb, scope) {
-    if (this.length) {
-      assert.not(this.scaning, 'Recursive calls are not allowed.');
-      this.scaning = true;
+    if (this.__length) {
+      assert.not(this.__scaning, 'Nested calls are not allowed.');
+      this.__scaning = true;
       cb = bind(cb, scope);
-      var node = this.head;
+      var node = this.__head;
 
       while (node) {
         if (node[3] === this && cb(node[0]) === false) break;
@@ -2497,13 +2446,13 @@ class List {
 
       this.__doLazyRemove();
 
-      this.scaning = false;
+      this.__scaning = false;
     }
   }
 
   toArray() {
-    const array = new Array(this.length);
-    let node = this.head,
+    const array = new Array(this.__length);
+    let node = this.__head,
         i = 0;
 
     while (node) {
@@ -2513,6 +2462,12 @@ class List {
 
     return array;
   }
+  /**
+   *
+   * @param obj
+   * @return new length
+   */
+
 
   remove(obj) {
     return this.__remove(this.__getNode(obj));
@@ -2521,16 +2476,16 @@ class List {
   pop() {}
 
   clean() {
-    if (this.length) {
-      if (this.scaning) {
-        var node = this.head;
+    if (this.__length) {
+      if (this.__scaning) {
+        var node = this.__head;
 
         while (node) {
           node[3] === this && this.__lazyRemove(node);
           node = node[2];
         }
 
-        this.length = 0;
+        this.__length = 0;
       } else {
         this.__clean();
       }
@@ -2590,12 +2545,12 @@ class List {
       nodeTail[2] = next = prev[2];
       prev[2] = nodeHead;
     } else {
-      nodeTail[2] = next = this.head;
-      this.head = nodeHead;
+      nodeTail[2] = next = this.__head;
+      this.__head = nodeHead;
     }
 
-    if (next) next[1] = nodeTail;else this.tail = nodeTail;
-    return this.length += len;
+    if (next) next[1] = nodeTail;else this.__tail = nodeTail;
+    return this.__length += len;
   }
 
   __insert(obj, prev) {
@@ -2628,13 +2583,13 @@ class List {
   }
 
   __remove(node) {
-    this.scaning ? this.__lazyRemove(node) : this.__doRemove(node);
-    return --this.length;
+    this.__scaning ? this.__lazyRemove(node) : this.__doRemove(node);
+    return --this.__length;
   }
 
   __lazyRemove(node) {
     const {
-      lazyRemoves
+      __lazyRemoves: lazyRemoves
     } = this;
     node[0][this.binding] = undefined; // unbind this node
 
@@ -2643,20 +2598,20 @@ class List {
     if (lazyRemoves) {
       lazyRemoves.push(node);
     } else {
-      this.lazyRemoves = [node];
+      this.__lazyRemoves = [node];
     }
   }
 
   __doLazyRemove() {
     const {
-      lazyRemoves
+      __lazyRemoves: lazyRemoves
     } = this;
 
     if (lazyRemoves) {
       var len = lazyRemoves.length;
 
       if (len) {
-        if (this.length) {
+        if (this.__length) {
           while (len--) this.__doRemove(lazyRemoves[len]);
         } else {
           this.__clean();
@@ -2674,13 +2629,13 @@ class List {
     if (prev) {
       prev[2] = next;
     } else {
-      this.head = next;
+      this.__head = next;
     }
 
     if (next) {
       next[1] = prev;
     } else {
-      this.tail = prev;
+      this.__tail = prev;
     }
 
     node[1] = node[2] = node[3] = null;
@@ -2688,16 +2643,16 @@ class List {
 
   __clean() {
     let node,
-        next = this.head;
+        next = this.__head;
 
     while (node = next) {
       next = node[2];
       node.length = 1;
     }
 
-    this.head = undefined;
-    this.tail = undefined;
-    this.length = 0;
+    this.__head = undefined;
+    this.__tail = undefined;
+    this.__length = 0;
   }
 
 }
@@ -2708,43 +2663,53 @@ List.binding = DEFAULT_BINDING;
  * @module utility/List
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
- * @modified Tue Dec 18 2018 19:32:10 GMT+0800 (China Standard Time)
+ * @modified Fri Feb 22 2019 16:53:21 GMT+0800 (China Standard Time)
  */
-const DEFAULT_FN_BINDING = '__id__';
-const DEFAULT_SCOPE_BINDING = '__id__';
+const DEFAULT_FN_BINDING = '__flist_id__';
+const DEFAULT_SCOPE_BINDING = '__flist_id__';
 class FnList {
   constructor(fnBinding, scopeBinding) {
-    this.nodeMap = create(null);
-    this.list = new List();
+    this.__nodeMap = create(null);
+    this.__list = new List();
     this.fnBinding = fnBinding || DEFAULT_FN_BINDING;
     this.scopeBinding = scopeBinding || DEFAULT_SCOPE_BINDING;
   }
+  /**
+   * add executable function
+   * @param fn		function
+   * @param scope		scope of function
+   * @param data		user data of [function + scope]
+   * @return executable function id, can remove executable function by id: {@link FnList#removeId}
+   */
 
-  add(fn, scope) {
+
+  add(fn, scope, data) {
     scope = parseScope(scope);
     const {
-      list,
-      nodeMap
+      __list: list,
+      __nodeMap: nodeMap
     } = this;
-    const id = nodeId(this, fn, scope);
+    const id = this.id(fn, scope);
     let node = nodeMap[id];
 
     if (!node) {
-      node = [id, fn, scope];
-      var ret = list.add(node);
-      if (ret) nodeMap[id] = node;
-      return ret;
+      node = [id, fn, scope, data];
+      if (list.add(node)) nodeMap[id] = node;
+      return id;
     }
-
-    return -1;
   }
+  /**
+   * remove executable function by id
+   *
+   * @param id
+   */
 
-  remove(fn, scope) {
+
+  removeId(id) {
     const {
-      list,
-      nodeMap
+      __list: list,
+      __nodeMap: nodeMap
     } = this;
-    const id = nodeId(this, fn, parseScope(scope));
     const node = nodeMap[id];
 
     if (node) {
@@ -2755,22 +2720,40 @@ class FnList {
     return -1;
   }
 
+  remove(fn, scope) {
+    return this.removeId(this.id(fn, parseScope(scope)));
+  }
+
   has(fn, scope) {
-    return !!this.nodeMap[nodeId(this, fn, parseScope(scope))];
+    return !!this.__nodeMap[this.id(fn, parseScope(scope))];
   }
 
   size() {
-    return this.list.size();
+    return this.__list.size();
   }
 
   clean() {
-    this.nodeMap = create(null);
-    this.list.clean();
+    this.__nodeMap = create(null);
+
+    this.__list.clean();
   }
 
   each(cb, scope) {
     cb = cb.bind(scope);
-    this.list.each(node => cb(node[1], node[2]));
+
+    this.__list.each(node => cb(node[1], node[2], node[3]));
+  }
+
+  id(fn, scope) {
+    const {
+      fnBinding,
+      scopeBinding
+    } = this;
+    let fnId = fn[fnBinding],
+        scopeId = scope ? scope[scopeBinding] : DEFAULT_SCOPE_ID;
+    if (!fnId) fnId = defPropValue(fn, fnBinding, ++fnIdGenerator, false, false, false);
+    if (!scopeId) scopeId = defPropValue(scope, scopeBinding, ++scopeIdGenerator, false, false, false);
+    return `${fnId}&${scopeId}`;
   }
 
 }
@@ -2779,18 +2762,6 @@ FnList.scopeBinding = DEFAULT_SCOPE_BINDING;
 const DEFAULT_SCOPE_ID = 1;
 let scopeIdGenerator = 1,
     fnIdGenerator = 0;
-
-function nodeId(list, fn, scope) {
-  const {
-    fnBinding,
-    scopeBinding
-  } = list;
-  let fnId = fn[fnBinding],
-      scopeId = scope ? scope[scopeBinding] : DEFAULT_SCOPE_ID;
-  if (!fnId) fnId = defPropValue(fn, fnBinding, ++fnIdGenerator, false, false, false);
-  if (!scopeId) scopeId = defPropValue(scope, scopeBinding, ++scopeIdGenerator, false, false, false);
-  return `${fnId}&${scopeId}`;
-}
 
 function parseScope(scope) {
   return !scope ? undefined : scope;
@@ -2808,7 +2779,7 @@ function parseScope(scope) {
  * @module utility/nextTick
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
- * @modified Mon Dec 10 2018 16:59:56 GMT+0800 (China Standard Time)
+ * @modified Thu Jan 31 2019 16:34:55 GMT+0800 (China Standard Time)
  */
 const ticks = new FnList();
 let pending = false;
@@ -2824,7 +2795,7 @@ function flush() {
   pending = false;
 }
 
-if (isFn(MutationObserver)) {
+if (typeof MutationObserver === TYPE_FN) {
   // chrome18+, safari6+, firefox14+,ie11+,opera15
   var counter = 0,
       observer = new MutationObserver(flush),
@@ -2859,23 +2830,23 @@ function clearTick(fn, scope) {
  * @module utility/Source
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 17 2018 10:41:21 GMT+0800 (China Standard Time)
- * @modified Wed Dec 19 2018 13:22:43 GMT+0800 (China Standard Time)
+ * @modified Sat Dec 22 2018 14:37:32 GMT+0800 (China Standard Time)
  */
 const LINE_REG = /([^\n]+)?(\n|$)/g;
 class Source {
   constructor(buff) {
     this.buff = buff;
     this.len = buff.length;
-    this.lines = [];
-    this.linePos = 0;
+    this.__lines = [];
+    this.__linePos = 0;
   }
 
   position(offset) {
     const {
       buff,
       len,
-      lines,
-      linePos
+      __lines: lines,
+      __linePos: linePos
     } = this;
     let i = lines.length,
         p;
@@ -2896,7 +2867,7 @@ class Source {
           if (!p || offset < p) break;
         }
 
-        this.linePos = p || len;
+        this.__linePos = p || len;
       }
 
       return i ? [i, (offset > len ? len : offset) - lines[i - 1][0], lines[i - 1][1]] : [1, 0, ''];
@@ -2914,7 +2885,7 @@ class Source {
 
 }
 
-function sourceStr(m) {
+function sourceStr(m, s, t) {
   return m || '';
 }
 
@@ -2935,12 +2906,14 @@ function escapeSourceStr(m, s, t) {
  */
 
 function eachCharCodes(codes, ignoreCase, cb) {
-  if (isStr(codes)) {
-    var i = codes.length;
+  let i;
 
-    while (i--) eachCharCode(codes.charCodeAt(i), ignoreCase, cb);
+  if (isStr(codes)) {
+    i = codes.length;
+
+    while (i--) eachCharCode(charCode(codes, i), ignoreCase, cb);
   } else if (isArray(codes)) {
-    var i = codes.length;
+    i = codes.length;
 
     while (i--) eachCharCodes(codes[i], ignoreCase, cb);
   } else if (isInt(codes)) {
@@ -2952,22 +2925,23 @@ function eachCharCode(code, ignoreCase, cb) {
   cb(code);
 
   if (ignoreCase) {
-    if (code <= 90) {
-      if (code >= 65) cb(code + 32);
-    } else if (code <= 122) {
-      cb(code - 32);
-    }
+    var c = getAnotherCode(code);
+    c && cb(c);
   }
+}
+
+function getAnotherCode(code) {
+  return code <= 90 ? code >= 65 ? code + 32 : 0 : code <= 122 ? code - 32 : 0;
 }
 
 /**
  * @module utility/mixin
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Tue Dec 18 2018 16:41:03 GMT+0800 (China Standard Time)
- * @modified Tue Dec 18 2018 19:01:41 GMT+0800 (China Standard Time)
+ * @modified Fri Dec 21 2018 10:24:24 GMT+0800 (China Standard Time)
  */
 function mixin(behaviour) {
-  return function (Class) {
+  return function mixin(Class) {
     const proto = Class.prototype;
 
     for (var k in behaviour) if (hasOwnProp(behaviour, k)) proto[k] = behaviour[k];
@@ -2979,12 +2953,13 @@ function mixin(behaviour) {
 var _dec, _class, _dec2, _class2;
 let MatchError = (_dec = mixin({
   $ruleErr: true
-}), _dec(_class = class {
+}), _dec(_class = class MatchError {
   constructor(msg, capturable, source, context, rule) {
     !isBool(capturable) && (capturable = rule.capturable);
     this.capturable = capturable && source ? source.capturable : capturable;
     this.msg = msg;
     this.source = source;
+    this.target = source ? source.target : this;
     this.context = context;
     this.rule = rule;
     this.pos = context.startPos();
@@ -3014,6 +2989,8 @@ let Rule = (_dec2 = mixin({
 }), _dec2(_class2 = class Rule {
   // rule type (for debug)
   // rule id
+  // rule name
+  // error is capturable
   // rule expression (for debug)
   // rule EXPECT content (for debug)
   // matched callback
@@ -3027,12 +3004,12 @@ let Rule = (_dec2 = mixin({
    * @param onMatch		callback on matched, allow modify the match result or return an error
    * @param onErr			callback on Error, allow to ignore error or modify error message or return new error
    */
-  constructor(name, capturable, onMatch, onErr) {
+  constructor(name, options) {
     this.id = idGen++;
     this.name = name;
-    this.capturable = capturable !== false;
-    this.onMatch = onMatch || defaultMatch;
-    this.onErr = onErr || defaultErr;
+    this.capturable = options.capturable !== false;
+    this.onMatch = options.match || defaultMatch;
+    this.onErr = options.err || defaultErr;
   }
   /**
    * create Error
@@ -3043,7 +3020,7 @@ let Rule = (_dec2 = mixin({
    */
 
 
-  mkErr(msg, context, source, capturable) {
+  mkErr(msg, context, capturable, source) {
     return new MatchError(msg, capturable, source, context, this);
   }
   /**
@@ -3057,9 +3034,9 @@ let Rule = (_dec2 = mixin({
 
 
   error(msg, context, src, capturable) {
-    const err = this.mkErr(msg, context, src, capturable);
+    const err = this.mkErr(msg, context, capturable, src);
     const userErr = this.onErr(err, context, this);
-    if (userErr) return isStr(userErr) ? (err[0] = userErr, err) : userErr;
+    if (userErr) return userErr.$ruleErr ? userErr : (err[0] = String(userErr), err);
   }
   /**
    * match success
@@ -3073,7 +3050,11 @@ let Rule = (_dec2 = mixin({
 
   matched(data, len, context) {
     const err = this.onMatch(data, len, context, this);
-    if (err) return err.$ruleErr ? err : this.mkErr(String(err), context, null, false);
+    if (err) return err.$ruleErr ? err : this.mkErr(String(err), context, false);
+  }
+
+  enter(context) {
+    return context.create();
   }
   /**
    * match
@@ -3081,7 +3062,7 @@ let Rule = (_dec2 = mixin({
    */
 
 
-  match() {
+  match(context) {
     return assert();
   }
   /**
@@ -3089,7 +3070,7 @@ let Rule = (_dec2 = mixin({
    */
 
 
-  getStart() {
+  getStart(stack) {
     return this.startCodes;
   }
   /**
@@ -3097,13 +3078,12 @@ let Rule = (_dec2 = mixin({
    */
 
 
-  test() {
-    return true; //return context.nextCode() !== 0
+  test(context) {
+    return true;
   }
 
   startCodeTest(context) {
-    const code = context.nextCode();
-    return code !== 0 && !!this.startCodeIdx[code];
+    return this.startCodeIdx[context.nextCode()];
   }
 
   setStartCodes(start, ignoreCase) {
@@ -3120,8 +3100,10 @@ let Rule = (_dec2 = mixin({
   }
 
   setCodeIdx(index) {
-    this.startCodeIdx = index;
-    this.test = index && index.length > 1 ? this.startCodeTest : Rule[PROTOTYPE].test;
+    if (index.length > 1) {
+      this.startCodeIdx = index;
+      this.test = this.startCodeTest;
+    }
   } //──── for debug ─────────────────────────────────────────────────────────────────────────
 
   /**
@@ -3145,7 +3127,7 @@ let Rule = (_dec2 = mixin({
     this.EXPECT = `Expect: ${expr}`;
   }
 
-  getExpr() {
+  getExpr(stack) {
     return this.name || this.expr;
   }
   /**
@@ -3163,7 +3145,7 @@ let Rule = (_dec2 = mixin({
  * @module utility/AST
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Tue Nov 06 2018 10:06:22 GMT+0800 (China Standard Time)
- * @modified Tue Dec 18 2018 18:57:32 GMT+0800 (China Standard Time)
+ * @modified Sat Dec 22 2018 15:11:19 GMT+0800 (China Standard Time)
  */
 /**
  * Match Rule Interface
@@ -3174,13 +3156,10 @@ class MatchRule extends Rule {
    * @param name 			match name
    * @param start 		start char codes, prepare test by start char codes before match
    * @param ignoreCase	ignore case for the start char codes
-   * @param capturable	error is capturable
-   * @param onMatch		match callback
-   * @param onErr			error callback
+   * @param options		Rule Options
    */
-  constructor(name, start, ignoreCase, capturable, onMatch, onErr) {
-    super(name, capturable, onMatch, onErr);
-    this.ignoreCase = ignoreCase;
+  constructor(name, start, ignoreCase, options) {
+    super(name, options);
     this.setStartCodes(start, ignoreCase);
   }
   /**
@@ -3198,13 +3177,7 @@ class MatchRule extends Rule {
 
 }
 
-/**
- *
- * @module utility/AST
- * @author Tao Zeng <tao.zeng.zt@qq.com>
- * @created Tue Dec 11 2018 15:36:42 GMT+0800 (China Standard Time)
- * @modified Tue Dec 18 2018 18:56:48 GMT+0800 (China Standard Time)
- */
+var _dec$1, _class$1;
 /**
  * match a character in the allowed list
  * > well match any character if the allowed list is empty
@@ -3212,19 +3185,19 @@ class MatchRule extends Rule {
  * > must call test() before match
  */
 
-class CharMatchRule extends MatchRule {
+let CharMatchRule = (_dec$1 = mixin({
+  type: 'Character'
+}), _dec$1(_class$1 = class CharMatchRule extends MatchRule {
   /**
    * @param name 			match name
    * @param allows 		allowed character codes for match
    * 						well match any character if the allowed list is empty
    * @param ignoreCase	ignore case for the allowed character codes
-   * @param capturable	error is capturable
-   * @param onMatch		match callback
-   * @param onErr			error callback
+   * @param options		Rule Options
    */
-  constructor(name, allows, ignoreCase, capturable, onMatch, onErr) {
-    super(name, allows, ignoreCase, capturable, onMatch, onErr);
-    this.type = 'Character';
+  constructor(name, allows, ignoreCase, options) {
+    super(name, allows, ignoreCase, options); // generate expression for debug
+
     const codes = this.startCodes;
     let i = codes.length,
         expr = '*';
@@ -3244,9 +3217,9 @@ class CharMatchRule extends MatchRule {
     return this.comsume(context.nextChar(), 1, context);
   }
 
-}
+}) || _class$1);
 
-var _dec$1, _class$1;
+var _dec$2, _class$2;
 /**
  * match string by RegExp
  *
@@ -3255,9 +3228,9 @@ var _dec$1, _class$1;
  *
  */
 
-let RegMatchRule = (_dec$1 = mixin({
+let RegMatchRule = (_dec$2 = mixin({
   type: 'RegExp'
-}), _dec$1(_class$1 = class extends MatchRule {
+}), _dec$2(_class$2 = class RegMatchRule extends MatchRule {
   /**
    * @param name 			match name
    * @param regexp		regular
@@ -3272,9 +3245,9 @@ let RegMatchRule = (_dec$1 = mixin({
    * @param onMatch		match callback
    * @param onErr			error callback
    */
-  constructor(name, regexp, pick, start, capturable, onMatch, onErr) {
+  constructor(name, regexp, pick, start, options) {
     pick = pick === false || isInt(pick) ? pick : !!pick || 0;
-    const sticky = regStickySupport && !pick,
+    const sticky = stickyReg && !pick,
           // use exec mode when need pick match group data
     pattern = regexp.source,
           ignoreCase = regexp.ignoreCase; // always wrapping in a none capturing group preceded by '^' to make sure
@@ -3286,16 +3259,12 @@ let RegMatchRule = (_dec$1 = mixin({
     // line.
 
     regexp = new RegExp(sticky ? pattern : `^(?:${pattern})`, (ignoreCase ? 'i' : '') + (regexp.multiline ? 'm' : '') + (sticky ? 'y' : ''));
-    super(name, start, ignoreCase, capturable, onMatch, onErr);
+    super(name, start, ignoreCase, options);
     this.regexp = regexp;
     this.pick = pick;
     this.match = sticky ? this.stickyMatch : this.execMatch;
     sticky ? this.spicker = pick === false ? pickNone : pickTestStr : this.picker = mkPicker(pick);
     this.setExpr(pattern);
-  }
-
-  match(context) {
-    return this.comsume(context.nextChar(), 1, context);
   }
   /**
    * match on sticky mode
@@ -3304,10 +3273,11 @@ let RegMatchRule = (_dec$1 = mixin({
 
   stickyMatch(context) {
     const reg = this.regexp,
-          buff = context.getBuff(),
-          start = context.getOffset();
+          buff = context.buff(),
+          start = context.offset();
     reg.lastIndex = start;
-    return reg.test(buff) ? this.comsume(this.spicker(buff, start, reg.lastIndex), reg.lastIndex - start, context) : this.error(this.EXPECT, context);
+    let len;
+    return reg.test(buff) ? (len = reg.lastIndex - start, this.comsume(this.spicker(buff, start, len), len, context)) : this.error(this.EXPECT, context);
   }
   /**
    * match on exec mode
@@ -3315,19 +3285,15 @@ let RegMatchRule = (_dec$1 = mixin({
 
 
   execMatch(context) {
-    const m = this.regexp.exec(context.getBuff(true));
-
-    if (m) {
-      return this.comsume(this.picker(m), m[0].length, context);
-    }
-
-    return this.error(this.EXPECT, context);
+    const m = this.regexp.exec(context.buff(true));
+    return m ? this.comsume(this.picker(m), m[0].length, context) : this.error(this.EXPECT, context);
   }
 
-}) || _class$1);
+}) || _class$2);
+const cache = create(null);
 
 function mkPicker(pick) {
-  return pick === false ? pickNone : pick === true ? pickAll : pick >= 0 ? m => m[pick] : createFn(`return ${mapArray(new Array(-pick), (v, i) => `m[${i + 1}]`).join(' || ')}`, ['m']);
+  return cache[pick] || (cache[pick] = pick === false ? pickNone : pick === true ? pickAll : pick >= 0 ? createFn(`return m[${pick}]`, ['m'], `pick_${pick}`) : createFn(`return ${mapArray(new Array(-pick), (v, i) => `m[${i + 1}]`).join(' || ')}`, ['m'], `pick_1_${-pick}`));
 }
 
 function pickNone() {
@@ -3339,56 +3305,62 @@ function pickAll(m) {
 }
 
 function pickTestStr(buff, start, end) {
-  return buff.substring(start, end);
+  return cutLStr(buff, start, end);
 }
 
-var _dec$2, _class$2;
-let StringMatchRule = (_dec$2 = mixin({
+var _dec$3, _class$3;
+let StringMatchRule = (_dec$3 = mixin({
   type: 'String'
-}), _dec$2(_class$2 = class extends RegMatchRule {
-  constructor(name, str, ignoreCase, capturable, onMatch, onErr) {
-    super(name, new RegExp(reEscape(str), ignoreCase ? 'i' : ''), 0, str.charCodeAt(0), capturable, onMatch, onErr);
+}), _dec$3(_class$3 = class StringMatchRule extends RegMatchRule {
+  /**
+   * @param name 			match name
+   * @param str 			match string
+   * @param ignoreCase	ignore case
+   * @param options		Rule Options
+   */
+  constructor(name, str, ignoreCase, options) {
+    super(name, new RegExp(reEscape(str), ignoreCase ? 'i' : ''), 0, charCode(str), options);
     this.setExpr(str);
   }
 
-}) || _class$2);
+}) || _class$3);
 
 /**
  * @module utility/AST
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Tue Dec 11 2018 15:36:42 GMT+0800 (China Standard Time)
- * @modified Tue Dec 18 2018 19:00:01 GMT+0800 (China Standard Time)
+ * @modified Sat Dec 22 2018 16:32:31 GMT+0800 (China Standard Time)
  */
 /**
  * Match Context of Rule
  */
 
 class MatchContext {
-  // matched data list
   // start offset of original buff
-  // start offset of original buff
+  // parent context
+  // matched result list
   // template buff
   // current offset of template buff
+  // current offset of original buff
   // advanced characters
   // cached character
-  // parent context
-  constructor(source, buff, offset, orgPos, parent, code) {
+  constructor(source, buff, offset, orgOffset, parent) {
     this.source = source;
-    this.buff = buff;
-    this.offset = offset;
-    this.orgPos = orgPos;
     this.parent = parent;
-    this.data = [];
-    this.advanced = 0;
-    code ? this.codeCache = code : this.flushCache();
+    this.result = [];
+    this.__buff = buff;
+    this.__offset = offset;
+    this.__orgOffset = orgOffset;
+    this.__advanced = 0;
+    parent ? (this.__code = parent.__code, this.data = parent.data) : this.__flushCode();
   }
 
-  flushCache() {
+  __flushCode() {
     const {
-      buff,
-      offset
+      __buff: buff,
+      __offset: offset
     } = this;
-    this.codeCache = offset < buff.length ? charCode(buff, offset) : 0;
+    this.__code = offset < buff.length ? charCode(buff, offset) : 0;
   }
   /**
    * create sub Context
@@ -3396,38 +3368,70 @@ class MatchContext {
 
 
   create() {
-    return new MatchContext(this.source, this.buff, this.offset, this.orgPos + this.advanced, this, this.codeCache);
+    return new MatchContext(this.source, this.__buff, this.__offset, this.__orgOffset + this.__advanced, this);
+  }
+
+  __setAdvanced(advanced) {
+    assert.notLess(advanced, 0);
+    const offset = this.__offset - this.__advanced + advanced;
+
+    if (offset < 0) {
+      this.__buff = this.source.buff;
+      this.__offset = this.__orgOffset + advanced;
+    }
+
+    this.__advanced = advanced;
+    this.__offset = offset;
+
+    this.__flushCode();
   }
   /**
-   * commit context states to parent context
-   * @param margeData is marge data to parent
+   * commit context state to parent context
    */
 
 
   commit() {
     const {
-      advanced
+      __advanced: advanced
     } = this;
     this.parent.advance(advanced);
-    this.orgPos += advanced;
-    this.advanced = 0;
+    this.__orgOffset += advanced;
+    this.__advanced = 0;
+    this.data = null;
   }
   /**
-   *
-   * @param len 		reset buff length
-   * @param dataLen 	reset data length
+   * marge context state
    */
 
 
-  reset(len, dataLen) {
-    len || (len = 0);
-    assert.range(len, 0, this.advanced + 1);
-    this.advance(-(this.advanced - len));
-    this.resetData(dataLen || 0);
+  margeState(context) {
+    this.__setAdvanced(context.__orgOffset + context.__advanced - this.__orgOffset);
   }
+  /**
+   * rollback state and result
+   * @param checkpoint 	rollback to checkpoint
+   */
 
-  len() {
-    return this.advanced;
+
+  rollback(checkpoint) {
+    let advanced = 0,
+        resultLen = 0;
+    checkpoint && (advanced = checkpoint[0], resultLen = checkpoint[1]);
+
+    this.__setAdvanced(advanced);
+
+    const {
+      result
+    } = this;
+    if (result.length > resultLen) result.length = resultLen;
+  }
+  /**
+   * get a check point
+   */
+
+
+  checkpoint() {
+    return [this.__advanced, this.result.length];
   }
   /**
    * advance buffer position
@@ -3435,15 +3439,18 @@ class MatchContext {
 
 
   advance(i) {
-    this.offset += i;
-    this.advanced += i;
+    this.__offset += i;
+    this.__advanced += i;
 
-    if (this.offset < 0) {
-      this.buff = this.source.buff;
-      this.offset = this.orgPos + this.advanced;
-    }
+    this.__flushCode();
+  }
+  /**
+   * advanced buff length
+   */
 
-    this.flushCache();
+
+  advanced() {
+    return this.__advanced;
   }
   /**
    * get buffer
@@ -3451,35 +3458,40 @@ class MatchContext {
    */
 
 
-  getBuff(reset) {
+  buff(reset) {
+    let {
+      __buff: buff
+    } = this;
+
     if (reset) {
-      const {
-        offset
-      } = this;
-      this.buff = this.buff.substring(offset);
-      this.offset = 0;
+      this.__buff = buff = cutStr(buff, this.__offset);
+      this.__offset = 0;
     }
 
-    return this.buff;
+    return buff;
   }
 
-  getOffset() {
-    return this.offset;
+  orgBuff() {
+    return this.source.buff;
+  }
+
+  offset() {
+    return this.__offset;
   }
 
   startPos() {
-    return this.orgPos;
+    return this.__orgOffset;
   }
 
   currPos() {
-    return this.orgPos + this.advanced;
+    return this.__orgOffset + this.__advanced;
   }
 
   pos() {
     const {
-      orgPos
+      __orgOffset: offset
     } = this;
-    return [orgPos, orgPos + this.advanced];
+    return [offset, offset + this.__advanced];
   }
   /**
    * get next char code
@@ -3488,54 +3500,45 @@ class MatchContext {
 
 
   nextCode() {
-    return this.codeCache;
+    return this.__code;
   }
 
   nextChar() {
-    return char(this.codeCache);
-  }
-
-  eof() {
-    return this.codeCache === 0;
-  } //──── data opeartions ───────────────────────────────────────────────────────────────────
+    return char(this.__code);
+  } //──── result opeartions ───────────────────────────────────────────────────────────────────
 
   /**
-   * append data
+   * append result
    */
 
 
   add(data) {
-    this.data.push(data);
+    const {
+      result
+    } = this;
+    result[result.length] = data;
   }
   /**
-   * append datas
+   * append resultset
    */
 
 
-  addAll(datas) {
+  addAll(data) {
     const {
-      data
+      result
     } = this;
-    const len = data.length;
-    let i = datas.length;
+    const len = result.length;
+    let i = data.length;
 
-    while (i--) data[len + i] = datas[i];
+    while (i--) result[len + i] = data[i];
   }
   /**
-   * reset result data size
+   * get result size
    */
 
 
-  resetData(len) {
-    const {
-      data
-    } = this;
-    len = len || 0;
-    if (data.length > len) data.length = len;
-  }
-
-  dataLen() {
-    return this.data.length;
+  resultSize() {
+    return this.result.length;
   }
 
 }
@@ -3544,8 +3547,9 @@ class MatchContext {
  * @module utility/AST
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Tue Nov 06 2018 10:06:22 GMT+0800 (China Standard Time)
- * @modified Tue Dec 18 2018 18:57:10 GMT+0800 (China Standard Time)
+ * @modified Sat Dec 22 2018 15:24:21 GMT+0800 (China Standard Time)
  */
+const MAX = -1 >>> 0;
 /**
  * Abstract Complex Rule
  */
@@ -3554,26 +3558,28 @@ class ComplexRule extends Rule {
   /**
    * @param name 			match name
    * @param builder 		callback of build rules
-   * @param capturable	error is capturable
-   * @param onMatch		match callback
-   * @param onErr			error callback
+   * @param options		Rule Options
    */
-  constructor(name, repeat, builder, capturable, onMatch, onErr) {
-    super(name, capturable, onMatch, onErr);
+  constructor(name, repeat, builder, options) {
+    super(name, options);
+    let [rMin, rMax] = repeat;
+    rMin < 0 && (rMin = 0);
+    rMax <= 0 && (rMax = MAX);
+    assert.notGreater(rMin, rMax);
+    this.rMin = rMin;
+    this.rMax = rMax;
     this.builder = builder;
-    if (!(repeat[0] >= 0)) repeat[0] = 0;
-    if (!(repeat[1] > 0)) repeat[1] = 1e5;
-    assert.notGreater(repeat[0], repeat[1]);
-    this.repeat = [repeat[0], repeat[1]];
 
-    if (repeat[0] !== repeat[1] || repeat[0] !== 1) {
-      this.match = this.repeatMatch;
-      this.type = `${this.type}[${repeat[0]}${repeat[0] === repeat[1] ? '' : ` - ${repeat[1] === 1e5 ? 'MAX' : repeat[1]}`}]`;
+    if (rMin !== rMax || rMin !== 1) {
+      this.match = this.rmatch; // for debug
+
+      this.type = `${this.type}[${rMin}${rMin === rMax ? '' : ` - ${rMax === MAX ? 'MAX' : rMax}`}]`;
     }
   }
 
-  parse(buff, errSource) {
+  parse(buff, data) {
     const ctx = new MatchContext(new Source(buff), buff, 0, 0);
+    ctx.data = data;
     let err = this.match(ctx);
 
     if (err) {
@@ -3585,22 +3591,19 @@ class ComplexRule extends Rule {
         msg.unshift(`[${pad(String(pos[0]), 3)}:${pad(String(pos[1]), 2)}] - ${err.rule.toString()}: ${err.msg} on "${escapeStr(pos[2])}"`);
       } while (err = err.source);
 
-      if (errSource !== false) msg.push('[Source]', ctx.source.source());
+      msg.push('[Source]', ctx.source.source());
       throw new SyntaxError(msg.join('\n'));
     }
 
-    return ctx.data;
-  }
-
-  repeatMatch() {
-    return assert();
+    return ctx.result;
   }
 
   init() {
     const rules = this.builder(this);
     let i = rules && rules.length;
     assert.is(i, `Require Complex Rules`);
-    this.rules = rules;
+    this.rules = rules; // generate expression and expect string for debug
+
     const names = this.rnames(rules);
     this.setExpr(names.join(this.split));
 
@@ -3614,10 +3617,14 @@ class ComplexRule extends Rule {
     return this;
   }
 
-  __init() {}
+  __init(rules) {}
+
+  rmatch(context) {
+    return assert();
+  }
 
   setCodeIdx(index) {
-    if (this.repeat[0]) super.setCodeIdx(index);
+    this.rMin && super.setCodeIdx(index);
   }
 
   getRules() {
@@ -3633,10 +3640,11 @@ class ComplexRule extends Rule {
   }
 
   consume(context) {
-    const err = this.matched(context.data, context.len(), context.parent);
+    const err = this.matched(context.result, context.advanced(), context.parent);
     !err && context.commit();
     return err;
-  }
+  } // for debug
+
 
   rnames(rules, stack) {
     let i = rules.length;
@@ -3654,21 +3662,20 @@ class ComplexRule extends Rule {
       name
     } = this;
     let i;
-    return name ? name : stack ? (i = idxOfArray(stack, id), ~i) ? `<${this.type} -> $${stack[i]}>` : this.mkExpr(this.rnames(this.getRules(), stack).join(this.split)) : this.expr;
+    return name ? name : stack ? ~(i = idxOfArray(stack, id)) ? `<${this.type} -> $${stack[i]}>` : this.mkExpr(this.rnames(this.getRules(), stack).join(this.split)) : this.expr;
   }
 
 }
 
-var _dec$3, _class$3;
+var _dec$4, _class$4;
 /**
  * AND Complex Rule
- *
  */
 
-let AndRule = (_dec$3 = mixin({
+let AndRule = (_dec$4 = mixin({
   type: 'And',
   split: ' '
-}), _dec$3(_class$3 = class extends ComplexRule {
+}), _dec$4(_class$4 = class AndRule extends ComplexRule {
   __init(rules) {
     this.setStartCodes(rules[0].getStart([this.id]));
   }
@@ -3685,25 +3692,26 @@ let AndRule = (_dec$3 = mixin({
     return this.consume(ctx);
   }
 
-  repeatMatch(context) {
+  rmatch(context) {
+    const {
+      rMin,
+      rMax
+    } = this;
     const rules = this.getRules(),
           len = rules.length,
-          [min, max] = this.repeat,
           ctx = context.create();
     let err,
         repeat = 0,
         i,
-        mlen,
-        dlen;
+        cp;
 
-    out: for (; repeat < max; repeat++) {
-      dlen = ctx.dataLen();
-      mlen = ctx.len();
+    out: for (; repeat < rMax; repeat++) {
+      cp = ctx.checkpoint();
 
       for (i = 0; i < len; i++) {
         if (err = this.testRule(rules[i], i, ctx)) {
-          if (repeat < min) return err;
-          ctx.reset(mlen, dlen);
+          if (repeat < rMin) return err;
+          ctx.rollback(cp);
           break out;
         }
       }
@@ -3714,20 +3722,26 @@ let AndRule = (_dec$3 = mixin({
 
   testRule(rule, i, ctx) {
     let err;
-    return (!rule.test(ctx) || (err = rule.match(ctx))) && (err = this.error(this.EXPECTS[i], ctx, err));
+
+    if (!rule.test(ctx)) {
+      return this.error(this.EXPECTS[i], ctx);
+    } else if (err = rule.match(ctx)) {
+      return this.error(this.EXPECTS[i], ctx, err);
+    } // return (!rule.test(ctx) || (err = rule.match(ctx))) && (err = this.error(this.EXPECTS[i], ctx, err))
+
   }
 
-}) || _class$3);
+}) || _class$4);
 
-var _dec$4, _class$4;
+var _dec$5, _class$5;
 /**
  * OR Complex Rule
  */
 
-let OrRule = (_dec$4 = mixin({
+let OrRule = (_dec$5 = mixin({
   type: 'Or',
   split: ' | '
-}), _dec$4(_class$4 = class extends ComplexRule {
+}), _dec$5(_class$5 = class OrRule extends ComplexRule {
   __init(rules) {
     const {
       id
@@ -3782,16 +3796,15 @@ let OrRule = (_dec$4 = mixin({
     } // rule have unkown start code when got unkown start code from any rules
 
 
-    this.startCodes = index[0].length ? [] : starts;
-    this.index = starts.length && index;
-    starts.length && !index[0].length && this.setCodeIdx(index);
+    const startCodes = !index[0].length && starts;
+    this.startCodes = startCodes || [];
+    startCodes && this.setCodeIdx(index);
+    this.index = index;
   }
 
   match(context) {
-    const {
-      index
-    } = this;
-    const rules = index ? index[context.nextCode()] || index[0] : this.getRules(),
+    const index = this.index || (this.init(), this.index),
+          rules = index[context.nextCode()] || index[0],
           len = rules.length,
           ctx = context.create();
     let err,
@@ -3808,17 +3821,18 @@ let OrRule = (_dec$4 = mixin({
       }
 
       if (!upErr || err.pos >= upErr.pos) upErr = err;
-      ctx.reset();
+      ctx.rollback();
     }
 
     return this.error(this.EXPECT, ctx, upErr);
   }
 
-  repeatMatch(context) {
-    let {
-      index
+  rmatch(context) {
+    const {
+      rMin,
+      rMax
     } = this;
-    const [min, max] = this.repeat,
+    const index = this.index || (this.init(), this.index),
           ctx = context.create();
     let rules,
         len,
@@ -3826,25 +3840,14 @@ let OrRule = (_dec$4 = mixin({
         upErr,
         repeat = 0,
         i,
-        mlen,
-        dlen;
+        cp;
 
-    if (!index) {
-      rules = this.getRules();
-      index = this.index;
-      len = rules.length;
-    }
+    out: for (; repeat < rMax; repeat++) {
+      rules = index[ctx.nextCode()] || index[0];
+      upErr = null;
 
-    out: for (; repeat < max; repeat++) {
-      if (index) {
-        rules = index[ctx.nextCode()] || index[0];
-        len = rules.length;
-      }
-
-      if (len) {
-        dlen = ctx.dataLen();
-        mlen = ctx.len();
-        upErr = null;
+      if (len = rules.length) {
+        cp = ctx.checkpoint();
 
         for (i = 0; i < len; i++) {
           err = rules[i].match(ctx);
@@ -3856,24 +3859,25 @@ let OrRule = (_dec$4 = mixin({
           }
 
           if (!upErr || err.pos >= upErr.pos) upErr = err;
-          ctx.reset(mlen, dlen);
+          ctx.rollback(cp);
         }
       }
 
-      if (repeat < min) return this.error(this.EXPECT, ctx, upErr);
+      if (repeat < rMin || upErr && !upErr.capturable) return this.error(this.EXPECT, ctx, upErr);
+      break;
     }
 
     return this.consume(ctx);
   }
 
-}) || _class$4);
+}) || _class$5);
 
 /**
  * AST Parser API
  * @module utility/AST
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Tue Nov 06 2018 10:58:52 GMT+0800 (China Standard Time)
- * @modified Tue Dec 18 2018 19:27:42 GMT+0800 (China Standard Time)
+ * @modified Sat Dec 22 2018 15:45:10 GMT+0800 (China Standard Time)
  */
 
 /*                                                                                      *
@@ -3886,114 +3890,26 @@ function appendMatch(data, len, context) {
   context.addAll(data);
 }
 function attachMatch(val) {
-  const fn = isFn(val) ? val : () => val;
-  return (data, len, context) => {
-    context.add(fn(data, len, context));
+  const callback = isFn(val) ? val : () => val;
+  return (data, len, context, rule) => {
+    context.add(callback(data, len, context, rule));
   };
 } //========================================================================================
 
 /*                                                                                      *
- *                                  match rule builder                                  *
+ *                                       match api                                      *
  *                                                                                      */
 //========================================================================================
 
 function match() {
   return mkMatch(arguments);
-}
-
-function mkMatch(args, defaultOnMatch) {
-  let name,
-      pattern,
-      regexp,
-      pick = 0,
-      startCodes,
-      ignoreCase = false,
-      capturable,
-      onMatch,
-      onErr;
-
-  if (isObj(args[0])) {
-    const desc = args[0],
-          p = desc.pattern;
-
-    if (isReg(p)) {
-      regexp = p;
-      pick = desc.pick;
-      startCodes = desc.startCodes;
-    } else if (isMatchPattern(p)) {
-      pattern = p;
-      ignoreCase = desc.ignoreCase;
-    }
-
-    name = desc.name;
-    capturable = desc.capturable;
-    onMatch = desc.onMatch;
-    onErr = desc.onErr;
-  } else {
-    var i = 2;
-
-    if (isMatchPattern(args[1])) {
-      name = args[0];
-      isReg(args[1]) ? regexp = args[1] : pattern = args[1];
-    } else if (isMatchPattern(args[0])) {
-      i = 1;
-      isReg(args[0]) ? regexp = args[0] : pattern = args[0];
-    }
-
-    if (regexp) {
-      if (isBool(args[i]) || isInt(args[i])) pick = args[i++];
-      if (isStrOrCodes(args[i])) startCodes = args[i++];
-    } else {
-      if (isBool(args[i])) ignoreCase = args[i++];
-    }
-
-    if (isBool(args[i])) capturable = args[i++];
-    onMatch = args[i++];
-    onErr = args[i++];
-  }
-
-  onMatch = onMatch || defaultOnMatch;
-  return regexp ? regMatch(name, regexp, onMatch === discardMatch ? false : pick, startCodes, capturable, onMatch, onErr) : pattern ? strMatch(name, pattern, ignoreCase, capturable, onMatch, onErr) : null;
-}
-
-function isStrOrCodes(pattern) {
-  return isStr(pattern) || isNum(pattern) || isArray(pattern);
-}
-
-function isMatchPattern(pattern) {
-  return isReg(pattern) || isStrOrCodes(pattern);
-}
-
-function strMatch(name, pattern, ignoreCase, capturable, onMatch, onErr) {
-  const C = isStr(pattern) && pattern.length > 1 ? StringMatchRule : CharMatchRule;
-  return new C(name, pattern, ignoreCase, capturable, onMatch, onErr);
-}
-
-const REG_ESPEC_CHARS = makeMap('dDsStrnt0cbBfvwW', 1, '');
-
-function regMatch(name, pattern, pick, startCodes, capturable, onMatch, onErr) {
-  const source = pattern.source;
-
-  if (!pick) {
-    var c = 0;
-
-    if (source.length == 1 && source !== '^' && source !== '$') {
-      c = source === '.' ? '' : source;
-    } else if (source.length == 2 && source[0] === '\\' && REG_ESPEC_CHARS[source[1]]) {
-      c = source[1];
-    }
-
-    if (c != 0) return strMatch(name, c, pattern.ignoreCase, capturable, onMatch, onErr);
-  }
-
-  return new RegMatchRule(name, pattern, pick, startCodes, capturable, onMatch, onErr);
 } //========================================================================================
 
 /*                                                                                      *
- *                                   and rule builder                                   *
+ *                                     and rule api                                     *
  *                                                                                      */
 //========================================================================================
-
+//──── and ───────────────────────────────────────────────────────────────────────────────
 
 function and() {
   return mkComplexRule(arguments, AndRule, [1, 1]);
@@ -4012,9 +3928,10 @@ function option() {
 } //========================================================================================
 
 /*                                                                                      *
- *                                   OR Rule Builders                                   *
+ *                                      or rule api                                     *
  *                                                                                      */
 //========================================================================================
+//──── or ────────────────────────────────────────────────────────────────────────────────
 
 function or() {
   return mkComplexRule(arguments, OrRule, [1, 1]);
@@ -4033,12 +3950,80 @@ function optionOne() {
 } //========================================================================================
 
 /*                                                                                      *
+ *                                  Match Rule Builder                                  *
+ *                                                                                      */
+//========================================================================================
+
+function mkMatch(args, defaultMatchCallback) {
+  let name,
+      pattern,
+      regexp,
+      pick = 0,
+      startCodes,
+      ignoreCase = false,
+      options;
+
+  if (isObj(args[0])) {
+    const desc = args[0],
+          p = desc.pattern;
+
+    if (isReg(p)) {
+      regexp = p;
+      pick = desc.pick;
+      startCodes = desc.startCodes;
+    } else if (isStrOrCodes(p)) {
+      pattern = p;
+      ignoreCase = desc.ignoreCase;
+    }
+
+    name = desc.name;
+    options = desc;
+  } else {
+    var i = 1;
+
+    if (isStr(args[0]) && isMatchPattern(args[1])) {
+      name = args[0];
+      isReg(args[1]) ? regexp = args[1] : pattern = args[1];
+      i = 2;
+    } else if (isMatchPattern(args[0])) {
+      isReg(args[0]) ? regexp = args[0] : pattern = args[0];
+    }
+
+    if (regexp) {
+      if (isBool(args[i]) || isInt(args[i])) pick = args[i++];
+      if (isStrOrCodes(args[i])) startCodes = args[i++];
+    } else {
+      if (isBool(args[i])) ignoreCase = args[i++];
+    }
+
+    options = parseRuleOptions(args, i);
+  }
+
+  !options.match && (options.match = defaultMatchCallback);
+  return regexp ? new RegMatchRule(name, regexp, options.match === discardMatch ? false : pick, startCodes, options) : pattern ? strMatch(name, pattern, ignoreCase, options) : assert('invalid match rule {j}', args);
+}
+
+function isStrOrCodes(pattern) {
+  return isStr(pattern) || isNum(pattern) || isArray(pattern);
+}
+
+function isMatchPattern(pattern) {
+  return isReg(pattern) || isStrOrCodes(pattern);
+}
+
+function strMatch(name, pattern, ignoreCase, options) {
+  const C = isStr(pattern) && pattern.length > 1 ? StringMatchRule : CharMatchRule;
+  return new C(name, pattern, ignoreCase, options);
+} //========================================================================================
+
+/*                                                                                      *
  *                                 complex rule builder                                 *
  *                                                                                      */
 //========================================================================================
 
+
 function mkComplexRule(args, Rule, defaultRepeat) {
-  let name, builder, rules, repeat, capturable, onMatch, onErr;
+  let name, builder, rules, repeat, options;
 
   if (isObj(args[0])) {
     const desc = args[0],
@@ -4046,24 +4031,20 @@ function mkComplexRule(args, Rule, defaultRepeat) {
     if (isArray(r) || isFn(r)) rules = r;
     repeat = desc.repeat;
     name = desc.name;
-    capturable = desc.capturable;
-    onMatch = desc.onMatch;
-    onErr = desc.onErr;
+    options = desc;
   } else {
     var i = 0;
     if (isStr(args[i])) name = args[i++];
     if (isArray(args[i]) || isFn(args[i])) rules = args[i++];
     if (isArray(args[i])) repeat = args[i++];
-    if (isBool(args[i])) capturable = args[i++];
-    onMatch = args[i++];
-    onErr = args[i++];
+    options = parseRuleOptions(args, i);
   }
 
   if (!repeat) repeat = defaultRepeat;
 
   if (rules) {
     builder = rulesBuilder(rules);
-    return new Rule(name, repeat, builder, capturable, onMatch, onErr);
+    return new Rule(name, repeat, builder, options);
   }
 }
 
@@ -4071,11 +4052,25 @@ function rulesBuilder(rules) {
   return function (_rule) {
     return mapArray(isFn(rules) ? rules(_rule) : rules, (r, i) => {
       if (!r) return SKIP;
-      let rule = r.$rule ? r : isArray(r) ? mkMatch(r) : mkMatch([r], discardMatch);
-      assert.is(rule, '{}: Invalid Rule Configuration on index {d}: {:.80="..."j}', _rule, i, r);
+      let rule = r.$rule ? r : mkMatch(isArray(r) ? r : [r], discardMatch);
+      assert.is(rule, '{}: Invalid Rule Configuration on index {d}: {j}', _rule, i, r);
       return rule;
     });
   };
+} //========================================================================================
+
+/*                                                                                      *
+ *                                         tools                                        *
+ *                                                                                      */
+//========================================================================================
+
+
+function parseRuleOptions(args, i) {
+  const options = {};
+  if (isBool(args[i])) options.capturable = args[i++];
+  options.match = args[i++];
+  options.err = args[i];
+  return options;
 }
 
 /**
@@ -4084,7 +4079,7 @@ function rulesBuilder(rules) {
  * @preferred
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Nov 21 2018 10:21:41 GMT+0800 (China Standard Time)
- * @modified Tue Dec 18 2018 18:58:32 GMT+0800 (China Standard Time)
+ * @modified Mon Feb 18 2019 14:52:12 GMT+0800 (China Standard Time)
  */
 
 /**
@@ -4093,7 +4088,7 @@ function rulesBuilder(rules) {
  * @module main
  * @preferred
  * @created Wed Nov 21 2018 10:21:20 GMT+0800 (China Standard Time)
- * @modified Thu Nov 22 2018 09:32:01 GMT+0800 (China Standard Time)
+ * @modified Fri Dec 21 2018 14:08:39 GMT+0800 (China Standard Time)
  */
 
 exports.createFn = createFn;
@@ -4127,17 +4122,18 @@ exports.isTypedArray = isTypedArray;
 exports.isArrayLike = isArrayLike;
 exports.isObj = isObj;
 exports.isBlank = isBlank;
-exports.regStickySupport = regStickySupport;
-exports.regUnicodeSupport = regUnicodeSupport;
+exports.stickyReg = stickyReg;
+exports.unicodeReg = unicodeReg;
 exports.reEscape = reEscape;
-exports.prototypeOfSupport = prototypeOfSupport;
-exports.protoPropSupport = protoPropSupport;
+exports.prototypeOf = prototypeOf;
+exports.protoProp = protoProp;
 exports.protoOf = protoOf;
 exports.__setProto = __setProto;
 exports.setProto = setProto;
-exports.hasOwnProp = hasOwnProp;
 exports.getOwnProp = getOwnProp;
-exports.defPropSupport = defPropSupport;
+exports.hasOwnProp = hasOwnProp;
+exports.propDescriptor = propDescriptor;
+exports.propAccessor = propAccessor;
 exports.defProp = defProp;
 exports.defPropValue = defPropValue;
 exports.parsePath = parsePath;
@@ -4146,14 +4142,16 @@ exports.get = get;
 exports.set = set;
 exports.charCode = charCode;
 exports.char = char;
+exports.cutStr = cutStr;
+exports.cutLStr = cutLStr;
 exports.trim = trim;
-exports.upperFirst = upperFirst;
 exports.upper = upper;
 exports.lower = lower;
-exports.strval = strval;
+exports.upperFirst = upperFirst;
+exports.lowerFirst = lowerFirst;
 exports.escapeStr = escapeStr;
 exports.pad = pad;
-exports.cut = cut;
+exports.shorten = shorten;
 exports.thousandSeparate = thousandSeparate;
 exports.binarySeparate = binarySeparate;
 exports.octalSeparate = octalSeparate;
@@ -4214,4 +4212,3 @@ exports.or = or;
 exports.anyOne = anyOne;
 exports.manyOne = manyOne;
 exports.optionOne = optionOne;
-//# sourceMappingURL=argilo.cjs.js.map

@@ -1,23 +1,8 @@
-/*
- *    __ _ _ __ __ _(_) | ___
- *   / _` | '__/ _` | | |/ _ \
- *  | (_| | | | (_| | | | (_) |
- *   \__,_|_|  \__, |_|_|\___/
- *             |___/
- *
- * argilo v1.0.0
- * https://github.com/tao-zeng/argilo
- *
- * Copyright (c) 2018 Tao Zeng <tao.zeng.zt@qq.com>
- * Released under the MIT license
- *
- * Date: Fri, 28 Dec 2018 12:19:13 GMT
- */
 (function (global, factory) {
 	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
 	typeof define === 'function' && define.amd ? define('argilo', ['exports'], factory) :
-	(factory((global.argilo = {})));
-}(this, (function (exports) {
+	(global = global || self, factory(global.argilo = {}));
+}(this, function (exports) {
 	/**
 	 *
 	 * @author Tao Zeng (tao.zeng.zt@qq.com)
@@ -41,7 +26,7 @@
 	 * @module utility
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Mon Dec 11 2017 13:57:32 GMT+0800 (China Standard Time)
-	 * @modified Wed Dec 19 2018 11:11:43 GMT+0800 (China Standard Time)
+	 * @modified Sat Feb 16 2019 10:53:30 GMT+0800 (China Standard Time)
 	 */
 	function getConstructor(o) {
 	  var C = o[CONSTRUCTOR];
@@ -53,7 +38,7 @@
 	 * @module utility
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Mon Dec 11 2017 13:57:32 GMT+0800 (China Standard Time)
-	 * @modified Wed Dec 19 2018 11:11:05 GMT+0800 (China Standard Time)
+	 * @modified Sat Feb 23 2019 11:36:55 GMT+0800 (China Standard Time)
 	 */
 	/**
 	 * is equals
@@ -144,7 +129,7 @@
 	}
 
 	function mkIsPrimitive(type) {
-	  return function (o) {
+	  return function is(o) {
 	    return typeof o === type;
 	  };
 	} //========================================================================================
@@ -234,7 +219,7 @@
 	 */
 
 	function isArrayLike(o) {
-	  if (o) {
+	  if (o && o[CONSTRUCTOR]) {
 	    switch (o[CONSTRUCTOR]) {
 	      case Array:
 	      case String:
@@ -267,7 +252,7 @@
 	}
 
 	function mkIs(Type) {
-	  return function (o) {
+	  return function is(o) {
 	    return o !== undefined && o !== null && o[CONSTRUCTOR] === Type;
 	  };
 	}
@@ -429,7 +414,7 @@
 	var funcProto = Function[PROTOTYPE];
 
 	if (funcProto.bind) {
-	  _bind = function (fn, scope) {
+	  _bind = function bind(fn, scope) {
 	    var args = arguments,
 	        argLen = args.length;
 
@@ -440,11 +425,11 @@
 	    return applyScopeN(fn.bind, fn, args, 1, argLen - 1);
 	  };
 	} else {
-	  funcProto.bind = function (scope) {
+	  funcProto.bind = function bind(scope) {
 	    return bindPolyfill(this, scope, arguments, 1);
 	  };
 
-	  _bind = function (fn, scope) {
+	  _bind = function bind(fn, scope) {
 	    return bindPolyfill(fn, scope, arguments, 2);
 	  };
 	}
@@ -498,7 +483,7 @@
 
 	  if (argLen > 0) {
 	    // bind with arguments
-	    return function () {
+	    return function bindProxy() {
 	      var args = arguments;
 	      var i = args.length;
 
@@ -528,12 +513,12 @@
 
 	  if (scope === GLOBAL) {
 	    // bind on GLOBAL
-	    return function () {
+	    return function bindProxy() {
 	      return applyNoScope(fn, arguments);
 	    };
 	  }
 
-	  return function () {
+	  return function bindProxy() {
 	    return applyScope(fn, scope, arguments);
 	  };
 	}
@@ -543,14 +528,13 @@
 	 * @module utility/reg
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Thu Sep 06 2018 18:27:51 GMT+0800 (China Standard Time)
-	 * @modified Thu Dec 27 2018 16:22:16 GMT+0800 (China Standard Time)
+	 * @modified Sat Dec 29 2018 19:29:00 GMT+0800 (China Standard Time)
 	 */
 	/**
 	 * whether to support sticky on RegExp
 	 */
 
-	var stickyReg = false; //isBool(/(?:)/.sticky)
-
+	var stickyReg = isBool(/(?:)/.sticky);
 	/**
 	 * whether to support unicode on RegExp
 	 */
@@ -566,13 +550,26 @@
 	}
 
 	/**
-	 * prototype utilities
+	 * @module utility
+	 * @author Tao Zeng <tao.zeng.zt@qq.com>
+	 * @created Wed Jul 25 2018 15:22:57 GMT+0800 (China Standard Time)
+	 * @modified Sat Dec 29 2018 18:35:40 GMT+0800 (China Standard Time)
+	 */
+	var __hasOwn = Object[PROTOTYPE][HAS_OWN_PROP];
+	/**
+	 * has own property
+	 */
+
+	function hasOwnProp(obj, prop) {
+	  return __hasOwn.call(obj, prop);
+	}
+
+	/**
 	 * @module utility
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Wed Jul 25 2018 15:23:56 GMT+0800 (China Standard Time)
-	 * @modified Thu Dec 27 2018 19:23:11 GMT+0800 (China Standard Time)
+	 * @modified Thu Jan 31 2019 10:10:28 GMT+0800 (China Standard Time)
 	 */
-	var __hasOwn = Object[PROTOTYPE][HAS_OWN_PROP];
 	var __getProto = Object.getPrototypeOf,
 	    ____setProto = Object.setPrototypeOf;
 	/**
@@ -580,6 +577,10 @@
 	 */
 
 	var prototypeOf = !!____setProto;
+	/**
+	 * whether to support `__proto__`
+	 */
+
 	var protoProp = {
 	  __proto__: []
 	} instanceof Array;
@@ -587,17 +588,17 @@
 	 * get prototype
 	 */
 
-	var protoOf = ____setProto ? __getProto : __getProto ? function (obj) {
+	var protoOf = ____setProto ? __getProto : __getProto ? function getPrototypeOf(obj) {
 	  return obj[PROTO] || __getProto(obj);
-	} : function (obj) {
-	  return (__hasOwn.call(obj, PROTO) ? obj[PROTO] : obj[CONSTRUCTOR][PROTOTYPE]) || null;
+	} : function getPrototypeOf(obj) {
+	  return (hasOwnProp(obj, PROTO) ? obj[PROTO] : obj[CONSTRUCTOR][PROTOTYPE]) || null;
 	};
 	/**
 	 * set prototype
 	 * > properties on the prototype are not inherited on older browsers
 	 */
 
-	var __setProto = ____setProto || function (obj, proto) {
+	var __setProto = ____setProto || function setPrototypeOf(obj, proto) {
 	  obj[PROTO] = proto;
 	  return obj;
 	};
@@ -606,20 +607,28 @@
 	 * > the properties on the prototype will be copied on the older browser
 	 */
 
-	var setProto = ____setProto || (protoProp ? __setProto : function (obj, proto) {
+	var setProto = ____setProto || (protoProp ? __setProto : function setPrototypeOf(obj, proto) {
 	  for (var p in proto) {
-	    if (__hasOwn.call(proto, p)) obj[p] = proto[p];
+	    if (hasOwnProp(proto, p)) obj[p] = proto[p];
 	  }
 
 	  return __setProto(obj, proto);
 	});
 
 	/**
+	 * prototype utilities
+	 * @module utility
+	 * @author Tao Zeng <tao.zeng.zt@qq.com>
+	 * @created Wed Jul 25 2018 15:24:47 GMT+0800 (China Standard Time)
+	 * @modified Thu Jan 31 2019 10:11:40 GMT+0800 (China Standard Time)
+	 */
+
+	/**
 	 * prop utilities
 	 * @module utility
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Wed Jul 25 2018 15:22:57 GMT+0800 (China Standard Time)
-	 * @modified Thu Dec 27 2018 19:23:34 GMT+0800 (China Standard Time)
+	 * @modified Sat Dec 29 2018 18:57:40 GMT+0800 (China Standard Time)
 	 */
 
 	/*                                                                                      *
@@ -627,35 +636,23 @@
 	 *                                                                                      */
 	//========================================================================================
 
-	var __hasOwn$1 = Object[PROTOTYPE][HAS_OWN_PROP];
 	/**
 	 * has own property
 	 */
 
-	var hasOwnProp = protoProp ? function (obj, prop) {
-	  return __hasOwn$1.call(obj, prop);
-	} : function (obj, prop) {
-	  return prop !== PROTO && __hasOwn$1.call(obj, prop);
-	};
-	/**
-	 * get owner property value
-	 * @param prop 			property name
-	 * @param defaultVal 	default value
-	 */
-
-	function getOwnProp(obj, prop, defaultVal) {
-	  return hasOwnProp(obj, prop) ? obj[prop] : defaultVal;
-	} //========================================================================================
+	var hasOwnProp$1 = protoProp ? hasOwnProp : function hasOwnProp$1(obj, prop) {
+	  return prop !== PROTO && hasOwnProp(obj, prop);
+	}; //========================================================================================
 
 	/*                                                                                      *
 	 *                                    define property                                   *
 	 *                                                                                      */
 	//========================================================================================
 
+	var __defProp = Object.defineProperty;
 	var _ref = Object[PROTOTYPE],
 	    __defineGetter__ = _ref.__defineGetter__,
 	    __defineSetter__ = _ref.__defineSetter__;
-	var __defProp = Object.defineProperty;
 	/**
 	 * whether to support Object.defineProperty
 	 */
@@ -683,14 +680,14 @@
 	 */
 
 	var propAccessor = propDescriptor || !!__defineSetter__;
-	if (!propDescriptor) __defProp = __defineSetter__ ? function (obj, prop, desc) {
+	if (!propDescriptor) __defProp = __defineSetter__ ? function defineProperty(obj, prop, desc) {
 	  var get = desc.get,
 	      set = desc.set;
 	  if ('value' in desc || !(prop in obj)) obj[prop] = desc.value;
 	  if (get) __defineGetter__.call(obj, prop, get);
 	  if (set) __defineSetter__.call(obj, prop, set);
 	  return obj;
-	} : function (obj, prop, desc) {
+	} : function defineProperty(obj, prop, desc) {
 	  if (desc.get || desc.set) throw new TypeError('Invalid property descriptor. Accessor descriptors are not supported.');
 	  if ('value' in desc || !(prop in obj)) obj[prop] = desc.value;
 	  return obj;
@@ -704,7 +701,7 @@
 	 * define property by value
 	 */
 
-	var defPropValue = propDescriptor ? function (obj, prop, value, configurable, writable, enumerable) {
+	var defPropValue = propDescriptor ? function defPropValue(obj, prop, value, configurable, writable, enumerable) {
 	  __defProp(obj, prop, {
 	    value: value,
 	    enumerable: enumerable !== false,
@@ -713,17 +710,34 @@
 	  });
 
 	  return value;
-	} : function (obj, prop, value) {
+	} : function defPropValue(obj, prop, value) {
 	  obj[prop] = value;
 	  return value;
 	};
 
 	/**
-	 * Object.create shim
+	 * property utilities
+	 * @module utility
+	 * @author Tao Zeng <tao.zeng.zt@qq.com>
+	 * @created Wed Jul 25 2018 15:24:47 GMT+0800 (China Standard Time)
+	 * @modified Thu Jan 31 2019 10:15:09 GMT+0800 (China Standard Time)
+	 */
+	/**
+	 * get owner property value
+	 * @param prop 			property name
+	 * @param defaultVal 	default value
+	 */
+
+	function getOwnProp(obj, prop, defaultVal) {
+	  return hasOwnProp$1(obj, prop) ? obj[prop] : defaultVal;
+	}
+
+	/**
+	 * Object.create polyfill
 	 * @module utility/create
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Wed Jul 25 2018 15:24:47 GMT+0800 (China Standard Time)
-	 * @modified Fri Dec 28 2018 20:13:58 GMT+0800 (China Standard Time)
+	 * @modified Sat Dec 29 2018 18:19:24 GMT+0800 (China Standard Time)
 	 */
 
 	function __() {}
@@ -739,7 +753,7 @@
 
 	  if (props) {
 	    for (var k in props) {
-	      if (hasOwnProp(props, k)) {
+	      if (hasOwnProp$1(props, k)) {
 	        defProp(obj, k, props[k]);
 	      }
 	    }
@@ -752,7 +766,7 @@
 	 */
 
 
-	var create = Object.create || (Object.getPrototypeOf ? doCreate : function (o, props) {
+	var create = Object.create || (Object.create = Object.getPrototypeOf ? doCreate : function create(o, props) {
 	  var obj = doCreate(o, props);
 
 	  __setProto(obj, o);
@@ -761,22 +775,29 @@
 	});
 
 	/**
+	 * @module utility/create
+	 * @author Tao Zeng <tao.zeng.zt@qq.com>
+	 * @created Wed Jul 25 2018 15:24:47 GMT+0800 (China Standard Time)
+	 * @modified Thu Jan 31 2019 10:15:42 GMT+0800 (China Standard Time)
+	 */
+
+	/**
 	 * @module utility/collection
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Wed Jul 25 2018 17:10:41 GMT+0800 (China Standard Time)
-	 * @modified Tue Nov 27 2018 14:17:32 GMT+0800 (China Standard Time)
+	 * @modified Sat Dec 29 2018 19:37:44 GMT+0800 (China Standard Time)
 	 */
 	var Control =
 	/*#__PURE__*/
 	function () {
 	  function Control(desc) {
-	    this.desc = desc;
+	    this.__desc = desc;
 	  }
 
 	  var _proto = Control.prototype;
 
 	  _proto.toString = function toString() {
-	    return this.desc;
+	    return this.__desc;
 	  };
 
 	  return Control;
@@ -786,7 +807,7 @@
 	 * @module utility/collection
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Wed Jul 25 2018 17:10:41 GMT+0800 (China Standard Time)
-	 * @modified Tue Nov 27 2018 13:39:11 GMT+0800 (China Standard Time)
+	 * @modified Sat Dec 29 2018 19:34:51 GMT+0800 (China Standard Time)
 	 */
 	/**
 	 * STOP Control
@@ -812,13 +833,15 @@
 	    callback = bind(callback, scope);
 	  }
 
+	  var k;
+
 	  if (own === false) {
-	    for (var k in obj) {
+	    for (k in obj) {
 	      if (callback(k, obj) === STOP) return k;
 	    }
 	  } else {
 	    for (k in obj) {
-	      if (hasOwnProp(obj, k) && callback(k, obj) === STOP) return k;
+	      if (hasOwnProp$1(obj, k) && callback(k, obj) === STOP) return k;
 	    }
 	  }
 
@@ -843,13 +866,15 @@
 	    callback = bind(callback, scope);
 	  }
 
+	  var k;
+
 	  if (own === false) {
-	    for (var k in obj) {
+	    for (k in obj) {
 	      if (callback(obj[k], k, obj) === STOP) return k;
 	    }
 	  } else {
 	    for (k in obj) {
-	      if (hasOwnProp(obj, k) && callback(obj[k], k, obj) === STOP) return k;
+	      if (hasOwnProp$1(obj, k) && callback(obj[k], k, obj) === STOP) return k;
 	    }
 	  }
 
@@ -912,7 +937,7 @@
 	 * @module utility/collection
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Wed Jul 25 2018 17:12:06 GMT+0800 (China Standard Time)
-	 * @modified Fri Dec 21 2018 14:09:49 GMT+0800 (China Standard Time)
+	 * @modified Sat Dec 29 2018 19:37:30 GMT+0800 (China Standard Time)
 	 */
 	/**
 	 * SKIP Control
@@ -935,7 +960,7 @@
 	 * @param obj	map target
 	 */
 
-	function doMapObj(each$$1, obj, callback, scope, own) {
+	function doMapObj(each, obj, callback, scope, own) {
 	  if (isBool(scope)) {
 	    own = scope;
 	  } else {
@@ -943,7 +968,7 @@
 	  }
 
 	  var copy = create(null);
-	  each$$1(obj, function (value, prop, obj) {
+	  each(obj, function (value, prop, obj) {
 	    var v = callback(value, prop, obj);
 	    if (v === STOP) return STOP;
 	    if (v !== SKIP) copy[prop] = v;
@@ -978,11 +1003,11 @@
 	 * @param array	map target
 	 */
 
-	function doMapArray(each$$1, array, callback, scope) {
+	function doMapArray(each, array, callback, scope) {
 	  callback = bind(callback, scope);
 	  var copy = [];
 	  var j = 0;
-	  each$$1(array, function (data, index, array) {
+	  each(array, function (data, index, array) {
 	    var v = callback(data, index, array);
 	    if (v === STOP) return STOP;
 	    if (v !== SKIP) copy[j++] = v;
@@ -1036,7 +1061,7 @@
 
 	function parseCallback(value, scope) {
 	  if (isFn(value)) return bind(value, scope);
-	  return function (data) {
+	  return function defaultHandler(data, idx, obj) {
 	    return eq(data, value);
 	  };
 	} //========================================================================================
@@ -1059,7 +1084,7 @@
 	 */
 
 
-	function doIdxOfObj(each$$1, obj, value, scope, own) {
+	function doIdxOfObj(each, obj, value, scope, own) {
 	  if (isBool(scope)) {
 	    own = scope;
 	    scope = null;
@@ -1067,7 +1092,7 @@
 
 	  var callback = parseCallback(value, scope);
 	  var idx = -1;
-	  each$$1(obj, function (data, prop, obj) {
+	  each(obj, function (data, prop, obj) {
 	    var r = callback(data, prop, obj);
 
 	    if (r === true) {
@@ -1108,10 +1133,10 @@
 	 * - STOP: stop find
 	 */
 
-	function doIdxOfArray(each$$1, array, value, scope) {
+	function doIdxOfArray(each, array, value, scope) {
 	  var callback = parseCallback(value, scope);
 	  var idx = -1;
-	  each$$1(array, function (data, index, array) {
+	  each(array, function (data, index, array) {
 	    var r = callback(data, index, array);
 
 	    if (r === true) {
@@ -1175,14 +1200,14 @@
 	 * - will stop reduce on return STOP
 	 */
 
-	function doReduceObj(each$$1, obj, accumulator, callback, scope, own) {
+	function doReduceObj(each, obj, accumulator, callback, scope, own) {
 	  if (isBool(scope)) {
 	    own = scope;
 	  } else {
 	    callback = bind(callback, scope);
 	  }
 
-	  each$$1(obj, function (value, prop, obj) {
+	  each(obj, function (value, prop, obj) {
 	    var rs = callback(accumulator, value, prop, obj);
 	    if (rs === STOP) return STOP;
 	    accumulator = rs;
@@ -1213,9 +1238,9 @@
 	 * - will stop reduce on return STOP
 	 */
 
-	function doReduceArray(each$$1, array, accumulator, callback, scope) {
+	function doReduceArray(each, array, accumulator, callback, scope) {
 	  callback = bind(callback, scope);
-	  each$$1(array, function (data, index, array) {
+	  each(array, function (data, index, array) {
 	    var rs = callback(accumulator, data, index, array);
 	    if (rs === STOP) return STOP;
 	    accumulator = rs;
@@ -1262,7 +1287,7 @@
 	 * @module utility/collection
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Thu Jul 26 2018 10:47:47 GMT+0800 (China Standard Time)
-	 * @modified Tue Nov 27 2018 13:59:31 GMT+0800 (China Standard Time)
+	 * @modified Sat Dec 29 2018 19:34:56 GMT+0800 (China Standard Time)
 	 */
 
 	/*                                                                                      *
@@ -1270,11 +1295,11 @@
 	 *                                                                                      */
 	//========================================================================================
 
-	function defaultObjKeyHandler(prop) {
+	function defaultObjKeyHandler(prop, obj) {
 	  return prop;
 	}
 
-	function doObjKeys(each$$1, obj) {
+	function doObjKeys(each, obj) {
 	  var rs = [],
 	      args = arguments;
 	  var handler = defaultObjKeyHandler,
@@ -1286,7 +1311,7 @@
 	    if (!isBool(args[i])) handler = bind(handler, args[i++]);
 	  }
 
-	  each$$1(obj, function (prop, obj) {
+	  each(obj, function (prop, obj) {
 	    var val = handler(prop, obj);
 	    if (val === STOP) return STOP;
 	    if (val !== SKIP) rs[j++] = val;
@@ -1309,11 +1334,11 @@
 	 *                                                                                      */
 	//========================================================================================
 
-	function defaultObjValueHandler(value) {
+	function defaultObjValueHandler(value, prop, obj) {
 	  return value;
 	}
 
-	function doObjValues(each$$1, obj) {
+	function doObjValues(each, obj) {
 	  var rs = [],
 	      args = arguments;
 	  var handler = defaultObjValueHandler,
@@ -1325,7 +1350,7 @@
 	    if (!isBool(args[i])) handler = bind(handler, args[i++]);
 	  }
 
-	  each$$1(obj, function (data, prop, obj) {
+	  each(obj, function (data, prop, obj) {
 	    var val = handler(data, prop, obj);
 	    if (val === STOP) return STOP;
 	    if (val !== SKIP) rs[j++] = val;
@@ -1347,16 +1372,16 @@
 	 * @module utility/collection
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Fri Nov 16 2018 16:29:04 GMT+0800 (China Standard Time)
-	 * @modified Fri Dec 21 2018 14:09:44 GMT+0800 (China Standard Time)
+	 * @modified Sat Dec 29 2018 19:33:49 GMT+0800 (China Standard Time)
 	 */
 	/**
 	 * @return STOP or SKIP or [key: string, value: any]
 	 */
 
-	function doArr2Obj(each$$1, array, callback, scope) {
+	function doArr2Obj(each, array, callback, scope) {
 	  var obj = create(null);
 	  callback = bind(callback, scope);
-	  each$$1(array, function (data, index, array) {
+	  each(array, function (data, index, array) {
 	    var r = callback(data, index, array);
 
 	    if (isArray(r)) {
@@ -1409,7 +1434,7 @@
 	 * @module utility/prop
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Fri Nov 30 2018 14:41:02 GMT+0800 (China Standard Time)
-	 * @modified Fri Dec 28 2018 20:05:26 GMT+0800 (China Standard Time)
+	 * @modified Sat Feb 23 2019 10:45:54 GMT+0800 (China Standard Time)
 	 */
 	var pathCache = create(null); // (^ | .) prop | (index | "string prop" | 'string prop')
 
@@ -1479,8 +1504,9 @@
 	 * @module utility/string
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Mon Dec 11 2017 13:57:32 GMT+0800 (China Standard Time)
-	 * @modified Sat Dec 22 2018 15:06:34 GMT+0800 (China Standard Time)
+	 * @modified Thu Jan 31 2019 10:04:55 GMT+0800 (China Standard Time)
 	 */
+	//========================================================================================
 
 	/*                                                                                      *
 	 *                                       char code                                      *
@@ -1491,7 +1517,6 @@
 	 * get char code
 	 * > string.charCodeAt
 	 */
-
 	function charCode(str, index) {
 	  return str.charCodeAt(index || 0);
 	}
@@ -1506,7 +1531,7 @@
 	function cutStr(str, start, end) {
 	  return str.substring(start, end);
 	}
-	function cutStrLen(str, start, len) {
+	function cutLStr(str, start, len) {
 	  return str.substr(start, len);
 	} //========================================================================================
 
@@ -1529,37 +1554,19 @@
 	 *                                                                                      */
 	//========================================================================================
 
-	var FIRST_LOWER_LETTER_REG = /^[a-z]/;
-	/**
-	 * upper first char
-	 */
-
+	var FIRST_LOWER_LETTER_REG = /^[a-z]/,
+	    FIRST_UPPER_LETTER_REG = /^[A-Z]/;
+	function upper(str) {
+	  return str.toUpperCase();
+	}
+	function lower(str) {
+	  return str.toLowerCase();
+	}
 	function upperFirst(str) {
 	  return str.replace(FIRST_LOWER_LETTER_REG, upper);
 	}
-	function upper(m) {
-	  return m.toUpperCase();
-	}
-	function lower(m) {
-	  return m.toLowerCase();
-	} //========================================================================================
-
-	/*                                                                                      *
-	 *                                  parse string value                                  *
-	 *                                                                                      */
-	//========================================================================================
-
-	/**
-	 * convert any value to string
-	 * - undefined | null: ''
-	 * - NaN:
-	 * - Infinity:
-	 * - other: String(value)
-	 * TODO support NaN, Infinity
-	 */
-
-	function strval(obj) {
-	  return isNil(obj) ? '' : String(obj);
+	function lowerFirst(str) {
+	  return str.replace(FIRST_UPPER_LETTER_REG, lower);
 	} //========================================================================================
 
 	/*                                                                                      *
@@ -1585,7 +1592,7 @@
 	 * @module utility/format
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Mon Dec 03 2018 19:46:41 GMT+0800 (China Standard Time)
-	 * @modified Sat Dec 22 2018 15:08:24 GMT+0800 (China Standard Time)
+	 * @modified Fri Feb 22 2019 11:37:25 GMT+0800 (China Standard Time)
 	 */
 
 	/*                                                                                      *
@@ -1601,8 +1608,8 @@
 	}
 
 	function __pad(str, len, chr, leftAlign) {
-	  var padding = new Array(len - str.length + 1).join(chr || ' ');
-	  return leftAlign ? str + padding : padding + str;
+	  var pad = new Array(len - str.length + 1).join(chr || ' ');
+	  return leftAlign ? str + pad : pad + str;
 	} //========================================================================================
 
 	/*                                                                                      *
@@ -1819,7 +1826,6 @@
 	 * 			{:&${<prop>}=<pad-char>}
 	 * 			{:&<number>{<prop>}=<pad-char>}
 	 * @example
-	 *
 	 * - precision
 	 * 		For integer specifiers (d,  o, u, x, X): precision specifies the minimum number of digits to be written.
 	 * 		If the value to be written is shorter than this number, the result is padded with leading zeros.
@@ -2009,12 +2015,13 @@
 	  if (prop) {
 	    var path = parsePath(prop);
 	    var i = path.length;
+	    var strs = new Array(i);
 
 	    while (i--) {
-	      path[i] = "\"" + escapeStr(path[i]) + "\"";
+	      strs[i] = "\"" + escapeStr(path[i]) + "\"";
 	    }
 
-	    return GET_PROP_VAR + "(" + code + ", [" + path.join(', ') + "])";
+	    return GET_PROP_VAR + "(" + code + ", [" + strs.join(', ') + "])";
 	  }
 
 	  return code;
@@ -2126,7 +2133,7 @@
 	function baseFormatter(type) {
 	  var base = BASE_RADIXS[type.toLowerCase()],
 	      n = base[0],
-	      __toStr = function (num) {
+	      __toStr = function __toStr(num) {
 	    return num.toString(n);
 	  },
 	      toStr = type === 'X' ? function (num) {
@@ -2145,7 +2152,7 @@
 
 	function floatFormatter(type) {
 	  var ____toStr = upper(type) === 'E' ? toExponential : type === 'f' ? toFixed : toPrecision,
-	      __toStr = function (num, flags, precision) {
+	      __toStr = function __toStr(num, flags, precision) {
 	    return ____toStr(num, precision) || String(num);
 	  },
 	      toStr = charCode(type) > 96 ? __toStr : function (num, flags, precision) {
@@ -2265,7 +2272,7 @@
 	 */
 
 	function defaultAssignFilter(prop, target, override) {
-	  return hasOwnProp(override, prop);
+	  return hasOwnProp$1(override, prop);
 	}
 	/**
 	 * assign if filter
@@ -2275,9 +2282,15 @@
 	 */
 
 	function assignIfFilter(prop, target, override) {
-	  return hasOwnProp(override, prop) && !(prop in target);
+	  return hasOwnProp$1(override, prop) && !(prop in target);
 	}
 
+	/**
+	 * @module utility
+	 * @author Tao Zeng <tao.zeng.zt@qq.com>
+	 * @created Wed Jul 25 2018 15:24:47 GMT+0800 (China Standard Time)
+	 * @modified Tue Feb 19 2019 11:53:18 GMT+0800 (China Standard Time)
+	 */
 	var REG_PROPS = ['source', 'global', 'ignoreCase', 'multiline'];
 	function deepEq(actual, expected) {
 	  if (eq(actual, expected)) return true;
@@ -2306,7 +2319,7 @@
 	  return true;
 	}
 
-	function eqArray(actual, expected, eq$$1) {
+	function eqArray(actual, expected, eq) {
 	  var i = actual.length;
 
 	  if (i !== expected.length) {
@@ -2314,7 +2327,7 @@
 	  }
 
 	  while (i--) {
-	    if (!eq$$1(actual[i], expected[i])) {
+	    if (!eq(actual[i], expected[i])) {
 	      return false;
 	    }
 	  }
@@ -2324,8 +2337,9 @@
 
 	function eqObj(actual, expected) {
 	  var cache = create(null);
+	  var k;
 
-	  for (var k in actual) {
+	  for (k in actual) {
 	    if (notEqObjKey(actual, expected, k)) {
 	      return false;
 	    }
@@ -2343,14 +2357,14 @@
 	}
 
 	function notEqObjKey(actual, expected, k) {
-	  return hasOwnProp(actual, k) ? !hasOwnProp(expected, k) || !deepEq(actual[k], expected[k]) : hasOwnProp(expected, k);
+	  return hasOwnProp$1(actual, k) ? !hasOwnProp$1(expected, k) || !deepEq(actual[k], expected[k]) : hasOwnProp$1(expected, k);
 	}
 
 	/**
 	 * @module utility/assert
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Wed Nov 28 2018 11:01:45 GMT+0800 (China Standard Time)
-	 * @modified Fri Dec 21 2018 14:17:26 GMT+0800 (China Standard Time)
+	 * @modified Tue Feb 19 2019 10:38:22 GMT+0800 (China Standard Time)
 	 */
 	var formatters$1 = [],
 	    formatArgHandlers = [];
@@ -2369,7 +2383,7 @@
 	  return (fs[msg] || (fs[msg] = formatter(msg, msgIdx, formatArgHandlers[msgIdx])))(args);
 	}
 
-	var assert = function (msg) {
+	var assert = function assert(msg) {
 	  throw new Error(parseMessage(msg || 'Error', arguments, 0));
 	};
 
@@ -2435,15 +2449,15 @@
 	  });
 	}
 
-	var NULL = 'null';
-	var UNDEFINED = 'undefined';
-	var BOOLEAN = 'boolean';
-	var NUMBER = 'number';
-	var INTEGER = 'integer';
-	var STRING = 'string';
-	var FUNCTION = 'function';
-	var ARRAY = 'Array';
-	var TYPED_ARRAY = 'TypedArray';
+	var UNDEFINED = TYPE_UNDEF,
+	    BOOLEAN = TYPE_BOOL,
+	    NUMBER = TYPE_NUM,
+	    STRING = TYPE_STRING,
+	    FUNCTION = TYPE_FN,
+	    NULL = 'null',
+	    INTEGER = 'integer',
+	    ARRAY = 'Array',
+	    TYPED_ARRAY = 'TypedArray';
 	extendAssert('is', '!o', 'o', expectMsg('Exist'));
 	extendAssert('not', 'o', 'o', expectMsg('Not Exist'));
 	extendAsserts({
@@ -2501,7 +2515,7 @@
 	 * @module utility/List
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
-	 * @modified Thu Dec 27 2018 14:00:33 GMT+0800 (China Standard Time)
+	 * @modified Fri Feb 22 2019 16:45:27 GMT+0800 (China Standard Time)
 	 */
 	var DEFAULT_BINDING = '__list__'; //type ListNode = [ListElement, IListNode, IListNode, List]
 
@@ -2509,40 +2523,70 @@
 	/*#__PURE__*/
 	function () {
 	  function List(binding) {
-	    this.length = 0;
-	    this.scaning = false;
+	    this.__length = 0;
+	    this.__scaning = false;
 	    this.binding = binding || DEFAULT_BINDING;
 	  }
 
 	  var _proto = List.prototype;
 
 	  _proto.size = function size() {
-	    return this.length;
+	    return this.__length;
 	  };
 
 	  _proto.has = function has(obj) {
 	    var node = obj[this.binding];
 	    return node ? node[0] === obj && node[3] === this : false;
-	  };
+	  }
+	  /**
+	   *
+	   * @param obj
+	   * @return new length
+	   */
+	  ;
 
 	  _proto.add = function add(obj) {
-	    return this.__insert(obj, this.tail);
-	  };
+	    return this.__insert(obj, this.__tail);
+	  }
+	  /**
+	   *
+	   * @param obj
+	   * @return new length
+	   */
+	  ;
 
 	  _proto.addFirst = function addFirst(obj) {
 	    return this.__insert(obj);
-	  };
+	  }
+	  /**
+	   *
+	   * @param obj
+	   * @return new length
+	   */
+	  ;
 
 	  _proto.insertAfter = function insertAfter(obj, target) {
 	    return this.__insert(obj, target && this.__getNode(target));
-	  };
+	  }
+	  /**
+	   *
+	   * @param obj
+	   * @return new length
+	   */
+	  ;
 
 	  _proto.insertBefore = function insertBefore(obj, target) {
 	    return this.__insert(obj, target && this.__getNode(target)[1]);
-	  };
+	  }
+	  /**
+	   *
+	   * @param objs
+	   * @return new length
+	   */
+	  ;
 
 	  _proto.addAll = function addAll(objs) {
-	    return this.__insertAll(objs, this.tail);
+	    return this.__insertAll(objs, this.__tail);
 	  };
 
 	  _proto.addFirstAll = function addFirstAll(objs) {
@@ -2566,21 +2610,21 @@
 	  };
 
 	  _proto.first = function first() {
-	    var node = this.head;
+	    var node = this.__head;
 	    return node && node[0];
 	  };
 
 	  _proto.last = function last() {
-	    var node = this.tail;
+	    var node = this.__tail;
 	    return node && node[0];
 	  };
 
 	  _proto.each = function each(cb, scope) {
-	    if (this.length) {
-	      assert.not(this.scaning, 'Recursive calls are not allowed.');
-	      this.scaning = true;
+	    if (this.__length) {
+	      assert.not(this.__scaning, 'Nested calls are not allowed.');
+	      this.__scaning = true;
 	      cb = bind(cb, scope);
-	      var node = this.head;
+	      var node = this.__head;
 
 	      while (node) {
 	        if (node[3] === this && cb(node[0]) === false) break;
@@ -2589,13 +2633,13 @@
 
 	      this.__doLazyRemove();
 
-	      this.scaning = false;
+	      this.__scaning = false;
 	    }
 	  };
 
 	  _proto.toArray = function toArray() {
-	    var array = new Array(this.length);
-	    var node = this.head,
+	    var array = new Array(this.__length);
+	    var node = this.__head,
 	        i = 0;
 
 	    while (node) {
@@ -2604,7 +2648,13 @@
 	    }
 
 	    return array;
-	  };
+	  }
+	  /**
+	   *
+	   * @param obj
+	   * @return new length
+	   */
+	  ;
 
 	  _proto.remove = function remove(obj) {
 	    return this.__remove(this.__getNode(obj));
@@ -2613,16 +2663,16 @@
 	  _proto.pop = function pop() {};
 
 	  _proto.clean = function clean() {
-	    if (this.length) {
-	      if (this.scaning) {
-	        var node = this.head;
+	    if (this.__length) {
+	      if (this.__scaning) {
+	        var node = this.__head;
 
 	        while (node) {
 	          node[3] === this && this.__lazyRemove(node);
 	          node = node[2];
 	        }
 
-	        this.length = 0;
+	        this.__length = 0;
 	      } else {
 	        this.__clean();
 	      }
@@ -2680,12 +2730,12 @@
 	      nodeTail[2] = next = prev[2];
 	      prev[2] = nodeHead;
 	    } else {
-	      nodeTail[2] = next = this.head;
-	      this.head = nodeHead;
+	      nodeTail[2] = next = this.__head;
+	      this.__head = nodeHead;
 	    }
 
-	    if (next) next[1] = nodeTail;else this.tail = nodeTail;
-	    return this.length += len;
+	    if (next) next[1] = nodeTail;else this.__tail = nodeTail;
+	    return this.__length += len;
 	  };
 
 	  _proto.__insert = function __insert(obj, prev) {
@@ -2718,12 +2768,12 @@
 	  };
 
 	  _proto.__remove = function __remove(node) {
-	    this.scaning ? this.__lazyRemove(node) : this.__doRemove(node);
-	    return --this.length;
+	    this.__scaning ? this.__lazyRemove(node) : this.__doRemove(node);
+	    return --this.__length;
 	  };
 
 	  _proto.__lazyRemove = function __lazyRemove(node) {
-	    var lazyRemoves = this.lazyRemoves;
+	    var lazyRemoves = this.__lazyRemoves;
 	    node[0][this.binding] = undefined; // unbind this node
 
 	    node[3] = null;
@@ -2731,18 +2781,18 @@
 	    if (lazyRemoves) {
 	      lazyRemoves.push(node);
 	    } else {
-	      this.lazyRemoves = [node];
+	      this.__lazyRemoves = [node];
 	    }
 	  };
 
 	  _proto.__doLazyRemove = function __doLazyRemove() {
-	    var lazyRemoves = this.lazyRemoves;
+	    var lazyRemoves = this.__lazyRemoves;
 
 	    if (lazyRemoves) {
 	      var len = lazyRemoves.length;
 
 	      if (len) {
-	        if (this.length) {
+	        if (this.__length) {
 	          while (len--) {
 	            this.__doRemove(lazyRemoves[len]);
 	          }
@@ -2762,13 +2812,13 @@
 	    if (prev) {
 	      prev[2] = next;
 	    } else {
-	      this.head = next;
+	      this.__head = next;
 	    }
 
 	    if (next) {
 	      next[1] = prev;
 	    } else {
-	      this.tail = prev;
+	      this.__tail = prev;
 	    }
 
 	    node[1] = node[2] = node[3] = null;
@@ -2776,16 +2826,16 @@
 
 	  _proto.__clean = function __clean() {
 	    var node,
-	        next = this.head;
+	        next = this.__head;
 
 	    while (node = next) {
 	      next = node[2];
 	      node.length = 1;
 	    }
 
-	    this.head = undefined;
-	    this.tail = undefined;
-	    this.length = 0;
+	    this.__head = undefined;
+	    this.__tail = undefined;
+	    this.__length = 0;
 	  };
 
 	  return List;
@@ -2797,7 +2847,7 @@
 	 * @module utility/List
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
-	 * @modified Thu Dec 27 2018 14:00:58 GMT+0800 (China Standard Time)
+	 * @modified Fri Feb 22 2019 16:53:21 GMT+0800 (China Standard Time)
 	 */
 	var DEFAULT_FN_BINDING = '__flist_id__';
 	var DEFAULT_SCOPE_BINDING = '__flist_id__';
@@ -2805,35 +2855,45 @@
 	/*#__PURE__*/
 	function () {
 	  function FnList(fnBinding, scopeBinding) {
-	    this.nodeMap = create(null);
-	    this.list = new List();
+	    this.__nodeMap = create(null);
+	    this.__list = new List();
 	    this.fnBinding = fnBinding || DEFAULT_FN_BINDING;
 	    this.scopeBinding = scopeBinding || DEFAULT_SCOPE_BINDING;
 	  }
+	  /**
+	   * add executable function
+	   * @param fn		function
+	   * @param scope		scope of function
+	   * @param data		user data of [function + scope]
+	   * @return executable function id, can remove executable function by id: {@link FnList#removeId}
+	   */
+
 
 	  var _proto = FnList.prototype;
 
-	  _proto.add = function add(fn, scope) {
+	  _proto.add = function add(fn, scope, data) {
 	    scope = parseScope(scope);
-	    var list = this.list,
-	        nodeMap = this.nodeMap;
-	    var id = nodeId(this, fn, scope);
+	    var list = this.__list,
+	        nodeMap = this.__nodeMap;
+	    var id = this.id(fn, scope);
 	    var node = nodeMap[id];
 
 	    if (!node) {
-	      node = [id, fn, scope];
-	      var ret = list.add(node);
-	      if (ret) nodeMap[id] = node;
-	      return ret;
+	      node = [id, fn, scope, data];
+	      if (list.add(node)) nodeMap[id] = node;
+	      return id;
 	    }
+	  }
+	  /**
+	   * remove executable function by id
+	   *
+	   * @param id
+	   */
+	  ;
 
-	    return -1;
-	  };
-
-	  _proto.remove = function remove(fn, scope) {
-	    var list = this.list,
-	        nodeMap = this.nodeMap;
-	    var id = nodeId(this, fn, parseScope(scope));
+	  _proto.removeId = function removeId(id) {
+	    var list = this.__list,
+	        nodeMap = this.__nodeMap;
 	    var node = nodeMap[id];
 
 	    if (node) {
@@ -2844,24 +2904,40 @@
 	    return -1;
 	  };
 
+	  _proto.remove = function remove(fn, scope) {
+	    return this.removeId(this.id(fn, parseScope(scope)));
+	  };
+
 	  _proto.has = function has(fn, scope) {
-	    return !!this.nodeMap[nodeId(this, fn, parseScope(scope))];
+	    return !!this.__nodeMap[this.id(fn, parseScope(scope))];
 	  };
 
 	  _proto.size = function size() {
-	    return this.list.size();
+	    return this.__list.size();
 	  };
 
 	  _proto.clean = function clean() {
-	    this.nodeMap = create(null);
-	    this.list.clean();
+	    this.__nodeMap = create(null);
+
+	    this.__list.clean();
 	  };
 
 	  _proto.each = function each(cb, scope) {
 	    cb = cb.bind(scope);
-	    this.list.each(function (node) {
-	      return cb(node[1], node[2]);
+
+	    this.__list.each(function (node) {
+	      return cb(node[1], node[2], node[3]);
 	    });
+	  };
+
+	  _proto.id = function id(fn, scope) {
+	    var fnBinding = this.fnBinding,
+	        scopeBinding = this.scopeBinding;
+	    var fnId = fn[fnBinding],
+	        scopeId = scope ? scope[scopeBinding] : DEFAULT_SCOPE_ID;
+	    if (!fnId) fnId = defPropValue(fn, fnBinding, ++fnIdGenerator, false, false, false);
+	    if (!scopeId) scopeId = defPropValue(scope, scopeBinding, ++scopeIdGenerator, false, false, false);
+	    return fnId + "&" + scopeId;
 	  };
 
 	  return FnList;
@@ -2871,16 +2947,6 @@
 	var DEFAULT_SCOPE_ID = 1;
 	var scopeIdGenerator = 1,
 	    fnIdGenerator = 0;
-
-	function nodeId(list, fn, scope) {
-	  var fnBinding = list.fnBinding,
-	      scopeBinding = list.scopeBinding;
-	  var fnId = fn[fnBinding],
-	      scopeId = scope ? scope[scopeBinding] : DEFAULT_SCOPE_ID;
-	  if (!fnId) fnId = defPropValue(fn, fnBinding, ++fnIdGenerator, false, false, false);
-	  if (!scopeId) scopeId = defPropValue(scope, scopeBinding, ++scopeIdGenerator, false, false, false);
-	  return fnId + "&" + scopeId;
-	}
 
 	function parseScope(scope) {
 	  return !scope ? undefined : scope;
@@ -2898,7 +2964,7 @@
 	 * @module utility/nextTick
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
-	 * @modified Mon Dec 10 2018 16:59:56 GMT+0800 (China Standard Time)
+	 * @modified Thu Jan 31 2019 16:34:55 GMT+0800 (China Standard Time)
 	 */
 	var ticks = new FnList();
 	var pending = false;
@@ -2914,7 +2980,7 @@
 	  pending = false;
 	}
 
-	if (isFn(MutationObserver)) {
+	if (typeof MutationObserver === TYPE_FN) {
 	  // chrome18+, safari6+, firefox14+,ie11+,opera15
 	  var counter = 0,
 	      observer = new MutationObserver(flush),
@@ -2923,12 +2989,12 @@
 	    characterData: true
 	  });
 
-	  next = function () {
+	  next = function next() {
 	    textNode.data = counter + '';
 	    counter = counter ? 0 : 1;
 	  };
 	} else {
-	  next = function () {
+	  next = function next() {
 	    setTimeout(flush, 0);
 	  };
 	}
@@ -3007,7 +3073,7 @@
 	  return Source;
 	}();
 
-	function sourceStr(m) {
+	function sourceStr(m, s, t) {
 	  return m || '';
 	}
 
@@ -3029,28 +3095,6 @@
 	 * @created 2018-11-09 13:22:51
 	 * @modified 2018-11-09 13:22:51 by Tao Zeng (tao.zeng.zt@qq.com)
 	 */
-	function genCharCodes(start, end, ignoreCase) {
-	  var s = isNum(start) ? start : charCode(start),
-	      e = isNum(end) ? end : charCode(end),
-	      codes = new Array(e - s),
-	      i = 0;
-
-	  if (ignoreCase) {
-	    var c;
-
-	    for (; s <= e; s++) {
-	      codes[i++] = s;
-	      c = getAnotherCode(s);
-	      codes[i++] = c;
-	    }
-	  } else {
-	    for (; s <= e; s++) {
-	      codes[i++] = s;
-	    }
-	  }
-
-	  return codes;
-	}
 	/**
 	 * each char codes
 	 */
@@ -3095,11 +3139,11 @@
 	 * @modified Fri Dec 21 2018 10:24:24 GMT+0800 (China Standard Time)
 	 */
 	function mixin(behaviour) {
-	  return function (Class) {
+	  return function mixin(Class) {
 	    var proto = Class.prototype;
 
 	    for (var k in behaviour) {
-	      if (hasOwnProp(behaviour, k)) proto[k] = behaviour[k];
+	      if (hasOwnProp$1(behaviour, k)) proto[k] = behaviour[k];
 	    }
 
 	    return Class;
@@ -3187,7 +3231,7 @@
 
 	  _proto2.mkErr = function mkErr(msg, context, capturable, source) {
 	    return new MatchError(msg, capturable, source, context, this);
-	  };
+	  }
 	  /**
 	   * match fail
 	   * @param msg 			error message
@@ -3196,13 +3240,13 @@
 	   * @param src 			source error
 	   * @return Error|void: may ignore Error in the error callback
 	   */
-
+	  ;
 
 	  _proto2.error = function error(msg, context, src, capturable) {
 	    var err = this.mkErr(msg, context, capturable, src);
 	    var userErr = this.onErr(err, context, this);
 	    if (userErr) return userErr.$ruleErr ? userErr : (err[0] = String(userErr), err);
-	  };
+	  }
 	  /**
 	   * match success
 	   * > attach the matched result by match callback
@@ -3211,7 +3255,7 @@
 	   * @param context 	match context
 	   * @return Error|void: may return Error in the match callback
 	   */
-
+	  ;
 
 	  _proto2.matched = function matched(data, len, context) {
 	    var err = this.onMatch(data, len, context, this);
@@ -3220,30 +3264,30 @@
 
 	  _proto2.enter = function enter(context) {
 	    return context.create();
-	  };
+	  }
 	  /**
 	   * match
 	   * @param context match context
 	   */
+	  ;
 
-
-	  _proto2.match = function match() {
+	  _proto2.match = function match(context) {
 	    return assert();
-	  };
+	  }
 	  /**
 	   * get start char codes
 	   */
+	  ;
 
-
-	  _proto2.getStart = function getStart() {
+	  _proto2.getStart = function getStart(stack) {
 	    return this.startCodes;
-	  };
+	  }
 	  /**
 	   * prepare test before match
 	   */
+	  ;
 
-
-	  _proto2.test = function test() {
+	  _proto2.test = function test(context) {
 	    return true;
 	  };
 
@@ -3269,36 +3313,36 @@
 	      this.startCodeIdx = index;
 	      this.test = this.startCodeTest;
 	    }
-	  }; //──── for debug ─────────────────────────────────────────────────────────────────────────
+	  } //──── for debug ─────────────────────────────────────────────────────────────────────────
 
 	  /**
 	   * make rule expression
 	   * @param expr expression text
 	   */
-
+	  ;
 
 	  _proto2.mkExpr = function mkExpr(expr) {
 	    return "<" + this.type + ": " + expr + ">";
-	  };
+	  }
 	  /**
 	   * set rule expression
 	   * 		1. make rule expression
 	   * 		2. make Expect text
 	   */
-
+	  ;
 
 	  _proto2.setExpr = function setExpr(expr) {
 	    this.expr = this.mkExpr(expr);
 	    this.EXPECT = "Expect: " + expr;
 	  };
 
-	  _proto2.getExpr = function getExpr() {
+	  _proto2.getExpr = function getExpr(stack) {
 	    return this.name || this.expr;
-	  };
+	  }
 	  /**
 	   * toString by name or expression
 	   */
-
+	  ;
 
 	  _proto2.toString = function toString() {
 	    return this.getExpr();
@@ -3324,7 +3368,9 @@
 
 
 	  function MatchRule(name, start, ignoreCase, options) {
-	    var _this = _Rule.call(this, name, options) || this;
+	    var _this;
+
+	    _this = _Rule.call(this, name, options) || this;
 
 	    _this.setStartCodes(start, ignoreCase);
 
@@ -3372,8 +3418,9 @@
 
 
 	  function CharMatchRule(name, allows, ignoreCase, options) {
-	    var _this = _MatchRule.call(this, name, allows, ignoreCase, options) || this; // generate expression for debug
+	    var _this;
 
+	    _this = _MatchRule.call(this, name, allows, ignoreCase, options) || this; // generate expression for debug
 
 	    var codes = _this.startCodes;
 	    var i = codes.length,
@@ -3438,7 +3485,8 @@
 	    var _this;
 
 	    pick = pick === false || isInt(pick) ? pick : !!pick || 0;
-	    var // use exec mode when need pick match group data
+	    var sticky = stickyReg && !pick,
+	        // use exec mode when need pick match group data
 	    pattern = regexp.source,
 	        ignoreCase = regexp.ignoreCase; // always wrapping in a none capturing group preceded by '^' to make sure
 	    // matching can only work on start of input. duplicate/redundant start of
@@ -3448,12 +3496,12 @@
 	    // beginning of the input, or (if multiline is true) at the beginning of a
 	    // line.
 
-	    regexp = new RegExp("^(?:" + pattern + ")", (ignoreCase ? 'i' : '') + (regexp.multiline ? 'm' : '') + (''));
+	    regexp = new RegExp(sticky ? pattern : "^(?:" + pattern + ")", (ignoreCase ? 'i' : '') + (regexp.multiline ? 'm' : '') + (sticky ? 'y' : ''));
 	    _this = _MatchRule.call(this, name, start, ignoreCase, options) || this;
 	    _this.regexp = regexp;
 	    _this.pick = pick;
-	    _this.match = _this.execMatch;
-	    _this.picker = mkPicker(pick);
+	    _this.match = sticky ? _this.stickyMatch : _this.execMatch;
+	    sticky ? _this.spicker = pick === false ? pickNone : pickTestStr : _this.picker = mkPicker(pick);
 
 	    _this.setExpr(pattern);
 
@@ -3473,11 +3521,11 @@
 	    reg.lastIndex = start;
 	    var len;
 	    return reg.test(buff) ? (len = reg.lastIndex - start, this.comsume(this.spicker(buff, start, len), len, context)) : this.error(this.EXPECT, context);
-	  };
+	  }
 	  /**
 	   * match on exec mode
 	   */
-
+	  ;
 
 	  _proto.execMatch = function execMatch(context) {
 	    var m = this.regexp.exec(context.buff(true));
@@ -3502,6 +3550,10 @@
 	  return m;
 	}
 
+	function pickTestStr(buff, start, end) {
+	  return cutLStr(buff, start, end);
+	}
+
 	var _dec$3, _class$3;
 	var StringMatchRule = (_dec$3 = mixin({
 	  type: 'String'
@@ -3518,7 +3570,9 @@
 
 
 	  function StringMatchRule(name, str, ignoreCase, options) {
-	    var _this = _RegMatchRule.call(this, name, new RegExp(reEscape(str), ignoreCase ? 'i' : ''), 0, charCode(str), options) || this;
+	    var _this;
+
+	    _this = _RegMatchRule.call(this, name, new RegExp(reEscape(str), ignoreCase ? 'i' : ''), 0, charCode(str), options) || this;
 
 	    _this.setExpr(str);
 
@@ -3566,11 +3620,11 @@
 	    var buff = this.__buff,
 	        offset = this.__offset;
 	    this.__code = offset < buff.length ? charCode(buff, offset) : 0;
-	  };
+	  }
 	  /**
 	   * create sub Context
 	   */
-
+	  ;
 
 	  _proto.create = function create() {
 	    return new MatchContext(this.source, this.__buff, this.__offset, this.__orgOffset + this.__advanced, this);
@@ -3589,11 +3643,11 @@
 	    this.__offset = offset;
 
 	    this.__flushCode();
-	  };
+	  }
 	  /**
 	   * commit context state to parent context
 	   */
-
+	  ;
 
 	  _proto.commit = function commit() {
 	    var advanced = this.__advanced;
@@ -3601,20 +3655,20 @@
 	    this.__orgOffset += advanced;
 	    this.__advanced = 0;
 	    this.data = null;
-	  };
+	  }
 	  /**
 	   * marge context state
 	   */
-
+	  ;
 
 	  _proto.margeState = function margeState(context) {
 	    this.__setAdvanced(context.__orgOffset + context.__advanced - this.__orgOffset);
-	  };
+	  }
 	  /**
 	   * rollback state and result
 	   * @param checkpoint 	rollback to checkpoint
 	   */
-
+	  ;
 
 	  _proto.rollback = function rollback(checkpoint) {
 	    var advanced = 0,
@@ -3625,41 +3679,41 @@
 
 	    var result = this.result;
 	    if (result.length > resultLen) result.length = resultLen;
-	  };
+	  }
 	  /**
 	   * get a check point
 	   */
-
+	  ;
 
 	  _proto.checkpoint = function checkpoint() {
 	    return [this.__advanced, this.result.length];
-	  };
+	  }
 	  /**
 	   * advance buffer position
 	   */
-
+	  ;
 
 	  _proto.advance = function advance(i) {
 	    this.__offset += i;
 	    this.__advanced += i;
 
 	    this.__flushCode();
-	  };
+	  }
 	  /**
 	   * advanced buff length
 	   */
-
+	  ;
 
 	  _proto.advanced = function advanced() {
 	    return this.__advanced;
-	  };
+	  }
 	  /**
 	   * get buffer
 	   * @param reset reset buffer string from 0
 	   */
+	  ;
 
-
-	  _proto.buff = function (reset) {
+	  _proto.buff = function buff(reset) {
 	    var buff = this.__buff;
 
 	    if (reset) {
@@ -3689,12 +3743,12 @@
 	  _proto.pos = function pos() {
 	    var offset = this.__orgOffset;
 	    return [offset, offset + this.__advanced];
-	  };
+	  }
 	  /**
 	   * get next char code
 	   * @return number char code number
 	   */
-
+	  ;
 
 	  _proto.nextCode = function nextCode() {
 	    return this.__code;
@@ -3702,21 +3756,21 @@
 
 	  _proto.nextChar = function nextChar() {
 	    return char(this.__code);
-	  }; //──── result opeartions ───────────────────────────────────────────────────────────────────
+	  } //──── result opeartions ───────────────────────────────────────────────────────────────────
 
 	  /**
 	   * append result
 	   */
-
+	  ;
 
 	  _proto.add = function add(data) {
 	    var result = this.result;
 	    result[result.length] = data;
-	  };
+	  }
 	  /**
 	   * append resultset
 	   */
-
+	  ;
 
 	  _proto.addAll = function addAll(data) {
 	    var result = this.result;
@@ -3726,11 +3780,11 @@
 	    while (i--) {
 	      result[len + i] = data[i];
 	    }
-	  };
+	  }
 	  /**
 	   * get result size
 	   */
-
+	  ;
 
 	  _proto.resultSize = function resultSize() {
 	    return this.result.length;
@@ -3756,8 +3810,9 @@
 
 
 	  function ComplexRule(name, repeat, builder, options) {
-	    var _this = _Rule.call(this, name, options) || this;
+	    var _this;
 
+	    _this = _Rule.call(this, name, options) || this;
 	    var rMin = repeat[0],
 	        rMax = repeat[1];
 	    rMin < 0 && (rMin = 0);
@@ -3768,7 +3823,7 @@
 	    _this.builder = builder;
 
 	    if (rMin !== rMax || rMin !== 1) {
-	      _this.match = _this.repeatMatch; // for debug
+	      _this.match = _this.rmatch; // for debug
 
 	      _this.type = _this.type + "[" + rMin + (rMin === rMax ? '' : " - " + (rMax === MAX ? 'MAX' : rMax)) + "]";
 	    }
@@ -3820,9 +3875,9 @@
 	    return this;
 	  };
 
-	  _proto.__init = function __init() {};
+	  _proto.__init = function __init(rules) {};
 
-	  _proto.repeatMatch = function repeatMatch() {
+	  _proto.rmatch = function rmatch(context) {
 	    return assert();
 	  };
 
@@ -3844,8 +3899,8 @@
 	    var err = this.matched(context.result, context.advanced(), context.parent);
 	    !err && context.commit();
 	    return err;
-	  }; // for debug
-
+	  } // for debug
+	  ;
 
 	  _proto.rnames = function rnames(rules, stack) {
 	    var i = rules.length;
@@ -3906,7 +3961,7 @@
 	    return this.consume(ctx);
 	  };
 
-	  _proto.repeatMatch = function repeatMatch(context) {
+	  _proto.rmatch = function rmatch(context) {
 	    var rMin = this.rMin,
 	        rMax = this.rMax;
 	    var rules = this.getRules(),
@@ -4048,7 +4103,7 @@
 	    return this.error(this.EXPECT, ctx, upErr);
 	  };
 
-	  _proto.repeatMatch = function repeatMatch(context) {
+	  _proto.rmatch = function rmatch(context) {
 	    var rMin = this.rMin,
 	        rMax = this.rMax;
 	    var index = this.index || (this.init(), this.index),
@@ -4295,97 +4350,13 @@
 	  return options;
 	}
 
-	var VOID_ELEM = makeMap('input,br,hr', 1),
-	    CONTENT_ELEM = makeMap('script,style,textarea', 1);
-	var UNDEFINED$1 = match('undefined', attachMatch(undefined)),
-	    NULL$1 = match('null', attachMatch(null)),
-	    BOOLEAN$1 = match('boolean', /true|false/, 'tf', attachMatch(function (b) {
-	  return b === 'true';
-	})),
-	    NUMBER$1 = match('number', /[+-]?(?:0x[\da-f]+|0X[\dA-F]+|0[oO][0-7]+|0[bB][01]+|(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?)/, '+-0123456789', attachMatch(function (n) {
-	  return +n;
-	})),
-	    NAN = match('NaN', attachMatch(function () {
-	  return NaN;
-	})),
-	    STRING$1 = match('string', /"((?:[^\\"]|\\.)*)"|'((?:[^\\']|\\.)*)'/, -2, "'\"");
-	var ATTR_NAME = match('attr-name', /([@:$_a-zA-Z][\w-\.]*)\s*/, 1, ['@', ':', '$', '_'].concat(genCharCodes('a', 'z', true))),
-	    // prettier-ignore
-	ATTR_VALUE = or('attr-value', [UNDEFINED$1, BOOLEAN$1, NUMBER$1, NAN, STRING$1], appendMatch),
-	    // prettier-ignore
-	ATTRS = any('attrs', [ATTR_NAME, option([['attr-op', /=\s*/, '='], ATTR_VALUE, /\s*/])], function (data, l, ctx) {
-	  var attrs = {};
-
-	  for (var i = 0, _l = data.length; i < _l; i += 2) {
-	    attrs[data[i]] = data[i + 1][0];
-	  }
-
-	  ctx.add(attrs);
-	});
-	var ELEM_NAME = match('elem-open', /<([_a-zA-Z][\w-]*)\s*/, 1, '<'),
-	    ELEM = and('elem', function () {
-	  return [ELEM_NAME, ATTRS, or([['elem-slash-close', /\/>\s*/, '/'], match('elem-close', />\s*/, false, '>', function (d, l, ctx) {
-	    var parent = ctx.parent,
-	        tag = ctx.data = parent.result[0],
-	        rule = CONTENT_ELEM[tag] ? ELEM_CONTENT : ELEM_CHILDREN,
-	        err = rule.match(ctx);
-	    var target = err.target,
-	        context = err.context;
-	    if (target.msg) return err;
-	    ctx.margeState(context);
-	    ctx.add(context.result);
-	  })])];
-	}, function (d, l, ctx) {
-	  var tag = d[0],
-	      children = d[2][0],
-	      elem = {
-	    tag: tag,
-	    attrs: d[1]
-	  };
-	  ctx.add(elem);
-	  VOID_ELEM[tag] ? ctx.addAll(children) : CONTENT_ELEM[tag] ? elem.content = children[0] || '' : children.length && (elem.children = children);
-	});
-	var ELEM_CHILDREN = elemBody('elem-children', [ELEM], function (m, l, ctx, rule) {
-	  var tag = ctx.data;
-	  return rule.mkErr(tag === m[1] ? VOID_ELEM[tag] && ctx.resultSize() ? "<" + tag + "> have no children" : null : VOID_ELEM[tag] ? (ctx.advance(-l), null) : "expect: </" + tag + ">", ctx, false);
-	}),
-	    ELEM_CONTENT = elemBody('elem-content', [], function (m, l, ctx, rule) {
-	  if (ctx.data === m[1]) return rule.mkErr(null, ctx, false);
-	  attachText(m[0], l, ctx);
-	});
-
-	function elemBody(name, rules, onEnd) {
-	  return anyOne(name, rules.concat([match('elem-end', /<\/([_a-zA-Z][\w-]*)>\s*/, true, '<', onEnd), match('text', /.[^<]*/, 0, false, attachText, function (err, ctx) {
-	    return "expect: </" + ctx.data + ">";
-	  })]), appendMatch);
-	} // prettier-ignore
-
-
-	var html = and('html', [/\s*/, many('elems', [or([ELEM, match('text', /.[^<]*/, attachText)])], appendMatch), ['EOF', /\s*$/]], function (data, len, ctx) {
-	  ctx.addAll(data[0]);
-	}).init();
-
-	function attachText(text, length, ctx) {
-	  var data = ctx.result,
-	      len = data.length;
-	  var prev;
-
-	  if (len && (prev = data[len - 1]) && prev.text) {
-	    prev.text += text;
-	  } else {
-	    ctx.add({
-	      text: text
-	    });
-	  }
-	}
-
 	/**
 	 * utility utilities
 	 * @module utility
 	 * @preferred
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Wed Nov 21 2018 10:21:41 GMT+0800 (China Standard Time)
-	 * @modified Fri Dec 21 2018 20:35:04 GMT+0800 (China Standard Time)
+	 * @modified Mon Feb 18 2019 14:52:12 GMT+0800 (China Standard Time)
 	 */
 
 	/**
@@ -4436,8 +4407,8 @@
 	exports.protoOf = protoOf;
 	exports.__setProto = __setProto;
 	exports.setProto = setProto;
-	exports.hasOwnProp = hasOwnProp;
 	exports.getOwnProp = getOwnProp;
+	exports.hasOwnProp = hasOwnProp$1;
 	exports.propDescriptor = propDescriptor;
 	exports.propAccessor = propAccessor;
 	exports.defProp = defProp;
@@ -4449,12 +4420,12 @@
 	exports.charCode = charCode;
 	exports.char = char;
 	exports.cutStr = cutStr;
-	exports.cutStrLen = cutStrLen;
+	exports.cutLStr = cutLStr;
 	exports.trim = trim;
-	exports.upperFirst = upperFirst;
 	exports.upper = upper;
 	exports.lower = lower;
-	exports.strval = strval;
+	exports.upperFirst = upperFirst;
+	exports.lowerFirst = lowerFirst;
 	exports.escapeStr = escapeStr;
 	exports.pad = pad;
 	exports.shorten = shorten;
@@ -4518,8 +4489,7 @@
 	exports.anyOne = anyOne;
 	exports.manyOne = manyOne;
 	exports.optionOne = optionOne;
-	exports.html = html;
 
 	Object.defineProperty(exports, '__esModule', { value: true });
 
-})));
+}));

@@ -2,6 +2,7 @@
 /coverage
 /benchmark
 /doc
+/docs
 /*.log
 /index.html
 /analysis

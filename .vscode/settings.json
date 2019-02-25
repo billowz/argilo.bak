@@ -1,6 +1,26 @@
 {
-    "mochaExplorer.files": "**/*.spec.ts",
-    "mochaExplorer.logpanel": true,
-    "mochaExplorer.mochaPath": "node_modules/mocha",
-    "mochaExplorer.optsFile": "mocha.opts"
+	"files.eol": "\n",
+	"javascript.validate.enable": false,
+	"prettier.eslintIntegration": true,
+	"mochaExplorer.files": "**/*.spec.ts",
+	"mochaExplorer.logpanel": true,
+	"mochaExplorer.mochaPath": "node_modules/mocha",
+	"mochaExplorer.optsFile": "mocha.opts",
+	"topper.headerTemplates": [
+		{
+			"defaultCStyled": {
+				"headerBegin": "/**",
+				"headerPrefix": " *",
+				"headerEnd": " */",
+				"template": [
+					"${headerBegin}",
+					"${headerPrefix} ",
+					"${headerPrefix} @author ${author}",
+					"${headerPrefix} @created ${createdDate}",
+					"${headerPrefix} @modified ${lastModifiedDate}",
+					"${headerEnd}"
+				]
+			}
+		}
+	]
 }

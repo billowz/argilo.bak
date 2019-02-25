@@ -1,12 +1,11 @@
 import babel from 'rollup-plugin-babel'
-import filesize from 'rollup-plugin-filesize'
 import nodeResolve from 'rollup-plugin-node-resolve'
 import commonjs from 'rollup-plugin-commonjs'
-import { uglify } from 'rollup-plugin-uglify'
-import visualizer from 'rollup-plugin-visualizer'
+import { terser as compress } from 'rollup-plugin-terser'
+import jscc from 'rollup-plugin-jscc'
 import prototypeMinify from 'rollup-plugin-prototype-minify'
+import visualizer from 'rollup-plugin-visualizer'
 import progress from 'rollup-plugin-progress'
-
 import pkg from './package.json'
 
 const banner = `/*
@@ -42,6 +41,24 @@ export default [
 			})
 		}),
 
+	// commonjs && esmodule bundle
+	PROD &&
+		config({
+			target: 'es6',
+			output: [
+				output({
+					file: pkg.main,
+					format: 'cjs'
+				}),
+				output({
+					file: pkg.module,
+					format: 'esm'
+				})
+			],
+			babel: { targets: { browsers: 'chrome >= 59' } },
+			external: Object.keys(pkg.dependencies || {})
+		}),
+
 	// production mini bundle
 	PROD &&
 		config({
@@ -49,40 +66,45 @@ export default [
 				file: `dist/${pkg.name}.min.js`
 			}),
 			plugins: [
-				uglify({
+				compress({
 					warnings: true,
 					sourcemap: true,
-					ie8: true
+					ie8: true,
+					compress: {
+						passes: 1,
+						toplevel: true,
+						typeofs: false
+					},
+					mangle: {
+						properties: {
+							regex: /^__\w*[^_]$/
+							//debug: true
+						}
+					},
+					output: {
+						//beautify: true
+					}
 				}),
 				visualizer({
-					filename: 'analysis/code-analysis.html',
-					title: pkg.name,
-					sourcemap: true
+					filename: './code-analysis.html',
+					title: 'Argilo Bundle',
+					sourcemap: false
 				})
 			]
-		}),
-
-	// commonjs && esmodule bundle
-	PROD &&
-		config(
-			{
-				external: Object.keys(pkg.dependencies || {}),
-				output: [
-					output({
-						file: pkg.main,
-						format: 'cjs'
-					}),
-					output({
-						file: pkg.module,
-						format: 'esm'
-					})
-				]
-			},
-			false
-		)
+		})
 ].filter(v => v)
 
-function config(options, loose = true) {
+function config(options) {
+	const target = options.target || 'es3',
+		babelOptions = options.babel || {},
+		babelPlugins = babelOptions.plugins || [],
+		babelPresets = babelOptions.presets || []
+
+	delete options.target
+	delete options.babel
+	delete babelOptions.plugins
+	delete babelOptions.presets
+
 	return Object.assign({ input: './src/index.ts' }, options, {
 		plugins: [
 			nodeResolve({ jsnext: true, extensions: ['.js', '.ts'] }),
@@ -92,18 +114,21 @@ function config(options, loose = true) {
 					'@babel/preset-typescript',
 					[
 						'@babel/preset-env',
-						{
-							modules: false,
-							loose: true,
-							targets: !loose && { browsers: 'chrome >= 59' }
-						}
+						Object.assign(
+							{
+								modules: false,
+								loose: true
+							},
+							babelOptions
+						)
 					]
-				],
+				].concat(babelPresets),
+				plugins: babelPlugins,
 				extensions: ['.js', '.ts']
 			}),
+			jscc({ values: { _TARGET: target } }),
 			prototypeMinify({ sourcemap: true }),
-			filesize(),
-			//progress()
+			progress()
 		].concat(options.plugins || [])
 	})
 }
@@ -121,11 +146,12 @@ function umdOutput(options) {
 		)
 	)
 }
+
 function output(options) {
 	return Object.assign(
 		{
-			banner,
-			sourcemap: false
+			//banner,
+			sourcemap: true
 		},
 		options
 	)

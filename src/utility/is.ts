@@ -3,7 +3,7 @@
  * @module utility
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 13:57:32 GMT+0800 (China Standard Time)
- * @modified Wed Dec 19 2018 11:11:05 GMT+0800 (China Standard Time)
+ * @modified Mon Feb 25 2019 16:59:04 GMT+0800 (China Standard Time)
  */
 
 import { CONSTRUCTOR, GLOBAL, TYPE_BOOL, TYPE_FN, TYPE_NUM, TYPE_STRING, TYPE_UNDEF } from './consts'
@@ -179,7 +179,7 @@ export const isTypedArray: (o: any) => boolean = isFn(ArrayBuffer) ? ArrayBuffer
  * - {length: int, [length-1]: any}
  */
 export function isArrayLike(o: any): boolean {
-	if (o) {
+	if (o && o[CONSTRUCTOR]) {
 		switch (o[CONSTRUCTOR]) {
 			case Array:
 			case String:

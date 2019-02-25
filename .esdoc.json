@@ -1,5 +1,30 @@
 {
 	"source": "./src",
+	"includes": ["\\.ts$"],
+	"excludes": ["\\.__.*__\\.ts$", "\\.js$"],
 	"destination": "./docs",
-	"plugins": [{ "name": "esdoc-typescript-plugin" }, { "name": "esdoc-standard-plugin" }]
+	"plugins": [
+		{ "name": "esdoc-typescript-plugin" },
+		{
+			"name": "esdoc-standard-plugin",
+			"option": {
+				"lint": { "enable": true },
+				"coverage": { "enable": true },
+				"accessor": { "access": ["public", "protected"], "autoPrivate": false },
+				"undocumentIdentifier": { "enable": true },
+				"unexportedIdentifier": { "enable": false },
+				"typeInference": { "enable": true },
+				"manual": {
+					"index": "./README.md",
+					"globalIndex": true,
+					"files": []
+				},
+				"test": {
+					"source": "./src/",
+					"interfaces": ["describe", "it"],
+					"includes": ["\\.spec\\.ts$"]
+				}
+			}
+		}
+	]
 }

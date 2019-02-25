@@ -2,9 +2,9 @@
  * @module utility/collection
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Jul 25 2018 17:10:41 GMT+0800 (China Standard Time)
- * @modified Tue Nov 27 2018 13:39:11 GMT+0800 (China Standard Time)
+ * @modified Sat Dec 29 2018 19:34:51 GMT+0800 (China Standard Time)
  */
-import { Control } from './control'
+import { Control } from './Control'
 import { IArray } from '../consts'
 import { bind } from '../fn'
 import { hasOwnProp } from '../prop'

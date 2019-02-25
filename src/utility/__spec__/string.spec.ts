@@ -1,5 +1,5 @@
 import expect from 'expect.js'
-import { trim } from '../string'
+import { trim, escapeStr } from '../string'
 
 describe('utility/string', () => {
 	it('trim', () => {
@@ -11,9 +11,7 @@ describe('utility/string', () => {
 		expect(trim('  a  ')).to.equal('a')
 	})
 
-	it('strval')
-	it('thousandSeparate')
-	it('plural')
-	it('singular')
-	it('escapeStr')
+	it('escapeStr', () => {
+		expect(escapeStr('\n\t\f"\'')).to.equal('\\n\\t\\f\\"\\\'')
+	})
 })

@@ -28,7 +28,7 @@ export class AndRule extends ComplexRule {
 		for (; i < len; i++) if ((err = this.testRule(rules[i], i, ctx))) return err
 		return this.consume(ctx)
 	}
-	protected repeatMatch(context: MatchContext): MatchError {
+	protected rmatch(context: MatchContext): MatchError {
 		const { rMin, rMax } = this
 		const rules = this.getRules(),
 			len = rules.length,

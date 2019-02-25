@@ -3,7 +3,7 @@
  * @module utility/List
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
- * @modified Thu Dec 27 2018 14:00:58 GMT+0800 (China Standard Time)
+ * @modified Mon Feb 25 2019 17:28:33 GMT+0800 (China Standard Time)
  */
 
 import { List } from './List'
@@ -13,38 +13,48 @@ import { defPropValue } from '../prop'
 const DEFAULT_FN_BINDING = '__flist_id__'
 const DEFAULT_SCOPE_BINDING = '__flist_id__'
 
-type FnNode<T extends Function> = [string, T, any]
+type FnNode<T extends Function> = [string, T, any, any]
 export class FnList<T extends Function> {
 	static readonly fnBinding: string = DEFAULT_FN_BINDING
 	static readonly scopeBinding: string = DEFAULT_SCOPE_BINDING
 
 	readonly fnBinding: string
 	readonly scopeBinding: string
-	private readonly list: List<FnNode<T>>
-	private nodeMap: { [key: string]: FnNode<T> }
+	private readonly __list: List<FnNode<T>>
+	private __nodeMap: { [key: string]: FnNode<T> }
 
 	constructor(fnBinding?: string, scopeBinding?: string) {
-		this.nodeMap = create(null)
-		this.list = new List()
+		this.__nodeMap = create(null)
+		this.__list = new List()
 		this.fnBinding = fnBinding || DEFAULT_FN_BINDING
 		this.scopeBinding = scopeBinding || DEFAULT_SCOPE_BINDING
 	}
-	add(fn: T, scope?: any): number {
+	/**
+	 * add executable function
+	 * @param fn		function
+	 * @param scope		scope of function
+	 * @param data		user data of [function + scope]
+	 * @return executable function id, can remove executable function by id: {@link FnList#removeId}
+	 */
+	add(fn: T, scope?: any, data?: any): string {
 		scope = parseScope(scope)
-		const { list, nodeMap } = this
-		const id = nodeId(this, fn, scope)
+		const { __list: list, __nodeMap: nodeMap } = this
+		const id = this.id(fn, scope)
 		let node = nodeMap[id]
 		if (!node) {
-			node = [id, fn, scope]
-			var ret = list.add(node)
-			if (ret) nodeMap[id] = node
-			return ret
+			node = [id, fn, scope, data]
+			if (list.add(node)) nodeMap[id] = node
+			return id
 		}
-		return -1
 	}
-	remove(fn: T, scope?: any): number {
-		const { list, nodeMap } = this
-		const id = nodeId(this, fn, parseScope(scope))
+
+	/**
+	 * remove executable function by id
+	 *
+	 * @param id
+	 */
+	removeId(id: string): number {
+		const { __list: list, __nodeMap: nodeMap } = this
 		const node = nodeMap[id]
 		if (node) {
 			nodeMap[id] = undefined
@@ -52,35 +62,37 @@ export class FnList<T extends Function> {
 		}
 		return -1
 	}
+	remove(fn: T, scope?: any): number {
+		return this.removeId(this.id(fn, parseScope(scope)))
+	}
 	has(fn: T, scope?: any): boolean {
-		return !!this.nodeMap[nodeId(this, fn, parseScope(scope))]
+		return !!this.__nodeMap[this.id(fn, parseScope(scope))]
 	}
 	size(): number {
-		return this.list.size()
+		return this.__list.size()
 	}
 	clean() {
-		this.nodeMap = create(null)
-		this.list.clean()
+		this.__nodeMap = create(null)
+		this.__list.clean()
 	}
-	each(cb: (fn: T, scope: any) => boolean | void, scope?: any) {
+	each(cb: (fn: T, scope: any, data: any, __node: FnNode<T>) => boolean | void, scope?: any) {
 		cb = cb.bind(scope)
-		this.list.each(node => cb(node[1], node[2]))
+		this.__list.each(node => cb(node[1], node[2], node[3], node))
+	}
+	id(fn: T, scope?: any): string {
+		const { fnBinding, scopeBinding } = this
+
+		let fnId = fn[fnBinding],
+			scopeId = scope ? scope[scopeBinding] : DEFAULT_SCOPE_ID
+		if (!fnId) fnId = defPropValue(fn, fnBinding, ++fnIdGenerator, false, false, false)
+		if (!scopeId) scopeId = defPropValue(scope, scopeBinding, ++scopeIdGenerator, false, false, false)
+		return `${fnId}&${scopeId}`
 	}
 }
 
 const DEFAULT_SCOPE_ID = 1
 let scopeIdGenerator = 1,
 	fnIdGenerator = 0
-
-function nodeId<T extends Function>(list: FnList<T>, fn: T, scope?: any): string {
-	const { fnBinding, scopeBinding } = list
-
-	let fnId = fn[fnBinding],
-		scopeId = scope ? scope[scopeBinding] : DEFAULT_SCOPE_ID
-	if (!fnId) fnId = defPropValue(fn, fnBinding, ++fnIdGenerator, false, false, false)
-	if (!scopeId) scopeId = defPropValue(scope, scopeBinding, ++scopeIdGenerator, false, false, false)
-	return `${fnId}&${scopeId}`
-}
 
 function parseScope(scope: any): any {
 	return !scope ? undefined : scope

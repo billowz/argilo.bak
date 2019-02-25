@@ -2,10 +2,10 @@
  * @module utility/collection
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Jul 25 2018 17:12:06 GMT+0800 (China Standard Time)
- * @modified Fri Dec 21 2018 14:09:49 GMT+0800 (China Standard Time)
+ * @modified Sat Dec 29 2018 19:37:30 GMT+0800 (China Standard Time)
  */
 
-import { Control } from './control'
+import { Control } from './Control'
 import { STOP, eachArray, reachArray, eachObj } from './each'
 import { IArray } from '../consts'
 import { create } from '../create'
