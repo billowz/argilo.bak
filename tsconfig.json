@@ -1,10 +1,9 @@
 {
 	"compilerOptions": {
-		"target": "es3",
-		"module": "commonjs",
+		"target": "ESNext",
+		"module": "es2015",
 		"lib": ["es6", "es2015", "dom"],
 		"moduleResolution": "node",
-		"outDir":"./build",
 		"sourceMap": true,
 		"charset": "utf-8",
 		"newLine": "LF",

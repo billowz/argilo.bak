@@ -13,7 +13,7 @@ module.exports = function(config) {
 			colors: config.colors
 		},
 		junitReporter: {
-			outputDir: 'benchmark',
+			outputDir: '../benchmark',
 			outputFile: 'benchmark.xml'
 		},
 		browserNoActivityTimeout: 10 * 60 * 1000

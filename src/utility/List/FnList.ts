@@ -3,7 +3,7 @@
  * @module utility/List
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
- * @modified Mon Feb 25 2019 17:28:33 GMT+0800 (China Standard Time)
+ * @modified Thu Feb 28 2019 09:50:35 GMT+0800 (China Standard Time)
  */
 
 import { List } from './List'
@@ -11,7 +11,7 @@ import { create } from '../create'
 import { defPropValue } from '../prop'
 
 const DEFAULT_FN_BINDING = '__flist_id__'
-const DEFAULT_SCOPE_BINDING = '__flist_id__'
+const DEFAULT_SCOPE_BINDING = DEFAULT_FN_BINDING
 
 type FnNode<T extends Function> = [string, T, any, any]
 export class FnList<T extends Function> {
@@ -86,7 +86,7 @@ export class FnList<T extends Function> {
 			scopeId = scope ? scope[scopeBinding] : DEFAULT_SCOPE_ID
 		if (!fnId) fnId = defPropValue(fn, fnBinding, ++fnIdGenerator, false, false, false)
 		if (!scopeId) scopeId = defPropValue(scope, scopeBinding, ++scopeIdGenerator, false, false, false)
-		return `${fnId}&${scopeId}`
+		return `${fnId}#${scopeId}`
 	}
 }
 

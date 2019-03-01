@@ -2,7 +2,7 @@
  * @module observer
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Dec 26 2018 13:59:10 GMT+0800 (China Standard Time)
- * @modified Mon Feb 25 2019 19:48:03 GMT+0800 (China Standard Time)
+ * @modified Wed Feb 27 2019 13:12:54 GMT+0800 (China Standard Time)
  */
 
 import {
@@ -19,7 +19,8 @@ import {
 	isObj,
 	isPrimitive,
 	nextTick,
-	map
+	map,
+	isNil
 } from '../utility'
 import { PROTOTYPE } from '../utility/consts'
 import { assert } from '../utility/assert'
@@ -28,14 +29,19 @@ export type ObserverTarget = any[] | {}
 
 export type ObserveListener = (path: string[], value: any, original: any, observer: Observer) => void
 
+function checkObserverTarget(obj: any) {
+	return (obj && isArray(obj)) || isObj(obj)
+}
 const dirtyQueue: Subject[] = [],
 	notifyQueue: Subject[] = []
 
-const SUBJECT_ENABLED_FLAG = 0x1,
-	SUBJECT_LISTEN_FLAG = 0x2,
-	SUBJECT_SUB_FLAG = 0x4
+const SUBJECT_DIRTY_FLAG = 0x1,
+	SUBJECT_ENABLED_FLAG = 0x2,
+	SUBJECT_LISTEN_FLAG = 0x4,
+	SUBJECT_SUB_FLAG = 0x8
 
 let listenerIdGen = 1
+
 /**
  * @ignore
  */
@@ -84,6 +90,25 @@ class Subject {
 		this.__flags = 0
 	}
 
+	private __initSubObserver(): Observer {
+		const { __observer: observer, __prop: prop } = this
+		if (observer) {
+			const target = observer.target[prop]
+
+			if (checkObserverTarget(target)) {
+				var subObserver: Observer = target[OBSERVER_KEY]
+				if (!subObserver || !(subObserver.target === target || subObserver.proxy === target)) {
+					subObserver = observer.observerOf(target)
+				}
+				if (subObserver.proxy !== target) {
+					observer.target[prop] = subObserver.proxy
+				}
+				return subObserver
+			} else if (!isNil(target)) {
+			}
+		}
+	}
+
 	/**
 	 * get sub-subject from cache
 	 * @param prop property
@@ -91,6 +116,18 @@ class Subject {
 	__getSub(prop: string): Subject {
 		const { __subCache: subCache } = this
 		return subCache && subCache[prop]
+	}
+
+	private __badArrayPath(i: number, msg?: string) {
+		const path = this.__getPath()
+		console.error(
+			`bad path[{}]: not support {} on Array{}{}.`,
+			formatPath(path),
+			formatPath(path.slice(-i)),
+			path.length > i ? `[${formatPath(path.slice(0, -i))}]` : '',
+			msg || '',
+			this.__owner.target
+		)
 	}
 
 	/**
@@ -102,7 +139,14 @@ class Subject {
 		const { __observer: org } = this
 		if (org !== observer) {
 			org && org.__unwatch(this) // unbind old observer
-			observer && observer.__watch(this) // bind old observer
+			if (observer) {
+				if (observer.isArray && !ARRAY_EVENTS[this.__prop]) {
+					this.__badArrayPath(1, ', change to "change" or "length"')
+					observer = undefined
+				} else {
+					observer.__watch(this)
+				}
+			}
 			this.__observer = observer
 			return observer
 		}
@@ -120,22 +164,19 @@ class Subject {
 			sub = subCache[subProp] || (subCache[subProp] = new Subject(this.__owner, subProp, this))
 
 		if (!(sub.__flags & SUBJECT_ENABLED_FLAG)) {
+			const { __subs: subs } = this
 			// attach sub-subject
 			sub.__flags |= SUBJECT_ENABLED_FLAG
-			this.__subs.push(sub)
+			subs.push(sub)
 
-			// bind sub-subject
 			const { __observer: observer } = this
-			var subObserver: Observer
 			if (observer) {
-				const { __prop: prop } = this
-				const subTarget = observer.target[prop]
-				if (subTarget && (isArray(subTarget) || isObj(subTarget))) {
-					subObserver = observer.observerOf(subTarget)
-					observer.__correct(prop, subObserver)
+				if (observer.isArray) {
+					sub.__badArrayPath(2)
+				} else {
+					sub.__bind(subs[0] ? subs[0].__observer : this.__initSubObserver())
 				}
 			}
-			sub.__bind(subObserver)
 		}
 
 		this.__flags |= SUBJECT_SUB_FLAG | SUBJECT_ENABLED_FLAG
@@ -183,7 +224,10 @@ class Subject {
 			var subject: Subject = this,
 				parent: Subject
 			subject.__flags &= ~SUBJECT_LISTEN_FLAG
-			while (subject.__flags === SUBJECT_ENABLED_FLAG) {
+			while (
+				(subject.__flags & (SUBJECT_SUB_FLAG | SUBJECT_LISTEN_FLAG | SUBJECT_ENABLED_FLAG)) ===
+				SUBJECT_ENABLED_FLAG
+			) {
 				subject.__bind()
 				subject.__flags = 0
 				if (!(parent = subject.__parent)) break
@@ -225,21 +269,18 @@ class Subject {
 
 		if (flags & SUBJECT_SUB_FLAG) {
 			const { __subs: subs } = this
-			const value = dirty[0]
-			let subObserver: Observer
-			if (value && (isArray(value) || isObj(value))) {
-				const { __observer: observer } = this
-				subObserver = observer.observerOf(value)
-				observer.__correct(this.__prop, subObserver)
-			}
-			var i = subs.length
-			while (i--) {
-				subs[i].__collectDep(subObserver)
+			const l = subs.length,
+				subObserver: Observer = this.__initSubObserver()
+
+			subObserver && (dirty[0] = subObserver.proxy)
+
+			for (var i = 0; i < l; i++) {
+				subs[i].__collectDep(subObserver, dirty[0])
 			}
 		}
 	}
 
-	__collectDep(observer: Observer) {
+	__collectDep(observer: Observer, value: any) {
 		const { __observer: org } = this
 		if (org !== observer) {
 			const { __prop: prop } = this
@@ -252,7 +293,7 @@ class Subject {
 			} else {
 				dirty = this.__notifyDirty || [, org && org.__value(prop)]
 			}
-			dirty[0] = observer && observer.__value(prop)
+			dirty[0] = observer ? observer.__value(prop) : isNil(value) ? undefined : value[prop]
 			this.__collect(dirty)
 		}
 	}
@@ -272,6 +313,14 @@ class Subject {
 			dirtyQueue[l] = this
 			!l && nextTick(notify)
 		}
+	}
+	__getPath() {
+		let path: string[] = this.__path
+		if (!path) {
+			const { __parent: parent, __prop: prop } = this
+			this.__path = path = parent ? parent.__getPath().concat(prop) : [prop]
+		}
+		return path
 	}
 }
 
@@ -369,22 +418,13 @@ export class Observer {
 
 		this.target = target
 		this.proxy = target
+
 		if ((this.isArray = isArray(target))) applyArrayHooks(target as any[])
 
 		assert.is(isObj(target), `the observer target can only be an object or an array`)
 
 		// bind observer key on original object
 		defPropValue(target, OBSERVER_KEY, this, false, false, false)
-	}
-
-	private __checkPathProp(path: string[], i: number) {
-		if (this.isArray && !ARRAY_EVENTS[path[i]])
-			assert(
-				`invalid path[{}]: does not support {} on Array{}, change to "change" or "length".`,
-				formatPath(path),
-				formatPath(path.slice(i)),
-				i ? `[${formatPath(path.slice(0, i))}]` : ''
-			)
 	}
 
 	/**
@@ -394,12 +434,11 @@ export class Observer {
 	 * @param scope		scope of callback
 	 */
 	observe(propPath: string | string[], listener: ObserveListener, scope?: any) {
-		const path: string[] = parsePath(propPath)
+		const path: string[] = parsePath(propPath),
+			subjects = this.__subjects || (this.__subjects = create(null)),
+			prop0 = path[0]
 
-		const subjects = this.__subjects || (this.__subjects = create(null))
-
-		let prop = path[0],
-			subject = subjects[prop] || (subjects[prop] = new Subject(this, prop)),
+		let subject = subjects[prop0] || (subjects[prop0] = new Subject(this, prop0)),
 			i = 1,
 			l = path.length
 
@@ -408,6 +447,7 @@ export class Observer {
 		for (; i < l; i++) {
 			subject = subject.__addSub(path[i])
 		}
+
 		return subject.__listen(path, listener, scope)
 	}
 
@@ -444,14 +484,6 @@ export class Observer {
 	}
 
 	/**
-	 * get or create observer
-	 * @param obj	observer target
-	 */
-	observerOf(target: ObserverTarget): Observer {
-		return target[OBSERVER_KEY] || new Observer(target)
-	}
-
-	/**
 	 * update property value and notify changes
 	 * @param prop		property
 	 * @param value		new value
@@ -462,6 +494,15 @@ export class Observer {
 		if (subjects && subjects.size()) {
 			subjects.each(subject => subject.__notify(value, original))
 		}
+	}
+
+	/**
+	 * get or create observer
+	 * @abstract
+	 * @protected
+	 */
+	observerOf(target: any): Observer {
+		return assert('abstruct')
 	}
 
 	/**
@@ -492,20 +533,7 @@ export class Observer {
 	 */
 	__value(prop: string) {
 		const { target } = this
-		if (!this.isArray || prop === ARRAY_LENGTH_PROP) return target[prop]
-		if (prop === ARRAY_CHANGE_PROP) return target
-	}
-
-	/**
-	 * correct proxy property value
-	 * @private
-	 * @param prop 		property
-	 * @param observer	observer of property value
-	 */
-	__correct(prop: string, observer: Observer) {
-		const { target } = this
-		const { proxy } = observer
-		target[prop] !== proxy && (target[prop] = proxy)
+		return this.isArray && prop === ARRAY_CHANGE_PROP ? target : target[prop]
 	}
 
 	/**

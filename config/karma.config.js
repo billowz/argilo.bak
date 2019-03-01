@@ -1,8 +1,6 @@
-const nodeResolve = require('rollup-plugin-node-resolve')
-const babel = require('rollup-plugin-babel')
-const commonjs = require('rollup-plugin-commonjs')
 const json = require('rollup-plugin-json')
-const pkg = require('./package.json')
+const rollupConfig = require('./rollupConfig')
+const pkg = require('../package.json')
 
 module.exports = function(config) {
 	config.set({
@@ -10,51 +8,33 @@ module.exports = function(config) {
 		transports: ['websocket', 'polling', 'jsonp-polling'],
 		frameworks: ['mocha', 'expect'],
 		reporters: ['spec', 'coverage'],
-		files: ['src/**/*.spec.ts'],
+		files: ['../src/**/*.spec.ts', '../src/index.ts'],
 		preprocessors: {
-			'src/**/*.spec.ts': ['rollup', 'transformPath']
+			'../src/**/*.ts': ['rollup', 'transformPath']
 		},
-		rollupPreprocessor: {
-			plugins: [
-				nodeResolve({
-					jsnext: true,
-					extensions: ['.js', '.ts']
-				}),
-				commonjs(),
-				babel({
-					presets: [
-						'@babel/preset-typescript',
-						[
-							'@babel/preset-env',
-							{
-								modules: false,
-								loose: true
-							}
-						]
-					],
-					extensions: ['.js', '.ts']
-				}),
-				json()
-			],
+		rollupPreprocessor: rollupConfig({
+			plugins: [json()],
+			progress: false,
 			treeshake: false,
+			strict: false,
+			sourcemap: 'inline',
 			external: ['expect.js'],
 			output: {
 				name: 'argilo',
-				sourcemap: 'inline',
 				format: 'umd',
-				strict: false,
+				file: false,
 				globals: {
 					'expect.js': 'expect'
 				}
 			}
-		},
+		}),
 		transformPathPreprocessor: {
 			transformer(filepath) {
 				return filepath.replace(/\.ts$/, '.js')
 			}
 		},
 		coverageReporter: {
-			dir: './coverage/',
+			dir: '../coverage/',
 			reporters: [
 				{
 					type: 'lcov'

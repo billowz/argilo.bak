@@ -47,11 +47,16 @@ describe('FnList', () => {
 		assert.eq(list.size(), 0)
 
 		// add
-		for (; i < l; i++) assert.eq(list.add(objs[i].fn, objs[i]), i + 1)
+		for (; i < l; i++) {
+			assert.string(list.add(objs[i].fn, objs[i]))
+			assert.eq(list.size(), i + 1)
+		}
 		checkList()
 
 		// readd
-		for (; i < l; i++) assert.eq(list.add(objs[i].fn, objs[i]), false)
+		for (; i < l; i++) {
+			assert.eq(list.add(objs[i].fn, objs[i]), undefined)
+		}
 		checkList()
 	})
 

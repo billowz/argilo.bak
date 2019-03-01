@@ -1,3 +1,18 @@
+/*
+ *    __ _ _ __ __ _(_) | ___
+ *   / _` | '__/ _` | | |/ _ \
+ *  | (_| | | | (_| | | | (_) |
+ *   \__,_|_|  \__, |_|_|\___/
+ *             |___/
+ *
+ * argilo v1.0.0
+ * https://github.com/tao-zeng/argilo
+ *
+ * Copyright (c) 2018 Tao Zeng <tao.zeng.zt@qq.com>
+ * Released under the MIT license
+ *
+ * Date: Fri, 01 Mar 2019 08:58:54 GMT
+ */
 (function (global, factory) {
 	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
 	typeof define === 'function' && define.amd ? define('argilo', ['exports'], factory) :
@@ -38,7 +53,7 @@
 	 * @module utility
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Mon Dec 11 2017 13:57:32 GMT+0800 (China Standard Time)
-	 * @modified Sat Feb 23 2019 11:36:55 GMT+0800 (China Standard Time)
+	 * @modified Mon Feb 25 2019 16:59:04 GMT+0800 (China Standard Time)
 	 */
 	/**
 	 * is equals
@@ -899,7 +914,6 @@
 	 * @param scope		scope of callback
 	 * @return stoped index or false
 	 */
-
 	function eachArray(array, callback, scope) {
 	  callback = bind(callback, scope);
 
@@ -2227,7 +2241,6 @@
 	 * @param startOffset 	start offset in overrides, default: 0
 	 * @param endOffset 	end offset in overrides, default: overrides.length-1
 	 */
-
 	function doAssign(target, overrides, filter, startOffset, endOffset) {
 	  if (!target) {
 	    target = {};
@@ -2435,9 +2448,9 @@
 	      cond = isArray(condition) ? condition[0] : condition,
 	      expr = (isArray(condition) ? condition[1] : '') + (isStr(cond) ? "(" + cond + ")" : "cond(" + paramStr + ")");
 	  return assert[name] = createFn("return function assert" + upperFirst(name) + "(" + paramStr + ", msg){\n\tif (" + expr + ")\n\t\tthrow new Err(parseMsg(msg || dmsg, arguments, " + params.length + "));\n\treturn assert;\n}", ['Err', 'parseMsg', 'dmsg', 'cond', 'assert'])(Err || Error, parseMessage, dmsg, cond, assert);
-	} // [condition, argcount?, [msg, not msg], Error]
+	}
 
-
+	// [condition, argcount?, [msg, not msg], Error]
 	function extendAsserts(apis) {
 	  eachObj(apis, function (desc, name) {
 	    var condition = desc[0],
@@ -2517,8 +2530,8 @@
 	 * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
 	 * @modified Fri Feb 22 2019 16:45:27 GMT+0800 (China Standard Time)
 	 */
-	var DEFAULT_BINDING = '__list__'; //type ListNode = [ListElement, IListNode, IListNode, List]
-
+	var DEFAULT_BINDING = '__list__';
+	//type ListNode = [ListElement, IListNode, IListNode, List]
 	var List =
 	/*#__PURE__*/
 	function () {
@@ -2847,10 +2860,10 @@
 	 * @module utility/List
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
-	 * @modified Fri Feb 22 2019 16:53:21 GMT+0800 (China Standard Time)
+	 * @modified Thu Feb 28 2019 09:50:35 GMT+0800 (China Standard Time)
 	 */
 	var DEFAULT_FN_BINDING = '__flist_id__';
-	var DEFAULT_SCOPE_BINDING = '__flist_id__';
+	var DEFAULT_SCOPE_BINDING = DEFAULT_FN_BINDING;
 	var FnList =
 	/*#__PURE__*/
 	function () {
@@ -2926,7 +2939,7 @@
 	    cb = cb.bind(scope);
 
 	    this.__list.each(function (node) {
-	      return cb(node[1], node[2], node[3]);
+	      return cb(node[1], node[2], node[3], node);
 	    });
 	  };
 
@@ -2937,7 +2950,7 @@
 	        scopeId = scope ? scope[scopeBinding] : DEFAULT_SCOPE_ID;
 	    if (!fnId) fnId = defPropValue(fn, fnBinding, ++fnIdGenerator, false, false, false);
 	    if (!scopeId) scopeId = defPropValue(scope, scopeBinding, ++scopeIdGenerator, false, false, false);
-	    return fnId + "&" + scopeId;
+	    return fnId + "#" + scopeId;
 	  };
 
 	  return FnList;
@@ -3354,19 +3367,17 @@
 	/**
 	 * Match Rule Interface
 	 */
-
 	var MatchRule =
 	/*#__PURE__*/
 	function (_Rule) {
 	  _inheritsLoose(MatchRule, _Rule);
+
 	  /**
 	   * @param name 			match name
 	   * @param start 		start char codes, prepare test by start char codes before match
 	   * @param ignoreCase	ignore case for the start char codes
 	   * @param options		Rule Options
 	   */
-
-
 	  function MatchRule(name, start, ignoreCase, options) {
 	    var _this;
 
@@ -3408,6 +3419,7 @@
 	/*#__PURE__*/
 	function (_MatchRule) {
 	  _inheritsLoose(CharMatchRule, _MatchRule);
+
 	  /**
 	   * @param name 			match name
 	   * @param allows 		allowed character codes for match
@@ -3415,8 +3427,6 @@
 	   * @param ignoreCase	ignore case for the allowed character codes
 	   * @param options		Rule Options
 	   */
-
-
 	  function CharMatchRule(name, allows, ignoreCase, options) {
 	    var _this;
 
@@ -3465,6 +3475,7 @@
 	/*#__PURE__*/
 	function (_MatchRule) {
 	  _inheritsLoose(RegMatchRule, _MatchRule);
+
 	  /**
 	   * @param name 			match name
 	   * @param regexp		regular
@@ -3479,8 +3490,6 @@
 	   * @param onMatch		match callback
 	   * @param onErr			error callback
 	   */
-
-
 	  function RegMatchRule(name, regexp, pick, start, options) {
 	    var _this;
 
@@ -3561,14 +3570,13 @@
 	/*#__PURE__*/
 	function (_RegMatchRule) {
 	  _inheritsLoose(StringMatchRule, _RegMatchRule);
+
 	  /**
 	   * @param name 			match name
 	   * @param str 			match string
 	   * @param ignoreCase	ignore case
 	   * @param options		Rule Options
 	   */
-
-
 	  function StringMatchRule(name, str, ignoreCase, options) {
 	    var _this;
 
@@ -3588,10 +3596,10 @@
 	 * @created Tue Dec 11 2018 15:36:42 GMT+0800 (China Standard Time)
 	 * @modified Sat Dec 22 2018 16:32:31 GMT+0800 (China Standard Time)
 	 */
+
 	/**
 	 * Match Context of Rule
 	 */
-
 	var MatchContext =
 	/*#__PURE__*/
 	function () {
@@ -3802,13 +3810,12 @@
 	/*#__PURE__*/
 	function (_Rule) {
 	  _inheritsLoose(ComplexRule, _Rule);
+
 	  /**
 	   * @param name 			match name
 	   * @param builder 		callback of build rules
 	   * @param options		Rule Options
 	   */
-
-
 	  function ComplexRule(name, repeat, builder, options) {
 	    var _this;
 
@@ -4490,6 +4497,5 @@
 	exports.manyOne = manyOne;
 	exports.optionOne = optionOne;
 
-	Object.defineProperty(exports, '__esModule', { value: true });
-
 }));
+//# sourceMappingURL=argilo.js.map
