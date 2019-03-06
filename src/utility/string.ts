@@ -3,8 +3,16 @@
  * @module utility/string
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 13:57:32 GMT+0800 (China Standard Time)
- * @modified Thu Jan 31 2019 10:04:55 GMT+0800 (China Standard Time)
+ * @modified Tue Mar 05 2019 18:59:22 GMT+0800 (China Standard Time)
  */
+const toString = Object.prototype.toString
+export function toStr(obj: any): String {
+	return toString.call(obj)
+}
+
+export function toStrType(obj: any) {
+	return toString.call(obj).match(/^\[object ([^\]]+)\]$/)[1]
+}
 
 //========================================================================================
 /*                                                                                      *

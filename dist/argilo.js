@@ -11,7 +11,7 @@
  * Copyright (c) 2018 Tao Zeng <tao.zeng.zt@qq.com>
  * Released under the MIT license
  *
- * Date: Fri, 01 Mar 2019 08:58:54 GMT
+ * Date: Mon, 04 Mar 2019 11:50:13 GMT
  */
 (function (global, factory) {
 	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
@@ -793,7 +793,7 @@
 	 * @module utility/create
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Wed Jul 25 2018 15:24:47 GMT+0800 (China Standard Time)
-	 * @modified Thu Jan 31 2019 10:15:42 GMT+0800 (China Standard Time)
+	 * @modified Mon Mar 04 2019 18:35:26 GMT+0800 (China Standard Time)
 	 */
 
 	/**
@@ -4367,12 +4367,674 @@
 	 */
 
 	/**
+	 * @module observer
+	 * @author Tao Zeng <tao.zeng.zt@qq.com>
+	 * @created Wed Dec 26 2018 13:59:10 GMT+0800 (China Standard Time)
+	 * @modified Mon Mar 04 2019 09:28:53 GMT+0800 (China Standard Time)
+	 */
+
+	function checkObserverTarget(obj) {
+	  return obj && isArray(obj) || isObj(obj);
+	}
+
+	var dirtyQueue = [],
+	    notifyQueue = [];
+	var SUBJECT_ENABLED_FLAG = 0x2,
+	    SUBJECT_LISTEN_FLAG = 0x4,
+	    SUBJECT_SUB_FLAG = 0x8;
+	var listenerIdGen = 1;
+	/**
+	 * @ignore
+	 */
+
+	var Subject =
+	/*#__PURE__*/
+	function () {
+	  // parent subject
+	  // own observer
+	  // property
+	  // binded observer
+	  // property path
+	  // listeners
+	  // sub-subjects
+	  // cache of sub-subjects
+
+	  /**
+	   *
+	   * @param owner
+	   * @param prop
+	   * @param binded
+	   * @param parent
+	   */
+	  function Subject(owner, prop, parent) {
+	    this.__owner = owner;
+	    this.__prop = prop;
+	    this.__parent = parent;
+	    this.__flags = 0;
+	  }
+
+	  var _proto = Subject.prototype;
+
+	  _proto.__initSubObserver = function __initSubObserver() {
+	    var observer = this.__observer,
+	        prop = this.__prop;
+
+	    if (observer) {
+	      var target = observer.target[prop];
+
+	      if (checkObserverTarget(target)) {
+	        var subObserver = target[OBSERVER_KEY];
+
+	        if (!subObserver || !(subObserver.target === target || subObserver.proxy === target)) {
+	          subObserver = observer.observerOf(target);
+	        }
+
+	        if (subObserver.proxy !== target) {
+	          observer.target[prop] = subObserver.proxy;
+	        }
+
+	        return subObserver;
+	      }
+	    }
+	  }
+	  /**
+	   * get sub-subject from cache
+	   * @param prop property
+	   */
+	  ;
+
+	  _proto.__getSub = function __getSub(prop) {
+	    var subCache = this.__subCache;
+	    return subCache && subCache[prop];
+	  };
+
+	  _proto.__badArrayPath = function __badArrayPath(i, msg) {
+	    var path = this.__getPath();
+
+	    console.error("bad path[{}]: not support {} on Array{}{}.", formatPath(path), formatPath(path.slice(-i)), path.length > i ? "[" + formatPath(path.slice(0, -i)) + "]" : '', msg || '', this.__owner.target);
+	  }
+	  /**
+	   * bind observer
+	   * @param observer new observer
+	   * @return binded observer
+	   */
+	  ;
+
+	  _proto.__bind = function __bind(observer) {
+	    var org = this.__observer;
+
+	    if (org !== observer) {
+	      org && org.__unwatch(this); // unbind old observer
+
+	      if (observer) {
+	        if (observer.isArray && !ARRAY_EVENTS[this.__prop]) {
+	          this.__badArrayPath(1, ', change to "change" or "length"');
+
+	          observer = undefined;
+	        } else {
+	          observer.__watch(this);
+	        }
+	      }
+
+	      this.__observer = observer;
+	      return observer;
+	    }
+	  }
+	  /**
+	   * create or get sub-subject on cache
+	   * @param subProp	property
+	   * @param binded	binded observer
+	   */
+	  ;
+
+	  _proto.__addSub = function __addSub(subProp) {
+	    // get or init cache and subs
+	    var subCache = this.__subCache || (this.__subs = [], this.__subCache = create(null)),
+	        // get or create sub-subject on cache
+	    sub = subCache[subProp] || (subCache[subProp] = new Subject(this.__owner, subProp, this));
+
+	    if (!(sub.__flags & SUBJECT_ENABLED_FLAG)) {
+	      var subs = this.__subs; // attach sub-subject
+
+	      sub.__flags |= SUBJECT_ENABLED_FLAG;
+	      subs.push(sub);
+	      var observer = this.__observer;
+
+	      if (observer) {
+	        if (observer.isArray) {
+	          sub.__badArrayPath(2);
+	        } else {
+	          sub.__bind(subs[0] ? subs[0].__observer : this.__initSubObserver());
+	        }
+	      }
+	    }
+
+	    this.__flags |= SUBJECT_SUB_FLAG | SUBJECT_ENABLED_FLAG;
+	    return sub;
+	  }
+	  /**
+	   * add listener
+	   */
+	  ;
+
+	  _proto.__listen = function __listen(path, listener, scope) {
+	    var listeners = this.__listeners;
+
+	    if (!listeners) {
+	      this.__listeners = listeners = new FnList();
+	      this.__path = path;
+	    }
+
+	    var id = listeners.add(listener, scope, listenerIdGen++);
+	    id && (this.__flags |= SUBJECT_LISTEN_FLAG | SUBJECT_ENABLED_FLAG);
+	    return id;
+	  }
+	  /**
+	   * remove sub-subject
+	   * @param subject subject
+	   */
+	  ;
+
+	  _proto.__removeSub = function __removeSub(subject) {
+	    var subs = this.__subs;
+	    var l = subs.length;
+	    var i = l;
+
+	    while (i--) {
+	      if (subject === subs[i]) {
+	        subs.splice(i, 1);
+	        l === 1 && (this.__flags &= ~SUBJECT_SUB_FLAG);
+	        return;
+	      }
+	    }
+
+	    assert('un-attached subject');
+	  }
+	  /**
+	   * check subject state
+	   */
+	  ;
+
+	  _proto.____unlisten = function ____unlisten(listeners) {
+	    if (!listeners.size()) {
+	      var subject = this,
+	          parent;
+	      subject.__flags &= ~SUBJECT_LISTEN_FLAG;
+
+	      while ((subject.__flags & (SUBJECT_SUB_FLAG | SUBJECT_LISTEN_FLAG | SUBJECT_ENABLED_FLAG)) === SUBJECT_ENABLED_FLAG) {
+	        subject.__bind();
+
+	        subject.__flags = 0;
+	        if (!(parent = subject.__parent)) break;
+
+	        parent.__removeSub(subject);
+
+	        subject = parent;
+	      }
+	    }
+	  }
+	  /**
+	   * remove listener
+	   */
+	  ;
+
+	  _proto.__unlisten = function __unlisten(listener, scope) {
+	    var listeners = this.__listeners;
+
+	    if (listeners) {
+	      listeners.remove(listener, scope);
+
+	      this.____unlisten(listeners);
+	    }
+	  }
+	  /**
+	   * remove listener by id
+	   */
+	  ;
+
+	  _proto.__unlistenId = function __unlistenId(id) {
+	    var listeners = this.__listeners;
+
+	    if (listeners) {
+	      listeners.removeId(id);
+
+	      this.____unlisten(listeners);
+	    }
+	  };
+
+	  _proto.__collect = function __collect(dirty) {
+	    var flags = this.__flags;
+
+	    if (flags & SUBJECT_LISTEN_FLAG) {
+	      !this.__notifyDirty && notifyQueue.push(this);
+	      this.__notifyDirty = dirty;
+	    }
+
+	    if (flags & SUBJECT_SUB_FLAG) {
+	      var subs = this.__subs;
+
+	      var l = subs.length,
+	          subObserver = this.__initSubObserver();
+
+	      subObserver && (dirty[0] = subObserver.proxy);
+
+	      for (var i = 0; i < l; i++) {
+	        subs[i].__collectDep(subObserver, dirty[0]);
+	      }
+	    }
+	  };
+
+	  _proto.__collectDep = function __collectDep(observer, value) {
+	    var org = this.__observer;
+
+	    if (org !== observer) {
+	      var prop = this.__prop;
+	      var dirty = this.__dirty;
+
+	      this.__bind(observer);
+
+	      if (dirty) {
+	        this.__dirty = null;
+	      } else {
+	        dirty = this.__notifyDirty || [, org && org.__value(prop)];
+	      }
+
+	      dirty[0] = observer ? observer.__value(prop) : isNil(value) ? undefined : value[prop];
+
+	      this.__collect(dirty);
+	    }
+	  }
+	  /**
+	   * notify change
+	   * @param value
+	   * @param original
+	   */
+	  ;
+
+	  _proto.__notify = function __notify(value, original) {
+	    var dirty = this.__dirty;
+
+	    if (dirty) {
+	      dirty[0] = value;
+	    } else {
+	      this.__dirty = [value, original];
+	      var l = dirtyQueue.length;
+	      dirtyQueue[l] = this;
+	      !l && nextTick(notify);
+	    }
+	  };
+
+	  _proto.__getPath = function __getPath() {
+	    var path = this.__path;
+
+	    if (!path) {
+	      var parent = this.__parent,
+	          prop = this.__prop;
+	      this.__path = path = parent ? parent.__getPath().concat(prop) : [prop];
+	    }
+
+	    return path;
+	  };
+
+	  return Subject;
+	}();
+
+	function notify() {
+	  // collect dirty subjects
+	  var subject,
+	      l = dirtyQueue.length,
+	      i = 0,
+	      dirty;
+
+	  for (; i < l; i++) {
+	    subject = dirtyQueue[i];
+
+	    if (dirty = subject.__dirty) {
+	      subject.__collect(dirty);
+
+	      subject.__dirty = null;
+	    }
+	  } // notify subject listeners
+
+
+	  var owner, path, value, original;
+	  l = notifyQueue.length;
+	  i = 0;
+
+	  for (; i < l; i++) {
+	    subject = notifyQueue[i];
+	    dirty = subject.__notifyDirty;
+	    value = dirty[0];
+	    original = dirty[1];
+	    subject.__notifyDirty = null;
+
+	    if (value !== original || !isPrimitive(value)) {
+	      owner = subject.__owner;
+	      path = subject.__path;
+
+	      subject.__listeners.each(function (fn, scope) {
+	        scope ? fn.call(scope, path, value, original, owner) : fn(path, value, original, owner);
+	      });
+	    }
+	  }
+	}
+
+	var OBSERVER_KEY = '__observer__';
+	var Observer =
+	/*#__PURE__*/
+	function () {
+	  /**
+	   * original object
+	   */
+
+	  /**
+	   * proxy object
+	   */
+
+	  /**
+	   * is array
+	   */
+
+	  /**
+	   * subjects
+	   * 	- key: property of original object
+	   * 	- value: subject
+	   */
+
+	  /**
+	   * watched subjects
+	   * 	- key: property of original object
+	   * 	- value: subjects
+	   */
+
+	  /**
+	   * create Observer
+	   * @param target original object
+	   */
+	  function Observer(target) {
+	    this.__watchs = create(null);
+	    this.target = target;
+	    this.proxy = target;
+	    if (this.isArray = isArray(target)) applyArrayHooks(target);
+	    assert.is(isObj(target), "the observer target can only be an object or an array"); // bind observer key on original object
+
+	    defPropValue(target, OBSERVER_KEY, this, false, false, false);
+	  }
+	  /**
+	   * observe property
+	   * @param propPath 	property path of original object, parse string path by {@link parsePath}
+	   * @param listener	callback
+	   * @param scope		scope of callback
+	   */
+
+
+	  var _proto2 = Observer.prototype;
+
+	  _proto2.observe = function observe(propPath, listener, scope) {
+	    var path = parsePath(propPath),
+	        subjects = this.__subjects || (this.__subjects = create(null)),
+	        prop0 = path[0];
+	    var subject = subjects[prop0] || (subjects[prop0] = new Subject(this, prop0)),
+	        i = 1,
+	        l = path.length;
+
+	    subject.__bind(this);
+
+	    for (; i < l; i++) {
+	      subject = subject.__addSub(path[i]);
+	    }
+
+	    return subject.__listen(path, listener, scope);
+	  }
+	  /**
+	   * @param propPath	property path on object
+	   * @param listener	listener
+	   * @param scope		scope of listener
+	   * @return >= 0: listener count on the property path of object
+	   * 			 -1: no listener
+	   */
+	  ;
+
+	  _proto2.unobserve = function unobserve(propPath, listener, scope) {
+	    var subject = this.__getSubject(parsePath(propPath));
+
+	    subject && subject.__unlisten(listener, scope);
+	  };
+
+	  _proto2.unobserveId = function unobserveId(propPath, id) {
+	    var subject = this.__getSubject(parsePath(propPath));
+
+	    subject && subject.__unlistenId(id);
+	  }
+	  /**
+	   *
+	   * @param path
+	   */
+	  ;
+
+	  _proto2.__getSubject = function __getSubject(path) {
+	    var subjects = this.__subjects;
+	    var subject;
+
+	    if (subjects && (subject = subjects[path[0]])) {
+	      for (var i = 1, l = path.length; i < l; i++) {
+	        if (!(subject = subject.__getSub(path[i]))) break;
+	      }
+	    }
+
+	    return subject;
+	  }
+	  /**
+	   * update property value and notify changes
+	   * @param prop		property
+	   * @param value		new value
+	   * @param original	original value
+	   */
+	  ;
+
+	  _proto2.update = function update(prop, value, original) {
+	    var subjects = this.__watchs[prop];
+
+	    if (subjects && subjects.size()) {
+	      subjects.each(function (subject) {
+	        return subject.__notify(value, original);
+	      });
+	    }
+	  }
+	  /**
+	   * get or create observer
+	   * @abstract
+	   * @protected
+	   */
+	  ;
+
+	  _proto2.observerOf = function observerOf(target) {
+	    return assert('abstruct');
+	  }
+	  /**
+	   * watch subject
+	   * @private
+	   * @param subject
+	   */
+	  ;
+
+	  _proto2.__watch = function __watch(subject) {
+	    var watchs = this.__watchs;
+	    var prop = subject.__prop;
+	    var subjects = watchs[prop] || (watchs[prop] = new List());
+	    subjects.add(subject);
+	  }
+	  /**
+	   * remove watched subject
+	   * @private
+	   * @param subject
+	   */
+	  ;
+
+	  _proto2.__unwatch = function __unwatch(subject) {
+	    this.__watchs[subject.__prop].remove(subject);
+	  }
+	  /**
+	   * get property value
+	   * @private
+	   * @param prop property
+	   */
+	  ;
+
+	  _proto2.__value = function __value(prop) {
+	    var target = this.target;
+	    return this.isArray && prop === ARRAY_CHANGE_PROP ? target : target[prop];
+	  }
+	  /**
+	   * @ignore
+	   */
+	  ;
+
+	  _proto2.toJSON = function toJSON() {};
+
+	  return Observer;
+	}(); //========================================================================================
+
+	/*                                                                                      *
+	 *                                      Array Hooks                                     *
+	 *                                                                                      */
+	//========================================================================================
+
+	var ARRAY_CHANGE_PROP = 'change',
+	    ARRAY_LENGTH_PROP = 'length',
+	    ARRAY_EVENTS = makeMap([ARRAY_CHANGE_PROP, ARRAY_LENGTH_PROP]),
+	    arrayHooks = mapArray('fill,pop,push,reverse,shift,sort,splice,unshift'.split(','), function (method) {
+	  var fn = Array[PROTOTYPE][method];
+	  return [method, function () {
+	    var array = this,
+	        len = array.length,
+	        rs = applyScope(fn, array, arguments),
+	        newlen = array.length,
+	        observer = array[OBSERVER_KEY];
+	    observer.update(ARRAY_CHANGE_PROP, array, array);
+	    if (len !== newlen) observer.update(ARRAY_LENGTH_PROP, newlen, len);
+	    return rs;
+	  }];
+	});
+	/**
+	 * apply observer hooks on Array
+	 * @param array
+	 */
+
+	function applyArrayHooks(array) {
+	  var hook,
+	      i = arrayHooks.length;
+
+	  while (i--) {
+	    hook = arrayHooks[i];
+	    defPropValue(array, hook[0], hook[1], false, false, false);
+	  }
+	} //========================================================================================
+
+	/*                                                                                      *
+	 *                                     test subject                                     *
+	 *                                                                                      */
+	//========================================================================================
+
+	/*
+	const objIdGen: { [key: string]: number } = {}
+	function objId(obj: any, str: string) {
+		return obj.id || (obj.id = str + '-' + (objIdGen[str] ? ++objIdGen[str] : (objIdGen[str] = 1)))
+	}
+	function subjectState(subject: Subject) {
+		const path = []
+		let p = subject
+		while (p) {
+			path.unshift(p.__prop)
+			p = p.__parent
+		}
+		const subs = subject.__subs && subject.__subs.length
+		const listeners = subject.__listeners && subject.__listeners.size()
+
+		assert.is(!!(subs || listeners) === !!(subject.__flags & SUBJECT_ENABLED_FLAG))
+		assert.is(!!subs === !!(subject.__flags & SUBJECT_SUB_FLAG))
+		assert.is(!!listeners === !!(subject.__flags & SUBJECT_LISTEN_FLAG))
+		assert.is(!subject.__observer || subject.__flags & SUBJECT_ENABLED_FLAG)
+
+		return {
+			id: objId(subject, 'subject'),
+			path: formatPath(path),
+			obj: JSON.stringify(subject.__owner.target),
+			enabled: !!(subs || listeners),
+			listeners: listeners,
+			watched: subject.__observer && {
+				id: objId(subject.__observer, 'observer'),
+				obj: JSON.stringify(subject.__observer.target),
+				watchs: watchs(subject.__observer)
+			},
+			subCache: subject.__subCache && map(subject.__subCache, subjectState),
+			subs: subs && map(subject.__subs, sub => objId(sub, 'subject'))
+		}
+	}
+	function observerState(observer: Observer) {
+		return {
+			id: objId(observer, 'observer'),
+			obj: JSON.stringify(observer.target),
+			watchs: watchs(observer),
+			subjects: map(observer.__subjects, subj => subjectState(subj))
+		}
+	}
+	function watchs(observer: Observer) {
+		return map(observer.__watchs, w =>
+			w
+				.toArray()
+				.map(s => objId(s, 'subject'))
+				.join(', ')
+		)
+	}
+
+	function logState(obs: Observer) {
+		const state = observerState(obs)
+		console.log(JSON.stringify(state, null, '  '))
+	}
+	let obs = new Observer({ a: { b: { c: 1 } } })
+	let id1 = obs.observe('a.b.c', () => {})
+	let id2 = obs.observe('a.b.d', () => {})
+	//logState(obs)
+	obs.unobserveId('a.b.c', id1)
+	obs.unobserveId('a.b.c', id1)
+	//logState(obs)
+	obs.unobserveId('a.b.d', id2)
+
+	//logState(obs)
+	id1 = obs.observe('a.b.c', function() {
+		console.log('a.b.c', arguments)
+	})
+	id2 = obs.observe('a.b.d', function() {
+		console.log('a.b.d', arguments)
+	})
+	//logState(obs)
+
+	const ov = obs.target['a']
+	obs.target['a'] = { b: { d: 2 } }
+	obs.update('a', obs.target['a'], ov)
+
+	setTimeout(function() {
+		logState(obs)
+	}, 1000)
+
+	logState(obs)
+	 */
+
+	/**
+	 * @module observer
+	 * @author Tao Zeng <tao.zeng.zt@qq.com>
+	 * @created Fri Mar 01 2019 18:17:27 GMT+0800 (China Standard Time)
+	 * @modified Fri Mar 01 2019 18:17:50 GMT+0800 (China Standard Time)
+	 */
+
+	/**
 	 *
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @module main
 	 * @preferred
 	 * @created Wed Nov 21 2018 10:21:20 GMT+0800 (China Standard Time)
-	 * @modified Fri Dec 21 2018 14:08:39 GMT+0800 (China Standard Time)
+	 * @modified Fri Mar 01 2019 18:20:02 GMT+0800 (China Standard Time)
 	 */
 
 	exports.createFn = createFn;
@@ -4496,6 +5158,8 @@
 	exports.anyOne = anyOne;
 	exports.manyOne = manyOne;
 	exports.optionOne = optionOne;
+	exports.OBSERVER_KEY = OBSERVER_KEY;
+	exports.Observer = Observer;
 
 }));
 //# sourceMappingURL=argilo.js.map

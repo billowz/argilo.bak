@@ -8,7 +8,9 @@ const path = require('path'),
 	visualizer = require('rollup-plugin-visualizer'),
 	progress = require('rollup-plugin-progress')
 
-const configOptions = mkMap('target,debug,compact,strict,sourcemap,dist,extensions,banner,footer,babel,progress,codeAnalysis'),
+const configOptions = mkMap(
+		'target,debug,compact,strict,sourcemap,sourceRoot,outDir,extensions,banner,footer,babel,progress,codeAnalysis'
+	),
 	babelConfigOptions = mkMap('plugins,presets')
 
 /**
@@ -21,7 +23,8 @@ const configOptions = mkMap('target,debug,compact,strict,sourcemap,dist,extensio
  * @param {*}					[config.compact=false]					compact bundle
  * @param {boolean}				[config.progress=true]					show progress
  * @param {boolean}				[config.strict=true]					strict
- * @param {string}				config.dist								out dir
+ * @param {string}				config.sourceRoot						root path of source map
+ * @param {string}				config.outDir							out dir
  * @param {string}				config.codeAnalysis						code analysis file
  * @param {string}				config.banner							banner
  * @param {string}				config.footer							banner
@@ -39,7 +42,6 @@ function mkConfig(config) {
 		sourcemap = config.sourcemap === undefined ? true : config.sourcemap,
 		compact = config.compact,
 		codeAnalysis = config.codeAnalysis,
-		dist = config.dist,
 		es3 = target === 'es3',
 		es5 = target === 'es5',
 		es6 = target === 'es6'
@@ -75,19 +77,14 @@ function mkConfig(config) {
 				output.amd = { id: typeof output.amd === 'string' ? output.amd : output.name }
 			}
 
-			if (output.file === false) {
+			if (!output.file) {
 				delete output.file
 			} else {
-				if (!output.file) output.file = amdModule ? output.amd.id : output.name
-				if (!output.file) throw new Error('require output file')
-				if (output.file) {
-					if (!/\.js$/.test(output.file)) {
-						output.file = `${output.file}${debug ? '.dev' : ''}${compact ? '.min' : ''}.js`
-					}
-					dist && (output.file = path.join(dist, output.file))
+				if (!/\.js$/.test(output.file)) {
+					output.file = `${output.file}${debug ? '.dev' : ''}${compact ? '.min' : ''}.js`
 				}
+				config.outDir && (output.file = path.join(config.outDir, output.file))
 			}
-
 			assignIf(output, {
 				banner,
 				footer,
@@ -95,14 +92,27 @@ function mkConfig(config) {
 				strict: config.strict !== false,
 				esModule: !es3,
 				freeze: !es3,
-				compact: !!compact,
-				sourcemapPathTransform: amdModule ? p => path.join('/' + output.amd.id, p) : path => path
+				compact: !!compact
 			})
+
+			let sourceRoot =
+				output.sourceRoot ||
+				config.sourceRoot ||
+				(amdModule ? '/' + output.amd.id : output.name && '/' + output.name)
+			delete output.sourceRoot
+
+			const sourcemapPathTransform = output.sourcemapPathTransform
+			output.sourcemapPathTransform = p => {
+				if (sourceRoot) {
+					p = path.join(sourceRoot, p.replace(/^(?:\.\.[\/\\])+/, ''))
+				}
+				return sourcemapPathTransform ? sourcemapPathTransform(p) : p
+			}
 			return output
 		})
 	if (rollup.output.length < 2) rollup.output = rollup.output[0]
 
-	return Object.assign({ perf: true }, rollup, {
+	return Object.assign({}, rollup, {
 		plugins: [
 			nodeResolve({ jsnext: true, extensions }),
 			commonjs(),
@@ -150,7 +160,7 @@ function mkConfig(config) {
 						filename:
 							typeof codeAnalysis === 'string'
 								? codeAnalysis.replace(/\.html$/, '') + '.html'
-								: 'code-analysis.html',
+								: 'analysis/bundle.html',
 						sourcemap: !!sourcemap
 					})
 			])

@@ -11,7 +11,7 @@
  * Copyright (c) 2018 Tao Zeng <tao.zeng.zt@qq.com>
  * Released under the MIT license
  *
- * Date: Fri, 01 Mar 2019 10:19:23 GMT
+ * Date: Mon, 04 Mar 2019 11:50:13 GMT
  */
 (function (global, factory) {
 	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
@@ -793,7 +793,7 @@
 	 * @module utility/create
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Wed Jul 25 2018 15:24:47 GMT+0800 (China Standard Time)
-	 * @modified Thu Jan 31 2019 10:15:42 GMT+0800 (China Standard Time)
+	 * @modified Mon Mar 04 2019 18:35:26 GMT+0800 (China Standard Time)
 	 */
 
 	/**
@@ -4370,7 +4370,7 @@
 	 * @module observer
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Wed Dec 26 2018 13:59:10 GMT+0800 (China Standard Time)
-	 * @modified Wed Feb 27 2019 13:12:54 GMT+0800 (China Standard Time)
+	 * @modified Mon Mar 04 2019 09:28:53 GMT+0800 (China Standard Time)
 	 */
 
 	function checkObserverTarget(obj) {
@@ -4946,105 +4946,90 @@
 	 *                                                                                      */
 	//========================================================================================
 
+	/*
+	const objIdGen: { [key: string]: number } = {}
+	function objId(obj: any, str: string) {
+		return obj.id || (obj.id = str + '-' + (objIdGen[str] ? ++objIdGen[str] : (objIdGen[str] = 1)))
+	}
+	function subjectState(subject: Subject) {
+		const path = []
+		let p = subject
+		while (p) {
+			path.unshift(p.__prop)
+			p = p.__parent
+		}
+		const subs = subject.__subs && subject.__subs.length
+		const listeners = subject.__listeners && subject.__listeners.size()
 
-	var objIdGen = {};
+		assert.is(!!(subs || listeners) === !!(subject.__flags & SUBJECT_ENABLED_FLAG))
+		assert.is(!!subs === !!(subject.__flags & SUBJECT_SUB_FLAG))
+		assert.is(!!listeners === !!(subject.__flags & SUBJECT_LISTEN_FLAG))
+		assert.is(!subject.__observer || subject.__flags & SUBJECT_ENABLED_FLAG)
 
-	function objId(obj, str) {
-	  return obj.id || (obj.id = str + '-' + (objIdGen[str] ? ++objIdGen[str] : objIdGen[str] = 1));
+		return {
+			id: objId(subject, 'subject'),
+			path: formatPath(path),
+			obj: JSON.stringify(subject.__owner.target),
+			enabled: !!(subs || listeners),
+			listeners: listeners,
+			watched: subject.__observer && {
+				id: objId(subject.__observer, 'observer'),
+				obj: JSON.stringify(subject.__observer.target),
+				watchs: watchs(subject.__observer)
+			},
+			subCache: subject.__subCache && map(subject.__subCache, subjectState),
+			subs: subs && map(subject.__subs, sub => objId(sub, 'subject'))
+		}
+	}
+	function observerState(observer: Observer) {
+		return {
+			id: objId(observer, 'observer'),
+			obj: JSON.stringify(observer.target),
+			watchs: watchs(observer),
+			subjects: map(observer.__subjects, subj => subjectState(subj))
+		}
+	}
+	function watchs(observer: Observer) {
+		return map(observer.__watchs, w =>
+			w
+				.toArray()
+				.map(s => objId(s, 'subject'))
+				.join(', ')
+		)
 	}
 
-	function subjectState(subject) {
-	  var path = [];
-	  var p = subject;
-
-	  while (p) {
-	    path.unshift(p.__prop);
-	    p = p.__parent;
-	  }
-
-	  var subs = subject.__subs && subject.__subs.length;
-
-	  var listeners = subject.__listeners && subject.__listeners.size();
-
-	  assert.is(!!(subs || listeners) === !!(subject.__flags & SUBJECT_ENABLED_FLAG));
-	  assert.is(!!subs === !!(subject.__flags & SUBJECT_SUB_FLAG));
-	  assert.is(!!listeners === !!(subject.__flags & SUBJECT_LISTEN_FLAG));
-	  assert.is(!subject.__observer || subject.__flags & SUBJECT_ENABLED_FLAG);
-	  return {
-	    id: objId(subject, 'subject'),
-	    path: formatPath(path),
-	    obj: JSON.stringify(subject.__owner.target),
-	    enabled: !!(subs || listeners),
-	    listeners: listeners,
-	    watched: subject.__observer && {
-	      id: objId(subject.__observer, 'observer'),
-	      obj: JSON.stringify(subject.__observer.target),
-	      watchs: watchs(subject.__observer)
-	    },
-	    subCache: subject.__subCache && map(subject.__subCache, subjectState),
-	    subs: subs && map(subject.__subs, function (sub) {
-	      return objId(sub, 'subject');
-	    })
-	  };
+	function logState(obs: Observer) {
+		const state = observerState(obs)
+		console.log(JSON.stringify(state, null, '  '))
 	}
+	let obs = new Observer({ a: { b: { c: 1 } } })
+	let id1 = obs.observe('a.b.c', () => {})
+	let id2 = obs.observe('a.b.d', () => {})
+	//logState(obs)
+	obs.unobserveId('a.b.c', id1)
+	obs.unobserveId('a.b.c', id1)
+	//logState(obs)
+	obs.unobserveId('a.b.d', id2)
 
-	function observerState(observer) {
-	  return {
-	    id: objId(observer, 'observer'),
-	    obj: JSON.stringify(observer.target),
-	    watchs: watchs(observer),
-	    subjects: map(observer.__subjects, function (subj) {
-	      return subjectState(subj);
-	    })
-	  };
-	}
+	//logState(obs)
+	id1 = obs.observe('a.b.c', function() {
+		console.log('a.b.c', arguments)
+	})
+	id2 = obs.observe('a.b.d', function() {
+		console.log('a.b.d', arguments)
+	})
+	//logState(obs)
 
-	function watchs(observer) {
-	  return map(observer.__watchs, function (w) {
-	    return w.toArray().map(function (s) {
-	      return objId(s, 'subject');
-	    }).join(', ');
-	  });
-	}
+	const ov = obs.target['a']
+	obs.target['a'] = { b: { d: 2 } }
+	obs.update('a', obs.target['a'], ov)
 
-	function logState(obs) {
-	  var state = observerState(obs);
-	  console.log(JSON.stringify(state, null, '  '));
-	}
+	setTimeout(function() {
+		logState(obs)
+	}, 1000)
 
-	var obs = new Observer({
-	  a: {
-	    b: {
-	      c: 1
-	    }
-	  }
-	});
-	var id1 = obs.observe('a.b.c', function () {});
-	var id2 = obs.observe('a.b.d', function () {}); //logState(obs)
-
-	obs.unobserveId('a.b.c', id1);
-	obs.unobserveId('a.b.c', id1); //logState(obs)
-
-	obs.unobserveId('a.b.d', id2); //logState(obs)
-
-	id1 = obs.observe('a.b.c', function () {
-	  console.log('a.b.c', arguments);
-	});
-	id2 = obs.observe('a.b.d', function () {
-	  console.log('a.b.d', arguments);
-	}); //logState(obs)
-
-	var ov = obs.target['a'];
-	obs.target['a'] = {
-	  b: {
-	    d: 2
-	  }
-	};
-	obs.update('a', obs.target['a'], ov);
-	setTimeout(function () {
-	  logState(obs);
-	}, 1000);
-	logState(obs);
+	logState(obs)
+	 */
 
 	/**
 	 * @module observer

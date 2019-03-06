@@ -1,6 +1,6 @@
-const json = require('rollup-plugin-json')
-const rollupConfig = require('./rollupConfig')
-const pkg = require('../package.json')
+const json = require('rollup-plugin-json'),
+	rollupConfig = require('./rollupConfig'),
+	pkg = require('../package.json')
 
 module.exports = function(config) {
 	config.set({

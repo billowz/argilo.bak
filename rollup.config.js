@@ -19,27 +19,29 @@ const banner = `/*
  */`
 
 const input = './src/index.ts',
-	dist = './dist',
+	outDir = './dist',
 	moduleName = pkg.name,
 	namespace = pkg.namespace || moduleName,
 	browserConfig = {
 		input,
 		banner,
-		dist,
+		outDir,
 		target: 'es3',
 		strict: false,
 		output: {
 			format: 'umd',
 			name: namespace,
-			amd: moduleName
+			amd: moduleName,
+			file: moduleName
 		}
 	},
 	moduleConfig = {
 		input,
 		banner,
-		dist,
+		outDir,
 		target: 'es6',
 		strict: false,
+		sourceRoot: '/' + moduleName,
 		output: [
 			{
 				format: 'cjs',
