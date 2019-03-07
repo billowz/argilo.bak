@@ -2,7 +2,7 @@
  * @module observer
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Dec 26 2018 13:59:10 GMT+0800 (China Standard Time)
- * @modified Wed Mar 06 2019 19:43:14 GMT+0800 (China Standard Time)
+ * @modified Thu Mar 07 2019 20:07:15 GMT+0800 (China Standard Time)
  */
 
 import {
@@ -212,11 +212,22 @@ class Subject {
 			const { __observer: observer } = this
 			if (observer) {
 				if (!observer.isArray) {
-					sub.__bind(
-						subs[0]
-							? subs[0].__observer
-							: this.__loadSubObserver(observer, this.__prop, observer.target[this.__prop])
-					)
+					var subObserver: Observer
+					if (subs[0]) {
+						subObserver = sub[0].__observer
+					} else {
+						const { __prop: prop } = this
+						const subTarget = observer.target[prop]
+						if (checkObserverTarget(subTarget)) {
+							subObserver = loadSubObserver(observer, prop, subTarget)
+						}
+						//#if _DEBUG
+						else if (!isNil(subTarget)) {
+							sub.__badPath(2, toStrType(subTarget))
+						}
+						//#endif
+					}
+					sub.__bind(subObserver)
 				}
 				//#if _DEBUG
 				else {
@@ -254,24 +265,11 @@ class Subject {
 		assert('un-attached subject')
 	}
 
-	private __loadSubObserver(observer: Observer, prop: string, target: any): Observer {
-		if (checkObserverTarget(target)) {
-			const subObserver: Observer = getObserver(target) || observer.observerOf(target)
-			if (subObserver.proxy !== target) observer.target[prop] = subObserver.proxy
-			return subObserver
-		}
-		//#if _DEBUG
-		else if (!isNil(target)) {
-			this.__badPath(1, toStrType(target), '')
-		}
-		//#endif
-	}
-
 	//#if _DEBUG
 	private __badPath(i: number, type: string, msg?: string) {
 		const path = this.__getPath()
-		console.error(
-			`bad path[{}]: not support {} on {}{}{}.`,
+		console.warn(
+			`observer[{}]: can not watch {} on {}{}{}.`,
 			formatPath(path),
 			formatPath(path.slice(-i)),
 			type,
@@ -279,6 +277,12 @@ class Subject {
 			msg || '',
 			this.__owner.target
 		)
+	}
+
+	private __badSubsPath(subs: Subject[], len: number, type: string) {
+		for (let i = 0; i < len; i++) {
+			subs[i].__badPath(2, type)
+		}
 	}
 
 	private __getPath() {
@@ -308,7 +312,7 @@ class Subject {
 	}
 
 	/**
-	 * collect changed subjects
+	 * collect changed subjects by collect queue
 	 */
 	__collect() {
 		if (this.__flags & SUBJECT_CHANGED_FLAG) {
@@ -331,74 +335,109 @@ class Subject {
 	 * 	2. re-collect by parent-subject
 	 * 		keep the original value of dirty
 	 * 		replace the new value of dirty
+	 * 		re-collect sub-subjects
 	 * - Case 2:
 	 * 	1. collect by parent-subject
 	 * 	2. re-collect by collect queue
 	 * 		replace the original value of dirty
 	 * 		keep the new value of dirty
+	 * 		stop collect
 	 * @param observer 	Observer of this subject
-	 * @param prop 		property of this subject
-	 * @param subTarget new observe target on this subject
-	 * @param value 	new value on this subject
-	 * @param original 	original value on this subject
+	 * @param target 	new target of this subject
+	 * @param original 	original value of this subject
 	 */
-	private ____collect(observer: Observer, target: any, original: any) {
+	private ____collect(observer: Observer, target: any, original: any, from?: Subject) {
 		const { __flags: flags, __prop: prop } = this
-		let dirty: [any, any]
+		let dirty: [any, any],
+			subTarget: any = getValue(target, prop)
 
 		if (flags & SUBJECT_LISTEN_FLAG) {
-			if (!(dirty = this.__dirty)) {
+			if ((dirty = this.__dirty)) {
+				// re-collected by parent-subject
+				dirty[1] = original
+			} else {
 				// add to dirty queue
 				this.__dirty = dirty = [
 					observer
 						? observer.isArray && prop === ARRAY_CHANGE_PROP
 							? target
-							: target[prop]
+							: subTarget
 						: isNil(target)
 						? undefined
-						: target[prop],
+						: subTarget,
 					original
 				]
 				dirtyQueue.push(this)
-			} else {
-				dirty[1] = original
 			}
 		}
 
-		if (flags & SUBJECT_SUB_FLAG) {
-			const { __subs: subs } = this
-			const l = subs.length
+		flags & SUBJECT_SUB_FLAG && this.__collectSubs(observer, subTarget, original, dirty)
+	}
 
-			var subObserver: Observer,
-				sub: Subject,
-				subTarget: any,
-				i = 0
+	__collectSubs(observer: Observer, subTarget: any, original: any, dirty?: [any, any]) {
+		const { __subs: subs } = this
+		const l = subs.length
 
-			if (observer) {
-				if (!observer.isArray) {
-					if ((subObserver = this.__loadSubObserver(observer, prop, dirty[0]))) {
-						subTarget = subObserver.target
-						dirty && (dirty[0] = subObserver.proxy) // update dirty proxy
-					}
+		var subObserver: Observer,
+			sub: Subject,
+			subOriginal: any,
+			subDirty: [any, any],
+			i = 0
+
+		if (observer) {
+			if (!observer.isArray) {
+				if (checkObserverTarget(subTarget)) {
+					subObserver = loadSubObserver(observer, this.__prop, subTarget)
+					subTarget = subObserver.target
+					dirty && (dirty[0] = subObserver.proxy) // update dirty proxy
 				}
 				//#if _DEBUG
-				else {
-					for (; i < l; i++) {
-						sub[i].__badPath(2, 'Array')
-					}
-					i = 0
+				else if (!isNil(subTarget)) {
+					this.__badSubsPath(subs, l, toStrType(subTarget))
 				}
 				//#endif
 			}
-			for (; i < l; i++) {
-				sub = subs[i]
-				sub.__bind(subObserver)
-				if (!subObserver || sub.__observer != subObserver) {
-					sub.____collect(subObserver, subTarget, isNil(original) ? undefined : original[sub.__prop])
+			//#if _DEBUG
+			else {
+				this.__badSubsPath(subs, l, 'Array')
+			}
+			//#endif
+		}
+
+		for (; i < l; i++) {
+			sub = subs[i]
+			sub.__bind(subObserver)
+
+			if (!subObserver || sub.__observer != subObserver) {
+				if (sub.__flags & SUBJECT_CHANGED_FLAG) {
+					// sub-subject has changed
+					// use the sub-subject's un-collected original value and clean changed flag
+					subOriginal = sub.__original
+					sub.__dirty = [, subOriginal]
+
+					sub.__original = null
+					sub.__flags &= ~SUBJECT_CHANGED_FLAG
+				} else {
+					// 1. sub-subject have collected by itself
+					// 		use the collected original value
+					// 2. sub-subject not change
+					// 		use the original
+					subOriginal = (subDirty = sub.__dirty) ? subDirty[1] : getValue(original, sub.__prop)
 				}
+				sub.____collect(subObserver, subTarget, subOriginal)
 			}
 		}
 	}
+}
+
+function loadSubObserver(observer: Observer, prop: string, target: any): Observer {
+	const subObserver: Observer = getObserver(target) || observer.observerOf(target)
+	if (subObserver.proxy !== target) observer.target[prop] = subObserver.proxy
+	return subObserver
+}
+
+function getValue(obj: any, prop: string) {
+	return obj === undefined || obj === null ? undefined : obj[prop]
 }
 
 /**
