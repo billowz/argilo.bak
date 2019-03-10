@@ -3,7 +3,7 @@
  * @module utility/List
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
- * @modified Thu Feb 28 2019 09:50:35 GMT+0800 (China Standard Time)
+ * @modified Fri Mar 08 2019 18:24:33 GMT+0800 (China Standard Time)
  */
 
 import { List } from './List'
@@ -78,6 +78,9 @@ export class FnList<T extends Function> {
 	each(cb: (fn: T, scope: any, data: any, __node: FnNode<T>) => boolean | void, scope?: any) {
 		cb = cb.bind(scope)
 		this.__list.each(node => cb(node[1], node[2], node[3], node))
+	}
+	eachUnsafe(cb: (fn: T, scope: any, data: any, __node: FnNode<T>) => boolean | void, scope?: any) {
+		this.__list.eachUnsafe(node => cb(node[1], node[2], node[3], node))
 	}
 	id(fn: T, scope?: any): string {
 		const { fnBinding, scopeBinding } = this

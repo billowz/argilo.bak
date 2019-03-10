@@ -11,7 +11,7 @@
  * Copyright (c) 2018 Tao Zeng <tao.zeng.zt@qq.com>
  * Released under the MIT license
  *
- * Date: Mon, 04 Mar 2019 11:50:13 GMT
+ * Date: Sun, 10 Mar 2019 03:08:49 GMT
  */
 /**
  *
@@ -1350,9 +1350,15 @@ function set(obj, path, value) {
  * @module utility/string
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 13:57:32 GMT+0800 (China Standard Time)
- * @modified Thu Jan 31 2019 10:04:55 GMT+0800 (China Standard Time)
+ * @modified Tue Mar 05 2019 18:59:22 GMT+0800 (China Standard Time)
  */
-//========================================================================================
+const toString = Object.prototype.toString;
+function toStr(obj) {
+  return toString.call(obj);
+}
+function toStrType(obj) {
+  return toString.call(obj).match(/^\[object ([^\]]+)\]$/)[1];
+} //========================================================================================
 
 /*                                                                                      *
  *                                       char code                                      *
@@ -1363,6 +1369,7 @@ function set(obj, path, value) {
  * get char code
  * > string.charCodeAt
  */
+
 function charCode(str, index) {
   return str.charCodeAt(index || 0);
 }
@@ -2009,15 +2016,15 @@ function toFixed(num, precision) {
 
 
 extendFormatter({
-  s: strFormatter(toStr),
-  j: strFormatter(v => v === undefined || isFn(v) || v.toJSON && v.toJSON() === undefined ? toStr(v) : JSON.stringify(v)),
+  s: strFormatter(toStr$1),
+  j: strFormatter(v => v === undefined || isFn(v) || v.toJSON && v.toJSON() === undefined ? toStr$1(v) : JSON.stringify(v)),
 
   c(val) {
     const num = val >> 0;
     return num > 0 ? String.fromCharCode(num) : '';
   },
 
-  d: numFormatter(val => val >> 0, decimalPrefix, toStr, thousandSeparate),
+  d: numFormatter(val => val >> 0, decimalPrefix, toStr$1, thousandSeparate),
   e: floatFormatter('e'),
   E: floatFormatter('E'),
   f: floatFormatter('f'),
@@ -2032,7 +2039,7 @@ extendFormatter({
   X: baseFormatter('X')
 });
 
-function toStr(v) {
+function toStr$1(v) {
   return String(v);
 }
 
@@ -2341,7 +2348,7 @@ function typeExpect() {
  * @module utility/List
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
- * @modified Fri Feb 22 2019 16:45:27 GMT+0800 (China Standard Time)
+ * @modified Fri Mar 08 2019 18:22:58 GMT+0800 (China Standard Time)
  */
 const DEFAULT_BINDING = '__list__';
 //type ListNode = [ListElement, IListNode, IListNode, List]
@@ -2456,6 +2463,17 @@ class List {
       this.__doLazyRemove();
 
       this.__scaning = false;
+    }
+  }
+
+  eachUnsafe(cb, scope) {
+    if (this.__length) {
+      var node = this.__head;
+
+      while (node) {
+        if (node[3] === this && cb(node[0]) === false) break;
+        node = node[2];
+      }
     }
   }
 
@@ -2672,7 +2690,7 @@ List.binding = DEFAULT_BINDING;
  * @module utility/List
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
- * @modified Thu Feb 28 2019 09:50:35 GMT+0800 (China Standard Time)
+ * @modified Fri Mar 08 2019 18:24:33 GMT+0800 (China Standard Time)
  */
 const DEFAULT_FN_BINDING = '__flist_id__';
 const DEFAULT_SCOPE_BINDING = DEFAULT_FN_BINDING;
@@ -2751,6 +2769,10 @@ class FnList {
     cb = cb.bind(scope);
 
     this.__list.each(node => cb(node[1], node[2], node[3], node));
+  }
+
+  eachUnsafe(cb, scope) {
+    this.__list.eachUnsafe(node => cb(node[1], node[2], node[3], node));
   }
 
   id(fn, scope) {
@@ -4095,160 +4117,120 @@ function parseRuleOptions(args, i) {
  * @module observer
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Dec 26 2018 13:59:10 GMT+0800 (China Standard Time)
- * @modified Mon Mar 04 2019 09:28:53 GMT+0800 (China Standard Time)
+ * @modified Sun Mar 10 2019 11:04:55 GMT+0800 (China Standard Time)
  */
 
-function checkObserverTarget(obj) {
-  return obj && isArray(obj) || isObj(obj);
-}
+/**
+ * the property of observe an array change
+ */
+const ARRAY_CHANGE = '$change';
+/**
+ * The dirty collector lost the original value
+ */
 
-const dirtyQueue = [],
-      notifyQueue = [];
-const SUBJECT_ENABLED_FLAG = 0x2,
-      SUBJECT_LISTEN_FLAG = 0x4,
-      SUBJECT_SUB_FLAG = 0x8;
-let listenerIdGen = 1;
+const MISS = {}; //========================================================================================
+
+/*                                                                                      *
+ *                                        topic                                       *
+ *                                                                                      */
+//========================================================================================
+
+const V = {};
+
+function isObserverTarget(obj) {
+  return obj && (isArray(obj) || isObj(obj));
+}
+/**
+ * get or create sub-observer
+ * fix proxy value
+ * @param observer 	observer
+ * @param prop		property of observer target
+ * @param target	target = observer.target[prop]
+ * @return sub-observer
+ */
+
+
+function loadSubObserver(observer, prop, target) {
+  const subObserver = getObserver(target) || observer.observerOf(target);
+  if (subObserver.proxy !== target) observer.target[prop] = subObserver.proxy;
+  return subObserver;
+}
+/**
+ * get property value on object
+ * @param obj 	object
+ * @param prop 	property
+ */
+
+
+function getValue(obj, prop) {
+  return obj === undefined || obj === null ? undefined : obj[prop];
+}
+/**
+ * get property value on original object
+ * check {@link MISS}
+ * @param original 	object
+ * @param prop 		property
+ */
+
+
+function getOriginalValue(original, prop) {
+  return original === undefined || original === null ? undefined : original === MISS ? original : original[prop];
+} // id generator of topic
+
+
+let topicIdGen = 0;
+const collectQueue = [],
+      // the dirty topic queue waiting for collection
+dirtyQueue = []; // the dirty topic queue waiting for notification
+// flags of topic
+
+const TOPIC_ENABLED_FLAG = 0x1,
+      // topic is enabled
+TOPIC_LISTEN_FLAG = 0x2,
+      // topic is listend
+TOPIC_SUB_FLAG = 0x4; // topic has subtopic
+
 /**
  * @ignore
  */
 
-class Subject {
-  // parent subject
+class Topic {
+  // parent topic
   // own observer
-  // property
+  // watch property
   // binded observer
   // property path
   // listeners
-  // sub-subjects
-  // cache of sub-subjects
+  // the original value before change
+  // collected dirty value: [new value, original value]
+  // subtopics
+  // cache of subtopics
+  // flags: TOPIC_ENABLED_FLAG | TOPIC_LISTEN_FLAG | TOPIC_SUB_FLAG
 
   /**
-   *
-   * @param owner
-   * @param prop
-   * @param binded
-   * @param parent
+   * create a Topic
+   * @param owner		own observer
+   * @param prop		watch property
+   * @param parent	parent topic
    */
   constructor(owner, prop, parent) {
+    this.__flags = 0;
+    this.__original = V;
     this.__owner = owner;
     this.__prop = prop;
     this.__parent = parent;
-    this.__flags = 0;
-  }
-
-  __initSubObserver() {
-    const {
-      __observer: observer,
-      __prop: prop
-    } = this;
-
-    if (observer) {
-      const target = observer.target[prop];
-
-      if (checkObserverTarget(target)) {
-        var subObserver = target[OBSERVER_KEY];
-
-        if (!subObserver || !(subObserver.target === target || subObserver.proxy === target)) {
-          subObserver = observer.observerOf(target);
-        }
-
-        if (subObserver.proxy !== target) {
-          observer.target[prop] = subObserver.proxy;
-        }
-
-        return subObserver;
-      }
-    }
-  }
-  /**
-   * get sub-subject from cache
-   * @param prop property
-   */
-
-
-  __getSub(prop) {
-    const {
-      __subCache: subCache
-    } = this;
-    return subCache && subCache[prop];
-  }
-
-  __badArrayPath(i, msg) {
-    const path = this.__getPath();
-
-    console.error(`bad path[{}]: not support {} on Array{}{}.`, formatPath(path), formatPath(path.slice(-i)), path.length > i ? `[${formatPath(path.slice(0, -i))}]` : '', msg || '', this.__owner.target);
-  }
-  /**
-   * bind observer
-   * @param observer new observer
-   * @return binded observer
-   */
-
-
-  __bind(observer) {
-    const {
-      __observer: org
-    } = this;
-
-    if (org !== observer) {
-      org && org.__unwatch(this); // unbind old observer
-
-      if (observer) {
-        if (observer.isArray && !ARRAY_EVENTS[this.__prop]) {
-          this.__badArrayPath(1, ', change to "change" or "length"');
-
-          observer = undefined;
-        } else {
-          observer.__watch(this);
-        }
-      }
-
-      this.__observer = observer;
-      return observer;
-    }
-  }
-  /**
-   * create or get sub-subject on cache
-   * @param subProp	property
-   * @param binded	binded observer
-   */
-
-
-  __addSub(subProp) {
-    // get or init cache and subs
-    const subCache = this.__subCache || (this.__subs = [], this.__subCache = create(null)),
-          // get or create sub-subject on cache
-    sub = subCache[subProp] || (subCache[subProp] = new Subject(this.__owner, subProp, this));
-
-    if (!(sub.__flags & SUBJECT_ENABLED_FLAG)) {
-      const {
-        __subs: subs
-      } = this; // attach sub-subject
-
-      sub.__flags |= SUBJECT_ENABLED_FLAG;
-      subs.push(sub);
-      const {
-        __observer: observer
-      } = this;
-
-      if (observer) {
-        if (observer.isArray) {
-          sub.__badArrayPath(2);
-        } else {
-          sub.__bind(subs[0] ? subs[0].__observer : this.__initSubObserver());
-        }
-      }
-    }
-
-    this.__flags |= SUBJECT_SUB_FLAG | SUBJECT_ENABLED_FLAG;
-    return sub;
+    this.__id = topicIdGen++;
   }
   /**
    * add listener
+   * @param path		path of topic
+   * @param cb		observe callback
+   * @param scope		scope of the callback
+   * @return listen-id | undefined
    */
 
 
-  __listen(path, listener, scope) {
+  __listen(path, cb, scope) {
     let {
       __listeners: listeners
     } = this;
@@ -4258,74 +4240,31 @@ class Subject {
       this.__path = path;
     }
 
-    const id = listeners.add(listener, scope, listenerIdGen++);
-    id && (this.__flags |= SUBJECT_LISTEN_FLAG | SUBJECT_ENABLED_FLAG);
+    const id = listeners.add(cb, scope);
+    id && (this.__flags |= TOPIC_LISTEN_FLAG | TOPIC_ENABLED_FLAG);
     return id;
   }
   /**
-   * remove sub-subject
-   * @param subject subject
+   * remove listener by callback
+   * @param cb		observe callback
+   * @param scope		scope of the callback
    */
 
 
-  __removeSub(subject) {
-    const {
-      __subs: subs
-    } = this;
-    const l = subs.length;
-    let i = l;
-
-    while (i--) {
-      if (subject === subs[i]) {
-        subs.splice(i, 1);
-        l === 1 && (this.__flags &= ~SUBJECT_SUB_FLAG);
-        return;
-      }
-    }
-
-    assert('un-attached subject');
-  }
-  /**
-   * check subject state
-   */
-
-
-  ____unlisten(listeners) {
-    if (!listeners.size()) {
-      var subject = this,
-          parent;
-      subject.__flags &= ~SUBJECT_LISTEN_FLAG;
-
-      while ((subject.__flags & (SUBJECT_SUB_FLAG | SUBJECT_LISTEN_FLAG | SUBJECT_ENABLED_FLAG)) === SUBJECT_ENABLED_FLAG) {
-        subject.__bind();
-
-        subject.__flags = 0;
-        if (!(parent = subject.__parent)) break;
-
-        parent.__removeSub(subject);
-
-        subject = parent;
-      }
-    }
-  }
-  /**
-   * remove listener
-   */
-
-
-  __unlisten(listener, scope) {
+  __unlisten(cb, scope) {
     const {
       __listeners: listeners
     } = this;
 
     if (listeners) {
-      listeners.remove(listener, scope);
+      listeners.remove(cb, scope);
 
       this.____unlisten(listeners);
     }
   }
   /**
-   * remove listener by id
+   * remove listener by listen-id
+   * @param id	listen-id
    */
 
 
@@ -4340,78 +4279,141 @@ class Subject {
       this.____unlisten(listeners);
     }
   }
+  /**
+   * Clear all unlistening leaf topics
+   * @param listeners	listeners
+   */
 
-  __collect(dirty) {
-    const {
-      __flags: flags
-    } = this;
 
-    if (flags & SUBJECT_LISTEN_FLAG) {
-      !this.__notifyDirty && notifyQueue.push(this);
-      this.__notifyDirty = dirty;
-    }
+  ____unlisten(listeners) {
+    if (!listeners.size()) {
+      var topic = this,
+          parent;
+      topic.__flags &= ~TOPIC_LISTEN_FLAG;
 
-    if (flags & SUBJECT_SUB_FLAG) {
-      const {
-        __subs: subs
-      } = this;
+      while ((topic.__flags & (TOPIC_SUB_FLAG | TOPIC_LISTEN_FLAG | TOPIC_ENABLED_FLAG)) === TOPIC_ENABLED_FLAG) {
+        topic.__bind();
 
-      const l = subs.length,
-            subObserver = this.__initSubObserver();
+        topic.__flags = 0;
+        if (!(parent = topic.__parent)) break;
 
-      subObserver && (dirty[0] = subObserver.proxy);
+        parent.__removeSub(topic);
 
-      for (var i = 0; i < l; i++) {
-        subs[i].__collectDep(subObserver, dirty[0]);
+        topic = parent;
       }
     }
   }
+  /**
+   * bind observer
+   * @param observer new observer
+   */
 
-  __collectDep(observer, value) {
+
+  __bind(observer) {
     const {
       __observer: org
     } = this;
 
     if (org !== observer) {
-      const {
-        __prop: prop
-      } = this;
-      var {
-        __dirty: dirty
-      } = this;
+      org && org.__unwatchTopic(this); // unbind old observer
 
-      this.__bind(observer);
-
-      if (dirty) {
-        this.__dirty = null;
-      } else {
-        dirty = this.__notifyDirty || [, org && org.__value(prop)];
-      }
-
-      dirty[0] = observer ? observer.__value(prop) : isNil(value) ? undefined : value[prop];
-
-      this.__collect(dirty);
+      if (!observer || observer.__watchTopic(this) === false) observer = undefined;
+      this.__observer = observer && observer.__watchTopic(this) !== false ? observer : observer;
     }
   }
   /**
-   * notify change
-   * @param value
-   * @param original
+   * get a subtopic from the cache
+   * @param prop property
    */
 
 
-  __notify(value, original) {
+  __getSub(prop) {
     const {
-      __dirty: dirty
+      __subCache: subCache
     } = this;
+    return subCache && subCache[prop];
+  }
+  /**
+   * get or create a subtopic on the cache
+   * @param subProp	property of the subtopic
+   * @return subtopic
+   */
 
-    if (dirty) {
-      dirty[0] = value;
-    } else {
-      this.__dirty = [value, original];
-      const l = dirtyQueue.length;
-      dirtyQueue[l] = this;
-      !l && nextTick(notify);
+
+  __addSub(subProp) {
+    const subCache = this.__subCache || (this.__subs = [], this.__subCache = create(null)),
+          sub = subCache[subProp] || (subCache[subProp] = new Topic(this.__owner, subProp, this));
+
+    if (!(sub.__flags & TOPIC_ENABLED_FLAG)) {
+      // init the subtopic
+      const {
+        __subs: subs,
+        __observer: observer
+      } = this; // 1. bind observer
+
+      if (observer) {
+        const {
+          __prop: prop
+        } = this;
+        isArrayChangeProp(observer, prop) && sub.__badPath(2, 'Array');
+        var subObserver;
+
+        if (subs[0]) {
+          subObserver = subs[0].__observer;
+        } else {
+          const subTarget = observer.target[prop];
+
+          if (isObserverTarget(subTarget)) {
+            subObserver = loadSubObserver(observer, prop, subTarget);
+          } else if (!isNil(subTarget)) {
+            sub.__badPath(2, toStrType(subTarget));
+          }
+        }
+
+        sub.__bind(subObserver);
+      } // 2. attach subtopic
+
+
+      sub.__flags |= TOPIC_ENABLED_FLAG;
+      subs.push(sub);
+    }
+
+    this.__flags |= TOPIC_SUB_FLAG | TOPIC_ENABLED_FLAG;
+    return sub;
+  }
+  /**
+   * remove the subtopic from the subs
+   * @param topic topic
+   */
+
+
+  __removeSub(topic) {
+    const {
+      __subs: subs
+    } = this;
+    const l = subs.length;
+    let i = l;
+
+    while (i--) {
+      if (topic === subs[i]) {
+        subs.splice(i, 1);
+        l === 1 && (this.__flags &= ~TOPIC_SUB_FLAG);
+        return;
+      }
+    }
+
+    assert('un-attached topic');
+  }
+
+  __badPath(i, type, msg) {
+    const path = this.__getPath();
+
+    console.warn(`observer[{}]: can not watch {} on {}{}{}.`, formatPath(path), formatPath(path.slice(-i)), type, path.length > i ? `[${formatPath(path.slice(0, -i))}]` : '', msg || '', this.__owner.target);
+  }
+
+  __badSubsPath(subs, len, type) {
+    for (let i = 0; i < len; i++) {
+      subs[i].__badPath(2, type);
     }
   }
 
@@ -4428,60 +4430,215 @@ class Subject {
 
     return path;
   }
+  /**
+   * mark the change in topic
+   *
+   * @param original original value
+   */
 
-}
 
-function notify() {
-  let start = Date.now(); // collect dirty subjects
+  __update(original) {
+    if (this.__original === V) {
+      this.__original = original; // add to collect queue
 
-  let subject,
-      l = dirtyQueue.length,
-      i = 0,
-      dirty;
+      const l = collectQueue.length;
+      collectQueue[l] = this;
+      !l && nextTick(collect);
+    }
+  }
+  /**
+   * collect the dirty topics(current and sub topics) from collectQueue
+   * may collected by parent-topic
+   */
 
-  for (; i < l; i++) {
-    subject = dirtyQueue[i];
 
-    if (dirty = subject.__dirty) {
-      subject.__collect(dirty);
+  __collect() {
+    const {
+      __original: original
+    } = this;
 
-      subject.__dirty = null;
+    if (original !== V) {
+      const {
+        __observer: observer
+      } = this;
+      this.__original = V;
+
+      this.____collect(observer, observer.target, original);
+    }
+  }
+  /**
+   * collect dirty topics
+   * - Case 1:
+   * 	1. collect from collectQueue
+   * 		1. clean changed flag
+   * 		2. save dirty values
+   * 		3. collect the subtopics
+   * 			default use the new and original value
+   * 			use the subtopic's original value when subtopic is changed
+   * 			clean subtopic's changed flag
+   * 	2. re-collect by parent-topic
+   * 		1. replace the new value and discard the original value(keep the existing original value)
+   * 		2. re-collect subtopics
+   *
+   * @param observer 	observer of this topic
+   * @param target 	new target of this topic
+   * @param original 	original value of this topic
+   */
+
+
+  ____collect(observer, target, original) {
+    const {
+      __flags: flags,
+      __prop: prop
+    } = this;
+    let dirty,
+        subTarget = V; // lazy load the sub-target
+
+    if (flags & TOPIC_LISTEN_FLAG) {
+      if (!(dirty = this.__dirty)) {
+        this.__dirty = dirty = [, original];
+        dirtyQueue.push(this);
+      } // if this topic has been changed and collected, retains its original value
+
+
+      dirty[0] = observer && isArrayChangeProp(observer, prop) ? target : subTarget = getValue(target, prop);
+    }
+
+    if (flags & TOPIC_SUB_FLAG) {
+      subTarget === V && (subTarget = getValue(target, prop));
+      const {
+        __subs: subs
+      } = this;
+      const l = subs.length;
+      var subObserver,
+          sub,
+          subOriginal,
+          i = 0;
+
+      if (observer) {
+        isArrayChangeProp(observer, prop) && this.__badSubsPath(subs, l, 'Array');
+
+        if (isObserverTarget(subTarget)) {
+          subObserver = loadSubObserver(observer, this.__prop, subTarget);
+          subTarget = subObserver.target;
+          dirty && (dirty[0] = subObserver.proxy); // update dirty proxy
+        } else if (!isNil(subTarget)) {
+          this.__badSubsPath(subs, l, toStrType(subTarget));
+        }
+      }
+
+      for (; i < l; i++) {
+        sub = subs[i];
+
+        if (!subObserver || sub.__observer != subObserver) {
+          sub.__bind(subObserver);
+
+          if ((subOriginal = sub.__original) === V) {
+            // 1. this subtopic has not been changed, using the original value of the current topic
+            // *2. this subtopic has been changed and collected, and the collector retains its original value
+            // *   this does not happen after the topics are sorted by ID before collection
+            subOriginal = sub.__dirty ? undefined : getOriginalValue(original, sub.__prop);
+          } else {
+            // this subtopic was changed but not collected, collected in advance
+            sub.__original = V;
+          }
+
+          sub.____collect(subObserver, subTarget, subOriginal);
+        }
+      }
     }
   }
 
-  console.log(`collect observed subjects: x${notifyQueue.length} use ${Date.now() - start}ms`);
-  let changed = 0,
-      listens = 0;
-  start = Date.now(); // notify subject listeners
+}
 
-  let owner, path, value, original;
-  l = notifyQueue.length;
-  i = 0;
+function compareTopic(topic1, topic2) {
+  return topic1.__id - topic2.__id;
+}
+/**
+ * collect the dirty topics on the collectQueue
+ */
+
+
+function collect() {
+  const start = Date.now();
+  let l = collectQueue.length,
+      i = 0; // sort by topic id
+
+  collectQueue.sort(compareTopic);
 
   for (; i < l; i++) {
-    subject = notifyQueue[i];
-    dirty = subject.__notifyDirty;
+    collectQueue[i].__collect();
+  }
+
+  console.log(`Collect ${dirtyQueue.length} dirty topics from the collection queue (${l}), use ${Date.now() - start}ms`);
+  notify();
+}
+/**
+ * notify all of the dirty topics
+ */
+
+
+function notify() {
+  const start = Date.now();
+  let topics = 0,
+      listens = 0;
+  const l = dirtyQueue.length;
+  let topic,
+      owner,
+      path,
+      value,
+      original,
+      dirty,
+      i = 0;
+
+  for (; i < l; i++) {
+    topic = dirtyQueue[i];
+    dirty = topic.__dirty;
     value = dirty[0];
     original = dirty[1];
-    subject.__notifyDirty = null;
+    topic.__dirty = null; // clean the dirty
 
     if (value !== original || !isPrimitive(value)) {
-      owner = subject.__owner;
-      path = subject.__path;
+      // real dirty
+      owner = topic.__owner;
+      path = topic.__path;
 
-      subject.__listeners.each((fn, scope) => {
+      topic.__listeners.each((fn, scope) => {
         scope ? fn.call(scope, path, value, original, owner) : fn(path, value, original, owner);
         listens++;
       });
 
-      changed++;
+      topics++;
     }
   }
 
-  console.log(`notify changed subjects: x${changed}/${l}, listeners: x${listens} use ${Date.now() - start}ms`);
+  console.log(`${listens} listen-callbacks of ${topics}/${l} dirty topics have been notified, use ${Date.now() - start}ms`);
+} //========================================================================================
+
+/*                                                                                      *
+ *                                       Observer                                       *
+ *                                                                                      */
+//========================================================================================
+
+/**
+ */
+
+
+class Watchers extends List {
+  /**
+   *
+   */
+  notify(original) {
+    this.eachUnsafe(topic => topic.__update(original));
+  }
+
 }
 
 const OBSERVER_KEY = '__observer__';
+function getObserver(target) {
+  const oserver = target[OBSERVER_KEY];
+  if (oserver && (oserver.target === target || oserver.proxy === target)) return oserver;
+}
 class Observer {
   /**
    * original object
@@ -4496,15 +4653,15 @@ class Observer {
    */
 
   /**
-   * subjects
+   * topics
    * 	- key: property of original object
-   * 	- value: subject
+   * 	- value: topic
    */
 
   /**
-   * watched subjects
+   * watched topics
    * 	- key: property of original object
-   * 	- value: subjects
+   * 	- value: topics
    */
 
   /**
@@ -4521,83 +4678,98 @@ class Observer {
     defPropValue(target, OBSERVER_KEY, this, false, false, false);
   }
   /**
-   * observe property
+   * observe property path
    * @param propPath 	property path of original object, parse string path by {@link parsePath}
-   * @param listener	callback
+   * @param cb		callback
    * @param scope		scope of callback
    */
 
 
-  observe(propPath, listener, scope) {
+  observe(propPath, cb, scope) {
     const path = parsePath(propPath),
-          subjects = this.__subjects || (this.__subjects = create(null)),
+          topics = this.__topics || (this.__topics = create(null)),
           prop0 = path[0];
-    let subject = subjects[prop0] || (subjects[prop0] = new Subject(this, prop0)),
+    let topic = topics[prop0] || (topics[prop0] = new Topic(this, prop0)),
         i = 1,
         l = path.length;
 
-    subject.__bind(this);
+    topic.__bind(this);
 
     for (; i < l; i++) {
-      subject = subject.__addSub(path[i]);
+      topic = topic.__addSub(path[i]);
     }
 
-    return subject.__listen(path, listener, scope);
+    return topic.__listen(path, cb, scope);
   }
   /**
+   * unobserve property path
    * @param propPath	property path on object
-   * @param listener	listener
-   * @param scope		scope of listener
-   * @return >= 0: listener count on the property path of object
-   * 			 -1: no listener
+   * @param cb		callback
+   * @param scope		scope of cb
    */
 
 
-  unobserve(propPath, listener, scope) {
-    const subject = this.__getSubject(parsePath(propPath));
+  unobserve(propPath, cb, scope) {
+    const topic = this.__getTopic(parsePath(propPath));
 
-    subject && subject.__unlisten(listener, scope);
+    topic && topic.__unlisten(cb, scope);
   }
+  /**
+   * unobserve property path
+   * @param propPath	property path on object
+   * @param id 		listen-id
+   */
+
 
   unobserveId(propPath, id) {
-    const subject = this.__getSubject(parsePath(propPath));
+    const topic = this.__getTopic(parsePath(propPath));
 
-    subject && subject.__unlistenId(id);
-  }
-  /**
-   *
-   * @param path
-   */
-
-
-  __getSubject(path) {
-    const {
-      __subjects: subjects
-    } = this;
-    let subject;
-
-    if (subjects && (subject = subjects[path[0]])) {
-      for (var i = 1, l = path.length; i < l; i++) {
-        if (!(subject = subject.__getSub(path[i]))) break;
-      }
-    }
-
-    return subject;
+    topic && topic.__unlistenId(id);
   }
   /**
    * update property value and notify changes
    * @param prop		property
-   * @param value		new value
    * @param original	original value
    */
 
 
-  update(prop, value, original) {
-    const subjects = this.__watchs[prop];
-
-    if (subjects && subjects.size()) {
-      subjects.each(subject => subject.__notify(value, original));
+  update(prop, original) {
+    {
+      const watchers = this.__watchs[prop];
+      watchers && watchers.size() && watchers.notify(original);
     }
+  }
+
+  updateAll() {
+    {
+      const {
+        __watchs: watchs
+      } = this;
+      var prop, watchers;
+
+      for (prop in watchs) {
+        watchers = watchs[prop];
+        watchers.size() && watchers.notify(MISS);
+      }
+    }
+  }
+
+  _watchers(prop) {
+    {
+      const watchers = this.__watchs[prop];
+      if (watchers && watchers.size()) return watchers;
+    }
+  }
+  /**
+   * watch property
+   * @abstract
+   * @protected
+   * @param prop	property
+   */
+
+
+  _watch(prop) {
+    return true; //assert('abstruct')
   }
   /**
    * get or create observer
@@ -4607,47 +4779,56 @@ class Observer {
 
 
   observerOf(target) {
-    return assert('abstruct');
+    return new Observer(target); //assert('abstruct')
   }
   /**
-   * watch subject
-   * @private
-   * @param subject
+   *
+   * @param path
    */
 
 
-  __watch(subject) {
+  __getTopic(path) {
+    const {
+      __topics: topics
+    } = this;
+    let topic;
+
+    if (topics && (topic = topics[path[0]])) {
+      for (var i = 1, l = path.length; i < l; i++) {
+        if (!(topic = topic.__getSub(path[i]))) break;
+      }
+    }
+
+    return topic;
+  }
+  /**
+   * watch topic
+   * @private
+   * @param topic
+   */
+
+
+  __watchTopic(topic) {
     const {
       __watchs: watchs
     } = this;
     const {
       __prop: prop
-    } = subject;
-    const subjects = watchs[prop] || (watchs[prop] = new List());
-    subjects.add(subject);
+    } = topic;
+    const topics = watchs[prop] || (watchs[prop] = new Watchers()),
+          state = topics.__watched;
+    if (state === undefined) return topics.__watched = this._watch(prop) !== false;
+    state && topics.add(topic);
   }
   /**
-   * remove watched subject
+   * remove watched topic
    * @private
-   * @param subject
+   * @param topic
    */
 
 
-  __unwatch(subject) {
-    this.__watchs[subject.__prop].remove(subject);
-  }
-  /**
-   * get property value
-   * @private
-   * @param prop property
-   */
-
-
-  __value(prop) {
-    const {
-      target
-    } = this;
-    return this.isArray && prop === ARRAY_CHANGE_PROP ? target : target[prop];
+  __unwatchTopic(topic) {
+    this.__watchs[topic.__prop].remove(topic);
   }
   /**
    * @ignore
@@ -4656,6 +4837,10 @@ class Observer {
 
   toJSON() {}
 
+}
+
+function isArrayChangeProp(observer, prop) {
+  return observer.isArray && prop === ARRAY_CHANGE;
 } //========================================================================================
 
 /*                                                                                      *
@@ -4663,20 +4848,13 @@ class Observer {
  *                                                                                      */
 //========================================================================================
 
-const ARRAY_CHANGE_PROP = 'change',
-      ARRAY_LENGTH_PROP = 'length',
-      ARRAY_EVENTS = makeMap([ARRAY_CHANGE_PROP, ARRAY_LENGTH_PROP]),
-      arrayHooks = mapArray('fill,pop,push,reverse,shift,sort,splice,unshift'.split(','), method => {
+
+const arrayHooks = mapArray('fill,pop,push,reverse,shift,sort,splice,unshift'.split(','), method => {
   const fn = Array[PROTOTYPE][method];
   return [method, function () {
-    const array = this,
-          len = array.length,
-          rs = applyScope(fn, array, arguments),
-          newlen = array.length,
-          observer = array[OBSERVER_KEY];
-    observer.update(ARRAY_CHANGE_PROP, array, array);
-    if (len !== newlen) observer.update(ARRAY_LENGTH_PROP, newlen, len);
-    return rs;
+    const observer = this[OBSERVER_KEY];
+    observer.updateAll();
+    return applyScope(fn, observer.target, arguments);
   }];
 });
 /**
@@ -4694,95 +4872,37 @@ function applyArrayHooks(array) {
   }
 } //========================================================================================
 
-/*                                                                                      *
- *                                     test subject                                     *
- *                                                                                      */
-//========================================================================================
+let obs = new Observer({
+  a: {
+    b: {
+      c: 1
+    }
+  }
+});
+let id1 = obs.observe('a.b.c', () => {});
+let id2 = obs.observe('a.b.d', () => {}); //logState(obs)
 
-/*
-const objIdGen: { [key: string]: number } = {}
-function objId(obj: any, str: string) {
-	return obj.id || (obj.id = str + '-' + (objIdGen[str] ? ++objIdGen[str] : (objIdGen[str] = 1)))
-}
-function subjectState(subject: Subject) {
-	const path = []
-	let p = subject
-	while (p) {
-		path.unshift(p.__prop)
-		p = p.__parent
-	}
-	const subs = subject.__subs && subject.__subs.length
-	const listeners = subject.__listeners && subject.__listeners.size()
+obs.unobserveId('a.b.c', id1);
+obs.unobserveId('a.b.c', id1); //logState(obs)
 
-	assert.is(!!(subs || listeners) === !!(subject.__flags & SUBJECT_ENABLED_FLAG))
-	assert.is(!!subs === !!(subject.__flags & SUBJECT_SUB_FLAG))
-	assert.is(!!listeners === !!(subject.__flags & SUBJECT_LISTEN_FLAG))
-	assert.is(!subject.__observer || subject.__flags & SUBJECT_ENABLED_FLAG)
+obs.unobserveId('a.b.d', id2); //logState(obs)
 
-	return {
-		id: objId(subject, 'subject'),
-		path: formatPath(path),
-		obj: JSON.stringify(subject.__owner.target),
-		enabled: !!(subs || listeners),
-		listeners: listeners,
-		watched: subject.__observer && {
-			id: objId(subject.__observer, 'observer'),
-			obj: JSON.stringify(subject.__observer.target),
-			watchs: watchs(subject.__observer)
-		},
-		subCache: subject.__subCache && map(subject.__subCache, subjectState),
-		subs: subs && map(subject.__subs, sub => objId(sub, 'subject'))
-	}
-}
-function observerState(observer: Observer) {
-	return {
-		id: objId(observer, 'observer'),
-		obj: JSON.stringify(observer.target),
-		watchs: watchs(observer),
-		subjects: map(observer.__subjects, subj => subjectState(subj))
-	}
-}
-function watchs(observer: Observer) {
-	return map(observer.__watchs, w =>
-		w
-			.toArray()
-			.map(s => objId(s, 'subject'))
-			.join(', ')
-	)
-}
+id1 = obs.observe('a.b.c', function () {
+  console.log('a.b.c', arguments);
+});
+id2 = obs.observe('a.b.d', function () {
+  console.log('a.b.d', arguments);
+}); //logState(obs)
 
-function logState(obs: Observer) {
-	const state = observerState(obs)
-	console.log(JSON.stringify(state, null, '  '))
-}
-let obs = new Observer({ a: { b: { c: 1 } } })
-let id1 = obs.observe('a.b.c', () => {})
-let id2 = obs.observe('a.b.d', () => {})
-//logState(obs)
-obs.unobserveId('a.b.c', id1)
-obs.unobserveId('a.b.c', id1)
-//logState(obs)
-obs.unobserveId('a.b.d', id2)
-
-//logState(obs)
-id1 = obs.observe('a.b.c', function() {
-	console.log('a.b.c', arguments)
-})
-id2 = obs.observe('a.b.d', function() {
-	console.log('a.b.d', arguments)
-})
-//logState(obs)
-
-const ov = obs.target['a']
-obs.target['a'] = { b: { d: 2 } }
-obs.update('a', obs.target['a'], ov)
-
-setTimeout(function() {
-	logState(obs)
-}, 1000)
-
-logState(obs)
- */
+const ov = obs.target['a'];
+obs.target['a'] = {
+  b: {
+    d: 2
+  }
+};
+obs.update('a', ov);
+setTimeout(function () {//logState(obs)
+}, 1000); //logState(obs)
 
 /**
  * @module observer
@@ -4797,8 +4917,8 @@ logState(obs)
  * @module main
  * @preferred
  * @created Wed Nov 21 2018 10:21:20 GMT+0800 (China Standard Time)
- * @modified Fri Mar 01 2019 18:20:02 GMT+0800 (China Standard Time)
+ * @modified Fri Mar 08 2019 15:35:52 GMT+0800 (China Standard Time)
  */
 
-export { createFn, applyScope, applyNoScope, applyScopeN, applyNoScopeN, apply, applyN, fnName, bind, eq, isNull, isUndef, isNil, isBool, isNum, isStr, isFn, isInt, isPrimitive, instOf, is, isBoolean, isNumber, isString, isDate, isReg, isArray, isTypedArray, isArrayLike, isObj, isBlank, stickyReg, unicodeReg, reEscape, prototypeOf, protoProp, protoOf, __setProto, setProto, getOwnProp, hasOwnProp, propDescriptor, propAccessor, defProp, defPropValue, parsePath, formatPath, get, set, charCode, char, cutStr, cutLStr, trim, upper, lower, upperFirst, lowerFirst, escapeStr, pad, shorten, thousandSeparate, binarySeparate, octalSeparate, hexSeparate, plural, singular, FORMAT_XPREFIX, FORMAT_PLUS, FORMAT_ZERO, FORMAT_SPACE, FORMAT_SEPARATOR, FORMAT_LEFT, extendFormatter, getFormatter, vformat, format, formatter, create, doAssign, assign, assignIf, defaultAssignFilter, assignIfFilter, makeArray, STOP, eachProps, eachArray, eachObj, each, SKIP, mapArray, mapObj, map, idxOfArray, idxOfObj, idxOf, reduceArray, reduceObj, reduce, keys, values, arr2obj, makeMap, List, FnList, nextTick, clearTick, Source, discardMatch, appendMatch, attachMatch, match, and, any, many, option, or, anyOne, manyOne, optionOne, OBSERVER_KEY, Observer };
+export { createFn, applyScope, applyNoScope, applyScopeN, applyNoScopeN, apply, applyN, fnName, bind, eq, isNull, isUndef, isNil, isBool, isNum, isStr, isFn, isInt, isPrimitive, instOf, is, isBoolean, isNumber, isString, isDate, isReg, isArray, isTypedArray, isArrayLike, isObj, isBlank, stickyReg, unicodeReg, reEscape, prototypeOf, protoProp, protoOf, __setProto, setProto, getOwnProp, hasOwnProp, propDescriptor, propAccessor, defProp, defPropValue, parsePath, formatPath, get, set, toStr, toStrType, charCode, char, cutStr, cutLStr, trim, upper, lower, upperFirst, lowerFirst, escapeStr, pad, shorten, thousandSeparate, binarySeparate, octalSeparate, hexSeparate, plural, singular, FORMAT_XPREFIX, FORMAT_PLUS, FORMAT_ZERO, FORMAT_SPACE, FORMAT_SEPARATOR, FORMAT_LEFT, extendFormatter, getFormatter, vformat, format, formatter, create, doAssign, assign, assignIf, defaultAssignFilter, assignIfFilter, makeArray, STOP, eachProps, eachArray, eachObj, each, SKIP, mapArray, mapObj, map, idxOfArray, idxOfObj, idxOf, reduceArray, reduceObj, reduce, keys, values, arr2obj, makeMap, List, FnList, nextTick, clearTick, Source, discardMatch, appendMatch, attachMatch, match, and, any, many, option, or, anyOne, manyOne, optionOne, ARRAY_CHANGE, MISS, OBSERVER_KEY, getObserver, Observer };
 //# sourceMappingURL=argilo.esm.dev.js.map

@@ -3,7 +3,7 @@
  * @module utility/List
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
- * @modified Fri Feb 22 2019 16:45:27 GMT+0800 (China Standard Time)
+ * @modified Fri Mar 08 2019 18:22:58 GMT+0800 (China Standard Time)
  */
 
 import { bind } from '../fn'
@@ -116,6 +116,15 @@ export class List<T> {
 			}
 			this.__doLazyRemove()
 			this.__scaning = false
+		}
+	}
+	eachUnsafe(cb: (obj: T) => boolean | void, scope?: any) {
+		if (this.__length) {
+			var node = this.__head
+			while (node) {
+				if (node[3] === this && cb(node[0]) === false) break
+				node = node[2]
+			}
 		}
 	}
 	toArray(): T[] {
