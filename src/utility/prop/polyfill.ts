@@ -3,9 +3,9 @@
  * @module utility
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Jul 25 2018 15:22:57 GMT+0800 (China Standard Time)
- * @modified Sat Dec 29 2018 18:57:40 GMT+0800 (China Standard Time)
+ * @modified Mon Mar 11 2019 16:07:22 GMT+0800 (China Standard Time)
  */
-import { PROTO, PROTOTYPE, HAS_OWN_PROP } from '../consts'
+import { PROTO, PROTOTYPE } from '../consts'
 import { protoProp } from '../proto'
 import { hasOwnProp as __hasOwnProp } from './hasOwnProp'
 

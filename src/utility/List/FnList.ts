@@ -3,15 +3,16 @@
  * @module utility/List
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
- * @modified Fri Mar 08 2019 18:24:33 GMT+0800 (China Standard Time)
+ * @modified Mon Mar 11 2019 19:53:56 GMT+0800 (China Standard Time)
  */
 
 import { List } from './List'
 import { create } from '../create'
 import { defPropValue } from '../prop'
+import { addDefaultKey } from '../dkeys'
 
-const DEFAULT_FN_BINDING = '__flist_id__'
-const DEFAULT_SCOPE_BINDING = DEFAULT_FN_BINDING
+const DEFAULT_FN_BINDING = addDefaultKey('__flist_id__')
+const DEFAULT_SCOPE_BINDING = addDefaultKey(DEFAULT_FN_BINDING)
 
 type FnNode<T extends Function> = [string, T, any, any]
 export class FnList<T extends Function> {

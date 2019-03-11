@@ -2,7 +2,7 @@
  * @module observer
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Dec 26 2018 13:59:10 GMT+0800 (China Standard Time)
- * @modified Sun Mar 10 2019 11:04:55 GMT+0800 (China Standard Time)
+ * @modified Mon Mar 11 2019 19:56:42 GMT+0800 (China Standard Time)
  */
 
 import {
@@ -20,14 +20,16 @@ import {
 	nextTick,
 	isNil,
 	toStrType,
-	map
+	map,
+	get,
+	addDefaultKey
 } from '../utility'
 import { PROTOTYPE } from '../utility/consts'
 import { assert } from '../utility/assert'
-
-export type ObserverTarget = any[] | {}
+import { ObserverTarget, IWatcher } from './ObserverPolicy'
 
 /**
+ * change callback for observer
  * @param path 		the observe path
  * @param value 	new value
  * @param original	original value. the original value is {@link MISS} when the dirty collector loses the original value
@@ -50,6 +52,10 @@ export const MISS = {}
  *                                                                                      */
 //========================================================================================
 
+/**
+ * special object
+ * - special object indicates that the topic has not changed
+ */
 const V = {}
 
 function isObserverTarget(obj: any) {
@@ -60,7 +66,7 @@ function isObserverTarget(obj: any) {
  * get or create sub-observer
  * fix proxy value
  * @param observer 	observer
- * @param prop		property of observer target
+ * @param prop		property of the observer's target
  * @param target	target = observer.target[prop]
  * @return sub-observer
  */
@@ -68,6 +74,15 @@ function loadSubObserver(observer: Observer, prop: string, target: any): Observe
 	const subObserver: Observer = getObserver(target) || observer.observerOf(target)
 	if (subObserver.proxy !== target) observer.target[prop] = subObserver.proxy
 	return subObserver
+}
+
+/**
+ * is array change property
+ * @param observer 	observer
+ * @param prop 		property of the observer's target
+ */
+function isArrayChangeProp(observer: Observer, prop: string) {
+	return observer.isArray && prop === ARRAY_CHANGE
 }
 
 /**
@@ -80,9 +95,9 @@ function getValue(obj: any, prop: string) {
 }
 
 /**
- * get property value on original object
+ * get property value on the original value
  * check {@link MISS}
- * @param original 	object
+ * @param original 	original value
  * @param prop 		property
  */
 function getOriginalValue(original: any, prop: string) {
@@ -92,8 +107,11 @@ function getOriginalValue(original: any, prop: string) {
 // id generator of topic
 let topicIdGen = 0
 
-const collectQueue: Topic[] = [], // the dirty topic queue waiting for collection
-	dirtyQueue: Topic[] = [] // the dirty topic queue waiting for notification
+// the dirty topic queue waiting for collection
+const collectQueue: Topic[] = []
+
+// the dirty topic queue waiting for notification
+const dirtyQueue: Topic[] = []
 
 // flags of topic
 const TOPIC_ENABLED_FLAG = 0x1, // topic is enabled
@@ -137,7 +155,7 @@ class Topic {
 	__subCache: { [key: string]: Topic }
 
 	// flags: TOPIC_ENABLED_FLAG | TOPIC_LISTEN_FLAG | TOPIC_SUB_FLAG
-	__flags: number
+	__state: number
 
 	/**
 	 * create a Topic
@@ -146,8 +164,8 @@ class Topic {
 	 * @param parent	parent topic
 	 */
 	constructor(owner: Observer, prop: string, parent?: Topic) {
-		this.__flags = 0
-		this.__original = V
+		this.__state = 0
+		this.__original = V // special object indicates that the topic has not changed
 		this.__owner = owner
 		this.__prop = prop
 		this.__parent = parent
@@ -168,7 +186,7 @@ class Topic {
 			this.__path = path
 		}
 		const id = listeners.add(cb, scope)
-		id && (this.__flags |= TOPIC_LISTEN_FLAG | TOPIC_ENABLED_FLAG)
+		id && (this.__state |= TOPIC_LISTEN_FLAG | TOPIC_ENABLED_FLAG)
 		return id
 	}
 
@@ -198,20 +216,25 @@ class Topic {
 	}
 
 	/**
-	 * Clear all unlistening leaf topics
+	 * Clear all unlistening leaf topics (!TOPIC_LISTEN_FLAG && !TOPIC_SUB_FLAG)
 	 * @param listeners	listeners
 	 */
 	private ____unlisten(listeners: FnList<ObserverCallback>) {
 		if (!listeners.size()) {
+			// this topic has no listeners, clear the listen flag
 			var topic: Topic = this,
 				parent: Topic
-			topic.__flags &= ~TOPIC_LISTEN_FLAG
-			while ((topic.__flags & (TOPIC_SUB_FLAG | TOPIC_LISTEN_FLAG | TOPIC_ENABLED_FLAG)) === TOPIC_ENABLED_FLAG) {
+			topic.__state &= ~TOPIC_LISTEN_FLAG
+			while (topic.__state === TOPIC_ENABLED_FLAG) {
+				// the topic has no listeners and subtopics
+				//  - unbind the observer on the topic
+				//  - clear topic state
+				//  - remove from the parent topic
 				topic.__bind()
-				topic.__flags = 0
+				topic.__state = 0
 				if (!(parent = topic.__parent)) break
 				parent.__removeSub(topic)
-				topic = parent
+				topic = parent // re-check the parent topic
 			}
 		}
 	}
@@ -224,8 +247,7 @@ class Topic {
 		const { __observer: org } = this
 		if (org !== observer) {
 			org && org.__unwatchTopic(this) // unbind old observer
-			if (!observer || observer.__watchTopic(this) === false) observer = undefined
-			this.__observer = observer && observer.__watchTopic(this) !== false ? observer : observer
+			this.__observer = observer && observer.__watchTopic(this) ? observer : observer
 		}
 	}
 
@@ -248,7 +270,7 @@ class Topic {
 				this.__subCache || ((this.__subs = []), (this.__subCache = create(null))),
 			sub: Topic = subCache[subProp] || (subCache[subProp] = new Topic(this.__owner, subProp, this))
 
-		if (!(sub.__flags & TOPIC_ENABLED_FLAG)) {
+		if (!(sub.__state & TOPIC_ENABLED_FLAG)) {
 			// init the subtopic
 
 			const { __subs: subs, __observer: observer } = this
@@ -279,11 +301,11 @@ class Topic {
 			}
 
 			// 2. attach subtopic
-			sub.__flags |= TOPIC_ENABLED_FLAG
+			sub.__state |= TOPIC_ENABLED_FLAG
 			subs.push(sub)
 		}
 
-		this.__flags |= TOPIC_SUB_FLAG | TOPIC_ENABLED_FLAG
+		this.__state |= TOPIC_SUB_FLAG | TOPIC_ENABLED_FLAG
 
 		return sub
 	}
@@ -299,7 +321,7 @@ class Topic {
 		while (i--) {
 			if (topic === subs[i]) {
 				subs.splice(i, 1)
-				l === 1 && (this.__flags &= ~TOPIC_SUB_FLAG)
+				l === 1 && (this.__state &= ~TOPIC_SUB_FLAG)
 				return
 			}
 		}
@@ -353,7 +375,7 @@ class Topic {
 	}
 
 	/**
-	 * collect the dirty topics(current and sub topics) from collectQueue
+	 * collect the dirty topics(this topic and subtopics) from collectQueue
 	 * may collected by parent-topic
 	 */
 	__collect() {
@@ -365,28 +387,30 @@ class Topic {
 
 			this.____collect(observer, observer.target, original)
 		}
+		// this topic has been collected, retains its dirty value
 	}
 
 	/**
-	 * collect dirty topics
-	 * - Case 1:
-	 * 	1. collect from collectQueue
-	 * 		1. clean changed flag
-	 * 		2. save dirty values
-	 * 		3. collect the subtopics
-	 * 			default use the new and original value
-	 * 			use the subtopic's original value when subtopic is changed
-	 * 			clean subtopic's changed flag
-	 * 	2. re-collect by parent-topic
-	 * 		1. replace the new value and discard the original value(keep the existing original value)
-	 * 		2. re-collect subtopics
+	 * collect the dirty topics(this topic and subtopics)
+	 * - collect from collectQueue
+	 * 	1. this topic has been collected, stop collect
+	 * 	2. save the dirty value when the topic has a listener
+	 * 	3. clean the change state
+	 * 	4. collect the subtopics
+	 *		use this original value when subtopic has not changed
+	 *		use the subtopic's original value when subtopic is changed
+	 * 		clean the change state
+	 *		replace the new value on subtopics
+	 * - re-collect by parent-topic (this does not happen after the topics are sorted by ID before collection)
+	 * 	1. replace the new value and discard the original value(keep the existing original value)
+	 * 	2. re-collect subtopics
 	 *
 	 * @param observer 	observer of this topic
 	 * @param target 	new target of this topic
 	 * @param original 	original value of this topic
 	 */
 	private ____collect(observer: Observer, target: any, original: any) {
-		const { __flags: flags, __prop: prop } = this
+		const { __state: flags, __prop: prop } = this
 		let dirty: [any, any],
 			subTarget: any = V // lazy load the sub-target
 
@@ -416,7 +440,7 @@ class Topic {
 				//#endif
 
 				if (isObserverTarget(subTarget)) {
-					subObserver = loadSubObserver(observer, this.__prop, subTarget)
+					subObserver = loadSubObserver(observer, prop, subTarget)
 					subTarget = subObserver.target
 					dirty && (dirty[0] = subObserver.proxy) // update dirty proxy
 				}
@@ -539,77 +563,90 @@ function notify() {
  *                                                                                      */
 //========================================================================================
 
-/**
- */
-class Watchers extends List<Topic> {
-	__watched: boolean
+class Watcher extends List<Topic> implements IWatcher {
 	/**
-	 *
+	 * notify topics
+	 * @param original the original value
 	 */
 	notify(original: any) {
 		this.eachUnsafe(topic => topic.__update(original))
 	}
 }
 
-export const OBSERVER_KEY = '__observer__'
-export function getObserver(target: ObserverTarget) {
+/**
+ * Observer Key
+ */
+export const OBSERVER_KEY = addDefaultKey('__observer__')
+
+/**
+ * get existing observer on object
+ * @return existing observer
+ */
+export function getObserver(target: ObserverTarget): Observer {
 	const oserver: Observer = target[OBSERVER_KEY]
 	if (oserver && (oserver.target === target || oserver.proxy === target)) return oserver
 }
-let disableUpdate = false
+
 export class Observer {
 	/**
-	 * original object
+	 * observer target
 	 */
 	readonly target: ObserverTarget
 
 	/**
-	 * proxy object
+	 * observer proxy
 	 */
 	proxy: ObserverTarget
 
 	/**
-	 * is array
+	 * is array target
 	 */
 	readonly isArray: boolean
 
 	/**
 	 * topics
-	 * 	- key: property of original object
+	 * 	- key: property of topic in the observer's target
 	 * 	- value: topic
 	 */
 	__topics: { [key: string]: Topic }
 
 	/**
-	 * watched topics
-	 * 	- key: property of original object
-	 * 	- value: topics
+	 * watchers
+	 * 	- key: property of watcher in the observer's target
+	 * 	- value: watcher
 	 */
-	readonly __watchs: { [key: string]: Watchers }
+	readonly __watchers: { [key: string]: Watcher }
+
+	/**
+	 * properties of watchers in the observer's target
+	 */
+	readonly __watcherProps: string[]
 
 	/**
 	 * create Observer
-	 * @param target original object
+	 * @param target observer target
 	 */
 	constructor(target: ObserverTarget) {
-		this.__watchs = create(null)
+		this.__watchers = create(null)
+		this.__watcherProps = []
 
 		this.target = target
 		this.proxy = target
 
 		if ((this.isArray = isArray(target))) applyArrayHooks(target as any[])
 
-		assert.is(isObj(target), `the observer target can only be an object or an array`)
+		assert.is(isObj(target), `the observer's target can only be an object or an array`)
 
-		// bind observer key on original object
+		// bind observer key on the observer's target
 		defPropValue(target, OBSERVER_KEY, this, false, false, false)
 	}
 
 	/**
-	 * observe property path
-	 * @param propPath 	property path of original object, parse string path by {@link parsePath}
+	 * observe changes in the observer's target
+	 * @param propPath 	property path for observe, parse string path by {@link parsePath}
 	 * @param cb		callback
 	 * @param scope		scope of callback
+	 * @return listen-id
 	 */
 	observe(propPath: string | string[], cb: ObserverCallback, scope?: any) {
 		const path: string[] = parsePath(propPath),
@@ -621,6 +658,7 @@ export class Observer {
 			l = path.length
 
 		topic.__bind(this)
+		topic.__flags |= TOPIC_ENABLED_FLAG
 
 		for (; i < l; i++) {
 			topic = topic.__addSub(path[i])
@@ -630,10 +668,10 @@ export class Observer {
 	}
 
 	/**
-	 * unobserve property path
-	 * @param propPath	property path on object
+	 * cancel observing the changes in the observer's target
+	 * @param propPath	property path for unobserve, parse string path by {@link parsePath}
 	 * @param cb		callback
-	 * @param scope		scope of cb
+	 * @param scope		scope of callback
 	 */
 	unobserve(propPath: string | string[], cb: ObserverCallback, scope?: any) {
 		const topic = this.__getTopic(parsePath(propPath))
@@ -641,8 +679,8 @@ export class Observer {
 	}
 
 	/**
-	 * unobserve property path
-	 * @param propPath	property path on object
+	 * cancel observing the changes in the observer's target by listen-id
+	 * @param propPath	property path for unobserve, parse string path by {@link parsePath}
 	 * @param id 		listen-id
 	 */
 	unobserveId(propPath: string | string[], id: string) {
@@ -651,43 +689,35 @@ export class Observer {
 	}
 
 	/**
-	 * update property value and notify changes
-	 * @param prop		property
-	 * @param original	original value
+	 * notify the observer that the property in the target has been changed
+	 * @param prop		changed property
+	 * @param original	the original value
 	 */
-	update(prop: string, original: any) {
-		if (!disableUpdate) {
-			const watchers = this.__watchs[prop]
-			watchers && watchers.size() && watchers.notify(original)
-		}
+	notify(prop: string, original: any) {
+		const watcher = this.__watchers[prop]
+		watcher && watcher.size() && watcher.notify(original)
 	}
 
-	updateAll() {
-		if (!disableUpdate) {
-			const { __watchs: watchs } = this
-			var prop: string, watchers: Watchers
-			for (prop in watchs) {
-				watchers = watchs[prop]
-				watchers.size() && watchers.notify(MISS)
-			}
-		}
-	}
-
-	_watchers(prop: string) {
-		if (!disableUpdate) {
-			const watchers = this.__watchs[prop]
-			if (watchers && watchers.size()) return watchers
+	/**
+	 * notify the observer that all properties in the target have changed
+	 * the original value well be {@link MISS}
+	 */
+	notifyAll() {
+		const { __watchers: watchers, __watcherProps: props } = this
+		for (var i = 0, watcher: Watcher, l = props.length; i < l; i++) {
+			watcher = watchers[props[i]]
+			watcher.size() && watcher.notify(MISS)
 		}
 	}
 
 	/**
-	 * watch property
-	 * @abstract
+	 * get watcher of the property
 	 * @protected
-	 * @param prop	property
+	 * @param prop
 	 */
-	_watch(prop: string): boolean | void {
-		return true //assert('abstruct')
+	watcher(prop: string) {
+		const watcher = this.__watchers[prop]
+		if (watcher && watcher.size()) return watcher
 	}
 
 	/**
@@ -700,8 +730,45 @@ export class Observer {
 	}
 
 	/**
-	 *
-	 * @param path
+	 * watch property
+	 * @protected
+	 * @param prop	property
+	 * @return false: watch failed
+	 */
+	_watch(prop: string): boolean | void {}
+
+	/**
+	 * watch the topic
+	 * @private
+	 * @param topic topic
+	 * @return is successful
+	 */
+	__watchTopic(topic: Topic): boolean {
+		const { __watchers: watchers } = this
+		const { __prop: prop } = topic
+		let watcher: Watcher = watchers[prop]
+		if (!watcher) {
+			if (this._watch(prop) === false) return false
+			watchers[prop] = watcher = new Watcher()
+			this.__watcherProps.push(prop)
+		}
+		watcher.add(topic)
+		return true
+	}
+
+	/**
+	 * unwatched the topic
+	 * @private
+	 * @param topic topic
+	 */
+	__unwatchTopic(topic: Topic) {
+		this.__watchers[topic.__prop].remove(topic)
+	}
+
+	/**
+	 * get topic by property path
+	 * @param path property path of topic, parse string path by {@link parsePath}
+	 * @return topic | undefined
 	 */
 	private __getTopic(path: string[]) {
 		const { __topics: topics } = this
@@ -715,37 +782,25 @@ export class Observer {
 	}
 
 	/**
-	 * watch topic
-	 * @private
-	 * @param topic
+	 * set value
+	 * @param propPath 	property path for set, parse string path by {@link parsePath}
+	 * @param value		the value
 	 */
-	__watchTopic(topic: Topic): boolean | void {
-		const { __watchs: watchs } = this
-		const { __prop: prop } = topic
-		const topics: Watchers = watchs[prop] || (watchs[prop] = new Watchers()),
-			state = topics.__watched
-
-		if (state === undefined) return (topics.__watched = this._watch(prop) !== false)
-		state && topics.add(topic)
-	}
+	set(propPath: string | string[], value: any) {}
 
 	/**
-	 * remove watched topic
-	 * @private
-	 * @param topic
+	 * get value
+	 * @param propPath 	property path for get, parse string path by {@link parsePath}
+	 * @return the value
 	 */
-	__unwatchTopic(topic: Topic) {
-		this.__watchs[topic.__prop].remove(topic)
+	get(propPath: string | string[]): any {
+		return get(this.target, propPath)
 	}
 
 	/**
 	 * @ignore
 	 */
 	toJSON() {}
-}
-
-function isArrayChangeProp(observer: Observer, prop: string) {
-	return observer.isArray && prop === ARRAY_CHANGE
 }
 
 //========================================================================================
@@ -763,7 +818,7 @@ const arrayHooks = mapArray(
 			method,
 			function() {
 				const observer: Observer = this[OBSERVER_KEY]
-				observer.updateAll()
+				observer.notifyAll()
 				return applyScope(fn, observer.target, arguments)
 			}
 		]
@@ -788,7 +843,7 @@ function applyArrayHooks(array: any[]) {
  *                                     test topic                                     *
  *                                                                                      */
 //========================================================================================
-
+/*
 const objIdGen: { [key: string]: number } = {}
 function objId(obj: any, str: string) {
 	return obj.id || (obj.id = str + '-' + (objIdGen[str] ? ++objIdGen[str] : (objIdGen[str] = 1)))
@@ -803,10 +858,10 @@ function topicState(topic: Topic) {
 	const subs = topic.__subs && topic.__subs.length
 	const listeners = topic.__listeners && topic.__listeners.size()
 
-	assert.is(!!(subs || listeners) === !!(topic.__flags & TOPIC_ENABLED_FLAG))
-	assert.is(!!subs === !!(topic.__flags & TOPIC_SUB_FLAG))
-	assert.is(!!listeners === !!(topic.__flags & TOPIC_LISTEN_FLAG))
-	assert.is(!topic.__observer || topic.__flags & TOPIC_ENABLED_FLAG)
+	assert.is(!!(subs || listeners) === !!(topic.__state & TOPIC_ENABLED_FLAG))
+	assert.is(!!subs === !!(topic.__state & TOPIC_SUB_FLAG))
+	assert.is(!!listeners === !!(topic.__state & TOPIC_LISTEN_FLAG))
+	assert.is(!topic.__observer || topic.__state & TOPIC_ENABLED_FLAG)
 
 	return {
 		id: objId(topic, 'topic'),
@@ -832,7 +887,7 @@ function observerState(observer: Observer) {
 	}
 }
 function watchs(observer: Observer) {
-	return map(observer.__watchs, w =>
+	return map(observer.__watchers, w =>
 		w
 			.toArray()
 			.map(s => objId(s, 'topic'))
@@ -864,10 +919,11 @@ id2 = obs.observe('a.b.d', function() {
 
 const ov = obs.target['a']
 obs.target['a'] = { b: { d: 2 } }
-obs.update('a', ov)
+obs.notify('a', ov)
 
 setTimeout(function() {
 	//logState(obs)
 }, 1000)
 
 //logState(obs)
+ */

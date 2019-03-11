@@ -2,7 +2,7 @@
  * @module utility/prop
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Fri Nov 30 2018 14:41:02 GMT+0800 (China Standard Time)
- * @modified Sat Feb 23 2019 10:45:54 GMT+0800 (China Standard Time)
+ * @modified Mon Mar 11 2019 15:13:49 GMT+0800 (China Standard Time)
  */
 
 import { create } from './create'
@@ -61,7 +61,7 @@ export function get(obj: any, path: string | string[]): any {
 	const l = path.length - 1
 	let i = 0
 	for (; i < l; i++) if ((obj = obj[path[i]]) === null || obj === undefined) return
-	if (obj && ~l) return obj[path[i]]
+	if (obj) return obj[path[i]]
 }
 
 export function set(obj: any, path: string | string[], value: any) {
@@ -69,5 +69,5 @@ export function set(obj: any, path: string | string[], value: any) {
 	const l = path.length - 1
 	let i = 0
 	for (; i < l; i++) obj = obj[path[i]] || (obj[path[i]] = {})
-	~l && (obj[path[i]] = value)
+	obj[path[i]] = value
 }
