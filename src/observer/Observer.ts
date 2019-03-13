@@ -2,7 +2,7 @@
  * @module observer
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Dec 26 2018 13:59:10 GMT+0800 (China Standard Time)
- * @modified Mon Mar 11 2019 19:56:42 GMT+0800 (China Standard Time)
+ * @modified Wed Mar 13 2019 19:11:04 GMT+0800 (China Standard Time)
  */
 
 import {
@@ -20,13 +20,15 @@ import {
 	nextTick,
 	isNil,
 	toStrType,
-	map,
 	get,
-	addDefaultKey
+	eq,
+	set
 } from '../utility'
 import { PROTOTYPE } from '../utility/consts'
 import { assert } from '../utility/assert'
-import { ObserverTarget, IWatcher } from './ObserverPolicy'
+import { ObserverTarget, IWatcher, OBSERVER_KEY, IObserver, ObserverPolicy } from './IObserver'
+import accessorPolicy from './accessorPolicy'
+import proxyPolicy from './proxyPolicy'
 
 /**
  * change callback for observer
@@ -60,20 +62,6 @@ const V = {}
 
 function isObserverTarget(obj: any) {
 	return obj && (isArray(obj) || isObj(obj))
-}
-
-/**
- * get or create sub-observer
- * fix proxy value
- * @param observer 	observer
- * @param prop		property of the observer's target
- * @param target	target = observer.target[prop]
- * @return sub-observer
- */
-function loadSubObserver(observer: Observer, prop: string, target: any): Observer {
-	const subObserver: Observer = getObserver(target) || observer.observerOf(target)
-	if (subObserver.proxy !== target) observer.target[prop] = subObserver.proxy
-	return subObserver
 }
 
 /**
@@ -449,6 +437,8 @@ class Topic {
 					this.__badSubsPath(subs, l, toStrType(subTarget))
 				}
 				//#endif
+			} else if (dirty && policy.__proxy) {
+				dirty[0] = proxy(dirty[0])
 			}
 
 			for (; i < l; i++) {
@@ -470,6 +460,8 @@ class Topic {
 					sub.____collect(subObserver, subTarget, subOriginal)
 				}
 			}
+		} else if (dirty && policy.__proxy) {
+			dirty[0] = proxy(dirty[0])
 		}
 	}
 }
@@ -563,31 +555,24 @@ function notify() {
  *                                                                                      */
 //========================================================================================
 
+let __original__: any
+function __updateTopicCB(topic: Topic) {
+	topic.__update(__original__)
+}
+
 class Watcher extends List<Topic> implements IWatcher {
 	/**
 	 * notify topics
 	 * @param original the original value
 	 */
 	notify(original: any) {
-		this.eachUnsafe(topic => topic.__update(original))
+		__original__ = original
+		this.eachUnsafe(__updateTopicCB)
+		__original__ = 0
 	}
 }
 
-/**
- * Observer Key
- */
-export const OBSERVER_KEY = addDefaultKey('__observer__')
-
-/**
- * get existing observer on object
- * @return existing observer
- */
-export function getObserver(target: ObserverTarget): Observer {
-	const oserver: Observer = target[OBSERVER_KEY]
-	if (oserver && (oserver.target === target || oserver.proxy === target)) return oserver
-}
-
-export class Observer {
+class Observer implements IObserver {
 	/**
 	 * observer target
 	 */
@@ -627,15 +612,20 @@ export class Observer {
 	 * @param target observer target
 	 */
 	constructor(target: ObserverTarget) {
-		this.__watchers = create(null)
+		const arrayTarget = isArray(target)
+		if (arrayTarget) {
+			applyArrayHooks(target as any[])
+		} else {
+			assert.is(isObj(target), `the observer's target can only be an object or an array`)
+		}
+
+		const watchers = create(null)
+		this.__watchers = watchers
 		this.__watcherProps = []
 
+		this.isArray = arrayTarget
 		this.target = target
-		this.proxy = target
-
-		if ((this.isArray = isArray(target))) applyArrayHooks(target as any[])
-
-		assert.is(isObj(target), `the observer's target can only be an object or an array`)
+		this.proxy = policy.__createProxy(target, arrayTarget, watchers)
 
 		// bind observer key on the observer's target
 		defPropValue(target, OBSERVER_KEY, this, false, false, false)
@@ -695,7 +685,7 @@ export class Observer {
 	 */
 	notify(prop: string, original: any) {
 		const watcher = this.__watchers[prop]
-		watcher && watcher.size() && watcher.notify(original)
+		watcher && watcher.notify(original)
 	}
 
 	/**
@@ -706,7 +696,7 @@ export class Observer {
 		const { __watchers: watchers, __watcherProps: props } = this
 		for (var i = 0, watcher: Watcher, l = props.length; i < l; i++) {
 			watcher = watchers[props[i]]
-			watcher.size() && watcher.notify(MISS)
+			watcher.notify(MISS)
 		}
 	}
 
@@ -721,23 +711,6 @@ export class Observer {
 	}
 
 	/**
-	 * get or create observer
-	 * @abstract
-	 * @protected
-	 */
-	observerOf(target: any): Observer {
-		return new Observer(target) //assert('abstruct')
-	}
-
-	/**
-	 * watch property
-	 * @protected
-	 * @param prop	property
-	 * @return false: watch failed
-	 */
-	_watch(prop: string): boolean | void {}
-
-	/**
 	 * watch the topic
 	 * @private
 	 * @param topic topic
@@ -748,8 +721,9 @@ export class Observer {
 		const { __prop: prop } = topic
 		let watcher: Watcher = watchers[prop]
 		if (!watcher) {
-			if (this._watch(prop) === false) return false
-			watchers[prop] = watcher = new Watcher()
+			watcher = new Watcher()
+			if (policy.__watch && policy.__watch(this.target, prop, watcher) === false) return false
+			watchers[prop] = watcher
 			this.__watcherProps.push(prop)
 		}
 		watcher.add(topic)
@@ -786,7 +760,9 @@ export class Observer {
 	 * @param propPath 	property path for set, parse string path by {@link parsePath}
 	 * @param value		the value
 	 */
-	set(propPath: string | string[], value: any) {}
+	set(propPath: string | string[], value: any) {
+		$set(this.proxy, propPath, value)
+	}
 
 	/**
 	 * get value
@@ -794,7 +770,7 @@ export class Observer {
 	 * @return the value
 	 */
 	get(propPath: string | string[]): any {
-		return get(this.target, propPath)
+		return $get(this.target, propPath)
 	}
 
 	/**
@@ -837,6 +813,114 @@ function applyArrayHooks(array: any[]) {
 		defPropValue(array, hook[0], hook[1], false, false, false)
 	}
 }
+
+//========================================================================================
+/*                                                                                      *
+ *                                        policy                                        *
+ *                                                                                      */
+//========================================================================================
+
+const policy: ObserverPolicy = proxyPolicy() || accessorPolicy()
+
+assert.is(policy, 'The observer module is not supported.')
+
+//#if _DEBUG
+console.info(`the observer policy: ${policy.__name} -> `, policy)
+//#endif
+
+/**
+ * get existing observer on object
+ * @return existing observer
+ */
+let getObserver: (target: ObserverTarget) => Observer = (target: ObserverTarget): Observer => {
+	const oserver: Observer = target[OBSERVER_KEY]
+	if ((oserver && oserver.target === target) || oserver.proxy === target) return oserver
+}
+
+/**
+ * get or create sub-observer
+ * fix proxy value
+ * @param observer 	observer
+ * @param prop		property of the observer's target
+ * @param target	target = observer.target[prop]
+ * @return sub-observer
+ */
+let loadSubObserver: (observer: Observer, prop: string, target: any) => Observer = (
+	observer: Observer,
+	prop: string,
+	target: any
+): Observer => {
+	const subObserver: Observer = getObserver(target) || new Observer(target)
+	if (subObserver.proxy !== target) observer.target[prop] = subObserver.proxy
+	return subObserver
+}
+
+/**
+ * get the original object of the observer on the object
+ * @param object the object
+ * @return the original object | the object
+ */
+let source: <T>(obj: T) => T = <T>(obj: T): T => {
+	const observer = obj && getObserver(obj)
+	return observer ? (observer.target as T) : obj
+}
+
+/**
+ * get the proxy object for the observer on the object
+ * @param object the object
+ * @return the proxy object | the object
+ */
+let proxy: <T>(obj: T) => T = <T>(obj: T): T => {
+	const observer = obj && getObserver(obj)
+	return observer ? (observer.proxy as T) : obj
+}
+
+/**
+ * support equals function between observer objects
+ */
+let $eq: (o1: any, o2: any) => boolean = (o1, o2) => {
+	return eq(o1, o2) || (o1 && o2 && (o1 = getObserver(o1)) ? o1 === getObserver(o2) : false)
+}
+
+let $get: (obj: any, path: string | string[]) => any = (obj: any, path: string | string[]): any => {
+	return proxy(get(obj, path))
+}
+
+let $set: (obj: any, path: string | string[], value: any) => void = (obj: any, path: string | string[], value: any) => {
+	path = parsePath(path)
+	const l = path.length - 1
+	let i = 0,
+		v: any
+	for (; i < l; i++) {
+		v = obj[path[i]]
+		obj = v === null || v === undefined ? (obj[path[i]] = {}) : proxy(v)
+	}
+	obj[path[i]] = proxy(value)
+}
+
+//──── optimize on Non-Proxy policy ──────────────────────────────────────────────────────
+if (!policy.__proxy) {
+	getObserver = function getObserver(target: ObserverTarget): Observer {
+		const oserver: Observer = target[OBSERVER_KEY]
+		if (oserver && oserver.target === target) return oserver
+	}
+
+	loadSubObserver = function loadSubObserver(observer: Observer, prop: string, target: any): Observer {
+		return getObserver(target) || new Observer(target)
+	}
+
+	source = obj => obj
+
+	proxy = source
+
+	$eq = eq
+
+	$get = get
+
+	$set = set
+}
+
+export { getObserver, source, proxy, $eq, $get, $set }
 
 //========================================================================================
 /*                                                                                      *

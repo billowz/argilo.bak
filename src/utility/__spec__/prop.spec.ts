@@ -1,6 +1,6 @@
 import expect from 'expect.js'
-import '../prop'
-describe('utility/prop', function() {
+import '../defProp'
+describe('utility/defProp', function() {
 	it('hasOwnProp', function(){
 
 	})

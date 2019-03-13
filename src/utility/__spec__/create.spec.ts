@@ -1,6 +1,6 @@
 import expect from 'expect.js'
 import { create } from '../create'
-import { hasOwnProp } from '../prop'
+import { hasOwnProp } from '../ownProp'
 import { protoOf } from '../proto'
 
 describe('utility/create', function() {

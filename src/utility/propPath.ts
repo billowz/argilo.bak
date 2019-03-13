@@ -1,8 +1,8 @@
 /**
- * @module utility/prop
+ * @module utility/defProp
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Fri Nov 30 2018 14:41:02 GMT+0800 (China Standard Time)
- * @modified Mon Mar 11 2019 15:13:49 GMT+0800 (China Standard Time)
+ * @modified Wed Mar 13 2019 18:52:28 GMT+0800 (China Standard Time)
  */
 
 import { create } from './create'
@@ -60,14 +60,21 @@ export function get(obj: any, path: string | string[]): any {
 	path = parsePath(path)
 	const l = path.length - 1
 	let i = 0
-	for (; i < l; i++) if ((obj = obj[path[i]]) === null || obj === undefined) return
-	if (obj) return obj[path[i]]
+	for (; i < l; i++) {
+		obj = obj[path[i]]
+		if (obj === null || obj === undefined) return
+	}
+	return obj[path[i]]
 }
 
 export function set(obj: any, path: string | string[], value: any) {
 	path = parsePath(path)
 	const l = path.length - 1
-	let i = 0
-	for (; i < l; i++) obj = obj[path[i]] || (obj[path[i]] = {})
+	let i = 0,
+		v: any
+	for (; i < l; i++) {
+		v = obj[path[i]]
+		obj = v === null || v === undefined ? (obj[path[i]] = {}) : v
+	}
 	obj[path[i]] = value
 }

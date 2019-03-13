@@ -3,32 +3,9 @@
  * @module utility
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Jul 25 2018 15:22:57 GMT+0800 (China Standard Time)
- * @modified Mon Mar 11 2019 16:07:22 GMT+0800 (China Standard Time)
+ * @modified Wed Mar 13 2019 20:08:56 GMT+0800 (China Standard Time)
  */
-import { PROTO, PROTOTYPE } from '../consts'
-import { protoProp } from '../proto'
-import { hasOwnProp as __hasOwnProp } from './hasOwnProp'
-
-//========================================================================================
-/*                                                                                      *
- *                                     own property                                     *
- *                                                                                      */
-//========================================================================================
-
-/**
- * has own property
- */
-export const hasOwnProp: (obj: any, prop: string) => boolean = protoProp
-	? __hasOwnProp
-	: function hasOwnProp(obj, prop) {
-			return prop !== PROTO && __hasOwnProp(obj, prop)
-	  }
-
-//========================================================================================
-/*                                                                                      *
- *                                    define property                                   *
- *                                                                                      */
-//========================================================================================
+import { PROTOTYPE } from '../consts'
 
 let __defProp: (o: any, p: PropertyKey, attributes: PropertyDescriptor & ThisType<any>) => any = Object.defineProperty
 

@@ -3,11 +3,11 @@
  * @module utility/List
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
- * @modified Mon Mar 11 2019 19:53:26 GMT+0800 (China Standard Time)
+ * @modified Wed Mar 13 2019 19:29:16 GMT+0800 (China Standard Time)
  */
 
 import { bind } from '../fn'
-import { defPropValue } from '../prop'
+import { defPropValue } from '../defProp'
 import { assert } from '../assert'
 import { EMPTY_FN } from '../consts'
 import { addDefaultKey } from '../dkeys'
@@ -183,7 +183,7 @@ export class List<T> {
 
 	private __getNode(obj: T): ListNode<T> {
 		const node: ListNode<T> = obj[this.binding]
-		assert.is(node && node[3] === this, 'Object is not in this List')
+		assert.is(node && node[0] === obj && node[3] === this, 'Object is not in this List')
 		return node
 	}
 

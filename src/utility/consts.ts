@@ -36,6 +36,10 @@ export const GLOBAL: any =
 export interface ObjArray {
 	length: number
 }
+
 export type IArray = any[] | string | IArguments | ObjArray
 
 export function EMPTY_FN() {}
+
+export function NULL_CONSTRUCTOR() {}
+NULL_CONSTRUCTOR[PROTOTYPE] = null

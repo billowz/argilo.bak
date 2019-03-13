@@ -3,38 +3,38 @@
  * @module observer
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
- * @modified Mon Mar 11 2019 19:57:29 GMT+0800 (China Standard Time)
+ * @modified Wed Mar 13 2019 19:13:28 GMT+0800 (China Standard Time)
  */
 import { GLOBAL, CONSTRUCTOR, HAS_OWN_PROP } from '../utility/consts'
 import { create, isFn, addDefaultKey } from '../utility'
-import { ObserverTarget, IWatcher } from './ObserverPolicy'
+import { ObserverTarget, IWatcher, ObserverPolicy } from './IObserver'
 
 declare function execScript(code: string, type: string): void
 declare function parseVB(code: string): void
 
-const policy = {
-	name: 'VBProxy',
-	proxy: true,
-	support(): boolean {
-		if (GLOBAL.VBArray) {
-			try {
-				execScript(`Function parseVB(code)\n\tExecuteGlobal(code)\nEnd Function`, 'VBScript')
-				return true
-			} catch {}
+export default function(): ObserverPolicy {
+	if (GLOBAL.Proxy)
+		return {
+			__name: 'VBProxy',
+			__proxy: true,
+			__createProxy(
+				target: ObserverTarget,
+				isArray: boolean,
+				watchers: { [prop: string]: IWatcher }
+			): ObserverTarget {
+				return isArray
+					? target
+					: new VBProxy(target, {
+							set: (source, prop: string, value) => {
+								const watcher = watchers[prop]
+								watcher && watcher.notify(source[prop])
+								source[prop] = value
+								return true
+							}
+					  }).__proxy
+			},
+			__watch(target: ObserverTarget, prop: string, watcher: IWatcher): boolean | void {}
 		}
-		return false
-	},
-	createProxy(target: ObserverTarget, watchers: { [prop: string]: IWatcher }): ObserverTarget {
-		return new Proxy(target, {
-			set: (source, prop: string, value) => {
-				const watcher = watchers[prop]
-				watcher && watcher.notify(source[prop])
-				source[prop] = value
-				return true
-			}
-		})
-	},
-	watch(target: ObserverTarget, prop: string, watcher: IWatcher): boolean | void {}
 }
 
 export class VBProxy {

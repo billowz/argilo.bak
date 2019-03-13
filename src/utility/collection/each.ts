@@ -2,12 +2,12 @@
  * @module utility/collection
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Jul 25 2018 17:10:41 GMT+0800 (China Standard Time)
- * @modified Sat Dec 29 2018 19:34:51 GMT+0800 (China Standard Time)
+ * @modified Wed Mar 13 2019 20:07:41 GMT+0800 (China Standard Time)
  */
 import { Control } from './Control'
 import { IArray } from '../consts'
 import { bind } from '../fn'
-import { hasOwnProp } from '../prop'
+import { hasOwnProp } from '../ownProp'
 import { isArrayLike, isBool } from '../is'
 
 /**

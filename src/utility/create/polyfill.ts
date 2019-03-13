@@ -3,11 +3,12 @@
  * @module utility/create
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Jul 25 2018 15:24:47 GMT+0800 (China Standard Time)
- * @modified Sat Dec 29 2018 18:19:24 GMT+0800 (China Standard Time)
+ * @modified Wed Mar 13 2019 20:08:04 GMT+0800 (China Standard Time)
  */
 
 import { PROTOTYPE } from '../consts'
-import { defProp, hasOwnProp } from '../prop'
+import { defProp } from '../defProp'
+import { hasOwnProp } from '../ownProp'
 import { __setProto } from '../proto'
 
 function __() {}

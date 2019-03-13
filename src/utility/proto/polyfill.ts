@@ -2,10 +2,12 @@
  * @module utility
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Jul 25 2018 15:23:56 GMT+0800 (China Standard Time)
- * @modified Thu Jan 31 2019 10:10:28 GMT+0800 (China Standard Time)
+ * @modified Wed Mar 13 2019 20:10:16 GMT+0800 (China Standard Time)
  */
 import { CONSTRUCTOR, PROTO, PROTOTYPE } from '../consts'
-import { hasOwnProp } from '../prop/hasOwnProp'
+import { addDefaultKey } from '../dkeys'
+
+const PROTO_PROP = '__proto__'
 
 const __getProto = Object.getPrototypeOf,
 	____setProto = Object.setPrototypeOf
@@ -18,7 +20,9 @@ export const prototypeOf = !!____setProto
 /**
  * whether to support `__proto__`
  */
-export const protoProp = { __proto__: [] } instanceof Array
+export const protoProp = { [PROTO_PROP]: [] } instanceof Array
+
+!protoProp && addDefaultKey(PROTO_PROP)
 
 /**
  * get prototype
@@ -30,7 +34,7 @@ export const protoOf: (o: any) => any = ____setProto
 			return obj[PROTO] || __getProto(obj)
 	  }
 	: function getPrototypeOf(obj) {
-			return (hasOwnProp(obj, PROTO) ? obj[PROTO] : obj[CONSTRUCTOR][PROTOTYPE]) || null
+			return obj[PROTO] || obj[CONSTRUCTOR][PROTOTYPE]
 	  }
 
 /**
@@ -54,7 +58,7 @@ export const setProto: <T>(obj: any, proto: any) => any =
 		? __setProto
 		: function setPrototypeOf(obj, proto) {
 				for (let p in proto) {
-					if (hasOwnProp(proto, p)) obj[p] = proto[p]
+					if (!(p in obj)) obj[p] = proto[p]
 				}
 				return __setProto(obj, proto)
 		  })

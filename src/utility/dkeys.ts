@@ -2,19 +2,28 @@
  * @module utility/dkeys
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Mar 11 2019 17:22:13 GMT+0800 (China Standard Time)
- * @modified Mon Mar 11 2019 19:52:00 GMT+0800 (China Standard Time)
+ * @modified Wed Mar 13 2019 19:54:50 GMT+0800 (China Standard Time)
  */
+import { NULL_CONSTRUCTOR } from './consts'
 
-import { create } from './create'
+export const defaultKeyMap = new NULL_CONSTRUCTOR()
 
-const keyMap = create(null),
-	keyArray = []
+export const defaultKeys = []
 
 export function isDefaultKey(key: string) {
-	return keyMap[key] || false
+	return defaultKeyMap[key] || false
+}
+
+export function addDefaultKey(key: string) {
+	if (!defaultKeyMap[key]) {
+		defaultKeyMap[key] = true
+		defaultKeys.push(key)
+	}
+	return key
 }
 
 export function addDefaultKeys(...keys: string[]): void
+
 export function addDefaultKeys() {
 	const args = arguments,
 		l = args.length
@@ -23,16 +32,6 @@ export function addDefaultKeys() {
 	}
 }
 
-export function addDefaultKey(key: string) {
-	if (!keyMap[key]) {
-		keyMap[key] = true
-		keyArray.push(key)
-	}
-	return key
-}
-
 export function getDefaultKeys() {
-	return keyArray
+	return defaultKeys
 }
-
-addDefaultKey('__proto__')

@@ -3,9 +3,9 @@
  * @module utility/assign
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Jul 25 2018 15:22:13 GMT+0800 (China Standard Time)
- * @modified Tue Nov 27 2018 14:03:59 GMT+0800 (China Standard Time)
+ * @modified Wed Mar 13 2019 20:07:19 GMT+0800 (China Standard Time)
  */
-import { hasOwnProp } from './prop'
+import { hasOwnProp } from './ownProp'
 
 /**
  * @param prop

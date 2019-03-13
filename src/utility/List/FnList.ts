@@ -8,7 +8,7 @@
 
 import { List } from './List'
 import { create } from '../create'
-import { defPropValue } from '../prop'
+import { defPropValue } from '../defProp'
 import { addDefaultKey } from '../dkeys'
 
 const DEFAULT_FN_BINDING = addDefaultKey('__flist_id__')
