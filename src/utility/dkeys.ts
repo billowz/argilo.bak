@@ -2,7 +2,7 @@
  * @module utility/dkeys
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Mar 11 2019 17:22:13 GMT+0800 (China Standard Time)
- * @modified Wed Mar 13 2019 19:54:50 GMT+0800 (China Standard Time)
+ * @modified Thu Mar 14 2019 19:01:40 GMT+0800 (China Standard Time)
  */
 import { NULL_CONSTRUCTOR } from './consts'
 

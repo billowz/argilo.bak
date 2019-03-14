@@ -11,7 +11,7 @@
  * Copyright (c) 2018 Tao Zeng <tao.zeng.zt@qq.com>
  * Released under the MIT license
  *
- * Date: Sun, 10 Mar 2019 03:08:49 GMT
+ * Date: Thu, 14 Mar 2019 12:05:23 GMT
  */
 (function (global, factory) {
 	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
@@ -36,6 +36,39 @@
 	var TYPE_UNDEF = 'undefined';
 	var GLOBAL = typeof window !== TYPE_UNDEF ? window : typeof global !== TYPE_UNDEF ? global : typeof self !== TYPE_UNDEF ? self : {};
 	function EMPTY_FN() {}
+	function NULL_CONSTRUCTOR() {}
+	NULL_CONSTRUCTOR[PROTOTYPE] = null;
+
+	/**
+	 * @module utility/dkeys
+	 * @author Tao Zeng <tao.zeng.zt@qq.com>
+	 * @created Mon Mar 11 2019 17:22:13 GMT+0800 (China Standard Time)
+	 * @modified Thu Mar 14 2019 19:01:40 GMT+0800 (China Standard Time)
+	 */
+	var defaultKeyMap = new NULL_CONSTRUCTOR();
+	var defaultKeys = [];
+	function isDefaultKey(key) {
+	  return defaultKeyMap[key] || false;
+	}
+	function addDefaultKey(key) {
+	  if (!defaultKeyMap[key]) {
+	    defaultKeyMap[key] = true;
+	    defaultKeys.push(key);
+	  }
+
+	  return key;
+	}
+	function addDefaultKeys() {
+	  var args = arguments,
+	      l = args.length;
+
+	  for (var i = 0; i < l; i++) {
+	    addDefaultKey(args[i] + '');
+	  }
+	}
+	function getDefaultKeys() {
+	  return defaultKeys;
+	}
 
 	/**
 	 * @module utility
@@ -564,27 +597,8 @@
 	  return str.replace(REG_ESCAPE, '\\$&');
 	}
 
-	/**
-	 * @module utility
-	 * @author Tao Zeng <tao.zeng.zt@qq.com>
-	 * @created Wed Jul 25 2018 15:22:57 GMT+0800 (China Standard Time)
-	 * @modified Sat Dec 29 2018 18:35:40 GMT+0800 (China Standard Time)
-	 */
-	var __hasOwn = Object[PROTOTYPE][HAS_OWN_PROP];
-	/**
-	 * has own property
-	 */
-
-	function hasOwnProp(obj, prop) {
-	  return __hasOwn.call(obj, prop);
-	}
-
-	/**
-	 * @module utility
-	 * @author Tao Zeng <tao.zeng.zt@qq.com>
-	 * @created Wed Jul 25 2018 15:23:56 GMT+0800 (China Standard Time)
-	 * @modified Thu Jan 31 2019 10:10:28 GMT+0800 (China Standard Time)
-	 */
+	var _ref;
+	var PROTO_PROP = '__proto__';
 	var __getProto = Object.getPrototypeOf,
 	    ____setProto = Object.setPrototypeOf;
 	/**
@@ -596,9 +610,8 @@
 	 * whether to support `__proto__`
 	 */
 
-	var protoProp = {
-	  __proto__: []
-	} instanceof Array;
+	var protoProp = (_ref = {}, _ref[PROTO_PROP] = [], _ref) instanceof Array;
+	!protoProp && addDefaultKey(PROTO_PROP);
 	/**
 	 * get prototype
 	 */
@@ -606,7 +619,7 @@
 	var protoOf = ____setProto ? __getProto : __getProto ? function getPrototypeOf(obj) {
 	  return obj[PROTO] || __getProto(obj);
 	} : function getPrototypeOf(obj) {
-	  return (hasOwnProp(obj, PROTO) ? obj[PROTO] : obj[CONSTRUCTOR][PROTOTYPE]) || null;
+	  return obj[PROTO] || obj[CONSTRUCTOR][PROTOTYPE];
 	};
 	/**
 	 * set prototype
@@ -624,7 +637,7 @@
 
 	var setProto = ____setProto || (protoProp ? __setProto : function setPrototypeOf(obj, proto) {
 	  for (var p in proto) {
-	    if (hasOwnProp(proto, p)) obj[p] = proto[p];
+	    if (!(p in obj)) obj[p] = proto[p];
 	  }
 
 	  return __setProto(obj, proto);
@@ -635,7 +648,7 @@
 	 * @module utility
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Wed Jul 25 2018 15:24:47 GMT+0800 (China Standard Time)
-	 * @modified Thu Jan 31 2019 10:11:40 GMT+0800 (China Standard Time)
+	 * @modified Thu Mar 14 2019 09:20:31 GMT+0800 (China Standard Time)
 	 */
 
 	/**
@@ -643,31 +656,12 @@
 	 * @module utility
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Wed Jul 25 2018 15:22:57 GMT+0800 (China Standard Time)
-	 * @modified Sat Dec 29 2018 18:57:40 GMT+0800 (China Standard Time)
+	 * @modified Thu Mar 14 2019 09:18:39 GMT+0800 (China Standard Time)
 	 */
-
-	/*                                                                                      *
-	 *                                     own property                                     *
-	 *                                                                                      */
-	//========================================================================================
-
-	/**
-	 * has own property
-	 */
-
-	var hasOwnProp$1 = protoProp ? hasOwnProp : function hasOwnProp$1(obj, prop) {
-	  return prop !== PROTO && hasOwnProp(obj, prop);
-	}; //========================================================================================
-
-	/*                                                                                      *
-	 *                                    define property                                   *
-	 *                                                                                      */
-	//========================================================================================
-
 	var __defProp = Object.defineProperty;
-	var _ref = Object[PROTOTYPE],
-	    __defineGetter__ = _ref.__defineGetter__,
-	    __defineSetter__ = _ref.__defineSetter__;
+	var _ref$1 = Object[PROTOTYPE],
+	    __defineGetter__ = _ref$1.__defineGetter__,
+	    __defineSetter__ = _ref$1.__defineSetter__;
 	/**
 	 * whether to support Object.defineProperty
 	 */
@@ -699,11 +693,11 @@
 	  var get = desc.get,
 	      set = desc.set;
 	  if ('value' in desc || !(prop in obj)) obj[prop] = desc.value;
-	  if (get) __defineGetter__.call(obj, prop, get);
-	  if (set) __defineSetter__.call(obj, prop, set);
+	  get && __defineGetter__.call(obj, prop, get);
+	  set && __defineSetter__.call(obj, prop, set);
 	  return obj;
 	} : function defineProperty(obj, prop, desc) {
-	  if (desc.get || desc.set) throw new TypeError('Invalid property descriptor. Accessor descriptors are not supported.');
+	  if (desc.get || desc.set) throw new TypeError('property accessors are not supported.');
 	  if ('value' in desc || !(prop in obj)) obj[prop] = desc.value;
 	  return obj;
 	};
@@ -735,8 +729,23 @@
 	 * @module utility
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Wed Jul 25 2018 15:24:47 GMT+0800 (China Standard Time)
-	 * @modified Thu Jan 31 2019 10:15:09 GMT+0800 (China Standard Time)
+	 * @modified Thu Mar 14 2019 09:21:12 GMT+0800 (China Standard Time)
 	 */
+
+	/**
+	 * @module utility
+	 * @author Tao Zeng <tao.zeng.zt@qq.com>
+	 * @created Wed Jul 25 2018 15:22:57 GMT+0800 (China Standard Time)
+	 * @modified Thu Mar 14 2019 09:22:38 GMT+0800 (China Standard Time)
+	 */
+	var __hasOwn = Object[PROTOTYPE][HAS_OWN_PROP];
+	/**
+	 * has own property
+	 */
+
+	var hasOwnProp = function hasOwnProp(obj, prop) {
+	  return __hasOwn.call(obj, prop);
+	};
 	/**
 	 * get owner property value
 	 * @param prop 			property name
@@ -744,7 +753,7 @@
 	 */
 
 	function getOwnProp(obj, prop, defaultVal) {
-	  return hasOwnProp$1(obj, prop) ? obj[prop] : defaultVal;
+	  return hasOwnProp(obj, prop) ? obj[prop] : defaultVal;
 	}
 
 	/**
@@ -752,7 +761,7 @@
 	 * @module utility/create
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Wed Jul 25 2018 15:24:47 GMT+0800 (China Standard Time)
-	 * @modified Sat Dec 29 2018 18:19:24 GMT+0800 (China Standard Time)
+	 * @modified Wed Mar 13 2019 20:08:04 GMT+0800 (China Standard Time)
 	 */
 
 	function __() {}
@@ -768,7 +777,7 @@
 
 	  if (props) {
 	    for (var k in props) {
-	      if (hasOwnProp$1(props, k)) {
+	      if (hasOwnProp(props, k)) {
 	        defProp(obj, k, props[k]);
 	      }
 	    }
@@ -822,7 +831,7 @@
 	 * @module utility/collection
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Wed Jul 25 2018 17:10:41 GMT+0800 (China Standard Time)
-	 * @modified Sat Dec 29 2018 19:34:51 GMT+0800 (China Standard Time)
+	 * @modified Thu Mar 14 2019 14:04:35 GMT+0800 (China Standard Time)
 	 */
 	/**
 	 * STOP Control
@@ -852,11 +861,11 @@
 
 	  if (own === false) {
 	    for (k in obj) {
-	      if (callback(k, obj) === STOP) return k;
+	      if (!defaultKeyMap[k] && callback(k, obj) === STOP) return k;
 	    }
 	  } else {
 	    for (k in obj) {
-	      if (hasOwnProp$1(obj, k) && callback(k, obj) === STOP) return k;
+	      if (!defaultKeyMap[k] && hasOwnProp(obj, k) && callback(k, obj) === STOP) return k;
 	    }
 	  }
 
@@ -885,11 +894,11 @@
 
 	  if (own === false) {
 	    for (k in obj) {
-	      if (callback(obj[k], k, obj) === STOP) return k;
+	      if (!defaultKeyMap[k] && callback(obj[k], k, obj) === STOP) return k;
 	    }
 	  } else {
 	    for (k in obj) {
-	      if (hasOwnProp$1(obj, k) && callback(obj[k], k, obj) === STOP) return k;
+	      if (!defaultKeyMap[k] && hasOwnProp(obj, k) && callback(obj[k], k, obj) === STOP) return k;
 	    }
 	  }
 
@@ -1445,10 +1454,10 @@
 	}
 
 	/**
-	 * @module utility/prop
+	 * @module utility/defProp
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Fri Nov 30 2018 14:41:02 GMT+0800 (China Standard Time)
-	 * @modified Sat Feb 23 2019 10:45:54 GMT+0800 (China Standard Time)
+	 * @modified Wed Mar 13 2019 18:52:28 GMT+0800 (China Standard Time)
 	 */
 	var pathCache = create(null); // (^ | .) prop | (index | "string prop" | 'string prop')
 
@@ -1496,21 +1505,24 @@
 	  var i = 0;
 
 	  for (; i < l; i++) {
-	    if ((obj = obj[path[i]]) === null || obj === undefined) return;
+	    obj = obj[path[i]];
+	    if (obj === null || obj === undefined) return;
 	  }
 
-	  if (obj && ~l) return obj[path[i]];
+	  return obj[path[i]];
 	}
 	function set(obj, path, value) {
 	  path = parsePath(path);
 	  var l = path.length - 1;
-	  var i = 0;
+	  var i = 0,
+	      v;
 
 	  for (; i < l; i++) {
-	    obj = obj[path[i]] || (obj[path[i]] = {});
+	    v = obj[path[i]];
+	    obj = v === null || v === undefined ? obj[path[i]] = {} : v;
 	  }
 
-	  ~l && (obj[path[i]] = value);
+	  obj[path[i]] = value;
 	}
 
 	/**
@@ -2231,7 +2243,7 @@
 	 * @module utility/assign
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Wed Jul 25 2018 15:22:13 GMT+0800 (China Standard Time)
-	 * @modified Tue Nov 27 2018 14:03:59 GMT+0800 (China Standard Time)
+	 * @modified Thu Mar 14 2019 09:28:49 GMT+0800 (China Standard Time)
 	 */
 	/**
 	 * @param prop
@@ -2253,7 +2265,7 @@
 	    target = {};
 	  }
 
-	  var l = endOffset || overrides.length - 1;
+	  var l = endOffset || overrides.length;
 	  var i = startOffset || 0,
 	      override,
 	      prop;
@@ -2261,7 +2273,7 @@
 	  for (; i < l; i++) {
 	    if (override = overrides[i]) {
 	      for (prop in override) {
-	        if (filter(prop, target, override)) {
+	        if (!defaultKeyMap[prop] && filter(prop, target, override)) {
 	          target[prop] = override[prop];
 	        }
 	      }
@@ -2292,7 +2304,7 @@
 	 */
 
 	function defaultAssignFilter(prop, target, override) {
-	  return hasOwnProp$1(override, prop);
+	  return hasOwnProp(override, prop);
 	}
 	/**
 	 * assign if filter
@@ -2302,29 +2314,56 @@
 	 */
 
 	function assignIfFilter(prop, target, override) {
-	  return hasOwnProp$1(override, prop) && !(prop in target);
+	  return hasOwnProp(override, prop) && !(prop in target);
 	}
 
 	/**
 	 * @module utility
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Wed Jul 25 2018 15:24:47 GMT+0800 (China Standard Time)
-	 * @modified Tue Feb 19 2019 11:53:18 GMT+0800 (China Standard Time)
+	 * @modified Thu Mar 14 2019 15:05:03 GMT+0800 (China Standard Time)
 	 */
 	var REG_PROPS = ['source', 'global', 'ignoreCase', 'multiline'];
 	function deepEq(actual, expected) {
+	  return doDeepEq(actual, expected, eq, doDeepEqObj);
+	}
+	function doDeepEq(actual, expected, eq, eqObj) {
 	  if (eq(actual, expected)) return true;
 
 	  if (actual && expected && getConstructor(actual) === getConstructor(expected)) {
 	    if (isPrimitive(actual)) return String(actual) === String(expected);
 	    if (isDate(actual)) return actual.getTime() === expected.getTime();
 	    if (isReg(actual)) return eqProps(actual, expected, REG_PROPS);
-	    if (isArray(actual)) return eqArray(actual, expected, deepEq);
-	    if (isTypedArray(actual)) return eqArray(actual, expected, eq);
+	    if (isArray(actual)) return eqArray(actual, expected, eq, eqObj);
+	    if (isTypedArray(actual)) return eqTypeArray(actual, expected);
 	    return eqObj(actual, expected);
 	  }
 
 	  return false;
+	}
+	function doDeepEqObj(actual, expected) {
+	  var cache = create(null);
+	  var k;
+
+	  for (k in actual) {
+	    if (!defaultKeyMap[k] && notEqObjKey(actual, expected, k)) {
+	      return false;
+	    }
+
+	    cache[k] = true;
+	  }
+
+	  for (k in expected) {
+	    if (!cache[k] && !defaultKeyMap[k] && notEqObjKey(actual, expected, k)) {
+	      return false;
+	    }
+	  }
+
+	  return true;
+	}
+
+	function notEqObjKey(actual, expected, k) {
+	  return hasOwnProp(actual, k) ? !hasOwnProp(expected, k) || !deepEq(actual[k], expected[k]) : hasOwnProp(expected, k);
 	}
 
 	function eqProps(actual, expected, props) {
@@ -2339,7 +2378,7 @@
 	  return true;
 	}
 
-	function eqArray(actual, expected, eq) {
+	function eqTypeArray(actual, expected) {
 	  var i = actual.length;
 
 	  if (i !== expected.length) {
@@ -2347,7 +2386,7 @@
 	  }
 
 	  while (i--) {
-	    if (!eq(actual[i], expected[i])) {
+	    if (actual[i] !== expected[i]) {
 	      return false;
 	    }
 	  }
@@ -2355,29 +2394,20 @@
 	  return true;
 	}
 
-	function eqObj(actual, expected) {
-	  var cache = create(null);
-	  var k;
+	function eqArray(actual, expected, eq, eqObj) {
+	  var i = actual.length;
 
-	  for (k in actual) {
-	    if (notEqObjKey(actual, expected, k)) {
-	      return false;
-	    }
-
-	    cache[k] = true;
+	  if (i !== expected.length) {
+	    return false;
 	  }
 
-	  for (k in expected) {
-	    if (!cache[k] && notEqObjKey(actual, expected, k)) {
+	  while (i--) {
+	    if (!doDeepEq(actual[i], expected[i], eq, eqObj)) {
 	      return false;
 	    }
 	  }
 
 	  return true;
-	}
-
-	function notEqObjKey(actual, expected, k) {
-	  return hasOwnProp$1(actual, k) ? !hasOwnProp$1(expected, k) || !deepEq(actual[k], expected[k]) : hasOwnProp$1(expected, k);
 	}
 
 	/**
@@ -2535,9 +2565,9 @@
 	 * @module utility/List
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
-	 * @modified Fri Mar 08 2019 18:22:58 GMT+0800 (China Standard Time)
+	 * @modified Wed Mar 13 2019 19:29:16 GMT+0800 (China Standard Time)
 	 */
-	var DEFAULT_BINDING = '__list__';
+	var DEFAULT_BINDING = addDefaultKey('__list__');
 	//type ListNode = [ListElement, IListNode, IListNode, List]
 	var List =
 	/*#__PURE__*/
@@ -2734,7 +2764,7 @@
 
 	  _proto.__getNode = function __getNode(obj) {
 	    var node = obj[this.binding];
-	    assert.is(node && node[3] === this, 'Object is not in this List');
+	    assert.is(node && node[0] === obj && node[3] === this, 'Object is not in this List');
 	    return node;
 	  };
 
@@ -2878,10 +2908,10 @@
 	 * @module utility/List
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
-	 * @modified Fri Mar 08 2019 18:24:33 GMT+0800 (China Standard Time)
+	 * @modified Mon Mar 11 2019 19:53:56 GMT+0800 (China Standard Time)
 	 */
-	var DEFAULT_FN_BINDING = '__flist_id__';
-	var DEFAULT_SCOPE_BINDING = DEFAULT_FN_BINDING;
+	var DEFAULT_FN_BINDING = addDefaultKey('__flist_id__');
+	var DEFAULT_SCOPE_BINDING = addDefaultKey(DEFAULT_FN_BINDING);
 	var FnList =
 	/*#__PURE__*/
 	function () {
@@ -3173,14 +3203,14 @@
 	 * @module utility/mixin
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Tue Dec 18 2018 16:41:03 GMT+0800 (China Standard Time)
-	 * @modified Fri Dec 21 2018 10:24:24 GMT+0800 (China Standard Time)
+	 * @modified Wed Mar 13 2019 20:03:31 GMT+0800 (China Standard Time)
 	 */
 	function mixin(behaviour) {
 	  return function mixin(Class) {
 	    var proto = Class.prototype;
 
 	    for (var k in behaviour) {
-	      if (hasOwnProp$1(behaviour, k)) proto[k] = behaviour[k];
+	      if (hasOwnProp(behaviour, k)) proto[k] = behaviour[k];
 	    }
 
 	    return Class;
@@ -4387,720 +4417,65 @@
 	 * @preferred
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Wed Nov 21 2018 10:21:41 GMT+0800 (China Standard Time)
-	 * @modified Mon Feb 18 2019 14:52:12 GMT+0800 (China Standard Time)
+	 * @modified Wed Mar 13 2019 19:52:16 GMT+0800 (China Standard Time)
 	 */
 
 	/**
-	 * the property of observe an array change
+	 * Observer Key
 	 */
-	var ARRAY_CHANGE = '$change';
+	var OBSERVER_KEY = addDefaultKey('__observer__');
+
+	function accessorPolicy () {
+	  if (propAccessor) return {
+	    __name: 'Accessor',
+	    __watch: function __watch(observer, prop, watcher) {
+	      var value = observer.target[prop];
+
+	      try {
+	        defProp(observer.target, prop, {
+	          get: function get() {
+	            return value;
+	          },
+	          set: function set(newValue) {
+	            watcher.notify(value);
+	            value = newValue;
+	          }
+	        });
+	      } catch (e) {
+	        console.warn(e.message, e);
+	      }
+	    }
+	  };
+	}
+
+	function proxyPolicy () {
+	  if (GLOBAL.Proxy) return {
+	    __name: 'Proxy',
+	    __proxy: true,
+	    __createProxy: function __createProxy(target, isArray, watchers) {
+	      return new Proxy(target, {
+	        set: function set(source, prop, value) {
+	          var watcher = watchers[prop];
+	          watcher && watcher.notify(source[prop]);
+	          source[prop] = value;
+	          return true;
+	        }
+	      });
+	    }
+	  };
+	}
+
+	/**
+	 * change callback for observer
+	 * @param path 		the observe path
+	 * @param value 	new value
+	 * @param original	original value. the original value is {@link MISS} when the dirty collector loses the original value
+	 */
+
 	/**
 	 * The dirty collector lost the original value
 	 */
-
 	var MISS = {}; //========================================================================================
-
-	/*                                                                                      *
-	 *                                        topic                                       *
-	 *                                                                                      */
-	//========================================================================================
-
-	var V = {};
-
-	function isObserverTarget(obj) {
-	  return obj && (isArray(obj) || isObj(obj));
-	}
-	/**
-	 * get or create sub-observer
-	 * fix proxy value
-	 * @param observer 	observer
-	 * @param prop		property of observer target
-	 * @param target	target = observer.target[prop]
-	 * @return sub-observer
-	 */
-
-
-	function loadSubObserver(observer, prop, target) {
-	  var subObserver = getObserver(target) || observer.observerOf(target);
-	  if (subObserver.proxy !== target) observer.target[prop] = subObserver.proxy;
-	  return subObserver;
-	}
-	/**
-	 * get property value on object
-	 * @param obj 	object
-	 * @param prop 	property
-	 */
-
-
-	function getValue(obj, prop) {
-	  return obj === undefined || obj === null ? undefined : obj[prop];
-	}
-	/**
-	 * get property value on original object
-	 * check {@link MISS}
-	 * @param original 	object
-	 * @param prop 		property
-	 */
-
-
-	function getOriginalValue(original, prop) {
-	  return original === undefined || original === null ? undefined : original === MISS ? original : original[prop];
-	} // id generator of topic
-
-
-	var topicIdGen = 0;
-	var collectQueue = [],
-	    // the dirty topic queue waiting for collection
-	dirtyQueue = []; // the dirty topic queue waiting for notification
-	// flags of topic
-
-	var TOPIC_ENABLED_FLAG = 0x1,
-	    // topic is enabled
-	TOPIC_LISTEN_FLAG = 0x2,
-	    // topic is listend
-	TOPIC_SUB_FLAG = 0x4; // topic has subtopic
-
-	/**
-	 * @ignore
-	 */
-
-	var Topic =
-	/*#__PURE__*/
-	function () {
-	  // parent topic
-	  // own observer
-	  // watch property
-	  // binded observer
-	  // property path
-	  // listeners
-	  // the original value before change
-	  // collected dirty value: [new value, original value]
-	  // subtopics
-	  // cache of subtopics
-	  // flags: TOPIC_ENABLED_FLAG | TOPIC_LISTEN_FLAG | TOPIC_SUB_FLAG
-
-	  /**
-	   * create a Topic
-	   * @param owner		own observer
-	   * @param prop		watch property
-	   * @param parent	parent topic
-	   */
-	  function Topic(owner, prop, parent) {
-	    this.__flags = 0;
-	    this.__original = V;
-	    this.__owner = owner;
-	    this.__prop = prop;
-	    this.__parent = parent;
-	    this.__id = topicIdGen++;
-	  }
-	  /**
-	   * add listener
-	   * @param path		path of topic
-	   * @param cb		observe callback
-	   * @param scope		scope of the callback
-	   * @return listen-id | undefined
-	   */
-
-
-	  var _proto = Topic.prototype;
-
-	  _proto.__listen = function __listen(path, cb, scope) {
-	    var listeners = this.__listeners;
-
-	    if (!listeners) {
-	      this.__listeners = listeners = new FnList();
-	      this.__path = path;
-	    }
-
-	    var id = listeners.add(cb, scope);
-	    id && (this.__flags |= TOPIC_LISTEN_FLAG | TOPIC_ENABLED_FLAG);
-	    return id;
-	  }
-	  /**
-	   * remove listener by callback
-	   * @param cb		observe callback
-	   * @param scope		scope of the callback
-	   */
-	  ;
-
-	  _proto.__unlisten = function __unlisten(cb, scope) {
-	    var listeners = this.__listeners;
-
-	    if (listeners) {
-	      listeners.remove(cb, scope);
-
-	      this.____unlisten(listeners);
-	    }
-	  }
-	  /**
-	   * remove listener by listen-id
-	   * @param id	listen-id
-	   */
-	  ;
-
-	  _proto.__unlistenId = function __unlistenId(id) {
-	    var listeners = this.__listeners;
-
-	    if (listeners) {
-	      listeners.removeId(id);
-
-	      this.____unlisten(listeners);
-	    }
-	  }
-	  /**
-	   * Clear all unlistening leaf topics
-	   * @param listeners	listeners
-	   */
-	  ;
-
-	  _proto.____unlisten = function ____unlisten(listeners) {
-	    if (!listeners.size()) {
-	      var topic = this,
-	          parent;
-	      topic.__flags &= ~TOPIC_LISTEN_FLAG;
-
-	      while ((topic.__flags & (TOPIC_SUB_FLAG | TOPIC_LISTEN_FLAG | TOPIC_ENABLED_FLAG)) === TOPIC_ENABLED_FLAG) {
-	        topic.__bind();
-
-	        topic.__flags = 0;
-	        if (!(parent = topic.__parent)) break;
-
-	        parent.__removeSub(topic);
-
-	        topic = parent;
-	      }
-	    }
-	  }
-	  /**
-	   * bind observer
-	   * @param observer new observer
-	   */
-	  ;
-
-	  _proto.__bind = function __bind(observer) {
-	    var org = this.__observer;
-
-	    if (org !== observer) {
-	      org && org.__unwatchTopic(this); // unbind old observer
-
-	      if (!observer || observer.__watchTopic(this) === false) observer = undefined;
-	      this.__observer = observer && observer.__watchTopic(this) !== false ? observer : observer;
-	    }
-	  }
-	  /**
-	   * get a subtopic from the cache
-	   * @param prop property
-	   */
-	  ;
-
-	  _proto.__getSub = function __getSub(prop) {
-	    var subCache = this.__subCache;
-	    return subCache && subCache[prop];
-	  }
-	  /**
-	   * get or create a subtopic on the cache
-	   * @param subProp	property of the subtopic
-	   * @return subtopic
-	   */
-	  ;
-
-	  _proto.__addSub = function __addSub(subProp) {
-	    var subCache = this.__subCache || (this.__subs = [], this.__subCache = create(null)),
-	        sub = subCache[subProp] || (subCache[subProp] = new Topic(this.__owner, subProp, this));
-
-	    if (!(sub.__flags & TOPIC_ENABLED_FLAG)) {
-	      // init the subtopic
-	      var subs = this.__subs,
-	          observer = this.__observer; // 1. bind observer
-
-	      if (observer) {
-	        var prop = this.__prop;
-	        isArrayChangeProp(observer, prop) && sub.__badPath(2, 'Array');
-	        var subObserver;
-
-	        if (subs[0]) {
-	          subObserver = subs[0].__observer;
-	        } else {
-	          var subTarget = observer.target[prop];
-
-	          if (isObserverTarget(subTarget)) {
-	            subObserver = loadSubObserver(observer, prop, subTarget);
-	          } else if (!isNil(subTarget)) {
-	            sub.__badPath(2, toStrType(subTarget));
-	          }
-	        }
-
-	        sub.__bind(subObserver);
-	      } // 2. attach subtopic
-
-
-	      sub.__flags |= TOPIC_ENABLED_FLAG;
-	      subs.push(sub);
-	    }
-
-	    this.__flags |= TOPIC_SUB_FLAG | TOPIC_ENABLED_FLAG;
-	    return sub;
-	  }
-	  /**
-	   * remove the subtopic from the subs
-	   * @param topic topic
-	   */
-	  ;
-
-	  _proto.__removeSub = function __removeSub(topic) {
-	    var subs = this.__subs;
-	    var l = subs.length;
-	    var i = l;
-
-	    while (i--) {
-	      if (topic === subs[i]) {
-	        subs.splice(i, 1);
-	        l === 1 && (this.__flags &= ~TOPIC_SUB_FLAG);
-	        return;
-	      }
-	    }
-
-	    assert('un-attached topic');
-	  };
-
-	  _proto.__badPath = function __badPath(i, type, msg) {
-	    var path = this.__getPath();
-
-	    console.warn("observer[{}]: can not watch {} on {}{}{}.", formatPath(path), formatPath(path.slice(-i)), type, path.length > i ? "[" + formatPath(path.slice(0, -i)) + "]" : '', msg || '', this.__owner.target);
-	  };
-
-	  _proto.__badSubsPath = function __badSubsPath(subs, len, type) {
-	    for (var i = 0; i < len; i++) {
-	      subs[i].__badPath(2, type);
-	    }
-	  };
-
-	  _proto.__getPath = function __getPath() {
-	    var path = this.__path;
-
-	    if (!path) {
-	      var parent = this.__parent,
-	          prop = this.__prop;
-	      this.__path = path = parent ? parent.__getPath().concat(prop) : [prop];
-	    }
-
-	    return path;
-	  }
-	  /**
-	   * mark the change in topic
-	   *
-	   * @param original original value
-	   */
-	  ;
-
-	  _proto.__update = function __update(original) {
-	    if (this.__original === V) {
-	      this.__original = original; // add to collect queue
-
-	      var l = collectQueue.length;
-	      collectQueue[l] = this;
-	      !l && nextTick(collect);
-	    }
-	  }
-	  /**
-	   * collect the dirty topics(current and sub topics) from collectQueue
-	   * may collected by parent-topic
-	   */
-	  ;
-
-	  _proto.__collect = function __collect() {
-	    var original = this.__original;
-
-	    if (original !== V) {
-	      var observer = this.__observer;
-	      this.__original = V;
-
-	      this.____collect(observer, observer.target, original);
-	    }
-	  }
-	  /**
-	   * collect dirty topics
-	   * - Case 1:
-	   * 	1. collect from collectQueue
-	   * 		1. clean changed flag
-	   * 		2. save dirty values
-	   * 		3. collect the subtopics
-	   * 			default use the new and original value
-	   * 			use the subtopic's original value when subtopic is changed
-	   * 			clean subtopic's changed flag
-	   * 	2. re-collect by parent-topic
-	   * 		1. replace the new value and discard the original value(keep the existing original value)
-	   * 		2. re-collect subtopics
-	   *
-	   * @param observer 	observer of this topic
-	   * @param target 	new target of this topic
-	   * @param original 	original value of this topic
-	   */
-	  ;
-
-	  _proto.____collect = function ____collect(observer, target, original) {
-	    var flags = this.__flags,
-	        prop = this.__prop;
-	    var dirty,
-	        subTarget = V; // lazy load the sub-target
-
-	    if (flags & TOPIC_LISTEN_FLAG) {
-	      if (!(dirty = this.__dirty)) {
-	        this.__dirty = dirty = [, original];
-	        dirtyQueue.push(this);
-	      } // if this topic has been changed and collected, retains its original value
-
-
-	      dirty[0] = observer && isArrayChangeProp(observer, prop) ? target : subTarget = getValue(target, prop);
-	    }
-
-	    if (flags & TOPIC_SUB_FLAG) {
-	      subTarget === V && (subTarget = getValue(target, prop));
-	      var subs = this.__subs;
-	      var l = subs.length;
-	      var subObserver,
-	          sub,
-	          subOriginal,
-	          i = 0;
-
-	      if (observer) {
-	        isArrayChangeProp(observer, prop) && this.__badSubsPath(subs, l, 'Array');
-
-	        if (isObserverTarget(subTarget)) {
-	          subObserver = loadSubObserver(observer, this.__prop, subTarget);
-	          subTarget = subObserver.target;
-	          dirty && (dirty[0] = subObserver.proxy); // update dirty proxy
-	        } else if (!isNil(subTarget)) {
-	          this.__badSubsPath(subs, l, toStrType(subTarget));
-	        }
-	      }
-
-	      for (; i < l; i++) {
-	        sub = subs[i];
-
-	        if (!subObserver || sub.__observer != subObserver) {
-	          sub.__bind(subObserver);
-
-	          if ((subOriginal = sub.__original) === V) {
-	            // 1. this subtopic has not been changed, using the original value of the current topic
-	            // *2. this subtopic has been changed and collected, and the collector retains its original value
-	            // *   this does not happen after the topics are sorted by ID before collection
-	            subOriginal = sub.__dirty ? undefined : getOriginalValue(original, sub.__prop);
-	          } else {
-	            // this subtopic was changed but not collected, collected in advance
-	            sub.__original = V;
-	          }
-
-	          sub.____collect(subObserver, subTarget, subOriginal);
-	        }
-	      }
-	    }
-	  };
-
-	  return Topic;
-	}();
-
-	function compareTopic(topic1, topic2) {
-	  return topic1.__id - topic2.__id;
-	}
-	/**
-	 * collect the dirty topics on the collectQueue
-	 */
-
-
-	function collect() {
-	  var start = Date.now();
-	  var l = collectQueue.length,
-	      i = 0; // sort by topic id
-
-	  collectQueue.sort(compareTopic);
-
-	  for (; i < l; i++) {
-	    collectQueue[i].__collect();
-	  }
-
-	  console.log("Collect " + dirtyQueue.length + " dirty topics from the collection queue (" + l + "), use " + (Date.now() - start) + "ms");
-	  notify();
-	}
-	/**
-	 * notify all of the dirty topics
-	 */
-
-
-	function notify() {
-	  var start = Date.now();
-	  var topics = 0,
-	      listens = 0;
-	  var l = dirtyQueue.length;
-	  var topic,
-	      owner,
-	      path,
-	      value,
-	      original,
-	      dirty,
-	      i = 0;
-
-	  for (; i < l; i++) {
-	    topic = dirtyQueue[i];
-	    dirty = topic.__dirty;
-	    value = dirty[0];
-	    original = dirty[1];
-	    topic.__dirty = null; // clean the dirty
-
-	    if (value !== original || !isPrimitive(value)) {
-	      // real dirty
-	      owner = topic.__owner;
-	      path = topic.__path;
-
-	      topic.__listeners.each(function (fn, scope) {
-	        scope ? fn.call(scope, path, value, original, owner) : fn(path, value, original, owner);
-	        listens++;
-	      });
-
-	      topics++;
-	    }
-	  }
-
-	  console.log(listens + " listen-callbacks of " + topics + "/" + l + " dirty topics have been notified, use " + (Date.now() - start) + "ms");
-	} //========================================================================================
-
-	/*                                                                                      *
-	 *                                       Observer                                       *
-	 *                                                                                      */
-	//========================================================================================
-
-	/**
-	 */
-
-
-	var Watchers =
-	/*#__PURE__*/
-	function (_List) {
-	  _inheritsLoose(Watchers, _List);
-
-	  function Watchers() {
-	    return _List.apply(this, arguments) || this;
-	  }
-
-	  var _proto2 = Watchers.prototype;
-
-	  /**
-	   *
-	   */
-	  _proto2.notify = function notify(original) {
-	    this.eachUnsafe(function (topic) {
-	      return topic.__update(original);
-	    });
-	  };
-
-	  return Watchers;
-	}(List);
-
-	var OBSERVER_KEY = '__observer__';
-	function getObserver(target) {
-	  var oserver = target[OBSERVER_KEY];
-	  if (oserver && (oserver.target === target || oserver.proxy === target)) return oserver;
-	}
-	var Observer =
-	/*#__PURE__*/
-	function () {
-	  /**
-	   * original object
-	   */
-
-	  /**
-	   * proxy object
-	   */
-
-	  /**
-	   * is array
-	   */
-
-	  /**
-	   * topics
-	   * 	- key: property of original object
-	   * 	- value: topic
-	   */
-
-	  /**
-	   * watched topics
-	   * 	- key: property of original object
-	   * 	- value: topics
-	   */
-
-	  /**
-	   * create Observer
-	   * @param target original object
-	   */
-	  function Observer(target) {
-	    this.__watchs = create(null);
-	    this.target = target;
-	    this.proxy = target;
-	    if (this.isArray = isArray(target)) applyArrayHooks(target);
-	    assert.is(isObj(target), "the observer target can only be an object or an array"); // bind observer key on original object
-
-	    defPropValue(target, OBSERVER_KEY, this, false, false, false);
-	  }
-	  /**
-	   * observe property path
-	   * @param propPath 	property path of original object, parse string path by {@link parsePath}
-	   * @param cb		callback
-	   * @param scope		scope of callback
-	   */
-
-
-	  var _proto3 = Observer.prototype;
-
-	  _proto3.observe = function observe(propPath, cb, scope) {
-	    var path = parsePath(propPath),
-	        topics = this.__topics || (this.__topics = create(null)),
-	        prop0 = path[0];
-	    var topic = topics[prop0] || (topics[prop0] = new Topic(this, prop0)),
-	        i = 1,
-	        l = path.length;
-
-	    topic.__bind(this);
-
-	    for (; i < l; i++) {
-	      topic = topic.__addSub(path[i]);
-	    }
-
-	    return topic.__listen(path, cb, scope);
-	  }
-	  /**
-	   * unobserve property path
-	   * @param propPath	property path on object
-	   * @param cb		callback
-	   * @param scope		scope of cb
-	   */
-	  ;
-
-	  _proto3.unobserve = function unobserve(propPath, cb, scope) {
-	    var topic = this.__getTopic(parsePath(propPath));
-
-	    topic && topic.__unlisten(cb, scope);
-	  }
-	  /**
-	   * unobserve property path
-	   * @param propPath	property path on object
-	   * @param id 		listen-id
-	   */
-	  ;
-
-	  _proto3.unobserveId = function unobserveId(propPath, id) {
-	    var topic = this.__getTopic(parsePath(propPath));
-
-	    topic && topic.__unlistenId(id);
-	  }
-	  /**
-	   * update property value and notify changes
-	   * @param prop		property
-	   * @param original	original value
-	   */
-	  ;
-
-	  _proto3.update = function update(prop, original) {
-	    {
-	      var watchers = this.__watchs[prop];
-	      watchers && watchers.size() && watchers.notify(original);
-	    }
-	  };
-
-	  _proto3.updateAll = function updateAll() {
-	    {
-	      var _watchs = this.__watchs;
-	      var prop, watchers;
-
-	      for (prop in _watchs) {
-	        watchers = _watchs[prop];
-	        watchers.size() && watchers.notify(MISS);
-	      }
-	    }
-	  };
-
-	  _proto3._watchers = function _watchers(prop) {
-	    {
-	      var watchers = this.__watchs[prop];
-	      if (watchers && watchers.size()) return watchers;
-	    }
-	  }
-	  /**
-	   * watch property
-	   * @abstract
-	   * @protected
-	   * @param prop	property
-	   */
-	  ;
-
-	  _proto3._watch = function _watch(prop) {
-	    return true; //assert('abstruct')
-	  }
-	  /**
-	   * get or create observer
-	   * @abstract
-	   * @protected
-	   */
-	  ;
-
-	  _proto3.observerOf = function observerOf(target) {
-	    return new Observer(target); //assert('abstruct')
-	  }
-	  /**
-	   *
-	   * @param path
-	   */
-	  ;
-
-	  _proto3.__getTopic = function __getTopic(path) {
-	    var topics = this.__topics;
-	    var topic;
-
-	    if (topics && (topic = topics[path[0]])) {
-	      for (var i = 1, l = path.length; i < l; i++) {
-	        if (!(topic = topic.__getSub(path[i]))) break;
-	      }
-	    }
-
-	    return topic;
-	  }
-	  /**
-	   * watch topic
-	   * @private
-	   * @param topic
-	   */
-	  ;
-
-	  _proto3.__watchTopic = function __watchTopic(topic) {
-	    var watchs = this.__watchs;
-	    var prop = topic.__prop;
-	    var topics = watchs[prop] || (watchs[prop] = new Watchers()),
-	        state = topics.__watched;
-	    if (state === undefined) return topics.__watched = this._watch(prop) !== false;
-	    state && topics.add(topic);
-	  }
-	  /**
-	   * remove watched topic
-	   * @private
-	   * @param topic
-	   */
-	  ;
-
-	  _proto3.__unwatchTopic = function __unwatchTopic(topic) {
-	    this.__watchs[topic.__prop].remove(topic);
-	  }
-	  /**
-	   * @ignore
-	   */
-	  ;
-
-	  _proto3.toJSON = function toJSON() {};
-
-	  return Observer;
-	}();
-
-	function isArrayChangeProp(observer, prop) {
-	  return observer.isArray && prop === ARRAY_CHANGE;
-	} //========================================================================================
 
 	/*                                                                                      *
 	 *                                      Array Hooks                                     *
@@ -5112,56 +4487,190 @@
 	  var fn = Array[PROTOTYPE][method];
 	  return [method, function () {
 	    var observer = this[OBSERVER_KEY];
-	    observer.updateAll();
+	    observer.notifyAll();
 	    return applyScope(fn, observer.target, arguments);
 	  }];
 	});
+
+	/*                                                                                      *
+	 *                                        policy                                        *
+	 *                                                                                      */
+	//========================================================================================
+
+
+	var policy = proxyPolicy() || accessorPolicy();
+	assert.is(policy, 'The observer module is not supported.');
+	console.info("the observer policy: " + policy.__name + " -> ", policy);
+	if (!policy.__createProxy) policy.__createProxy = function (target) {
+	  return target;
+	};
+	if (!policy.__watch) policy.__watch = function () {
+	  return true;
+	};
 	/**
-	 * apply observer hooks on Array
-	 * @param array
+	 * get existing observer on object
+	 * @return existing observer
 	 */
 
-	function applyArrayHooks(array) {
-	  var hook,
-	      i = arrayHooks.length;
-
-	  while (i--) {
-	    hook = arrayHooks[i];
-	    defPropValue(array, hook[0], hook[1], false, false, false);
-	  }
-	} //========================================================================================
-
-	var obs = new Observer({
-	  a: {
-	    b: {
-	      c: 1
-	    }
-	  }
-	});
-	var id1 = obs.observe('a.b.c', function () {});
-	var id2 = obs.observe('a.b.d', function () {}); //logState(obs)
-
-	obs.unobserveId('a.b.c', id1);
-	obs.unobserveId('a.b.c', id1); //logState(obs)
-
-	obs.unobserveId('a.b.d', id2); //logState(obs)
-
-	id1 = obs.observe('a.b.c', function () {
-	  console.log('a.b.c', arguments);
-	});
-	id2 = obs.observe('a.b.d', function () {
-	  console.log('a.b.d', arguments);
-	}); //logState(obs)
-
-	var ov = obs.target['a'];
-	obs.target['a'] = {
-	  b: {
-	    d: 2
-	  }
+	exports.getObserver = function getObserver(target) {
+	  var oserver = target[OBSERVER_KEY];
+	  if (oserver && oserver.target === target || oserver.proxy === target) return oserver;
 	};
-	obs.update('a', ov);
-	setTimeout(function () {//logState(obs)
-	}, 1000); //logState(obs)
+	/**
+	 * get the original object of the observer on the object
+	 * @param object the object
+	 * @return the original object | the object
+	 */
+
+
+	exports.source = function source(obj) {
+	  var observer = obj && exports.getObserver(obj);
+	  return observer ? observer.target : obj;
+	};
+	/**
+	 * get the proxy object for the observer on the object
+	 * @param object the object
+	 * @return the proxy object | the object
+	 */
+
+
+	exports.proxy = function proxy(obj) {
+	  var observer = obj && exports.getObserver(obj);
+	  return observer ? observer.proxy : obj;
+	};
+	/**
+	 * support equals function between observer objects
+	 */
+
+
+	exports.$eq = function $eq(o1, o2) {
+	  return eq(o1, o2) || (o1 && o2 && (o1 = exports.getObserver(o1)) ? o1 === exports.getObserver(o2) : false);
+	};
+
+	exports.$get = function $get(obj, path) {
+	  return exports.proxy(get(obj, path));
+	};
+
+	exports.$set = function $set(obj, path, value) {
+	  path = parsePath(path);
+	  var l = path.length - 1;
+	  var i = 0,
+	      v;
+
+	  for (; i < l; i++) {
+	    v = obj[path[i]];
+	    obj = v === null || v === undefined ? exports.proxy(obj)[path[i]] = {} : v;
+	  }
+
+	  exports.proxy(obj)[path[i]] = exports.proxy(value);
+	}; //──── optimize on Non-Proxy policy ──────────────────────────────────────────────────────
+
+
+	if (!policy.__proxy) {
+	  exports.getObserver = function getObserver(target) {
+	    var oserver = target[OBSERVER_KEY];
+	    if (oserver && oserver.target === target) return oserver;
+	  };
+
+	  exports.source = function source(obj) {
+	    return obj;
+	  };
+
+	  exports.proxy = exports.source;
+	  exports.$eq = eq;
+	  exports.$get = get;
+	  exports.$set = set;
+	}
+
+	/*                                                                                      *
+	 *                                     test topic                                     *
+	 *                                                                                      */
+	//========================================================================================
+
+	/*
+	const objIdGen: { [key: string]: number } = {}
+	function objId(obj: any, str: string) {
+		return obj.id || (obj.id = str + '-' + (objIdGen[str] ? ++objIdGen[str] : (objIdGen[str] = 1)))
+	}
+	function topicState(topic: Topic) {
+		const path = []
+		let p = topic
+		while (p) {
+			path.unshift(p.__prop)
+			p = p.__parent
+		}
+		const subs = topic.__subs && topic.__subs.length
+		const listeners = topic.__listeners && topic.__listeners.size()
+
+		assert.is(!!(subs || listeners) === !!(topic.__state & TOPIC_ENABLED_FLAG))
+		assert.is(!!subs === !!(topic.__state & TOPIC_SUB_FLAG))
+		assert.is(!!listeners === !!(topic.__state & TOPIC_LISTEN_FLAG))
+		assert.is(!topic.__observer || topic.__state & TOPIC_ENABLED_FLAG)
+
+		return {
+			id: objId(topic, 'topic'),
+			path: formatPath(path),
+			obj: JSON.stringify(topic.__owner.target),
+			enabled: !!(subs || listeners),
+			listeners: listeners,
+			watched: topic.__observer && {
+				id: objId(topic.__observer, 'observer'),
+				obj: JSON.stringify(topic.__observer.target),
+				watchs: watchs(topic.__observer)
+			},
+			subCache: topic.__subCache && map(topic.__subCache, topicState),
+			subs: subs && map(topic.__subs, sub => objId(sub, 'topic'))
+		}
+	}
+	function observerState(observer: Observer) {
+		return {
+			id: objId(observer, 'observer'),
+			obj: JSON.stringify(observer.target),
+			watchs: watchs(observer),
+			topics: map(observer.__topics, subj => topicState(subj))
+		}
+	}
+	function watchs(observer: Observer) {
+		return map(observer.__watchers, w =>
+			w
+				.toArray()
+				.map(s => objId(s, 'topic'))
+				.join(', ')
+		)
+	}
+
+	function logState(obs: Observer) {
+		const state = observerState(obs)
+		console.log(JSON.stringify(state, null, '  '))
+	}
+	let obs = new Observer({ a: { b: { c: 1 } } })
+	let id1 = obs.observe('a.b.c', () => {})
+	let id2 = obs.observe('a.b.d', () => {})
+	//logState(obs)
+	obs.unobserveId('a.b.c', id1)
+	obs.unobserveId('a.b.c', id1)
+	//logState(obs)
+	obs.unobserveId('a.b.d', id2)
+
+	//logState(obs)
+	id1 = obs.observe('a.b.c', function() {
+		console.log('a.b.c', arguments)
+	})
+	id2 = obs.observe('a.b.d', function() {
+		console.log('a.b.d', arguments)
+	})
+	//logState(obs)
+
+	const ov = obs.target['a']
+	obs.target['a'] = { b: { d: 2 } }
+	obs.notify('a', ov)
+
+	setTimeout(function() {
+		//logState(obs)
+	}, 1000)
+
+	//logState(obs)
+	 */
 
 	/**
 	 * @module observer
@@ -5179,6 +4688,10 @@
 	 * @modified Fri Mar 08 2019 15:35:52 GMT+0800 (China Standard Time)
 	 */
 
+	exports.isDefaultKey = isDefaultKey;
+	exports.addDefaultKey = addDefaultKey;
+	exports.addDefaultKeys = addDefaultKeys;
+	exports.getDefaultKeys = getDefaultKeys;
 	exports.createFn = createFn;
 	exports.applyScope = applyScope;
 	exports.applyNoScope = applyNoScope;
@@ -5218,12 +4731,12 @@
 	exports.protoOf = protoOf;
 	exports.__setProto = __setProto;
 	exports.setProto = setProto;
-	exports.getOwnProp = getOwnProp;
-	exports.hasOwnProp = hasOwnProp$1;
 	exports.propDescriptor = propDescriptor;
 	exports.propAccessor = propAccessor;
 	exports.defProp = defProp;
 	exports.defPropValue = defPropValue;
+	exports.hasOwnProp = hasOwnProp;
+	exports.getOwnProp = getOwnProp;
 	exports.parsePath = parsePath;
 	exports.formatPath = formatPath;
 	exports.get = get;
@@ -5302,11 +4815,7 @@
 	exports.anyOne = anyOne;
 	exports.manyOne = manyOne;
 	exports.optionOne = optionOne;
-	exports.ARRAY_CHANGE = ARRAY_CHANGE;
 	exports.MISS = MISS;
-	exports.OBSERVER_KEY = OBSERVER_KEY;
-	exports.getObserver = getObserver;
-	exports.Observer = Observer;
 
 }));
 //# sourceMappingURL=argilo.dev.js.map

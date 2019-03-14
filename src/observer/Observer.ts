@@ -2,7 +2,7 @@
  * @module observer
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Dec 26 2018 13:59:10 GMT+0800 (China Standard Time)
- * @modified Wed Mar 13 2019 19:11:04 GMT+0800 (China Standard Time)
+ * @modified Thu Mar 14 2019 20:08:46 GMT+0800 (China Standard Time)
  */
 
 import {
@@ -26,7 +26,7 @@ import {
 } from '../utility'
 import { PROTOTYPE } from '../utility/consts'
 import { assert } from '../utility/assert'
-import { ObserverTarget, IWatcher, OBSERVER_KEY, IObserver, ObserverPolicy } from './IObserver'
+import { ObserverTarget, IWatcher, OBSERVER_KEY, IObserver, ObserverPolicy, ARRAY_CHANGE } from './IObserver'
 import accessorPolicy from './accessorPolicy'
 import proxyPolicy from './proxyPolicy'
 
@@ -39,18 +39,13 @@ import proxyPolicy from './proxyPolicy'
 export type ObserverCallback = (path: string[], value: any, original: any, observer: Observer) => void
 
 /**
- * the property of observe an array change
- */
-export const ARRAY_CHANGE = '$change'
-
-/**
  * The dirty collector lost the original value
  */
 export const MISS = {}
 
 //========================================================================================
 /*                                                                                      *
- *                                        topic                                       *
+ *                                        topic                                         *
  *                                                                                      */
 //========================================================================================
 
@@ -722,7 +717,7 @@ class Observer implements IObserver {
 		let watcher: Watcher = watchers[prop]
 		if (!watcher) {
 			watcher = new Watcher()
-			if (policy.__watch && policy.__watch(this.target, prop, watcher) === false) return false
+			if (!(this.isArray && prop === ARRAY_CHANGE) && policy.__watch(this, prop, watcher) === false) return false
 			watchers[prop] = watcher
 			this.__watcherProps.push(prop)
 		}
@@ -828,6 +823,9 @@ assert.is(policy, 'The observer module is not supported.')
 console.info(`the observer policy: ${policy.__name} -> `, policy)
 //#endif
 
+if (!policy.__createProxy) policy.__createProxy = target => target
+if (!policy.__watch) policy.__watch = () => true
+
 /**
  * get existing observer on object
  * @return existing observer
@@ -893,19 +891,19 @@ let $set: (obj: any, path: string | string[], value: any) => void = (obj: any, p
 		v: any
 	for (; i < l; i++) {
 		v = obj[path[i]]
-		obj = v === null || v === undefined ? (obj[path[i]] = {}) : proxy(v)
+		obj = v === null || v === undefined ? (proxy(obj)[path[i]] = {}) : v
 	}
-	obj[path[i]] = proxy(value)
+	proxy(obj)[path[i]] = proxy(value)
 }
 
 //──── optimize on Non-Proxy policy ──────────────────────────────────────────────────────
 if (!policy.__proxy) {
-	getObserver = function getObserver(target: ObserverTarget): Observer {
+	getObserver = (target: ObserverTarget): Observer => {
 		const oserver: Observer = target[OBSERVER_KEY]
 		if (oserver && oserver.target === target) return oserver
 	}
 
-	loadSubObserver = function loadSubObserver(observer: Observer, prop: string, target: any): Observer {
+	loadSubObserver = (observer: Observer, prop: string, target: any): Observer => {
 		return getObserver(target) || new Observer(target)
 	}
 

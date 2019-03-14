@@ -13,7 +13,7 @@ export default function(): ObserverPolicy {
 			): ObserverTarget {
 				return new Proxy(target, {
 					set: (source, prop: string, value) => {
-						const watcher = watchers[prop]
+						let watcher = watchers[prop]
 						watcher && watcher.notify(source[prop])
 						source[prop] = value
 						return true

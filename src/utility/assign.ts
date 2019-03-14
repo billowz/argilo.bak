@@ -3,9 +3,10 @@
  * @module utility/assign
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Jul 25 2018 15:22:13 GMT+0800 (China Standard Time)
- * @modified Wed Mar 13 2019 20:07:19 GMT+0800 (China Standard Time)
+ * @modified Thu Mar 14 2019 09:28:49 GMT+0800 (China Standard Time)
  */
 import { hasOwnProp } from './ownProp'
+import { defaultKeyMap } from './dkeys'
 
 /**
  * @param prop
@@ -25,7 +26,7 @@ export type AssignFilter = (prop: string, target: any, override: any) => boolean
  */
 export function doAssign(
 	target: any,
-	overrides: object[] | IArguments,
+	overrides: any[] | IArguments,
 	filter: AssignFilter,
 	startOffset?: number,
 	endOffset?: number
@@ -33,14 +34,14 @@ export function doAssign(
 	if (!target) {
 		target = {}
 	}
-	const l = endOffset || overrides.length - 1
+	const l = endOffset || overrides.length
 	let i = startOffset || 0,
-		override,
-		prop
+		override: any,
+		prop: string
 	for (; i < l; i++) {
 		if ((override = overrides[i])) {
 			for (prop in override) {
-				if (filter(prop, target, override)) {
+				if (!defaultKeyMap[prop] && filter(prop, target, override)) {
 					target[prop] = override[prop]
 				}
 			}

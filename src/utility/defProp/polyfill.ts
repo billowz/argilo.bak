@@ -3,13 +3,14 @@
  * @module utility
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Jul 25 2018 15:22:57 GMT+0800 (China Standard Time)
- * @modified Wed Mar 13 2019 20:08:56 GMT+0800 (China Standard Time)
+ * @modified Thu Mar 14 2019 09:18:39 GMT+0800 (China Standard Time)
  */
 import { PROTOTYPE } from '../consts'
 
 let __defProp: (o: any, p: PropertyKey, attributes: PropertyDescriptor & ThisType<any>) => any = Object.defineProperty
 
 const { __defineGetter__, __defineSetter__ } = Object[PROTOTYPE] as any
+
 /**
  * whether to support Object.defineProperty
  */
@@ -42,13 +43,12 @@ if (!propDescriptor)
 		? function defineProperty(obj, prop, desc) {
 				const { get, set } = desc
 				if ('value' in desc || !(prop in obj)) obj[prop] = desc.value
-				if (get) __defineGetter__.call(obj, prop, get)
-				if (set) __defineSetter__.call(obj, prop, set)
+				get && __defineGetter__.call(obj, prop, get)
+				set && __defineSetter__.call(obj, prop, set)
 				return obj
 		  }
 		: function defineProperty(obj, prop, desc) {
-				if (desc.get || desc.set)
-					throw new TypeError('Invalid property descriptor. Accessor descriptors are not supported.')
+				if (desc.get || desc.set) throw new TypeError('property accessors are not supported.')
 				if ('value' in desc || !(prop in obj)) obj[prop] = desc.value
 				return obj
 		  }

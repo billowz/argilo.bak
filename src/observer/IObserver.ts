@@ -7,17 +7,24 @@ export type ObserverTarget = any[] | {}
  */
 export const OBSERVER_KEY = addDefaultKey('__observer__')
 
+/**
+ * the property of observe an array change
+ */
+export const ARRAY_CHANGE = '$change'
+
 export type IWatcher = {
 	notify(original: any): void
 }
 
 export interface IObserver {
+	readonly target: ObserverTarget
+	readonly isArray: boolean
 	notify(prop: string, original: any): void
 	notifyAll(): void
 	watcher(prop: string): IWatcher
 }
 
-export interface ObserverPolicy {
+export type ObserverPolicy = {
 	__name: string
 	__proxy?: boolean
 	/**
@@ -30,5 +37,5 @@ export interface ObserverPolicy {
 	 * @param prop	property
 	 * @return false: watch failed
 	 */
-	__watch?: (target: ObserverTarget, prop: string, watcher: IWatcher) => boolean | void
+	__watch?: (observer: IObserver, prop: string, watcher: IWatcher) => boolean | void
 }

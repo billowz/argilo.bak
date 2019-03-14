@@ -2,13 +2,14 @@
  * @module utility/collection
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Jul 25 2018 17:10:41 GMT+0800 (China Standard Time)
- * @modified Wed Mar 13 2019 20:07:41 GMT+0800 (China Standard Time)
+ * @modified Thu Mar 14 2019 14:04:35 GMT+0800 (China Standard Time)
  */
 import { Control } from './Control'
 import { IArray } from '../consts'
 import { bind } from '../fn'
 import { hasOwnProp } from '../ownProp'
 import { isArrayLike, isBool } from '../is'
+import { defaultKeyMap } from '../dkeys'
 
 /**
  * STOP Control
@@ -46,9 +47,9 @@ export function eachProps(obj: object, callback: EachPropCallback, scope?: any, 
 	}
 	let k: string
 	if (own === false) {
-		for (k in obj) if (callback(k, obj) === STOP) return k
+		for (k in obj) if (!defaultKeyMap[k] && callback(k, obj) === STOP) return k
 	} else {
-		for (k in obj) if (hasOwnProp(obj, k) && callback(k, obj) === STOP) return k
+		for (k in obj) if (!defaultKeyMap[k] && hasOwnProp(obj, k) && callback(k, obj) === STOP) return k
 	}
 	return false
 }
@@ -85,9 +86,9 @@ export function eachObj(obj: object, callback: EachObjCallback, scope?: any, own
 	}
 	let k: string
 	if (own === false) {
-		for (k in obj) if (callback(obj[k], k, obj) === STOP) return k
+		for (k in obj) if (!defaultKeyMap[k] && callback(obj[k], k, obj) === STOP) return k
 	} else {
-		for (k in obj) if (hasOwnProp(obj, k) && callback(obj[k], k, obj) === STOP) return k
+		for (k in obj) if (!defaultKeyMap[k] && hasOwnProp(obj, k) && callback(obj[k], k, obj) === STOP) return k
 	}
 	return false
 }
