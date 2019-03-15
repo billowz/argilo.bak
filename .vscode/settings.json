@@ -1,11 +1,19 @@
 {
+	// editor
 	"files.eol": "\n",
+	"editor.tabSize": 8,
+	"editor.insertSpaces": false,
 	"javascript.validate.enable": false,
 	"prettier.eslintIntegration": true,
+
+	// mocha
 	"mochaExplorer.files": "**/*.spec.ts",
 	"mochaExplorer.logpanel": true,
 	"mochaExplorer.mochaPath": "node_modules/mocha",
 	"mochaExplorer.optsFile": "mocha.opts",
+
+	// comments
+	"topper.lastModified": "@modified",
 	"topper.headerTemplates": [
 		{
 			"defaultCStyled": {

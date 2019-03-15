@@ -11,7 +11,7 @@
  * Copyright (c) 2018 Tao Zeng <tao.zeng.zt@qq.com>
  * Released under the MIT license
  *
- * Date: Thu, 14 Mar 2019 12:05:23 GMT
+ * Date: Fri, 15 Mar 2019 07:09:30 GMT
  */
 Object.defineProperty(exports, '__esModule', { value: true });
 
@@ -4226,7 +4226,7 @@ function proxyPolicy () {
  * @module observer
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Dec 26 2018 13:59:10 GMT+0800 (China Standard Time)
- * @modified Thu Mar 14 2019 19:59:41 GMT+0800 (China Standard Time)
+ * @modified Thu Mar 14 2019 20:08:46 GMT+0800 (China Standard Time)
  */
 /**
  * change callback for observer
@@ -4326,7 +4326,7 @@ exports.$set = (obj, path, value) => {
 
 
 if (!policy.__proxy) {
-  exports.getObserver = function getObserver(target) {
+  exports.getObserver = target => {
     const oserver = target[OBSERVER_KEY];
     if (oserver && oserver.target === target) return oserver;
   };
