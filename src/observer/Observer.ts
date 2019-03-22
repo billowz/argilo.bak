@@ -2,7 +2,7 @@
  * @module observer
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Dec 26 2018 13:59:10 GMT+0800 (China Standard Time)
- * @modified Thu Mar 14 2019 20:08:46 GMT+0800 (China Standard Time)
+ * @modified Fri Mar 22 2019 19:49:34 GMT+0800 (China Standard Time)
  */
 
 import {
@@ -128,8 +128,8 @@ class Topic {
 	// the original value before change
 	__original: any
 
-	// collected dirty value: [new value, original value]
-	__dirty: [any, any]
+	// collected dirty value: [new value, original value, force notify]
+	__dirty: [any, any, boolean]
 
 	// subtopics
 	__subs: Topic[]
@@ -368,7 +368,7 @@ class Topic {
 
 			this.__original = V
 
-			this.____collect(observer, observer.target, original)
+			this.____collect(observer, observer.target, original, false)
 		}
 		// this topic has been collected, retains its dirty value
 	}
@@ -391,18 +391,22 @@ class Topic {
 	 * @param observer 	observer of this topic
 	 * @param target 	new target of this topic
 	 * @param original 	original value of this topic
+	 * @param force  	force notify
 	 */
-	private ____collect(observer: Observer, target: any, original: any) {
+	private ____collect(observer: Observer, target: any, original: any, force: boolean) {
 		const { __state: flags, __prop: prop } = this
-		let dirty: [any, any],
+		let dirty: [any, any, boolean?],
 			subTarget: any = V // lazy load the sub-target
 
 		if (flags & TOPIC_LISTEN_FLAG) {
 			if (!(dirty = this.__dirty)) {
-				this.__dirty = dirty = [, original]
+				this.__dirty = dirty = [, original, force]
 				dirtyQueue.push(this)
-			} // if this topic has been changed and collected, retains its original value
-
+			} else if (force) {
+				dirty[2] = force
+				// if this topic has been changed and collected, retains its original value
+			}
+			// set the new value
 			dirty[0] = observer && isArrayChangeProp(observer, prop) ? target : (subTarget = getValue(target, prop))
 		}
 
@@ -413,6 +417,7 @@ class Topic {
 			const l = subs.length
 
 			var subObserver: Observer,
+				orgSubObserver: Observer,
 				sub: Topic,
 				subOriginal: any,
 				i = 0
@@ -438,8 +443,8 @@ class Topic {
 
 			for (; i < l; i++) {
 				sub = subs[i]
-
-				if (!subObserver || sub.__observer != subObserver) {
+				orgSubObserver = sub.__observer
+				if (!subObserver || orgSubObserver != subObserver) {
 					sub.__bind(subObserver)
 
 					if ((subOriginal = sub.__original) === V) {
@@ -452,7 +457,7 @@ class Topic {
 						sub.__original = V
 					}
 
-					sub.____collect(subObserver, subTarget, subOriginal)
+					sub.____collect(subObserver, subTarget, subOriginal, orgSubObserver != subObserver)
 				}
 			}
 		} else if (dirty && policy.__proxy) {
@@ -508,7 +513,7 @@ function notify() {
 		path: string[],
 		value: any,
 		original: any,
-		dirty: [any, any],
+		dirty: [any, any, boolean],
 		i = 0
 
 	for (; i < l; i++) {
@@ -519,7 +524,7 @@ function notify() {
 
 		topic.__dirty = null // clean the dirty
 
-		if (value !== original || !isPrimitive(value)) {
+		if (dirty[2] || value !== original || !isPrimitive(value)) {
 			// real dirty
 			owner = topic.__owner
 			path = topic.__path
@@ -555,7 +560,19 @@ function __updateTopicCB(topic: Topic) {
 	topic.__update(__original__)
 }
 
+// const watcherQueue: Watcher[] = []
+// function collectWatchers() {
+// 	__original__ = original
+// 	this.eachUnsafe(__updateTopicCB)
+// 	__original__ = 0
+// }
+
 class Watcher extends List<Topic> implements IWatcher {
+	// __originValue: any
+
+	constructor() {
+		super()
+	}
 	/**
 	 * notify topics
 	 * @param original the original value
@@ -564,6 +581,15 @@ class Watcher extends List<Topic> implements IWatcher {
 		__original__ = original
 		this.eachUnsafe(__updateTopicCB)
 		__original__ = 0
+
+		// if (this.__originValue === V) {
+		// 	const l = collectQueue.length
+
+		// 	this.__originValue = original
+
+		// 	watcherQueue[l] = this
+		// 	!l && nextTick(collectWatchers)
+		// }
 	}
 }
 
