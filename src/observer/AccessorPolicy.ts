@@ -1,24 +1,49 @@
-import { ObserverPolicy, IObserver, IWatcher } from './IObserver'
+/**
+ * Observe implementation on the Object.defineProperty of ES5 or `__defineGetter__` and `__defineSetter__`
+ * @module observer
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Tue Mar 19 2019 14:12:23 GMT+0800 (China Standard Time)
+ * @modified Tue Mar 26 2019 19:16:55 GMT+0800 (China Standard Time)
+ */
+
+import { ObservePolicy, IObserver, IWatcher, ARRAY_CHANGE, ObserverTarget } from './IObserver'
 import { propAccessor, defProp } from '../utility'
 
-export default function(): ObserverPolicy {
+/**
+ * @ignore
+ */
+export default function(): ObservePolicy {
 	if (propAccessor)
 		return {
 			__name: 'Accessor',
-			__watch(observer: IObserver, prop: string, watcher: IWatcher): boolean | void {
-				let value: any = observer.target[prop]
+			__watch<T extends ObserverTarget>(observer: IObserver<T>, prop: string, watcher: IWatcher): Error {
+				const { target } = observer
+				let setter: (newValue: any) => void
+				if (!observer.isArray) {
+					setter = (newValue: any) => {
+						watcher.notify(value)
+						value = newValue
+					}
+				} else if (prop !== ARRAY_CHANGE && prop !== 'length') {
+					const changeWatcher: IWatcher = observer.initWatcher(ARRAY_CHANGE)
+					setter = (newValue: any) => {
+						watcher.notify(value)
+						value = newValue
+						changeWatcher.notify(target)
+					}
+				} else {
+					return
+				}
+				var value: any = target[prop]
 				try {
-					defProp(observer.target, prop, {
+					defProp(target, prop, {
 						get() {
 							return value
 						},
-						set(newValue: any) {
-							watcher.notify(value)
-							value = newValue
-						}
+						set: setter
 					})
 				} catch (e) {
-					console.warn(e.message, e)
+					return e
 				}
 			}
 		}

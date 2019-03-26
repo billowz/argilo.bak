@@ -2,7 +2,7 @@
  * @module utility/assert
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Nov 28 2018 11:01:45 GMT+0800 (China Standard Time)
- * @modified Tue Feb 19 2019 10:38:22 GMT+0800 (China Standard Time)
+ * @modified Tue Mar 26 2019 18:04:29 GMT+0800 (China Standard Time)
  */
 
 import {
@@ -29,7 +29,7 @@ import {
 } from '../utility/is'
 import { create } from './create'
 import { upperFirst, escapeStr } from '../utility/string'
-import { createFn } from '../utility/fn'
+import { createFn, applyScope } from '../utility/fn'
 import { eachObj, makeArray } from '../utility/collection'
 import { formatter } from './format'
 import { deepEq } from './deepEq'
@@ -50,63 +50,92 @@ export interface assert {
 	(msg?: string, ...args: any[]): never
 	is(actual: any, msg?: string, ...args: any[]): assert
 	not(actual: any, msg?: string, ...args: any[]): assert
-	eq(actual: any, expect: any, msg?: string, ...args: any[]): assert
-	eql(actual: any, expect: any, msg?: string, ...args: any[]): assert
-	blank(actual: any, msg?: string, ...args: any[]): assert
-	nul(actual: any, msg?: string, ...args: any[]): assert
-	nil(actual: any, msg?: string, ...args: any[]): assert
-	undef(actual: any, msg?: string, ...args: any[]): assert
-	bool(actual: any, msg?: string, ...args: any[]): assert
-	num(actual: any, msg?: string, ...args: any[]): assert
-	int(actual: any, msg?: string, ...args: any[]): assert
-	str(actual: any, msg?: string, ...args: any[]): assert
-	fn(actual: any, msg?: string, ...args: any[]): assert
-	primitive(actual: any, msg?: string, ...args: any[]): assert
-	boolean(actual: any, msg?: string, ...args: any[]): assert
-	number(actual: any, msg?: string, ...args: any[]): assert
-	string(actual: any, msg?: string, ...args: any[]): assert
-	date(actual: any, msg?: string, ...args: any[]): assert
-	reg(actual: any, msg?: string, ...args: any[]): assert
-	array(actual: any, msg?: string, ...args: any[]): assert
-	typedArray(actual: any, msg?: string, ...args: any[]): assert
-	arrayLike(actual: any, msg?: string, ...args: any[]): assert
-	obj(actual: any, msg?: string, ...args: any[]): assert
-	nan(actual: any, msg?: string, ...args: any[]): assert
-	finite(actual: number | string, msg?: string, ...args: any[]): assert
-	less(actual: number, expect: number, msg?: string, ...args: any[]): assert
-	greater(actual: number, expect: number, msg?: string, ...args: any[]): assert
-	match(actual: string, expect: any, msg?: string, ...args: any[]): assert
-	range(actual: number, start: number, end: number, msg?: string, ...args: any[]): assert
 
+	eq(actual: any, expect: any, msg?: string, ...args: any[]): assert
 	notEq(actual: any, expect: any, msg?: string, ...args: any[]): assert
+
+	eql(actual: any, expect: any, msg?: string, ...args: any[]): assert
 	notEql(actual: any, expect: any, msg?: string, ...args: any[]): assert
+
+	blank(actual: any, msg?: string, ...args: any[]): assert
 	notBlank(actual: any, msg?: string, ...args: any[]): assert
+
+	nul(actual: any, msg?: string, ...args: any[]): assert
 	notNul(actual: any, msg?: string, ...args: any[]): assert
+
+	nil(actual: any, msg?: string, ...args: any[]): assert
 	notNil(actual: any, msg?: string, ...args: any[]): assert
+
+	undef(actual: any, msg?: string, ...args: any[]): assert
 	notUndef(actual: any, msg?: string, ...args: any[]): assert
+
+	bool(actual: any, msg?: string, ...args: any[]): assert
 	notBool(actual: any, msg?: string, ...args: any[]): assert
+
+	num(actual: any, msg?: string, ...args: any[]): assert
 	notNum(actual: any, msg?: string, ...args: any[]): assert
+
+	int(actual: any, msg?: string, ...args: any[]): assert
 	notInt(actual: any, msg?: string, ...args: any[]): assert
+
+	str(actual: any, msg?: string, ...args: any[]): assert
 	notStr(actual: any, msg?: string, ...args: any[]): assert
+
+	fn(actual: any, msg?: string, ...args: any[]): assert
 	notFn(actual: any, msg?: string, ...args: any[]): assert
+
+	primitive(actual: any, msg?: string, ...args: any[]): assert
 	notPrimitive(actual: any, msg?: string, ...args: any[]): assert
+
+	boolean(actual: any, msg?: string, ...args: any[]): assert
 	notBoolean(actual: any, msg?: string, ...args: any[]): assert
+
+	number(actual: any, msg?: string, ...args: any[]): assert
 	notNumber(actual: any, msg?: string, ...args: any[]): assert
+
+	string(actual: any, msg?: string, ...args: any[]): assert
 	notString(actual: any, msg?: string, ...args: any[]): assert
+
+	date(actual: any, msg?: string, ...args: any[]): assert
 	notDate(actual: any, msg?: string, ...args: any[]): assert
+
+	reg(actual: any, msg?: string, ...args: any[]): assert
 	notReg(actual: any, msg?: string, ...args: any[]): assert
+
+	array(actual: any, msg?: string, ...args: any[]): assert
 	notArray(actual: any, msg?: string, ...args: any[]): assert
+
+	typedArray(actual: any, msg?: string, ...args: any[]): assert
 	notTypedArray(actual: any, msg?: string, ...args: any[]): assert
+
+	arrayLike(actual: any, msg?: string, ...args: any[]): assert
 	notArrayLike(actual: any, msg?: string, ...args: any[]): assert
+
+	obj(actual: any, msg?: string, ...args: any[]): assert
 	notObj(actual: any, msg?: string, ...args: any[]): assert
+
+	nan(actual: any, msg?: string, ...args: any[]): assert
 	notNan(actual: any, msg?: string, ...args: any[]): assert
+
+	finite(actual: number | string, msg?: string, ...args: any[]): assert
 	notFinite(actual: any, msg?: string, ...args: any[]): assert
-	throw(fn: () => any, err: Error | string, msg?: string, ...args: any[]): assert
-	notThrow(fn: () => any, err: Error | string, msg?: string, ...args: any[]): assert
+
+	less(actual: number, expect: number, msg?: string, ...args: any[]): assert
 	notLess(actual: number, expect: number, msg?: string, ...args: any[]): assert
+
+	greater(actual: number, expect: number, msg?: string, ...args: any[]): assert
 	notGreater(actual: number, expect: number, msg?: string, ...args: any[]): assert
+
+	match(actual: string, expect: any, msg?: string, ...args: any[]): assert
 	notMatch(actual: string, expect: any, msg?: string, ...args: any[]): assert
+
+	range(actual: number, start: number, end: number, msg?: string, ...args: any[]): assert
 	notRange(actual: number, start: number, end: number, msg?: string, ...args: any[]): assert
+
+	throw(fn: () => any, err?: Error | string, msg?: string, ...args: any[]): assert
+	notThrow(fn: () => any, err?: Error | string, msg?: string, ...args: any[]): assert
+
+	executor<T extends (...args: any[]) => any>(fn: T, maxCall: number, msg?: string): T & { called: number }
 }
 
 export const assert = function assert(msg?: string): never {
@@ -125,8 +154,9 @@ function checkErr(expect: Error | string, err: Error): boolean {
 	let msg = isStr(expect) ? (expect as string) : (expect as Error).message
 	return msg === err.message
 }
-const ERROR = new Error()
+const ERROR = new Error(`Expect Error`)
 const throwMsg = mkMsg(objFormatter(1), 'throw')
+
 assert.throw = function(fn: () => any, expect: Error | string, msg?: string): assert {
 	const err = catchErr(fn)
 	if (!err || (expect && !checkErr(expect, err))) {
@@ -145,6 +175,19 @@ assert.notThrow = function(fn: () => any, expect: Error | string, msg?: string):
 		throw new Error(parseMessage(msg || throwMsg[0], arguments, 2))
 	}
 	return assert
+}
+
+assert.executor = function<T extends (...args: any[]) => any>(
+	fn: T,
+	maxCall: number,
+	msg?: string
+): T & { called: number } {
+	const executor: any = function() {
+		assert.notGreater(++executor.called, maxCall, msg)
+		return applyScope(fn, this, arguments)
+	}
+	executor.called = 0
+	return executor
 }
 
 function extendAssert<T extends Function>(

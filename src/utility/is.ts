@@ -3,11 +3,12 @@
  * @module utility
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 13:57:32 GMT+0800 (China Standard Time)
- * @modified Mon Feb 25 2019 16:59:04 GMT+0800 (China Standard Time)
+ * @modified Sat Mar 23 2019 18:55:31 GMT+0800 (China Standard Time)
  */
 
 import { CONSTRUCTOR, GLOBAL, TYPE_BOOL, TYPE_FN, TYPE_NUM, TYPE_STRING, TYPE_UNDEF } from './consts'
 import { getConstructor } from './constructor'
+import { toStr } from './toStr'
 
 /**
  * is equals
@@ -207,6 +208,14 @@ export function isArrayLike(o: any): boolean {
  */
 export function isObj(o: any): boolean {
 	return o !== undefined && o !== null && getConstructor(o) === Object
+}
+
+/**
+ * is simple Object
+ * TODO object may has constructor property
+ */
+export function isObject(o: any): boolean {
+	return toStr(o) === '[object Object]'
 }
 
 function mkIs(Type: Function): (o: any) => boolean {

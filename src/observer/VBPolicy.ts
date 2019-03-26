@@ -1,38 +1,34 @@
 /**
- *
+ * Observe implementation on the VBScript of MSIE
  * @module observer
  * @author Tao Zeng <tao.zeng.zt@qq.com>
- * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
- * @modified Thu Mar 14 2019 19:12:03 GMT+0800 (China Standard Time)
+ * @created Tue Mar 19 2019 14:12:23 GMT+0800 (China Standard Time)
+ * @modified Tue Mar 26 2019 19:52:26 GMT+0800 (China Standard Time)
  */
 import { GLOBAL, CONSTRUCTOR, HAS_OWN_PROP } from '../utility/consts'
 import { create, isFn, getDefaultKeys, addDefaultKeys } from '../utility'
-import { ObserverTarget, IWatcher, ObserverPolicy, IObserver } from './IObserver'
+import { ObserverTarget, IWatcher, ObservePolicy, IObserver, ARRAY_CHANGE } from './IObserver'
 
 declare function execScript(code: string, type: string): void
 declare function parseVB(code: string): void
 
-export default function(): ObserverPolicy {
+export default function(): ObservePolicy {
 	if (GLOBAL.VBArray) {
 		try {
 			execScript(['Function parseVB(code)', '\tExecuteGlobal(code)', 'End Function'].join('\n'), 'VBScript')
-			addDefaultKeys(PROXY_KEY, CONSTRUCTOR_NAME)
+
+			addDefaultKeys(VBPROXY_KEY, VBPROXY_CTOR_KEY)
+
 			return {
 				__name: 'VBProxy',
-				__proxy: true,
-				__createProxy(
-					target: ObserverTarget,
-					isArray: boolean,
-					watchers: { [prop: string]: IWatcher }
-				): ObserverTarget {
-					return isArray ? target : new VBProxy(target, watchers).__proxy
+				__proxy: 'vb',
+				__createProxy<T extends ObserverTarget>(observer: IObserver<T>, target: T, isArray: boolean): T {
+					return isArray ? target : new VBProxy(target, observer).__proxy
 				},
-				__watch(observer: IObserver, prop: string, watcher: IWatcher): boolean | void {
-					//#if _DEBUG
-					if (observer.isArray) {
-						console.warn(`observing properties on array is not supported.`)
+				__watch<T extends ObserverTarget>(observer: IObserver<T>, prop: string, watcher: IWatcher): Error {
+					if (!observer.isArray && !observer.target[VBPROXY_KEY].__props[prop]) {
+						return new Error(`property[${prop}] is not defined`)
 					}
-					//#endif
 				}
 			}
 		} catch (e) {
@@ -41,8 +37,8 @@ export default function(): ObserverPolicy {
 	}
 }
 
-export class VBProxy {
-	private readonly __source: {}
+export class VBProxy<T extends {}> {
+	private readonly __source: T
 	/**
 	 * function property map
 	 * 	- key: property name
@@ -50,10 +46,10 @@ export class VBProxy {
 	 */
 	private readonly __fns: { [name: string]: [Function, Function] }
 	readonly __props: { [prop: string]: boolean }
-	private readonly __watchers: { [prop: string]: IWatcher }
-	readonly __proxy: {}
+	private readonly __observer: IObserver<T>
+	readonly __proxy: T
 
-	constructor(source: {}, watchers: { [prop: string]: IWatcher }) {
+	constructor(source: T, observer: IObserver<T>) {
 		const props = [],
 			propMap: { [prop: string]: boolean } = create(null),
 			__fns: string[] = [],
@@ -77,11 +73,11 @@ export class VBProxy {
 		}
 
 		this.__source = source
-		this.__watchers = watchers
+		this.__observer = observer
 		this.__proxy = proxy
 		this.__fns = fns
 		this.__props = propMap
-		source[PROXY_KEY] = this
+		source[VBPROXY_KEY] = this
 	}
 
 	private set(prop: string, value: any) {
@@ -91,7 +87,7 @@ export class VBProxy {
 		} else if (fns[prop]) {
 			fns[prop] = null
 		}
-		const watcher = this.__watchers[prop]
+		const watcher = this.__observer.watcher(prop)
 		watcher && watcher.notify(source[prop])
 		source[prop] = value
 	}
@@ -115,10 +111,10 @@ function applyProps(props: string[], propMap: { [key: string]: boolean }, applyP
 	}
 }
 
-const PROXY_KEY = '__vbclass_binding__',
-	CONSTRUCTOR_NAME = '__vbclass_constructor__',
+export const VBPROXY_KEY = '__vbclass_binding__',
+	VBPROXY_CTOR_KEY = '__vbclass_constructor__',
 	OBJECT_DEFAULT_PROPS = [
-		PROXY_KEY,
+		VBPROXY_KEY,
 		CONSTRUCTOR,
 		HAS_OWN_PROP,
 		'isPrototypeOf',
@@ -126,12 +122,13 @@ const PROXY_KEY = '__vbclass_binding__',
 		'toLocaleString',
 		'toString',
 		'valueOf'
-	],
-	CONSTRUCTOR_SCRIPT = `
-	Public [${PROXY_KEY}]
-	Public Default Function [${CONSTRUCTOR_NAME}](source)
-		Set [${PROXY_KEY}] = source
-		Set [${CONSTRUCTOR_NAME}] = Me
+	]
+
+const CONSTRUCTOR_SCRIPT = `
+	Public [${VBPROXY_KEY}]
+	Public Default Function [${VBPROXY_CTOR_KEY}](source)
+		Set [${VBPROXY_KEY}] = source
+		Set [${VBPROXY_CTOR_KEY}] = Me
 	End Function
 	`,
 	classPool = create(null)
@@ -139,17 +136,17 @@ const PROXY_KEY = '__vbclass_binding__',
 function genAccessorScript(prop: string): string {
 	return `
 	Public Property Let [${prop}](value)
-		Call [${PROXY_KEY}].set("${prop}", val)
+		Call [${VBPROXY_KEY}].set("${prop}", val)
 	End Property
 	Public Property Set [${prop}](value)
-		Call [${PROXY_KEY}].set("${prop}", val)
+		Call [${VBPROXY_KEY}].set("${prop}", val)
 	End Property
 
 	Public Property Get [${prop}]
 	On Error Resume Next
-		Set [${prop}] = [${PROXY_KEY}].get("${prop}")
+		Set [${prop}] = [${VBPROXY_KEY}].get("${prop}")
 	If Err.Number <> 0 Then
-		[${prop}] = [${PROXY_KEY}].get("${prop}")
+		[${prop}] = [${VBPROXY_KEY}].get("${prop}")
 	End If
 	On Error Goto 0
 	End Property
@@ -167,7 +164,7 @@ function genClassScript(className: string, props: string[]): string {
 }
 
 let classNameGenerator = 1
-function loadClassFactory(props: string[]): (source: VBProxy) => {} {
+function loadClassFactory(props: string[]): <T extends {}>(source: VBProxy<T>) => T {
 	const classKey = props.sort().join('|')
 	let factoryName = classPool[classKey]
 	if (!factoryName) {

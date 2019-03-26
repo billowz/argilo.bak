@@ -2,7 +2,7 @@
  * @module utility/collection
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Jul 25 2018 17:10:41 GMT+0800 (China Standard Time)
- * @modified Thu Mar 14 2019 14:04:35 GMT+0800 (China Standard Time)
+ * @modified Sat Mar 23 2019 17:29:41 GMT+0800 (China Standard Time)
  */
 import { Control } from './Control'
 import { IArray } from '../consts'

@@ -2,7 +2,7 @@
  * @module observer
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Dec 26 2018 13:59:10 GMT+0800 (China Standard Time)
- * @modified Fri Mar 22 2019 19:49:34 GMT+0800 (China Standard Time)
+ * @modified Tue Mar 26 2019 19:50:47 GMT+0800 (China Standard Time)
  */
 
 import {
@@ -22,26 +22,24 @@ import {
 	toStrType,
 	get,
 	eq,
-	set
+	set,
+	isObject
 } from '../utility'
 import { PROTOTYPE } from '../utility/consts'
 import { assert } from '../utility/assert'
-import { ObserverTarget, IWatcher, OBSERVER_KEY, IObserver, ObserverPolicy, ARRAY_CHANGE } from './IObserver'
-import accessorPolicy from './accessorPolicy'
+import {
+	ObserverTarget,
+	IWatcher,
+	OBSERVER_KEY,
+	IObserver,
+	ObservePolicy,
+	isArrayChangeProp,
+	MISS,
+	ObserverCallback
+} from './IObserver'
 import proxyPolicy from './proxyPolicy'
-
-/**
- * change callback for observer
- * @param path 		the observe path
- * @param value 	new value
- * @param original	original value. the original value is {@link MISS} when the dirty collector loses the original value
- */
-export type ObserverCallback = (path: string[], value: any, original: any, observer: Observer) => void
-
-/**
- * The dirty collector lost the original value
- */
-export const MISS = {}
+import accessorPolicy from './accessorPolicy'
+import vbPolicy from './vbPolicy'
 
 //========================================================================================
 /*                                                                                      *
@@ -56,16 +54,7 @@ export const MISS = {}
 const V = {}
 
 function isObserverTarget(obj: any) {
-	return obj && (isArray(obj) || isObj(obj))
-}
-
-/**
- * is array change property
- * @param observer 	observer
- * @param prop 		property of the observer's target
- */
-function isArrayChangeProp(observer: Observer, prop: string) {
-	return observer.isArray && prop === ARRAY_CHANGE
+	return obj && (isArray(obj) || isObject(obj))
 }
 
 /**
@@ -111,19 +100,19 @@ class Topic {
 	readonly __parent: Topic
 
 	// own observer
-	readonly __owner: Observer
+	readonly __owner: Observer<any>
 
 	// watch property
 	readonly __prop: string
 
 	// binded observer
-	__observer: Observer
+	__observer: Observer<any>
 
 	// property path
 	__path: string[]
 
 	// listeners
-	__listeners: FnList<ObserverCallback>
+	__listeners: FnList<ObserverCallback<any>>
 
 	// the original value before change
 	__original: any
@@ -146,7 +135,7 @@ class Topic {
 	 * @param prop		watch property
 	 * @param parent	parent topic
 	 */
-	constructor(owner: Observer, prop: string, parent?: Topic) {
+	constructor(owner: Observer<any>, prop: string, parent?: Topic) {
 		this.__state = 0
 		this.__original = V // special object indicates that the topic has not changed
 		this.__owner = owner
@@ -162,10 +151,10 @@ class Topic {
 	 * @param scope		scope of the callback
 	 * @return listen-id | undefined
 	 */
-	__listen(path: string[], cb: ObserverCallback, scope: any) {
+	__listen(path: string[], cb: ObserverCallback<any>, scope: any): string {
 		let { __listeners: listeners } = this
 		if (!listeners) {
-			this.__listeners = listeners = new FnList<ObserverCallback>()
+			this.__listeners = listeners = new FnList<ObserverCallback<any>>()
 			this.__path = path
 		}
 		const id = listeners.add(cb, scope)
@@ -178,7 +167,7 @@ class Topic {
 	 * @param cb		observe callback
 	 * @param scope		scope of the callback
 	 */
-	__unlisten(cb: ObserverCallback, scope: any) {
+	__unlisten(cb: ObserverCallback<any>, scope: any) {
 		const { __listeners: listeners } = this
 		if (listeners) {
 			listeners.remove(cb, scope)
@@ -202,7 +191,7 @@ class Topic {
 	 * Clear all unlistening leaf topics (!TOPIC_LISTEN_FLAG && !TOPIC_SUB_FLAG)
 	 * @param listeners	listeners
 	 */
-	private ____unlisten(listeners: FnList<ObserverCallback>) {
+	private ____unlisten(listeners: FnList<ObserverCallback<any>>) {
 		if (!listeners.size()) {
 			// this topic has no listeners, clear the listen flag
 			var topic: Topic = this,
@@ -226,11 +215,27 @@ class Topic {
 	 * bind observer
 	 * @param observer new observer
 	 */
-	__bind(observer?: Observer) {
+	__bind(observer?: Observer<any>) {
 		const { __observer: org } = this
 		if (org !== observer) {
 			org && org.__unwatchTopic(this) // unbind old observer
-			this.__observer = observer && observer.__watchTopic(this) ? observer : observer
+			if (observer) {
+				const err: Error = observer.__watchTopic(this)
+				if (err) {
+					const path = this.__getPath()
+					assert(
+						`observer[{}]: can not watch {} on {}{}, {{message}}.`,
+						formatPath(path),
+						formatPath(path.slice(-1)),
+						toStrType(observer.target),
+						path.length > 1 ? `[${formatPath(path.slice(0, -1))}]` : '',
+						err,
+						err,
+						this.__owner.target
+					)
+				}
+			}
+			this.__observer = observer
 		}
 	}
 
@@ -263,10 +268,10 @@ class Topic {
 				const { __prop: prop } = this
 
 				//#if _DEBUG
-				isArrayChangeProp(observer, prop) && sub.__badPath(2, 'Array')
+				isArrayChangeProp(observer, prop) && sub.__ignorePath(2, 'Array')
 				//#endif
 
-				var subObserver: Observer
+				var subObserver: Observer<any>
 				if (subs[0]) {
 					subObserver = subs[0].__observer
 				} else {
@@ -276,7 +281,7 @@ class Topic {
 					}
 					//#if _DEBUG
 					else if (!isNil(subTarget)) {
-						sub.__badPath(2, toStrType(subTarget))
+						sub.__ignorePath(2, toStrType(subTarget))
 					}
 					//#endif
 				}
@@ -312,10 +317,10 @@ class Topic {
 	}
 
 	//#if _DEBUG
-	private __badPath(i: number, type: string, msg?: string) {
+	private __ignorePath(i: number, type: string, msg?: string) {
 		const path = this.__getPath()
 		console.warn(
-			`observer[{}]: can not watch {} on {}{}{}.`,
+			`observer[{}]: ignore {} on {}{}{}.`,
 			formatPath(path),
 			formatPath(path.slice(-i)),
 			type,
@@ -325,11 +330,13 @@ class Topic {
 		)
 	}
 
-	private __badSubsPath(subs: Topic[], len: number, type: string) {
+	private __ignoreSubPaths(subs: Topic[], len: number, type: string) {
 		for (let i = 0; i < len; i++) {
-			subs[i].__badPath(2, type)
+			subs[i].__ignorePath(2, type)
 		}
 	}
+
+	//#endif
 
 	private __getPath() {
 		let path: string[] = this.__path
@@ -339,7 +346,6 @@ class Topic {
 		}
 		return path
 	}
-	//#endif
 
 	/**
 	 * mark the change in topic
@@ -393,7 +399,7 @@ class Topic {
 	 * @param original 	original value of this topic
 	 * @param force  	force notify
 	 */
-	private ____collect(observer: Observer, target: any, original: any, force: boolean) {
+	private ____collect(observer: Observer<any>, target: any, original: any, force: boolean) {
 		const { __state: flags, __prop: prop } = this
 		let dirty: [any, any, boolean?],
 			subTarget: any = V // lazy load the sub-target
@@ -416,28 +422,30 @@ class Topic {
 			const { __subs: subs } = this
 			const l = subs.length
 
-			var subObserver: Observer,
-				orgSubObserver: Observer,
+			var subObserver: Observer<any>,
+				orgSubObserver: Observer<any>,
 				sub: Topic,
 				subOriginal: any,
 				i = 0
 
 			if (observer) {
 				//#if _DEBUG
-				isArrayChangeProp(observer, prop) && this.__badSubsPath(subs, l, 'Array')
+				isArrayChangeProp(observer, prop) && this.__ignoreSubPaths(subs, l, 'Array')
 				//#endif
 
 				if (isObserverTarget(subTarget)) {
 					subObserver = loadSubObserver(observer, prop, subTarget)
-					subTarget = subObserver.target
-					dirty && (dirty[0] = subObserver.proxy) // update dirty proxy
+					if (proxyEnable) {
+						subTarget = subObserver.target
+						dirty && (dirty[0] = subObserver.proxy) // update dirty proxy
+					}
 				}
 				//#if _DEBUG
 				else if (!isNil(subTarget)) {
-					this.__badSubsPath(subs, l, toStrType(subTarget))
+					this.__ignoreSubPaths(subs, l, toStrType(subTarget))
 				}
 				//#endif
-			} else if (dirty && policy.__proxy) {
+			} else if (proxyEnable && dirty) {
 				dirty[0] = proxy(dirty[0])
 			}
 
@@ -460,7 +468,7 @@ class Topic {
 					sub.____collect(subObserver, subTarget, subOriginal, orgSubObserver != subObserver)
 				}
 			}
-		} else if (dirty && policy.__proxy) {
+		} else if (dirty && proxyEnable) {
 			dirty[0] = proxy(dirty[0])
 		}
 	}
@@ -473,7 +481,7 @@ function compareTopic(topic1: Topic, topic2: Topic) {
 /**
  * collect the dirty topics on the collectQueue
  */
-function collect() {
+export function collect() {
 	//#if _DEBUG
 	const start = Date.now()
 	//#endif
@@ -509,7 +517,7 @@ function notify() {
 
 	const l = dirtyQueue.length
 	let topic: Topic,
-		owner: Observer,
+		owner: Observer<any>,
 		path: string[],
 		value: any,
 		original: any,
@@ -560,13 +568,6 @@ function __updateTopicCB(topic: Topic) {
 	topic.__update(__original__)
 }
 
-// const watcherQueue: Watcher[] = []
-// function collectWatchers() {
-// 	__original__ = original
-// 	this.eachUnsafe(__updateTopicCB)
-// 	__original__ = 0
-// }
-
 class Watcher extends List<Topic> implements IWatcher {
 	// __originValue: any
 
@@ -581,28 +582,19 @@ class Watcher extends List<Topic> implements IWatcher {
 		__original__ = original
 		this.eachUnsafe(__updateTopicCB)
 		__original__ = 0
-
-		// if (this.__originValue === V) {
-		// 	const l = collectQueue.length
-
-		// 	this.__originValue = original
-
-		// 	watcherQueue[l] = this
-		// 	!l && nextTick(collectWatchers)
-		// }
 	}
 }
 
-class Observer implements IObserver {
+class Observer<T extends ObserverTarget> implements IObserver<T> {
 	/**
 	 * observer target
 	 */
-	readonly target: ObserverTarget
+	readonly target: T
 
 	/**
 	 * observer proxy
 	 */
-	proxy: ObserverTarget
+	readonly proxy: T
 
 	/**
 	 * is array target
@@ -632,12 +624,12 @@ class Observer implements IObserver {
 	 * create Observer
 	 * @param target observer target
 	 */
-	constructor(target: ObserverTarget) {
+	constructor(target: T) {
 		const arrayTarget = isArray(target)
 		if (arrayTarget) {
 			applyArrayHooks(target as any[])
 		} else {
-			assert.is(isObj(target), `the observer's target can only be an object or an array`)
+			assert.is(isObject(target), `the observer's target can only be an object or an array`)
 		}
 
 		const watchers = create(null)
@@ -646,10 +638,11 @@ class Observer implements IObserver {
 
 		this.isArray = arrayTarget
 		this.target = target
-		this.proxy = policy.__createProxy(target, arrayTarget, watchers)
 
 		// bind observer key on the observer's target
 		defPropValue(target, OBSERVER_KEY, this, false, false, false)
+
+		this.proxy = policy.__createProxy(this, target, arrayTarget)
 	}
 
 	/**
@@ -659,7 +652,7 @@ class Observer implements IObserver {
 	 * @param scope		scope of callback
 	 * @return listen-id
 	 */
-	observe(propPath: string | string[], cb: ObserverCallback, scope?: any) {
+	observe(propPath: string | string[], cb: ObserverCallback<T>, scope?: any): string {
 		const path: string[] = parsePath(propPath),
 			topics = this.__topics || (this.__topics = create(null)),
 			prop0 = path[0]
@@ -684,7 +677,7 @@ class Observer implements IObserver {
 	 * @param cb		callback
 	 * @param scope		scope of callback
 	 */
-	unobserve(propPath: string | string[], cb: ObserverCallback, scope?: any) {
+	unobserve(propPath: string | string[], cb: ObserverCallback<T>, scope?: any) {
 		const topic = this.__getTopic(parsePath(propPath))
 		topic && topic.__unlisten(cb, scope)
 	}
@@ -700,9 +693,9 @@ class Observer implements IObserver {
 	}
 
 	/**
-	 * notify the observer that the property in the target has been changed
-	 * @param prop		changed property
-	 * @param original	the original value
+	 * notify change on the property
+	 * @param prop		the property
+	 * @param original 	the original value
 	 */
 	notify(prop: string, original: any) {
 		const watcher = this.__watchers[prop]
@@ -715,20 +708,36 @@ class Observer implements IObserver {
 	 */
 	notifyAll() {
 		const { __watchers: watchers, __watcherProps: props } = this
-		for (var i = 0, watcher: Watcher, l = props.length; i < l; i++) {
-			watcher = watchers[props[i]]
-			watcher.notify(MISS)
+		for (var i = 0, l = props.length; i < l; i++) {
+			watchers[props[i]].notify(MISS)
 		}
 	}
 
 	/**
-	 * get watcher of the property
+	 * get wather by property
 	 * @protected
-	 * @param prop
+	 * @param prop the property
 	 */
 	watcher(prop: string) {
 		const watcher = this.__watchers[prop]
 		if (watcher && watcher.size()) return watcher
+	}
+
+	/**
+	 * get or create wather by property
+	 * @protected
+	 * @param prop the property
+	 */
+	initWatcher(prop: string): Watcher {
+		const { __watchers: watchers } = this
+		let watcher: Watcher = watchers[prop]
+		if (!watcher) {
+			watchers[prop] = watcher = new Watcher()
+			this.__watcherProps.push(prop)
+			const err: Error | void = policy.__watch(this as IObserver<T>, prop, watcher)
+			assert.not(err, `can not watch property[{}] on the Observer, {{message}}`, prop, err, err, this.target)
+		}
+		return watcher
 	}
 
 	/**
@@ -737,18 +746,18 @@ class Observer implements IObserver {
 	 * @param topic topic
 	 * @return is successful
 	 */
-	__watchTopic(topic: Topic): boolean {
+	__watchTopic(topic: Topic): Error {
 		const { __watchers: watchers } = this
 		const { __prop: prop } = topic
-		let watcher: Watcher = watchers[prop]
+		let watcher: Watcher = watchers[prop],
+			err: Error | void
 		if (!watcher) {
-			watcher = new Watcher()
-			if (!(this.isArray && prop === ARRAY_CHANGE) && policy.__watch(this, prop, watcher) === false) return false
-			watchers[prop] = watcher
+			watchers[prop] = watcher = new Watcher()
 			this.__watcherProps.push(prop)
+			err = policy.__watch(this as IObserver<T>, prop, watcher)
 		}
 		watcher.add(topic)
-		return true
+		return err as Error
 	}
 
 	/**
@@ -814,7 +823,7 @@ const arrayHooks = mapArray(
 		return [
 			method,
 			function() {
-				const observer: Observer = this[OBSERVER_KEY]
+				const observer: Observer<any[]> = this[OBSERVER_KEY]
 				observer.notifyAll()
 				return applyScope(fn, observer.target, arguments)
 			}
@@ -841,7 +850,7 @@ function applyArrayHooks(array: any[]) {
  *                                                                                      */
 //========================================================================================
 
-const policy: ObserverPolicy = proxyPolicy() || accessorPolicy()
+const policy: ObservePolicy = proxyPolicy() || accessorPolicy() || vbPolicy()
 
 assert.is(policy, 'The observer module is not supported.')
 
@@ -849,15 +858,17 @@ assert.is(policy, 'The observer module is not supported.')
 console.info(`the observer policy: ${policy.__name} -> `, policy)
 //#endif
 
-if (!policy.__createProxy) policy.__createProxy = target => target
-if (!policy.__watch) policy.__watch = () => true
+if (!policy.__createProxy) policy.__createProxy = (observer, target) => target
+if (!policy.__watch) policy.__watch = () => {}
+
+export const proxyEnable = policy.__proxy
 
 /**
  * get existing observer on object
  * @return existing observer
  */
-let getObserver: (target: ObserverTarget) => Observer = (target: ObserverTarget): Observer => {
-	const oserver: Observer = target[OBSERVER_KEY]
+let getObserver: <T extends ObserverTarget>(target: T) => Observer<T> = target => {
+	const oserver = target[OBSERVER_KEY]
 	if ((oserver && oserver.target === target) || oserver.proxy === target) return oserver
 }
 
@@ -869,12 +880,12 @@ let getObserver: (target: ObserverTarget) => Observer = (target: ObserverTarget)
  * @param target	target = observer.target[prop]
  * @return sub-observer
  */
-let loadSubObserver: (observer: Observer, prop: string, target: any) => Observer = (
-	observer: Observer,
-	prop: string,
-	target: any
-): Observer => {
-	const subObserver: Observer = getObserver(target) || new Observer(target)
+let loadSubObserver: <T extends ObserverTarget>(observer: Observer<any>, prop: string, target: T) => Observer<T> = (
+	observer,
+	prop,
+	target
+) => {
+	const subObserver: Observer<any> = getObserver(target) || new Observer(target)
 	if (subObserver.proxy !== target) observer.target[prop] = subObserver.proxy
 	return subObserver
 }
@@ -884,9 +895,9 @@ let loadSubObserver: (observer: Observer, prop: string, target: any) => Observer
  * @param object the object
  * @return the original object | the object
  */
-let source: <T>(obj: T) => T = <T>(obj: T): T => {
+let source: <T extends ObserverTarget>(obj: T) => T = <T>(obj: T): T => {
 	const observer = obj && getObserver(obj)
-	return observer ? (observer.target as T) : obj
+	return observer ? observer.target : obj
 }
 
 /**
@@ -894,9 +905,9 @@ let source: <T>(obj: T) => T = <T>(obj: T): T => {
  * @param object the object
  * @return the proxy object | the object
  */
-let proxy: <T>(obj: T) => T = <T>(obj: T): T => {
+let proxy: <T extends ObserverTarget>(obj: T) => T = <T>(obj: T): T => {
 	const observer = obj && getObserver(obj)
-	return observer ? (observer.proxy as T) : obj
+	return observer ? observer.proxy : obj
 }
 
 /**
@@ -923,13 +934,13 @@ let $set: (obj: any, path: string | string[], value: any) => void = (obj: any, p
 }
 
 //──── optimize on Non-Proxy policy ──────────────────────────────────────────────────────
-if (!policy.__proxy) {
-	getObserver = (target: ObserverTarget): Observer => {
-		const oserver: Observer = target[OBSERVER_KEY]
+if (!proxyEnable) {
+	getObserver = target => {
+		const oserver = target[OBSERVER_KEY]
 		if (oserver && oserver.target === target) return oserver
 	}
 
-	loadSubObserver = (observer: Observer, prop: string, target: any): Observer => {
+	loadSubObserver = (observer, prop, target) => {
 		return getObserver(target) || new Observer(target)
 	}
 
@@ -942,6 +953,47 @@ if (!policy.__proxy) {
 	$get = get
 
 	$set = set
+}
+
+/**
+ * get or create observer on object
+ */
+export function observer<T extends ObserverTarget>(target: T): Observer<T> {
+	return getObserver(target) || new Observer(target)
+}
+
+/**
+ * observe changes in target object
+ * @param propPath 	property path for object, parse string path by {@link parsePath}
+ * @param cb		callback
+ * @param scope		scope of callback
+ * @return listen-id
+ */
+export function observe<T extends ObserverTarget>(
+	target: T,
+	propPath: string | string[],
+	cb: ObserverCallback<T>,
+	scope?: any
+): string {
+	const __observer = observer(target)
+	return __observer.observe(propPath, cb, scope)
+}
+
+/**
+ * unobserve changes in target object
+ * @param propPath 	property path for object, parse string path by {@link parsePath}
+ * @param cb		callback
+ * @param scope		scope of callback
+ * @return the proxy of target object
+ */
+export function unobserve<T extends ObserverTarget>(
+	target: T,
+	propPath: string | string[],
+	cb: ObserverCallback<T>,
+	scope?: any
+) {
+	const __observer = getObserver(target)
+	__observer && __observer.unobserve(propPath, cb, scope)
 }
 
 export { getObserver, source, proxy, $eq, $get, $set }

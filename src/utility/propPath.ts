@@ -2,7 +2,7 @@
  * @module utility/defProp
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Fri Nov 30 2018 14:41:02 GMT+0800 (China Standard Time)
- * @modified Wed Mar 13 2019 18:52:28 GMT+0800 (China Standard Time)
+ * @modified Tue Mar 26 2019 19:39:49 GMT+0800 (China Standard Time)
  */
 
 import { create } from './create'
@@ -36,6 +36,11 @@ export function parsePath(propPath: string | string[], cacheable?: boolean): str
 				)
 			path[i++] = match[1] || match[2] || match[3] || match[4]
 			idx = cidx
+		}
+		if (propPath.length > idx + 1) {
+			throw new SyntaxError(
+				`Invalid Path: "${propPath}", unkown character[${(propPath as string).charAt(idx)}] at offset:${idx}`
+			)
 		}
 		if (cacheable !== false && i) {
 			pathCache[propPath as string] = path

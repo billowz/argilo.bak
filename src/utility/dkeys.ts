@@ -2,7 +2,7 @@
  * @module utility/dkeys
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Mar 11 2019 17:22:13 GMT+0800 (China Standard Time)
- * @modified Thu Mar 14 2019 19:01:40 GMT+0800 (China Standard Time)
+ * @modified Sat Mar 23 2019 17:42:04 GMT+0800 (China Standard Time)
  */
 import { NULL_CONSTRUCTOR } from './consts'
 
@@ -33,5 +33,9 @@ export function addDefaultKeys() {
 }
 
 export function getDefaultKeys() {
+	return defaultKeys
+}
+
+export function getDefaultKeyMap() {
 	return defaultKeys
 }
