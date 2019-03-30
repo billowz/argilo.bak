@@ -1,9 +1,16 @@
+/// <reference types="node" />
+
+export declare function isDefaultKey(key: string): any;
+export declare function addDefaultKey(key: string): string;
+export declare function addDefaultKeys(...keys: string[]): void;
+export declare function getDefaultKeys(): any[];
+export declare function getDefaultKeyMap(): any[];
 /**
  * Function utilities
  * @module utility
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 13:57:32 GMT+0800 (China Standard Time)
- * @modified Fri Nov 23 2018 11:18:33 GMT+0800 (China Standard Time)
+ * @modified Thu Mar 28 2019 19:22:34 GMT+0800 (China Standard Time)
  */
 /**
  * create function by code string
@@ -91,12 +98,16 @@ export declare function fnName(fn: Function): string;
  * @return function proxy
  */
 export declare const bind: <T extends Function>(fn: T, scope: any, ...args: any[]) => T;
+export declare type Executor<T extends (...args: any[]) => any> = T & {
+	called: number;
+};
+export declare function executor<T extends (...args: any[]) => any>(fn: T): Executor<T>;
 /**
  * type checker
  * @module utility
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 13:57:32 GMT+0800 (China Standard Time)
- * @modified Mon Feb 25 2019 16:59:04 GMT+0800 (China Standard Time)
+ * @modified Sat Mar 23 2019 18:55:31 GMT+0800 (China Standard Time)
  */
 /**
  * is equals
@@ -198,6 +209,11 @@ export declare function isArrayLike(o: any): boolean;
  */
 export declare function isObj(o: any): boolean;
 /**
+ * is simple Object
+ * TODO object may has constructor property
+ */
+export declare function isObject(o: any): boolean;
+/**
  * is empty
  * - string: trim(string).length === 0
  * - array: array.length === 0
@@ -246,10 +262,6 @@ export declare const __setProto: <T>(obj: any, proto: any) => any;
  */
 export declare const setProto: <T>(obj: any, proto: any) => any;
 /**
- * has own property
- */
-export declare const hasOwnProp: (obj: any, prop: string) => boolean;
-/**
  * whether to support Object.defineProperty
  */
 export declare const propDescriptor: boolean;
@@ -266,16 +278,26 @@ export declare const defProp: (o: any, p: string | number | symbol, attributes: 
  */
 export declare const defPropValue: <V>(obj: any, prop: string, value: V, enumerable?: boolean, configurable?: boolean, writable?: boolean) => V;
 /**
+ * @module utility
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Wed Jul 25 2018 15:22:57 GMT+0800 (China Standard Time)
+ * @modified Thu Mar 14 2019 09:22:38 GMT+0800 (China Standard Time)
+ */
+/**
+ * has own property
+ */
+export declare const hasOwnProp: (obj: any, prop: string) => boolean;
+/**
  * get owner property value
  * @param prop 			property name
  * @param defaultVal 	default value
  */
 export declare function getOwnProp(obj: any, prop: string, defaultVal?: any): any;
 /**
- * @module utility/prop
+ * @module utility/defProp
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Fri Nov 30 2018 14:41:02 GMT+0800 (China Standard Time)
- * @modified Sat Feb 23 2019 10:45:54 GMT+0800 (China Standard Time)
+ * @modified Tue Mar 26 2019 19:39:49 GMT+0800 (China Standard Time)
  */
 export declare function parsePath(propPath: string | string[], cacheable?: boolean): string[];
 export declare function formatPath(path: string | (string[] & {
@@ -283,12 +305,14 @@ export declare function formatPath(path: string | (string[] & {
 })): string;
 export declare function get(obj: any, path: string | string[]): any;
 export declare function set(obj: any, path: string | string[], value: any): void;
+export declare function toStr(obj: any): String;
+export declare function toStrType(obj: any): any;
 /**
  * String utilities
  * @module utility/string
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 13:57:32 GMT+0800 (China Standard Time)
- * @modified Thu Jan 31 2019 10:04:55 GMT+0800 (China Standard Time)
+ * @modified Sat Mar 23 2019 18:50:35 GMT+0800 (China Standard Time)
  */
 /**
  * get char code
@@ -561,7 +585,7 @@ export declare function formatter(fmt: string, offset?: number, getParam?: (args
  * @module utility/create
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Jul 25 2018 15:24:47 GMT+0800 (China Standard Time)
- * @modified Sat Dec 29 2018 18:19:24 GMT+0800 (China Standard Time)
+ * @modified Wed Mar 13 2019 20:08:04 GMT+0800 (China Standard Time)
  */
 /**
  * create object
@@ -585,7 +609,7 @@ export declare type AssignFilter = (prop: string, target: any, override: any) =>
  * @param startOffset 	start offset in overrides, default: 0
  * @param endOffset 	end offset in overrides, default: overrides.length-1
  */
-export declare function doAssign(target: any, overrides: object[] | IArguments, filter: AssignFilter, startOffset?: number, endOffset?: number): any;
+export declare function doAssign(target: any, overrides: any[] | IArguments, filter: AssignFilter, startOffset?: number, endOffset?: number): any;
 /**
  * assign properties
  * > Object.assign shim
@@ -897,12 +921,13 @@ export declare function arr2obj(array: IArray, callback: Arr2ObjCallback, scope?
 export declare function makeMap(array: IArray, val: Arr2ObjCallback, split?: string): object;
 export declare function makeMap(array: IArray, val?: any, split?: string): object;
 export declare function makeArray<T>(len: number, callback: (index: number) => T): T[];
+export declare type EachControl = Control;
 /**
  * Double Linked List
  * @module utility/List
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
- * @modified Fri Feb 22 2019 16:45:27 GMT+0800 (China Standard Time)
+ * @modified Wed Mar 13 2019 19:29:16 GMT+0800 (China Standard Time)
  */
 export declare class List<T> {
 	static readonly binding: string;
@@ -953,6 +978,7 @@ export declare class List<T> {
 	first(): T;
 	last(): T;
 	each(cb: (obj: T) => boolean | void, scope?: any): void;
+	eachUnsafe(cb: (obj: T) => boolean | void, scope?: any): void;
 	toArray(): T[];
 	/**
 	 *
@@ -979,7 +1005,7 @@ export declare class List<T> {
  * @module utility/List
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
- * @modified Thu Feb 28 2019 09:50:35 GMT+0800 (China Standard Time)
+ * @modified Mon Mar 11 2019 19:53:56 GMT+0800 (China Standard Time)
  */
 export declare type FnNode<T extends Function> = [string, T, any, any];
 export declare class FnList<T extends Function> {
@@ -1009,6 +1035,7 @@ export declare class FnList<T extends Function> {
 	size(): number;
 	clean(): void;
 	each(cb: (fn: T, scope: any, data: any, __node: FnNode<T>) => boolean | void, scope?: any): void;
+	eachUnsafe(cb: (fn: T, scope: any, data: any, __node: FnNode<T>) => boolean | void, scope?: any): void;
 	id(fn: T, scope?: any): string;
 }
 export declare function nextTick(fn: Function, scope?: any): void;
@@ -1344,169 +1371,490 @@ export declare type ComplexRuleDescriptor = {
 	onMatch?: onMatchCallback;
 	onErr?: onErrorCallback;
 } & RuleOptions;
-export declare type ObserverTarget = any[] | {};
-export declare type ObserveListener = (path: string[], value: any, original: any, observer: Observer) => void;
-declare class Subject {
-	readonly __parent: Subject;
-	readonly __owner: Observer;
-	readonly __prop: string;
-	__observer: Observer;
-	__path: string[];
-	__listeners: FnList<ObserveListener>;
-	__dirty: [any, any];
-	__notifyDirty: [any, any];
-	__subs: Subject[];
-	__subCache: {
-		[key: string]: Subject;
+/**
+ * @module utility/assert
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Wed Nov 28 2018 11:01:45 GMT+0800 (China Standard Time)
+ * @modified Thu Mar 28 2019 19:08:21 GMT+0800 (China Standard Time)
+ */
+export interface assert {
+	(msg?: string, ...args: any[]): never;
+	is(actual: any, msg?: string, ...args: any[]): assert;
+	not(actual: any, msg?: string, ...args: any[]): assert;
+	eq(actual: any, expect: any, msg?: string, ...args: any[]): assert;
+	notEq(actual: any, expect: any, msg?: string, ...args: any[]): assert;
+	eql(actual: any, expect: any, msg?: string, ...args: any[]): assert;
+	notEql(actual: any, expect: any, msg?: string, ...args: any[]): assert;
+	blank(actual: any, msg?: string, ...args: any[]): assert;
+	notBlank(actual: any, msg?: string, ...args: any[]): assert;
+	nul(actual: any, msg?: string, ...args: any[]): assert;
+	notNul(actual: any, msg?: string, ...args: any[]): assert;
+	nil(actual: any, msg?: string, ...args: any[]): assert;
+	notNil(actual: any, msg?: string, ...args: any[]): assert;
+	undef(actual: any, msg?: string, ...args: any[]): assert;
+	notUndef(actual: any, msg?: string, ...args: any[]): assert;
+	bool(actual: any, msg?: string, ...args: any[]): assert;
+	notBool(actual: any, msg?: string, ...args: any[]): assert;
+	num(actual: any, msg?: string, ...args: any[]): assert;
+	notNum(actual: any, msg?: string, ...args: any[]): assert;
+	int(actual: any, msg?: string, ...args: any[]): assert;
+	notInt(actual: any, msg?: string, ...args: any[]): assert;
+	str(actual: any, msg?: string, ...args: any[]): assert;
+	notStr(actual: any, msg?: string, ...args: any[]): assert;
+	fn(actual: any, msg?: string, ...args: any[]): assert;
+	notFn(actual: any, msg?: string, ...args: any[]): assert;
+	primitive(actual: any, msg?: string, ...args: any[]): assert;
+	notPrimitive(actual: any, msg?: string, ...args: any[]): assert;
+	boolean(actual: any, msg?: string, ...args: any[]): assert;
+	notBoolean(actual: any, msg?: string, ...args: any[]): assert;
+	number(actual: any, msg?: string, ...args: any[]): assert;
+	notNumber(actual: any, msg?: string, ...args: any[]): assert;
+	string(actual: any, msg?: string, ...args: any[]): assert;
+	notString(actual: any, msg?: string, ...args: any[]): assert;
+	date(actual: any, msg?: string, ...args: any[]): assert;
+	notDate(actual: any, msg?: string, ...args: any[]): assert;
+	reg(actual: any, msg?: string, ...args: any[]): assert;
+	notReg(actual: any, msg?: string, ...args: any[]): assert;
+	array(actual: any, msg?: string, ...args: any[]): assert;
+	notArray(actual: any, msg?: string, ...args: any[]): assert;
+	typedArray(actual: any, msg?: string, ...args: any[]): assert;
+	notTypedArray(actual: any, msg?: string, ...args: any[]): assert;
+	arrayLike(actual: any, msg?: string, ...args: any[]): assert;
+	notArrayLike(actual: any, msg?: string, ...args: any[]): assert;
+	obj(actual: any, msg?: string, ...args: any[]): assert;
+	notObj(actual: any, msg?: string, ...args: any[]): assert;
+	nan(actual: any, msg?: string, ...args: any[]): assert;
+	notNan(actual: any, msg?: string, ...args: any[]): assert;
+	finite(actual: number | string, msg?: string, ...args: any[]): assert;
+	notFinite(actual: any, msg?: string, ...args: any[]): assert;
+	less(actual: number, expect: number, msg?: string, ...args: any[]): assert;
+	notLess(actual: number, expect: number, msg?: string, ...args: any[]): assert;
+	greater(actual: number, expect: number, msg?: string, ...args: any[]): assert;
+	notGreater(actual: number, expect: number, msg?: string, ...args: any[]): assert;
+	match(actual: string, expect: any, msg?: string, ...args: any[]): assert;
+	notMatch(actual: string, expect: any, msg?: string, ...args: any[]): assert;
+	range(actual: number, start: number, end: number, msg?: string, ...args: any[]): assert;
+	notRange(actual: number, start: number, end: number, msg?: string, ...args: any[]): assert;
+	throw(fn: () => any, err?: Error | string, msg?: string, ...args: any[]): assert;
+	notThrow(fn: () => any, err?: Error | string, msg?: string, ...args: any[]): assert;
+	executor<T extends (...args: any[]) => any>(fn: T, maxCall: number, msg?: string): T & {
+		called: number;
 	};
-	__flags: number;
-	/**
-	 *
-	 * @param owner
-	 * @param prop
-	 * @param binded
-	 * @param parent
-	 */
-	constructor(owner: Observer, prop: string, parent?: Subject);
-	private __initSubObserver;
-	/**
-	 * get sub-subject from cache
-	 * @param prop property
-	 */
-	__getSub(prop: string): Subject;
-	private __badArrayPath;
-	/**
-	 * bind observer
-	 * @param observer new observer
-	 * @return binded observer
-	 */
-	__bind(observer?: Observer): Observer;
-	/**
-	 * create or get sub-subject on cache
-	 * @param subProp	property
-	 * @param binded	binded observer
-	 */
-	__addSub(subProp: string): Subject;
-	/**
-	 * add listener
-	 */
-	__listen(path: string[], listener: ObserveListener, scope: any): string;
-	/**
-	 * remove sub-subject
-	 * @param subject subject
-	 */
-	__removeSub(subject: Subject): void;
-	/**
-	 * check subject state
-	 */
-	____unlisten(listeners: FnList<ObserveListener>): void;
-	/**
-	 * remove listener
-	 */
-	__unlisten(listener: ObserveListener, scope: any): void;
-	/**
-	 * remove listener by id
-	 */
-	__unlistenId(id: string): void;
-	__collect(dirty: [any, any]): void;
-	__collectDep(observer: Observer, value: any): void;
-	/**
-	 * notify change
-	 * @param value
-	 * @param original
-	 */
-	__notify(value: any, original: any): void;
-	__getPath(): string[];
 }
-export declare const OBSERVER_KEY = "__observer__";
-export declare class Observer {
+export declare const assert: assert;
+/**
+ * Observer Key
+ */
+export declare const OBSERVER_KEY: string;
+/**
+ * the property of observe an array change
+ */
+export declare const ARRAY_CHANGE = "$change";
+/**
+ * The dirty collector lost the original value
+ */
+export declare const MISS: {};
+export declare type ObserverTarget = any[] | {};
+/**
+ * change callback for observer
+ * @param path 		the observe path
+ * @param value 	new value
+ * @param original	original value. the original value is {@link MISS} when the dirty collector loses the original value
+ */
+export declare type ObserverCallback<T extends ObserverTarget> = (path: string[], value: any, original: any, observer: T) => void;
+export declare type IWatcher = {
 	/**
-	 * original object
+	 * notify topics
+	 * @param original the original value
 	 */
-	readonly target: ObserverTarget;
+	notify(original: any): void;
+};
+export interface IObserver<T extends ObserverTarget> {
 	/**
-	 * proxy object
+	 * target of the observer
 	 */
-	proxy: ObserverTarget;
+	readonly target: T;
 	/**
-	 * is array
+	 * observer proxy
+	 */
+	readonly proxy: T;
+	/**
+	 * is array object
 	 */
 	readonly isArray: boolean;
 	/**
-	 * subjects
-	 * 	- key: property of original object
-	 * 	- value: subject
+	 * observe changes in the observer's target
+	 * @param propPath 	property path for observe, parse string path by {@link parsePath}
+	 * @param cb		callback
+	 * @param scope		scope of callback
+	 * @return listen-id
 	 */
-	__subjects: {
-		[key: string]: Subject;
-	};
+	observe(propPath: string | string[], cb: ObserverCallback<T>, scope?: any): string;
 	/**
-	 * watched subjects
-	 * 	- key: property of original object
-	 * 	- value: subjects
-	 */
-	readonly __watchs: {
-		[key: string]: List<Subject>;
-	};
-	/**
-	 * create Observer
-	 * @param target original object
-	 */
-	constructor(target: ObserverTarget);
-	/**
-	 * observe property
-	 * @param propPath 	property path of original object, parse string path by {@link parsePath}
-	 * @param listener	callback
+	 * cancel observing the changes in the observer's target
+	 * @param propPath	property path for unobserve, parse string path by {@link parsePath}
+	 * @param cb		callback
 	 * @param scope		scope of callback
 	 */
-	observe(propPath: string | string[], listener: ObserveListener, scope?: any): any;
+	unobserve(propPath: string | string[], cb: ObserverCallback<T>, scope?: any): void;
 	/**
-	 * @param propPath	property path on object
-	 * @param listener	listener
-	 * @param scope		scope of listener
-	 * @return >= 0: listener count on the property path of object
-	 * 			 -1: no listener
+	 * cancel observing the changes in the observer's target by listen-id
+	 * @param propPath	property path for unobserve, parse string path by {@link parsePath}
+	 * @param id 		listen-id
 	 */
-	unobserve(propPath: string | string[], listener: ObserveListener, scope?: any): void;
 	unobserveId(propPath: string | string[], id: string): void;
 	/**
-	 *
-	 * @param path
+	 * set value
+	 * @param propPath 	property path for set, parse string path by {@link parsePath}
+	 * @param value		the value
 	 */
-	private __getSubject;
+	set(propPath: string | string[], value: any): void;
 	/**
-	 * update property value and notify changes
-	 * @param prop		property
-	 * @param value		new value
-	 * @param original	original value
+	 * get value
+	 * @param propPath 	property path for get, parse string path by {@link parsePath}
+	 * @return the value
 	 */
-	update(prop: string, value: any, original: any): void;
+	get(propPath: string | string[]): any;
 	/**
-	 * get or create observer
-	 * @abstract
-	 * @protected
+	 * notify change on the property
+	 * @param prop		the property
+	 * @param original 	the original value
 	 */
-	observerOf(target: any): Observer;
+	notify(prop: string, original: any): void;
 	/**
-	 * watch subject
-	 * @private
-	 * @param subject
+	 * notify the observer that all properties in the target have changed
+	 * the original value well be {@link MISS}
 	 */
-	__watch(subject: Subject): void;
+	notifyAll(): void;
 	/**
-	 * remove watched subject
-	 * @private
-	 * @param subject
+	 * get wather by property
+	 * @param prop the property
 	 */
-	__unwatch(subject: Subject): void;
+	watcher(prop: string): IWatcher;
 	/**
-	 * get property value
-	 * @private
+	 * get or create wather by property
+	 * @param prop the property
+	 */
+	initWatcher(prop: string): IWatcher;
+}
+declare class Topic {
+	readonly __id: number;
+	readonly __parent: Topic;
+	readonly __owner: Observer<any>;
+	readonly __prop: string;
+	__observer: Observer<any>;
+	__path: string[];
+	__listeners: FnList<ObserverCallback<any>>;
+	__original: any;
+	__dirty: [any, any, boolean];
+	__subs: Topic[];
+	__subCache: {
+		[key: string]: Topic;
+	};
+	__state: number;
+	/**
+	 * create a Topic
+	 * @param owner		own observer
+	 * @param prop		watch property
+	 * @param parent	parent topic
+	 */
+	constructor(owner: Observer<any>, prop: string, parent?: Topic);
+	/**
+	 * add listener
+	 * @param path		path of topic
+	 * @param cb		observe callback
+	 * @param scope		scope of the callback
+	 * @return listen-id | undefined
+	 */
+	__listen(path: string[], cb: ObserverCallback<any>, scope: any): string;
+	/**
+	 * remove listener by callback
+	 * @param cb		observe callback
+	 * @param scope		scope of the callback
+	 */
+	__unlisten(cb: ObserverCallback<any>, scope: any): void;
+	/**
+	 * remove listener by listen-id
+	 * @param id	listen-id
+	 */
+	__unlistenId(id: string): void;
+	/**
+	 * Clear all unlistening leaf topics (!TOPIC_LISTEN_FLAG && !TOPIC_SUB_FLAG)
+	 * @param listeners	listeners
+	 */
+	private ____unlisten;
+	/**
+	 * bind observer
+	 * @param observer new observer
+	 */
+	__bind(observer?: Observer<any>): void;
+	/**
+	 * get a subtopic from the cache
 	 * @param prop property
 	 */
-	__value(prop: string): any;
+	__getSub(prop: string): Topic;
+	/**
+	 * get or create a subtopic on the cache
+	 * @param subProp	property of the subtopic
+	 * @return subtopic
+	 */
+	__addSub(subProp: string): Topic;
+	/**
+	 * remove the subtopic from the subs
+	 * @param topic topic
+	 */
+	__removeSub(topic: Topic): void;
+	private __ignorePath;
+	private __ignoreSubPaths;
+	private __getPath;
+	/**
+	 * mark the change in topic
+	 *
+	 * @param original original value
+	 */
+	__update(original: any): void;
+	/**
+	 * collect the dirty topics(this topic and subtopics) from collectQueue
+	 * may collected by parent-topic
+	 */
+	__collect(): void;
+	/**
+	 * collect the dirty topics(this topic and subtopics)
+	 * - collect from collectQueue
+	 * 	1. this topic has been collected, stop collect
+	 * 	2. save the dirty value when the topic has a listener
+	 * 	3. clean the change state
+	 * 	4. collect the subtopics
+	 *		use this original value when subtopic has not changed
+	 *		use the subtopic's original value when subtopic is changed
+	 * 		clean the change state
+	 *		replace the new value on subtopics
+	 * - re-collect by parent-topic (this does not happen after the topics are sorted by ID before collection)
+	 * 	1. replace the new value and discard the original value(keep the existing original value)
+	 * 	2. re-collect subtopics
+	 *
+	 * @param observer 	observer of this topic
+	 * @param target 	new target of this topic
+	 * @param original 	original value of this topic
+	 * @param force  	force notify
+	 */
+	private ____collect;
+}
+/**
+ * collect the dirty topics on the collectQueue
+ */
+export declare function collect(): void;
+declare class Watcher extends List<Topic> implements IWatcher {
+	constructor();
+	/**
+	 * notify topics
+	 *
+	 * @param original the original value
+	 */
+	notify(original: any): void;
+}
+declare class Observer<T extends ObserverTarget> implements IObserver<T> {
+	/**
+	 * observer target
+	 */
+	readonly target: T;
+	/**
+	 * observer proxy
+	 */
+	readonly proxy: T;
+	/**
+	 * is array target
+	 */
+	readonly isArray: boolean;
+	/**
+	 * topics
+	 * 	- key: property of topic in the observer's target
+	 * 	- value: topic
+	 */
+	__topics: {
+		[key: string]: Topic;
+	};
+	/**
+	 * watchers
+	 * 	- key: property of watcher in the observer's target
+	 * 	- value: watcher
+	 */
+	readonly __watchers: {
+		[key: string]: Watcher;
+	};
+	/**
+	 * properties of watchers in the observer's target
+	 */
+	readonly __watcherProps: string[];
+	/**
+	 * create Observer
+	 *
+	 * @param target observer target
+	 */
+	constructor(target: T);
+	/**
+	 * observe changes in the observer's target
+	 *
+	 * @param propPath 	property path for observe, parse string path by {@link parsePath}
+	 * @param cb		callback
+	 * @param scope		scope of callback
+	 * @return listen-id
+	 */
+	observe(propPath: string | string[], cb: ObserverCallback<T>, scope?: any): string;
+	/**
+	 * cancel observing the changes in the observer's target
+	 *
+	 * @param propPath	property path for unobserve, parse string path by {@link parsePath}
+	 * @param cb		callback
+	 * @param scope		scope of callback
+	 */
+	unobserve(propPath: string | string[], cb: ObserverCallback<T>, scope?: any): void;
+	/**
+	 * cancel observing the changes in the observer's target by listen-id
+	 *
+	 * @param propPath	property path for unobserve, parse string path by {@link parsePath}
+	 * @param id 		listen-id
+	 */
+	unobserveId(propPath: string | string[], id: string): void;
+	/**
+	 * notify change on the property
+	 *
+	 * @param prop		the property
+	 * @param original 	the original value
+	 */
+	notify(prop: string, original: any): void;
+	/**
+	 * notify the observer that all properties in the target have changed
+	 * the original value well be {@link MISS}
+	 */
+	notifyAll(): void;
+	/**
+	 * get wather by property
+	 *
+	 * @protected
+	 * @param prop the property
+	 */
+	watcher(prop: string): Watcher;
+	/**
+	 * get or create wather by property
+	 *
+	 * @protected
+	 * @param prop the property
+	 */
+	initWatcher(prop: string): Watcher;
+	/**
+	 * watch the topic
+	 *
+	 * @private
+	 * @param topic topic
+	 * @return is successful
+	 */
+	__watchTopic(topic: Topic): Error;
+	/**
+	 * unwatched the topic
+	 *
+	 * @private
+	 * @param topic topic
+	 */
+	__unwatchTopic(topic: Topic): void;
+	/**
+	 * get topic by property path
+	 *
+	 * @param path property path of topic, parse string path by {@link parsePath}
+	 * @return topic | undefined
+	 */
+	private __getTopic;
+	/**
+	 * get the value at path of target object
+	 *
+	 * @param propPath 	property path of target object, parse string path by {@link parsePath}
+	 * @return the value
+	 */
+	get(propPath: string | string[]): any;
+	/**
+	 * set the value at path of target object
+	 *
+	 * @param propPath 	property path for target object, parse string path by {@link parsePath}
+	 * @param value		the value
+	 */
+	set(propPath: string | string[], value: any): void;
 	/**
 	 * @ignore
 	 */
 	toJSON(): void;
 }
+export declare const proxyEnable: "vb" | "proxy";
+/**
+ * get existing observer on object
+ *
+ * @return existing observer
+ */
+export declare let getObserver: <T extends ObserverTarget>(target: T) => Observer<T>;
+/**
+ * get the original object of the observer on the object
+ *
+ * @param object the object
+ * @return the original object | the object
+ */
+export declare let source: <T extends ObserverTarget>(obj: T) => T;
+/**
+ * get the proxy object for the observer on the object
+ *
+ * @param object the object
+ * @return the proxy object | the object
+ */
+export declare let proxy: <T extends ObserverTarget>(obj: T) => T;
+/**
+ * support equals function between observer objects
+ */
+export declare let $eq: (o1: any, o2: any) => boolean;
+/**
+ * get the value at path of object
+ *
+ * @param obj 		the object
+ * @param path		property path of object, parse string path by {@link parsePath}
+ * @return the value | the proxy of value
+ */
+export declare let $get: (obj: any, path: string | string[]) => any;
+/**
+ * set the value at path of object
+ *
+ * @param obj 		the object
+ * @param path		property path of object, parse string path by {@link parsePath}
+ * @param value 	value
+ */
+export declare let $set: (obj: any, path: string | string[], value: any) => void;
+/**
+ * get or create observer on object
+ *
+ * @param target 	the target object
+ */
+export declare function observer<T extends ObserverTarget>(target: T): Observer<T>;
+/**
+ * observe changes in the target object
+ *
+ * @param target 	the target object
+ * @param propPath 	property path of object, parse string path by {@link parsePath}
+ * @param cb		callback
+ * @param scope		scope of callback
+ * @return listen-id
+ */
+export declare function observe<T extends ObserverTarget>(target: T, propPath: string | string[], cb: ObserverCallback<T>, scope?: any): string;
+/**
+ * cancel observing the changes in the target object
+ *
+ * @param target 	the target object
+ * @param propPath 	property path of object, parse string path by {@link parsePath}
+ * @param cb		callback
+ * @param scope		scope of callback
+ */
+export declare function unobserve<T extends ObserverTarget>(target: T, propPath: string | string[], cb: ObserverCallback<T>, scope?: any): void;
+/**
+ * cancel observing the changes in the target object by listen-id
+ *
+ * @param target 	the target object
+ * @param propPath 	property path of object, parse string path by {@link parsePath}
+ * @param listenId	listen-id
+ */
+export declare function unobserveId<T extends ObserverTarget>(target: T, propPath: string | string[], listenId: string): void;
+export declare const VBPROXY_KEY = "__vbclass_binding__", VBPROXY_CTOR_KEY = "__vbclass_constructor__", OBJECT_DEFAULT_PROPS: string[];

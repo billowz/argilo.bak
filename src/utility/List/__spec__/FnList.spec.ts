@@ -34,8 +34,8 @@ describe('FnList', () => {
 				l = objs.length
 			assert.eq(list.size(), l)
 			for (i = 0; i < l; i++) {
-				assert.eq(list.has(objs[i].fn, objs[i]), true)
-				assert.eq(list.has(objs[i].fn), false)
+				assert.is(list.has(objs[i].fn, objs[i]))
+				assert.not(list.has(objs[i].fn))
 			}
 			i = 0
 			list.each((fn, scope) => {
@@ -77,9 +77,9 @@ describe('FnList', () => {
 		for (i = 0; i < l; i += 2) {
 			removed++
 			assert.eq(list.remove(objs[i].fn), -1)
-			assert.eq(list.has(objs[i].fn, objs[i]), true)
+			assert.is(list.has(objs[i].fn, objs[i]))
 			assert.eq(list.remove(objs[i].fn, objs[i]), l - removed)
-			assert.eq(list.has(objs[i].fn, objs[i]), false)
+			assert.not(list.has(objs[i].fn, objs[i]))
 			assert.eq(list.size(), l - removed)
 		}
 		for (i = 0; i < l; i++) {
@@ -88,10 +88,10 @@ describe('FnList', () => {
 			} else {
 				removed++
 				assert.eq(list.remove(objs[i].fn), -1)
-				assert.eq(list.has(objs[i].fn, objs[i]), true)
+				assert.is(list.has(objs[i].fn, objs[i]))
 				assert.eq(list.remove(objs[i].fn, objs[i]), l - removed)
 			}
-			assert.eq(list.has(objs[i].fn, objs[i]), false)
+			assert.not(list.has(objs[i].fn, objs[i]))
 			assert.eq(list.size(), l - removed)
 		}
 		assert.eq(list.size(), 0)
@@ -116,9 +116,9 @@ describe('FnList', () => {
 			if (i % 2 === 0) {
 				removed += 1
 				assert.eq(list.remove(fn), -1)
-				assert.eq(list.has(fn, scope), true)
+				assert.is(list.has(fn, scope))
 				assert.eq(list.remove(fn, scope), l - removed)
-				assert.eq(list.has(fn, scope), false)
+				assert.not(list.has(fn, scope))
 				assert.eq(list.size(), l - removed)
 			}
 			i++
@@ -128,9 +128,9 @@ describe('FnList', () => {
 		list.each((fn, scope) => {
 			removed += 1
 			assert.eq(list.remove(fn), -1)
-			assert.eq(list.has(fn, scope), true)
+			assert.is(list.has(fn, scope))
 			assert.eq(list.remove(fn, scope), l - removed)
-			assert.eq(list.has(fn, scope), false)
+			assert.not(list.has(fn, scope))
 			assert.eq(list.size(), l - removed)
 		})
 		assert.eq(list.size(), 0)
@@ -150,7 +150,7 @@ describe('FnList', () => {
 
 		list.clean()
 
-		for (i = 0; i < l; i++) assert.eq(list.has(objs[i].fn, objs[i]), false)
+		for (i = 0; i < l; i++) assert.not(list.has(objs[i].fn, objs[i]))
 
 		assert.eq(list.size(), 0)
 	})
@@ -171,7 +171,7 @@ describe('FnList', () => {
 			list.clean()
 		})
 
-		for (i = 0; i < l; i++) assert.eq(list.has(objs[i].fn, objs[i]), false)
+		for (i = 0; i < l; i++) assert.not(list.has(objs[i].fn, objs[i]))
 
 		assert.eq(list.size(), 0)
 	})

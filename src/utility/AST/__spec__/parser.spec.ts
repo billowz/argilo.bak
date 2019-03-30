@@ -22,45 +22,49 @@ describe('utility/AST', function() {
 			<input type="submit" value="Submit">
 			</form>
 `)
-			assert.eql(rs, [
-				{
-					tag: 'form',
-					attrs: {
-						name: 'input',
-						action: 'html_form_action.php',
-						method: 'get'
-					},
-					children: [
-						{
-							text: 'Username: '
+			assert.eql(
+				rs,
+				[
+					{
+						tag: 'form',
+						attrs: {
+							name: 'input',
+							action: 'html_form_action.php',
+							method: 'get'
 						},
-						{
-							tag: 'input',
-							attrs: {
-								type: 'text',
-								name: 'user'
+						children: [
+							{
+								text: 'Username: '
+							},
+							{
+								tag: 'input',
+								attrs: {
+									type: 'text',
+									name: 'user'
+								}
+							},
+							{
+								text: 'Password:\n\t\t\t'
+							},
+							{
+								tag: 'input',
+								attrs: {
+									type: 'text',
+									name: 'pwd'
+								}
+							},
+							{
+								tag: 'input',
+								attrs: {
+									type: 'submit',
+									value: 'Submit'
+								}
 							}
-						},
-						{
-							text: 'Password:\n\t\t\t'
-						},
-						{
-							tag: 'input',
-							attrs: {
-								type: 'text',
-								name: 'pwd'
-							}
-						},
-						{
-							tag: 'input',
-							attrs: {
-								type: 'submit',
-								value: 'Submit'
-							}
-						}
-					]
-				}
-			], "invalid html:\nSource: {0j}\nTarget: {1j}")
+						]
+					}
+				],
+				'invalid html:\nSource: {0j}\nTarget: {1j}'
+			)
 		})
 	})
 })

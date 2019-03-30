@@ -11,7 +11,7 @@
  * Copyright (c) 2018 Tao Zeng <tao.zeng.zt@qq.com>
  * Released under the MIT license
  *
- * Date: Fri, 15 Mar 2019 07:09:30 GMT
+ * Date: Thu, 28 Mar 2019 11:44:13 GMT
  */
 (function (global, factory) {
 	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
@@ -43,7 +43,7 @@
 	 * @module utility/dkeys
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Mon Mar 11 2019 17:22:13 GMT+0800 (China Standard Time)
-	 * @modified Thu Mar 14 2019 19:01:40 GMT+0800 (China Standard Time)
+	 * @modified Sat Mar 23 2019 17:42:04 GMT+0800 (China Standard Time)
 	 */
 	var defaultKeyMap = new NULL_CONSTRUCTOR();
 	var defaultKeys = [];
@@ -69,6 +69,9 @@
 	function getDefaultKeys() {
 	  return defaultKeys;
 	}
+	function getDefaultKeyMap() {
+	  return defaultKeys;
+	}
 
 	/**
 	 * @module utility
@@ -82,11 +85,25 @@
 	}
 
 	/**
+	 * @module utility
+	 * @author Tao Zeng <tao.zeng.zt@qq.com>
+	 * @created Mon Dec 11 2017 13:57:32 GMT+0800 (China Standard Time)
+	 * @modified Sat Mar 23 2019 18:50:53 GMT+0800 (China Standard Time)
+	 */
+	var toString = Object.prototype.toString;
+	function toStr(obj) {
+	  return toString.call(obj);
+	}
+	function toStrType(obj) {
+	  return toString.call(obj).match(/^\[object ([^\]]+)\]$/)[1];
+	}
+
+	/**
 	 * type checker
 	 * @module utility
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Mon Dec 11 2017 13:57:32 GMT+0800 (China Standard Time)
-	 * @modified Mon Feb 25 2019 16:59:04 GMT+0800 (China Standard Time)
+	 * @modified Sat Mar 23 2019 18:55:31 GMT+0800 (China Standard Time)
 	 */
 	/**
 	 * is equals
@@ -298,6 +315,14 @@
 	function isObj(o) {
 	  return o !== undefined && o !== null && getConstructor(o) === Object;
 	}
+	/**
+	 * is simple Object
+	 * TODO object may has constructor property
+	 */
+
+	function isObject(o) {
+	  return toStr(o) === '[object Object]';
+	}
 
 	function mkIs(Type) {
 	  return function is(o) {
@@ -330,7 +355,7 @@
 	 * @module utility
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Mon Dec 11 2017 13:57:32 GMT+0800 (China Standard Time)
-	 * @modified Fri Nov 23 2018 11:18:33 GMT+0800 (China Standard Time)
+	 * @modified Thu Mar 28 2019 19:22:34 GMT+0800 (China Standard Time)
 	 */
 
 	/*                                                                                      *
@@ -569,6 +594,16 @@
 	  return function bindProxy() {
 	    return applyScope(fn, scope, arguments);
 	  };
+	}
+
+	function executor(fn) {
+	  var executor = function executor() {
+	    executor.called++;
+	    return applyScope(fn, this, arguments);
+	  };
+
+	  executor.called = 0;
+	  return executor;
 	}
 
 	/**
@@ -831,7 +866,7 @@
 	 * @module utility/collection
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Wed Jul 25 2018 17:10:41 GMT+0800 (China Standard Time)
-	 * @modified Thu Mar 14 2019 14:04:35 GMT+0800 (China Standard Time)
+	 * @modified Sat Mar 23 2019 17:29:41 GMT+0800 (China Standard Time)
 	 */
 	/**
 	 * STOP Control
@@ -1440,7 +1475,7 @@
 	 * @module utility/collection
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Thu Nov 15 2018 12:13:54 GMT+0800 (China Standard Time)
-	 * @modified Tue Dec 04 2018 20:10:32 GMT+0800 (China Standard Time)
+	 * @modified Thu Mar 28 2019 19:39:52 GMT+0800 (China Standard Time)
 	 */
 	function makeArray(len, callback) {
 	  var array = new Array(len);
@@ -1457,7 +1492,7 @@
 	 * @module utility/defProp
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Fri Nov 30 2018 14:41:02 GMT+0800 (China Standard Time)
-	 * @modified Wed Mar 13 2019 18:52:28 GMT+0800 (China Standard Time)
+	 * @modified Tue Mar 26 2019 19:39:49 GMT+0800 (China Standard Time)
 	 */
 	var pathCache = create(null); // (^ | .) prop | (index | "string prop" | 'string prop')
 
@@ -1481,6 +1516,10 @@
 	      if (cidx !== idx + match[0].length) throw new SyntaxError("Invalid Path: \"" + propPath + "\", unkown character[" + propPath.charAt(idx) + "] at offset:" + idx);
 	      path[i++] = match[1] || match[2] || match[3] || match[4];
 	      idx = cidx;
+	    }
+
+	    if (propPath.length > idx + 1) {
+	      throw new SyntaxError("Invalid Path: \"" + propPath + "\", unkown character[" + propPath.charAt(idx) + "] at offset:" + idx);
 	    }
 
 	    if (cacheable !== false && i) {
@@ -1530,15 +1569,9 @@
 	 * @module utility/string
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Mon Dec 11 2017 13:57:32 GMT+0800 (China Standard Time)
-	 * @modified Tue Mar 05 2019 18:59:22 GMT+0800 (China Standard Time)
+	 * @modified Sat Mar 23 2019 18:50:35 GMT+0800 (China Standard Time)
 	 */
-	var toString = Object.prototype.toString;
-	function toStr(obj) {
-	  return toString.call(obj);
-	}
-	function toStrType(obj) {
-	  return toString.call(obj).match(/^\[object ([^\]]+)\]$/)[1];
-	} //========================================================================================
+	//========================================================================================
 
 	/*                                                                                      *
 	 *                                       char code                                      *
@@ -1549,7 +1582,6 @@
 	 * get char code
 	 * > string.charCodeAt
 	 */
-
 	function charCode(str, index) {
 	  return str.charCodeAt(index || 0);
 	}
@@ -2414,7 +2446,7 @@
 	 * @module utility/assert
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Wed Nov 28 2018 11:01:45 GMT+0800 (China Standard Time)
-	 * @modified Tue Feb 19 2019 10:38:22 GMT+0800 (China Standard Time)
+	 * @modified Thu Mar 28 2019 19:08:21 GMT+0800 (China Standard Time)
 	 */
 	var formatters$1 = [],
 	    formatArgHandlers = [];
@@ -2450,7 +2482,7 @@
 	  return msg === err.message;
 	}
 
-	var ERROR = new Error();
+	var ERROR = new Error("Expect Error");
 	var throwMsg = mkMsg(objFormatter(1), 'throw');
 
 	assert["throw"] = function (fn, expect, msg) {
@@ -4417,65 +4449,1064 @@
 	 * @preferred
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Wed Nov 21 2018 10:21:41 GMT+0800 (China Standard Time)
-	 * @modified Wed Mar 13 2019 19:52:16 GMT+0800 (China Standard Time)
+	 * @modified Sat Mar 23 2019 18:50:43 GMT+0800 (China Standard Time)
 	 */
 
 	/**
 	 * Observer Key
 	 */
+
 	var OBSERVER_KEY = addDefaultKey('__observer__');
+	/**
+	 * the property of observe an array change
+	 */
 
-	function accessorPolicy () {
-	  if (propAccessor) return {
-	    __name: 'Accessor',
-	    __watch: function __watch(observer, prop, watcher) {
-	      var value = observer.target[prop];
+	var ARRAY_CHANGE = '$change';
+	/**
+	 * The dirty collector lost the original value
+	 */
 
-	      try {
-	        defProp(observer.target, prop, {
-	          get: function get() {
-	            return value;
-	          },
-	          set: function set(newValue) {
-	            watcher.notify(value);
-	            value = newValue;
-	          }
-	        });
-	      } catch (e) {
-	        console.warn(e.message, e);
-	      }
-	    }
-	  };
-	}
+	var MISS = {};
+
+	/**
+	 * Observe implementation on the Proxy of ES6
+	 * @module observer
+	 * @author Tao Zeng <tao.zeng.zt@qq.com>
+	 * @created Tue Mar 19 2019 14:12:23 GMT+0800 (China Standard Time)
+	 * @modified Thu Mar 28 2019 15:37:58 GMT+0800 (China Standard Time)
+	 */
+	/**
+	 * @ignore
+	 */
 
 	function proxyPolicy () {
 	  if (GLOBAL.Proxy) return {
 	    __name: 'Proxy',
-	    __proxy: true,
-	    __createProxy: function __createProxy(target, isArray, watchers) {
-	      return new Proxy(target, {
-	        set: function set(source, prop, value) {
-	          var watcher = watchers[prop];
+	    __proxy: 'proxy',
+	    __createProxy: function __createProxy(observer, target, isArray) {
+	      var setter;
+
+	      if (isArray) {
+	        var changeWatcher = observer.initWatcher(ARRAY_CHANGE);
+
+	        setter = function setter(source, prop, value) {
+	          var watcher = observer.watcher(prop);
+	          watcher && watcher.notify(source[prop]);
+	          source[prop] = value;
+	          changeWatcher.notify(observer.proxy);
+	          return true;
+	        };
+	      } else {
+	        setter = function setter(source, prop, value) {
+	          var watcher = observer.watcher(prop);
 	          watcher && watcher.notify(source[prop]);
 	          source[prop] = value;
 	          return true;
-	        }
+	        };
+	      }
+
+	      return new Proxy(target, {
+	        set: setter
 	      });
 	    }
 	  };
 	}
 
 	/**
-	 * change callback for observer
-	 * @param path 		the observe path
-	 * @param value 	new value
-	 * @param original	original value. the original value is {@link MISS} when the dirty collector loses the original value
+	 * Observe implementation on the Object.defineProperty of ES5 or `__defineGetter__` and `__defineSetter__`
+	 * @module observer
+	 * @author Tao Zeng <tao.zeng.zt@qq.com>
+	 * @created Tue Mar 19 2019 14:12:23 GMT+0800 (China Standard Time)
+	 * @modified Thu Mar 28 2019 15:33:29 GMT+0800 (China Standard Time)
+	 */
+	/**
+	 * @ignore
 	 */
 
+	function accessorPolicy () {
+	  if (propAccessor) return {
+	    __name: 'Accessor',
+	    __watch: function __watch(observer, prop, watcher) {
+	      var target = observer.target;
+	      var setter;
+
+	      if (!observer.isArray) {
+	        setter = function setter(newValue) {
+	          watcher.notify(value);
+	          value = newValue;
+	        };
+	      } else if (prop !== ARRAY_CHANGE && prop !== 'length') {
+	        var changeWatcher = observer.initWatcher(ARRAY_CHANGE);
+
+	        setter = function setter(newValue) {
+	          watcher.notify(value);
+	          value = newValue;
+	          changeWatcher.notify(target);
+	        };
+	      } else {
+	        return;
+	      }
+
+	      var value = target[prop];
+
+	      try {
+	        defProp(target, prop, {
+	          get: function get() {
+	            return value;
+	          },
+	          set: setter
+	        });
+	      } catch (e) {
+	        return e;
+	      }
+	    }
+	  };
+	}
+
 	/**
-	 * The dirty collector lost the original value
+	 * Observe implementation on the VBScript of MSIE
+	 * @module observer
+	 * @author Tao Zeng <tao.zeng.zt@qq.com>
+	 * @created Tue Mar 19 2019 14:12:23 GMT+0800 (China Standard Time)
+	 * @modified Thu Mar 28 2019 15:38:05 GMT+0800 (China Standard Time)
 	 */
-	var MISS = {}; //========================================================================================
+	function vbPolicy () {
+	  if (GLOBAL.VBArray) {
+	    try {
+	      execScript(['Function parseVB(code)', '\tExecuteGlobal(code)', 'End Function'].join('\n'), 'VBScript');
+	      addDefaultKeys(VBPROXY_KEY, VBPROXY_CTOR_KEY);
+	      return {
+	        __name: 'VBProxy',
+	        __proxy: 'vb',
+	        __createProxy: function __createProxy(observer, target, isArray) {
+	          return isArray ? target : new VBProxy(target, observer).__proxy;
+	        },
+	        __watch: function __watch(observer, prop, watcher) {
+	          if (!observer.isArray && !observer.target[VBPROXY_KEY].__props[prop]) {
+	            return new Error("property[" + prop + "] is not defined");
+	          }
+	        }
+	      };
+	    } catch (e) {
+	      console.error(e.message, e);
+	    }
+	  }
+	}
+	var VBProxy =
+	/*#__PURE__*/
+	function () {
+	  /**
+	   * function property map
+	   * 	- key: property name
+	   * 	- value: [scoped function, original function]
+	   */
+	  function VBProxy(source, observer) {
+	    var props = [],
+	        propMap = create(null),
+	        __fns = [],
+	        fns = create(null);
+	    var prop,
+	        i = 0,
+	        j = 0;
+
+	    for (prop in source) {
+	      propMap[prop] = true;
+	      props[i++] = prop;
+	      if (isFn(source[prop])) __fns[j++] = prop;
+	    }
+
+	    applyProps(props, propMap, OBJECT_DEFAULT_PROPS);
+	    applyProps(props, propMap, getDefaultKeys());
+	    var proxy = loadClassFactory(props)(this);
+
+	    while (j--) {
+	      prop = __fns[j];
+	      fns[prop] = [, source[prop]];
+	    }
+
+	    this.__source = source;
+	    this.__observer = observer;
+	    this.__proxy = proxy;
+	    this.__fns = fns;
+	    this.__props = propMap;
+	    source[VBPROXY_KEY] = this;
+	  }
+
+	  var _proto = VBProxy.prototype;
+
+	  _proto.set = function set(prop, value) {
+	    var source = this.__source,
+	        fns = this.__fns;
+
+	    if (isFn(value)) {
+	      fns[prop] = [, value];
+	    } else if (fns[prop]) {
+	      fns[prop] = null;
+	    }
+
+	    var watcher = this.__observer.watcher(prop);
+
+	    watcher && watcher.notify(source[prop]);
+	    source[prop] = value;
+	  };
+
+	  _proto.get = function get(prop) {
+	    var fn = this.__fns[prop];
+	    return fn ? fn[0] || (fn[0] = fn[1].bind(this.__proxy)) : this.__source[prop];
+	  };
+
+	  return VBProxy;
+	}();
+
+	function applyProps(props, propMap, applyProps) {
+	  var i = applyProps.length,
+	      j = props.length,
+	      prop;
+
+	  while (i--) {
+	    prop = applyProps[i];
+
+	    if (!propMap[prop]) {
+	      propMap[prop] = true;
+	      props[j++] = prop;
+	    }
+	  }
+	}
+
+	var VBPROXY_KEY = '__vbclass_binding__',
+	    VBPROXY_CTOR_KEY = '__vbclass_constructor__',
+	    OBJECT_DEFAULT_PROPS = [VBPROXY_KEY, CONSTRUCTOR, HAS_OWN_PROP, 'isPrototypeOf', 'propertyIsEnumerable', 'toLocaleString', 'toString', 'valueOf'];
+	var CONSTRUCTOR_SCRIPT = "\n\tPublic [" + VBPROXY_KEY + "]\n\tPublic Default Function [" + VBPROXY_CTOR_KEY + "](source)\n\t\tSet [" + VBPROXY_KEY + "] = source\n\t\tSet [" + VBPROXY_CTOR_KEY + "] = Me\n\tEnd Function\n\t",
+	    classPool = create(null);
+
+	function genAccessorScript(prop) {
+	  return "\n\tPublic Property Let [" + prop + "](value)\n\t\tCall [" + VBPROXY_KEY + "].set(\"" + prop + "\", val)\n\tEnd Property\n\tPublic Property Set [" + prop + "](value)\n\t\tCall [" + VBPROXY_KEY + "].set(\"" + prop + "\", val)\n\tEnd Property\n\n\tPublic Property Get [" + prop + "]\n\tOn Error Resume Next\n\t\tSet [" + prop + "] = [" + VBPROXY_KEY + "].get(\"" + prop + "\")\n\tIf Err.Number <> 0 Then\n\t\t[" + prop + "] = [" + VBPROXY_KEY + "].get(\"" + prop + "\")\n\tEnd If\n\tOn Error Goto 0\n\tEnd Property\n\n";
+	}
+
+	function genClassScript(className, props) {
+	  var buffer = ['Class ', className, CONSTRUCTOR_SCRIPT],
+	      l = props.length;
+	  var i = 0;
+
+	  for (; i < l; i++) {
+	    buffer[i + 3] = genAccessorScript(props[i]);
+	  }
+
+	  buffer[i + 3] = 'End Class';
+	  return buffer.join('\n');
+	}
+
+	var classNameGenerator = 1;
+
+	function loadClassFactory(props) {
+	  var classKey = props.sort().join('|');
+	  var factoryName = classPool[classKey];
+
+	  if (!factoryName) {
+	    var className = "VBClass" + classNameGenerator++;
+	    factoryName = className + "Factory"; // build VB Class
+
+	    parseVB(genClassScript(className, props));
+	    parseVB("\nFunction " + factoryName + "(desc)\n\tDim o\n\tSet o=(New " + className + ")(desc)\n\tSet " + factoryName + " = o\nEnd Function");
+	    classPool[classKey] = factoryName;
+	  }
+
+	  return GLOBAL[factoryName];
+	}
+
+	/*                                                                                      *
+	 *                                        topic                                         *
+	 *                                                                                      */
+	//========================================================================================
+
+	/**
+	 * special object
+	 * - special object indicates that the topic has not changed
+	 */
+
+	var V = {};
+
+	function isObserverTarget(obj) {
+	  return obj && (isArray(obj) || isObject(obj));
+	}
+	/**
+	 * is array change property
+	 * @param observer 	observer
+	 * @param prop 		property of the observer's target
+	 */
+
+
+	function isArrayChangeProp(observer, prop) {
+	  return observer.isArray && prop === ARRAY_CHANGE;
+	}
+	/**
+	 * get property value on object
+	 * @param obj 	object
+	 * @param prop 	property
+	 */
+
+
+	function getValue(obj, prop) {
+	  return obj === undefined || obj === null ? undefined : obj[prop];
+	}
+	/**
+	 * get property value on the original value
+	 * check {@link MISS}
+	 * @param original 	original value
+	 * @param prop 		property
+	 */
+
+
+	function getOriginalValue(original, prop) {
+	  return original === undefined || original === null ? undefined : original === MISS ? original : original[prop];
+	} // id generator of topic
+
+
+	var topicIdGen = 0; // the dirty topic queue waiting for collection
+
+	var collectQueue = []; // the dirty topic queue waiting for notification
+
+	var dirtyQueue = []; // flags of topic
+
+	var TOPIC_ENABLED_FLAG = 0x1,
+	    // topic is enabled
+	TOPIC_LISTEN_FLAG = 0x2,
+	    // topic is listend
+	TOPIC_SUB_FLAG = 0x4; // topic has subtopic
+
+	/**
+	 * @ignore
+	 */
+
+	var Topic =
+	/*#__PURE__*/
+	function () {
+	  // parent topic
+	  // own observer
+	  // watch property
+	  // binded observer
+	  // property path
+	  // listeners
+	  // the original value before change
+	  // collected dirty value: [new value, original value, force notify]
+	  // subtopics
+	  // cache of subtopics
+	  // flags: TOPIC_ENABLED_FLAG | TOPIC_LISTEN_FLAG | TOPIC_SUB_FLAG
+
+	  /**
+	   * create a Topic
+	   * @param owner		own observer
+	   * @param prop		watch property
+	   * @param parent	parent topic
+	   */
+	  function Topic(owner, prop, parent) {
+	    this.__state = 0;
+	    this.__original = V; // special object indicates that the topic has not changed
+
+	    this.__owner = owner;
+	    this.__prop = prop;
+	    this.__parent = parent;
+	    this.__id = topicIdGen++;
+	  }
+	  /**
+	   * add listener
+	   * @param path		path of topic
+	   * @param cb		observe callback
+	   * @param scope		scope of the callback
+	   * @return listen-id | undefined
+	   */
+
+
+	  var _proto = Topic.prototype;
+
+	  _proto.__listen = function __listen(path, cb, scope) {
+	    var listeners = this.__listeners;
+
+	    if (!listeners) {
+	      this.__listeners = listeners = new FnList();
+	      this.__path = path;
+	    }
+
+	    var id = listeners.add(cb, scope);
+	    id && (this.__state |= TOPIC_LISTEN_FLAG | TOPIC_ENABLED_FLAG);
+	    return id;
+	  }
+	  /**
+	   * remove listener by callback
+	   * @param cb		observe callback
+	   * @param scope		scope of the callback
+	   */
+	  ;
+
+	  _proto.__unlisten = function __unlisten(cb, scope) {
+	    var listeners = this.__listeners;
+
+	    if (listeners) {
+	      listeners.remove(cb, scope);
+
+	      this.____unlisten(listeners);
+	    }
+	  }
+	  /**
+	   * remove listener by listen-id
+	   * @param id	listen-id
+	   */
+	  ;
+
+	  _proto.__unlistenId = function __unlistenId(id) {
+	    var listeners = this.__listeners;
+
+	    if (listeners) {
+	      listeners.removeId(id);
+
+	      this.____unlisten(listeners);
+	    }
+	  }
+	  /**
+	   * Clear all unlistening leaf topics (!TOPIC_LISTEN_FLAG && !TOPIC_SUB_FLAG)
+	   * @param listeners	listeners
+	   */
+	  ;
+
+	  _proto.____unlisten = function ____unlisten(listeners) {
+	    if (!listeners.size()) {
+	      // this topic has no listeners, clear the listen flag
+	      var topic = this,
+	          parent;
+	      topic.__state &= ~TOPIC_LISTEN_FLAG;
+
+	      while (topic.__state === TOPIC_ENABLED_FLAG) {
+	        // the topic has no listeners and subtopics
+	        //  - unbind the observer on the topic
+	        //  - clear topic state
+	        //  - remove from the parent topic
+	        topic.__bind();
+
+	        topic.__state = 0;
+	        if (!(parent = topic.__parent)) break;
+
+	        parent.__removeSub(topic);
+
+	        topic = parent; // re-check the parent topic
+	      }
+	    }
+	  }
+	  /**
+	   * bind observer
+	   * @param observer new observer
+	   */
+	  ;
+
+	  _proto.__bind = function __bind(observer) {
+	    var org = this.__observer;
+
+	    if (org !== observer) {
+	      org && org.__unwatchTopic(this); // unbind old observer
+
+	      if (observer) {
+	        var err = observer.__watchTopic(this);
+
+	        if (err) {
+	          var path = this.__getPath();
+
+	          assert("observer[{}]: can not watch {} on {}{}, {{message}}.", formatPath(path), formatPath(path.slice(-1)), toStrType(observer.target), path.length > 1 ? "[" + formatPath(path.slice(0, -1)) + "]" : '', err, err, this.__owner.target);
+	        }
+	      }
+
+	      this.__observer = observer;
+	    }
+	  }
+	  /**
+	   * get a subtopic from the cache
+	   * @param prop property
+	   */
+	  ;
+
+	  _proto.__getSub = function __getSub(prop) {
+	    var subCache = this.__subCache;
+	    return subCache && subCache[prop];
+	  }
+	  /**
+	   * get or create a subtopic on the cache
+	   * @param subProp	property of the subtopic
+	   * @return subtopic
+	   */
+	  ;
+
+	  _proto.__addSub = function __addSub(subProp) {
+	    var subCache = this.__subCache || (this.__subs = [], this.__subCache = create(null)),
+	        sub = subCache[subProp] || (subCache[subProp] = new Topic(this.__owner, subProp, this));
+
+	    if (!(sub.__state & TOPIC_ENABLED_FLAG)) {
+	      // init the subtopic
+	      var subs = this.__subs,
+	          _observer = this.__observer; // 1. bind observer
+
+	      if (_observer) {
+	        var prop = this.__prop;
+	        isArrayChangeProp(_observer, prop) && sub.__ignorePath(2, 'Array');
+	        var subObserver;
+
+	        if (subs[0]) {
+	          subObserver = subs[0].__observer;
+	        } else {
+	          var subTarget = _observer.target[prop];
+
+	          if (isObserverTarget(subTarget)) {
+	            subObserver = loadSubObserver(_observer, prop, subTarget);
+	          } else if (!isNil(subTarget)) {
+	            sub.__ignorePath(2, toStrType(subTarget));
+	          }
+	        }
+
+	        sub.__bind(subObserver);
+	      } // 2. attach subtopic
+
+
+	      sub.__state |= TOPIC_ENABLED_FLAG;
+	      subs.push(sub);
+	    }
+
+	    this.__state |= TOPIC_SUB_FLAG | TOPIC_ENABLED_FLAG;
+	    return sub;
+	  }
+	  /**
+	   * remove the subtopic from the subs
+	   * @param topic topic
+	   */
+	  ;
+
+	  _proto.__removeSub = function __removeSub(topic) {
+	    var subs = this.__subs;
+	    var l = subs.length;
+	    var i = l;
+
+	    while (i--) {
+	      if (topic === subs[i]) {
+	        subs.splice(i, 1);
+	        l === 1 && (this.__state &= ~TOPIC_SUB_FLAG);
+	        return;
+	      }
+	    }
+
+	    assert('un-attached topic');
+	  };
+
+	  _proto.__ignorePath = function __ignorePath(i, type, msg) {
+	    var path = this.__getPath();
+
+	    console.warn("observer[{}]: ignore {} on {}{}{}.", formatPath(path), formatPath(path.slice(-i)), type, path.length > i ? "[" + formatPath(path.slice(0, -i)) + "]" : '', msg || '', this.__owner.target);
+	  };
+
+	  _proto.__ignoreSubPaths = function __ignoreSubPaths(subs, len, type) {
+	    for (var i = 0; i < len; i++) {
+	      subs[i].__ignorePath(2, type);
+	    }
+	  };
+
+	  _proto.__getPath = function __getPath() {
+	    var path = this.__path;
+
+	    if (!path) {
+	      var parent = this.__parent,
+	          prop = this.__prop;
+	      this.__path = path = parent ? parent.__getPath().concat(prop) : [prop];
+	    }
+
+	    return path;
+	  }
+	  /**
+	   * mark the change in topic
+	   *
+	   * @param original original value
+	   */
+	  ;
+
+	  _proto.__update = function __update(original) {
+	    if (this.__original === V) {
+	      this.__original = original; // add to collect queue
+
+	      var l = collectQueue.length;
+	      collectQueue[l] = this;
+	      !l && nextTick(collect);
+	    }
+	  }
+	  /**
+	   * collect the dirty topics(this topic and subtopics) from collectQueue
+	   * may collected by parent-topic
+	   */
+	  ;
+
+	  _proto.__collect = function __collect() {
+	    var original = this.__original;
+
+	    if (original !== V) {
+	      var _observer2 = this.__observer;
+	      this.__original = V;
+
+	      this.____collect(_observer2, _observer2.target, original, false);
+	    } // this topic has been collected, retains its dirty value
+
+	  }
+	  /**
+	   * collect the dirty topics(this topic and subtopics)
+	   * - collect from collectQueue
+	   * 	1. this topic has been collected, stop collect
+	   * 	2. save the dirty value when the topic has a listener
+	   * 	3. clean the change state
+	   * 	4. collect the subtopics
+	   *		use this original value when subtopic has not changed
+	   *		use the subtopic's original value when subtopic is changed
+	   * 		clean the change state
+	   *		replace the new value on subtopics
+	   * - re-collect by parent-topic (this does not happen after the topics are sorted by ID before collection)
+	   * 	1. replace the new value and discard the original value(keep the existing original value)
+	   * 	2. re-collect subtopics
+	   *
+	   * @param observer 	observer of this topic
+	   * @param target 	new target of this topic
+	   * @param original 	original value of this topic
+	   * @param force  	force notify
+	   */
+	  ;
+
+	  _proto.____collect = function ____collect(observer, target, original, force) {
+	    var flags = this.__state,
+	        prop = this.__prop;
+	    var dirty,
+	        subTarget = V; // lazy load the sub-target
+
+	    if (flags & TOPIC_LISTEN_FLAG) {
+	      if (!(dirty = this.__dirty)) {
+	        this.__dirty = dirty = [, original, force];
+	        dirtyQueue.push(this);
+	      } else if (force) {
+	        dirty[2] = force; // if this topic has been changed and collected, retains its original value
+	      } // set the new value
+
+
+	      dirty[0] = observer && isArrayChangeProp(observer, prop) ? target : subTarget = getValue(target, prop);
+	    }
+
+	    if (flags & TOPIC_SUB_FLAG) {
+	      subTarget === V && (subTarget = getValue(target, prop));
+	      var subs = this.__subs;
+	      var l = subs.length;
+	      var subObserver,
+	          orgSubObserver,
+	          sub,
+	          subOriginal,
+	          i = 0;
+
+	      if (observer) {
+	        isArrayChangeProp(observer, prop) && this.__ignoreSubPaths(subs, l, 'Array');
+
+	        if (isObserverTarget(subTarget)) {
+	          subObserver = loadSubObserver(observer, prop, subTarget);
+
+	          if (proxyEnable) {
+	            subTarget = subObserver.target;
+	            dirty && (dirty[0] = subObserver.proxy); // update dirty proxy
+	          }
+	        } else if (!isNil(subTarget)) {
+	          this.__ignoreSubPaths(subs, l, toStrType(subTarget));
+	        }
+	      } else if (proxyEnable && dirty) {
+	        dirty[0] = exports.proxy(dirty[0]);
+	      }
+
+	      for (; i < l; i++) {
+	        sub = subs[i];
+	        orgSubObserver = sub.__observer;
+
+	        if (!subObserver || orgSubObserver != subObserver) {
+	          sub.__bind(subObserver);
+
+	          if ((subOriginal = sub.__original) === V) {
+	            // 1. this subtopic has not been changed, using the original value of the current topic
+	            // *2. this subtopic has been changed and collected, and the collector retains its original value
+	            // *   this does not happen after the topics are sorted by ID before collection
+	            subOriginal = sub.__dirty ? undefined : getOriginalValue(original, sub.__prop);
+	          } else {
+	            // this subtopic was changed but not collected, collected in advance
+	            sub.__original = V;
+	          }
+
+	          sub.____collect(subObserver, subTarget, subOriginal, orgSubObserver != subObserver);
+	        }
+	      }
+	    } else if (dirty && proxyEnable) {
+	      dirty[0] = exports.proxy(dirty[0]);
+	    }
+	  };
+
+	  return Topic;
+	}();
+
+	function compareTopic(topic1, topic2) {
+	  return topic1.__id - topic2.__id;
+	}
+	/**
+	 * collect the dirty topics on the collectQueue
+	 */
+
+
+	function collect() {
+	  var start = Date.now();
+	  var l = collectQueue.length,
+	      i = 0; // sort by topic id
+
+	  collectQueue.sort(compareTopic);
+
+	  for (; i < l; i++) {
+	    collectQueue[i].__collect();
+	  }
+
+	  collectQueue.length = 0;
+	  console.log("Collect " + dirtyQueue.length + " dirty topics from the collection queue (" + l + "), use " + (Date.now() - start) + "ms");
+	  notify();
+	}
+	/**
+	 * notify all of the dirty topics
+	 */
+
+	function notify() {
+	  var start = Date.now();
+	  var topics = 0,
+	      listens = 0;
+	  var l = dirtyQueue.length;
+	  var topic,
+	      owner,
+	      path,
+	      value,
+	      original,
+	      dirty,
+	      i = 0;
+
+	  for (; i < l; i++) {
+	    topic = dirtyQueue[i];
+	    dirty = topic.__dirty;
+	    value = dirty[0];
+	    original = dirty[1];
+	    topic.__dirty = null; // clean the dirty
+
+	    if (dirty[2] || value !== original || !isPrimitive(value)) {
+	      // real dirty
+	      owner = topic.__owner;
+	      path = topic.__path;
+
+	      topic.__listeners.each(function (fn, scope) {
+	        scope ? fn.call(scope, path, value, original, owner) : fn(path, value, original, owner);
+	        listens++;
+	      });
+
+	      topics++;
+	    }
+	  }
+
+	  dirtyQueue.length = 0;
+	  console.log(listens + " listen-callbacks of " + topics + "/" + l + " dirty topics have been notified, use " + (Date.now() - start) + "ms");
+	} //========================================================================================
+
+	/*                                                                                      *
+	 *                                       Observer                                       *
+	 *                                                                                      */
+	//========================================================================================
+
+
+	var __original__;
+
+	function __updateTopicCB(topic) {
+	  topic.__update(__original__);
+	}
+
+	var Watcher =
+	/*#__PURE__*/
+	function (_List) {
+	  _inheritsLoose(Watcher, _List);
+
+	  function Watcher() {
+	    return _List.call(this) || this;
+	  }
+	  /**
+	   * notify topics
+	   *
+	   * @param original the original value
+	   */
+
+
+	  var _proto2 = Watcher.prototype;
+
+	  _proto2.notify = function notify(original) {
+	    __original__ = original;
+	    this.eachUnsafe(__updateTopicCB);
+	    __original__ = 0;
+	  };
+
+	  return Watcher;
+	}(List);
+
+	var Observer =
+	/*#__PURE__*/
+	function () {
+	  /**
+	   * observer target
+	   */
+
+	  /**
+	   * observer proxy
+	   */
+
+	  /**
+	   * is array target
+	   */
+
+	  /**
+	   * topics
+	   * 	- key: property of topic in the observer's target
+	   * 	- value: topic
+	   */
+
+	  /**
+	   * watchers
+	   * 	- key: property of watcher in the observer's target
+	   * 	- value: watcher
+	   */
+
+	  /**
+	   * properties of watchers in the observer's target
+	   */
+
+	  /**
+	   * create Observer
+	   *
+	   * @param target observer target
+	   */
+	  function Observer(target) {
+	    var arrayTarget = isArray(target);
+
+	    if (arrayTarget) {
+	      applyArrayHooks(target);
+	    } else {
+	      assert.is(isObject(target), "the observer's target can only be an object or an array");
+	    }
+
+	    var watchers = create(null);
+	    this.__watchers = watchers;
+	    this.__watcherProps = [];
+	    this.isArray = arrayTarget;
+	    this.target = target; // bind observer key on the observer's target
+
+	    defPropValue(target, OBSERVER_KEY, this, false, false, false);
+	    this.proxy = policy.__createProxy(this, target, arrayTarget);
+	  }
+	  /**
+	   * observe changes in the observer's target
+	   *
+	   * @param propPath 	property path for observe, parse string path by {@link parsePath}
+	   * @param cb		callback
+	   * @param scope		scope of callback
+	   * @return listen-id
+	   */
+
+
+	  var _proto3 = Observer.prototype;
+
+	  _proto3.observe = function observe(propPath, cb, scope) {
+	    var path = parsePath(propPath),
+	        topics = this.__topics || (this.__topics = create(null)),
+	        prop0 = path[0];
+	    var topic = topics[prop0] || (topics[prop0] = new Topic(this, prop0)),
+	        i = 1,
+	        l = path.length;
+
+	    topic.__bind(this);
+
+	    topic.__flags |= TOPIC_ENABLED_FLAG;
+
+	    for (; i < l; i++) {
+	      topic = topic.__addSub(path[i]);
+	    }
+
+	    return topic.__listen(path, cb, scope);
+	  }
+	  /**
+	   * cancel observing the changes in the observer's target
+	   *
+	   * @param propPath	property path for unobserve, parse string path by {@link parsePath}
+	   * @param cb		callback
+	   * @param scope		scope of callback
+	   */
+	  ;
+
+	  _proto3.unobserve = function unobserve(propPath, cb, scope) {
+	    var topic = this.__getTopic(parsePath(propPath));
+
+	    topic && topic.__unlisten(cb, scope);
+	  }
+	  /**
+	   * cancel observing the changes in the observer's target by listen-id
+	   *
+	   * @param propPath	property path for unobserve, parse string path by {@link parsePath}
+	   * @param id 		listen-id
+	   */
+	  ;
+
+	  _proto3.unobserveId = function unobserveId(propPath, id) {
+	    var topic = this.__getTopic(parsePath(propPath));
+
+	    topic && topic.__unlistenId(id);
+	  }
+	  /**
+	   * notify change on the property
+	   *
+	   * @param prop		the property
+	   * @param original 	the original value
+	   */
+	  ;
+
+	  _proto3.notify = function notify(prop, original) {
+	    var watcher = this.__watchers[prop];
+	    watcher && watcher.notify(original);
+	  }
+	  /**
+	   * notify the observer that all properties in the target have changed
+	   * the original value well be {@link MISS}
+	   */
+	  ;
+
+	  _proto3.notifyAll = function notifyAll() {
+	    var watchers = this.__watchers,
+	        props = this.__watcherProps;
+
+	    for (var i = 0, l = props.length; i < l; i++) {
+	      watchers[props[i]].notify(MISS);
+	    }
+	  }
+	  /**
+	   * get wather by property
+	   *
+	   * @protected
+	   * @param prop the property
+	   */
+	  ;
+
+	  _proto3.watcher = function watcher(prop) {
+	    var watcher = this.__watchers[prop];
+	    if (watcher && watcher.size()) return watcher;
+	  }
+	  /**
+	   * get or create wather by property
+	   *
+	   * @protected
+	   * @param prop the property
+	   */
+	  ;
+
+	  _proto3.initWatcher = function initWatcher(prop) {
+	    var watchers = this.__watchers;
+	    var watcher = watchers[prop];
+
+	    if (!watcher) {
+	      watchers[prop] = watcher = new Watcher();
+
+	      this.__watcherProps.push(prop);
+
+	      var err = policy.__watch(this, prop, watcher);
+
+	      assert.not(err, "can not watch property[{}] on the Observer, {{message}}", prop, err, err, this.target);
+	    }
+
+	    return watcher;
+	  }
+	  /**
+	   * watch the topic
+	   *
+	   * @private
+	   * @param topic topic
+	   * @return is successful
+	   */
+	  ;
+
+	  _proto3.__watchTopic = function __watchTopic(topic) {
+	    var watchers = this.__watchers;
+	    var prop = topic.__prop;
+	    var watcher = watchers[prop],
+	        err;
+
+	    if (!watcher) {
+	      watchers[prop] = watcher = new Watcher();
+
+	      this.__watcherProps.push(prop);
+
+	      err = policy.__watch(this, prop, watcher);
+	    }
+
+	    watcher.add(topic);
+	    return err;
+	  }
+	  /**
+	   * unwatched the topic
+	   *
+	   * @private
+	   * @param topic topic
+	   */
+	  ;
+
+	  _proto3.__unwatchTopic = function __unwatchTopic(topic) {
+	    this.__watchers[topic.__prop].remove(topic);
+	  }
+	  /**
+	   * get topic by property path
+	   *
+	   * @param path property path of topic, parse string path by {@link parsePath}
+	   * @return topic | undefined
+	   */
+	  ;
+
+	  _proto3.__getTopic = function __getTopic(path) {
+	    var topics = this.__topics;
+	    var topic;
+
+	    if (topics && (topic = topics[path[0]])) {
+	      for (var i = 1, l = path.length; i < l; i++) {
+	        if (!(topic = topic.__getSub(path[i]))) break;
+	      }
+	    }
+
+	    return topic;
+	  }
+	  /**
+	   * get the value at path of target object
+	   *
+	   * @param propPath 	property path of target object, parse string path by {@link parsePath}
+	   * @return the value
+	   */
+	  ;
+
+	  _proto3.get = function get(propPath) {
+	    return exports.$get(this.target, propPath);
+	  }
+	  /**
+	   * set the value at path of target object
+	   *
+	   * @param propPath 	property path for target object, parse string path by {@link parsePath}
+	   * @param value		the value
+	   */
+	  ;
+
+	  _proto3.set = function set(propPath, value) {
+	    exports.$set(this.proxy, propPath, value);
+	  }
+	  /**
+	   * @ignore
+	   */
+	  ;
+
+	  _proto3.toJSON = function toJSON() {};
+
+	  return Observer;
+	}(); //========================================================================================
 
 	/*                                                                                      *
 	 *                                      Array Hooks                                     *
@@ -4491,6 +5522,20 @@
 	    return applyScope(fn, observer.target, arguments);
 	  }];
 	});
+	/**
+	 * apply observer hooks on Array
+	 * @param array
+	 */
+
+	function applyArrayHooks(array) {
+	  var hook,
+	      i = arrayHooks.length;
+
+	  while (i--) {
+	    hook = arrayHooks[i];
+	    defPropValue(array, hook[0], hook[1], false, false, false);
+	  }
+	} //========================================================================================
 
 	/*                                                                                      *
 	 *                                        policy                                        *
@@ -4498,26 +5543,42 @@
 	//========================================================================================
 
 
-	var policy = proxyPolicy() || accessorPolicy();
+	var policy = proxyPolicy() || accessorPolicy() || vbPolicy();
 	assert.is(policy, 'The observer module is not supported.');
 	console.info("the observer policy: " + policy.__name + " -> ", policy);
-	if (!policy.__createProxy) policy.__createProxy = function (target) {
+	if (!policy.__createProxy) policy.__createProxy = function (observer, target) {
 	  return target;
 	};
-	if (!policy.__watch) policy.__watch = function () {
-	  return true;
-	};
+	if (!policy.__watch) policy.__watch = function () {};
+	var proxyEnable = policy.__proxy;
 	/**
 	 * get existing observer on object
+	 *
 	 * @return existing observer
 	 */
 
 	exports.getObserver = function getObserver(target) {
-	  var oserver = target[OBSERVER_KEY];
-	  if (oserver && oserver.target === target || oserver.proxy === target) return oserver;
+	  var ob = target[OBSERVER_KEY];
+	  if (ob && (ob.target === target || ob.proxy === target)) return ob;
+	};
+	/**
+	 * get or create sub-observer (well fix proxy value)
+	 *
+	 * @param observer 	observer
+	 * @param prop		property of the observer's target
+	 * @param target	target = observer.target[prop]
+	 * @return sub-observer
+	 */
+
+
+	var loadSubObserver = function loadSubObserver(observer, prop, target) {
+	  var subObserver = exports.getObserver(target) || new Observer(target);
+	  if (subObserver.proxy !== target) observer.target[prop] = subObserver.proxy;
+	  return subObserver;
 	};
 	/**
 	 * get the original object of the observer on the object
+	 *
 	 * @param object the object
 	 * @return the original object | the object
 	 */
@@ -4529,6 +5590,7 @@
 	};
 	/**
 	 * get the proxy object for the observer on the object
+	 *
 	 * @param object the object
 	 * @return the proxy object | the object
 	 */
@@ -4546,10 +5608,26 @@
 	exports.$eq = function $eq(o1, o2) {
 	  return eq(o1, o2) || (o1 && o2 && (o1 = exports.getObserver(o1)) ? o1 === exports.getObserver(o2) : false);
 	};
+	/**
+	 * get the value at path of object
+	 *
+	 * @param obj 		the object
+	 * @param path		property path of object, parse string path by {@link parsePath}
+	 * @return the value | the proxy of value
+	 */
+
 
 	exports.$get = function $get(obj, path) {
 	  return exports.proxy(get(obj, path));
 	};
+	/**
+	 * set the value at path of object
+	 *
+	 * @param obj 		the object
+	 * @param path		property path of object, parse string path by {@link parsePath}
+	 * @param value 	value
+	 */
+
 
 	exports.$set = function $set(obj, path, value) {
 	  path = parsePath(path);
@@ -4566,10 +5644,14 @@
 	}; //──── optimize on Non-Proxy policy ──────────────────────────────────────────────────────
 
 
-	if (!policy.__proxy) {
+	if (!proxyEnable) {
 	  exports.getObserver = function getObserver(target) {
 	    var oserver = target[OBSERVER_KEY];
 	    if (oserver && oserver.target === target) return oserver;
+	  };
+
+	  loadSubObserver = function loadSubObserver(observer, prop, target) {
+	    return exports.getObserver(target) || new Observer(target);
 	  };
 
 	  exports.source = function source(obj) {
@@ -4581,102 +5663,64 @@
 	  exports.$get = get;
 	  exports.$set = set;
 	}
-
-	/*                                                                                      *
-	 *                                     test topic                                     *
-	 *                                                                                      */
-	//========================================================================================
-
-	/*
-	const objIdGen: { [key: string]: number } = {}
-	function objId(obj: any, str: string) {
-		return obj.id || (obj.id = str + '-' + (objIdGen[str] ? ++objIdGen[str] : (objIdGen[str] = 1)))
-	}
-	function topicState(topic: Topic) {
-		const path = []
-		let p = topic
-		while (p) {
-			path.unshift(p.__prop)
-			p = p.__parent
-		}
-		const subs = topic.__subs && topic.__subs.length
-		const listeners = topic.__listeners && topic.__listeners.size()
-
-		assert.is(!!(subs || listeners) === !!(topic.__state & TOPIC_ENABLED_FLAG))
-		assert.is(!!subs === !!(topic.__state & TOPIC_SUB_FLAG))
-		assert.is(!!listeners === !!(topic.__state & TOPIC_LISTEN_FLAG))
-		assert.is(!topic.__observer || topic.__state & TOPIC_ENABLED_FLAG)
-
-		return {
-			id: objId(topic, 'topic'),
-			path: formatPath(path),
-			obj: JSON.stringify(topic.__owner.target),
-			enabled: !!(subs || listeners),
-			listeners: listeners,
-			watched: topic.__observer && {
-				id: objId(topic.__observer, 'observer'),
-				obj: JSON.stringify(topic.__observer.target),
-				watchs: watchs(topic.__observer)
-			},
-			subCache: topic.__subCache && map(topic.__subCache, topicState),
-			subs: subs && map(topic.__subs, sub => objId(sub, 'topic'))
-		}
-	}
-	function observerState(observer: Observer) {
-		return {
-			id: objId(observer, 'observer'),
-			obj: JSON.stringify(observer.target),
-			watchs: watchs(observer),
-			topics: map(observer.__topics, subj => topicState(subj))
-		}
-	}
-	function watchs(observer: Observer) {
-		return map(observer.__watchers, w =>
-			w
-				.toArray()
-				.map(s => objId(s, 'topic'))
-				.join(', ')
-		)
-	}
-
-	function logState(obs: Observer) {
-		const state = observerState(obs)
-		console.log(JSON.stringify(state, null, '  '))
-	}
-	let obs = new Observer({ a: { b: { c: 1 } } })
-	let id1 = obs.observe('a.b.c', () => {})
-	let id2 = obs.observe('a.b.d', () => {})
-	//logState(obs)
-	obs.unobserveId('a.b.c', id1)
-	obs.unobserveId('a.b.c', id1)
-	//logState(obs)
-	obs.unobserveId('a.b.d', id2)
-
-	//logState(obs)
-	id1 = obs.observe('a.b.c', function() {
-		console.log('a.b.c', arguments)
-	})
-	id2 = obs.observe('a.b.d', function() {
-		console.log('a.b.d', arguments)
-	})
-	//logState(obs)
-
-	const ov = obs.target['a']
-	obs.target['a'] = { b: { d: 2 } }
-	obs.notify('a', ov)
-
-	setTimeout(function() {
-		//logState(obs)
-	}, 1000)
-
-	//logState(obs)
+	/**
+	 * get or create observer on object
+	 *
+	 * @param target 	the target object
 	 */
+
+
+	function observer$1(target) {
+	  return exports.getObserver(target) || new Observer(target);
+	}
+	/**
+	 * observe changes in the target object
+	 *
+	 * @param target 	the target object
+	 * @param propPath 	property path of object, parse string path by {@link parsePath}
+	 * @param cb		callback
+	 * @param scope		scope of callback
+	 * @return listen-id
+	 */
+
+	function observe(target, propPath, cb, scope) {
+	  var __observer = observer$1(target);
+
+	  return __observer.observe(propPath, cb, scope);
+	}
+	/**
+	 * cancel observing the changes in the target object
+	 *
+	 * @param target 	the target object
+	 * @param propPath 	property path of object, parse string path by {@link parsePath}
+	 * @param cb		callback
+	 * @param scope		scope of callback
+	 */
+
+	function unobserve(target, propPath, cb, scope) {
+	  var __observer = exports.getObserver(target);
+
+	  __observer && __observer.unobserve(propPath, cb, scope);
+	}
+	/**
+	 * cancel observing the changes in the target object by listen-id
+	 *
+	 * @param target 	the target object
+	 * @param propPath 	property path of object, parse string path by {@link parsePath}
+	 * @param listenId	listen-id
+	 */
+
+	function unobserveId(target, propPath, listenId) {
+	  var __observer = exports.getObserver(target);
+
+	  __observer && __observer.unobserveId(propPath, listenId);
+	}
 
 	/**
 	 * @module observer
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Fri Mar 01 2019 18:17:27 GMT+0800 (China Standard Time)
-	 * @modified Fri Mar 01 2019 18:17:50 GMT+0800 (China Standard Time)
+	 * @modified Thu Mar 28 2019 19:40:22 GMT+0800 (China Standard Time)
 	 */
 
 	/**
@@ -4692,6 +5736,7 @@
 	exports.addDefaultKey = addDefaultKey;
 	exports.addDefaultKeys = addDefaultKeys;
 	exports.getDefaultKeys = getDefaultKeys;
+	exports.getDefaultKeyMap = getDefaultKeyMap;
 	exports.createFn = createFn;
 	exports.applyScope = applyScope;
 	exports.applyNoScope = applyNoScope;
@@ -4701,6 +5746,7 @@
 	exports.applyN = applyN;
 	exports.fnName = fnName;
 	exports.bind = bind;
+	exports.executor = executor;
 	exports.eq = eq;
 	exports.isNull = isNull;
 	exports.isUndef = isUndef;
@@ -4722,6 +5768,7 @@
 	exports.isTypedArray = isTypedArray;
 	exports.isArrayLike = isArrayLike;
 	exports.isObj = isObj;
+	exports.isObject = isObject;
 	exports.isBlank = isBlank;
 	exports.stickyReg = stickyReg;
 	exports.unicodeReg = unicodeReg;
@@ -4815,7 +5862,18 @@
 	exports.anyOne = anyOne;
 	exports.manyOne = manyOne;
 	exports.optionOne = optionOne;
+	exports.assert = assert;
+	exports.VBPROXY_KEY = VBPROXY_KEY;
+	exports.VBPROXY_CTOR_KEY = VBPROXY_CTOR_KEY;
+	exports.OBSERVER_KEY = OBSERVER_KEY;
+	exports.ARRAY_CHANGE = ARRAY_CHANGE;
 	exports.MISS = MISS;
+	exports.collect = collect;
+	exports.proxyEnable = proxyEnable;
+	exports.observer = observer$1;
+	exports.observe = observe;
+	exports.unobserve = unobserve;
+	exports.unobserveId = unobserveId;
 
 }));
 //# sourceMappingURL=argilo.dev.js.map

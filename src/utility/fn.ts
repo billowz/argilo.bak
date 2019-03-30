@@ -3,7 +3,7 @@
  * @module utility
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 13:57:32 GMT+0800 (China Standard Time)
- * @modified Fri Nov 23 2018 11:18:33 GMT+0800 (China Standard Time)
+ * @modified Sat Mar 30 2019 15:42:28 GMT+0800 (China Standard Time)
  */
 
 import { GLOBAL, PROTOTYPE } from './consts'
@@ -50,7 +50,7 @@ switch(${offset ? 'len' : 'args.length'}){
 ${cases.join('\n')}
 }
 ${offset &&
-		`var arr = new Array(len);
+	`var arr = new Array(len);
 for(var i=0; i<len; i++) arr[i] = arr[offset + i];`}
 return fn.apply(${scope || 'null'}, ${offset ? 'arr' : 'args'});
 }`)()

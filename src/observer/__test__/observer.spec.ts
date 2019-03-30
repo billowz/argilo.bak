@@ -1,5 +1,16 @@
-import { assert, create, hasOwnProp, isDefaultKey, assign, keys, eq } from '../../utility'
-import '../index'
+import {
+	assert,
+	create,
+	isDefaultKey,
+	assign,
+	keys,
+	eq,
+	eachObj,
+	mapObj,
+	isFn,
+	parsePath,
+	nextTick
+} from '../../utility'
 import {
 	observer,
 	source,
@@ -14,8 +25,17 @@ import {
 	observe,
 	collect,
 	ObserverTarget,
-	MISS
+	MISS,
+	ObserverCallback,
+	observedId,
+	unobserveId,
+	observed
 } from '../index'
+import { isArray } from 'util'
+import { each } from 'benchmark'
+
+const vb = proxyEnable === 'vb',
+	es6proxy = proxyEnable === 'proxy'
 
 describe('observer', function() {
 	it('default keys', function() {
@@ -25,6 +45,7 @@ describe('observer', function() {
 			assert.is(isDefaultKey(VBPROXY_CTOR_KEY))
 		}
 	})
+
 	it('create observer', function() {
 		const objObs = createObserver({})
 		const cObs = createObserver(create(objObs.target))
@@ -73,87 +94,77 @@ describe('observer', function() {
 		}
 	})
 
-	it('Observe changes on an object property', function() {
-		const ob = observer({
+	it('observe changes on an object property', function(done) {
+		const w = observeAll(
+			{
 				name: 'Mary',
 				email: 'mary@domain.com',
 				age: 18
-			}),
-			o = ob.proxy
+			},
+			{
+				name: [['Paul', 'Mary'], ['Paul', 'Test']],
+				email: [['paul@domain.com', 'mary@domain.com']],
+				age: () => {}
+			}
+		)
 
-		const listeners = [
-			assert.executor((prop, newvalue, oldvalue, _ob) => {
-				assert.eql(prop, ['name'])
-				assert.eq(newvalue, 'Paul')
-				assert.eq(oldvalue, 'Mary')
-				assert.eq(_ob, ob)
-			}, 1),
-			assert.executor((prop, newvalue, oldvalue, _ob) => {
-				assert.eql(prop, ['email'])
-				assert.eq(newvalue, 'paul@domain.com')
-				assert.eq(oldvalue, 'mary@domain.com')
-				assert.eq(_ob, ob)
-			}, 1)
-		]
+		w.obj.name = 'Paul'
+		w.obj.email = 'paul@domain.com'
+		w.obj.age = 18
 
-		observe(o, 'name', listeners[0])
-		observe(o, 'name', listeners[0])
-		observe(o, 'email', listeners[1])
-		observe(o, 'age', assert.executor(() => {}, 0))
+		nextTick(() => {
+			w.called({
+				name: 1,
+				email: 1
+			})
 
-		o.name = 'Paul'
-		o.email = 'paul@domain.com'
-		o.age = 18
-		collect()
-		assert.eq(listeners[0].called, 1)
-		assert.eq(listeners[1].called, 1)
+			w.obj.name = 'Test'
+			w.obj.email = 'test@domain.com'
+
+			w.unobserve(['email'])
+
+			nextTick(() => {
+				w.called({ name: 1 })
+
+				w.obj.name = 'Test2'
+
+				w.unobserve()
+
+				nextTick(() => {
+					w.called({})
+					done()
+				})
+			})
+		})
 	})
 
-	it('Observe changes on an array property', function() {
-		const ob = observer([1, 2, 3]),
-			o = ob.proxy
+	it('observe changes on an array property', function() {
+		const w = observeAll([1, 2, 3], {
+			'[0]': [[2, vb ? MISS : 1]],
+			'[1]': [[3, vb ? MISS : 2]],
+			length: [[4, MISS]],
+			$change: () => [w.obj, vb ? MISS : w.obj]
+		})
 
-		const listeners = [
-			assert.executor((prop, newvalue, oldvalue, _ob) => {
-				assert.eql(prop, ['0'])
-				assert.eq(newvalue, 2)
-				if (proxyEnable !== 'vb') assert.eq(oldvalue, 1)
-				assert.eq(_ob, ob)
-			}, 1),
-			assert.executor((prop, newvalue, oldvalue, _ob) => {
-				assert.eql(prop, ['1'])
-				assert.eq(newvalue, 3)
-				if (proxyEnable !== 'vb') assert.eq(oldvalue, 2)
-				assert.eq(_ob, ob)
-			}, 1),
-			assert.executor((prop, newvalue, oldvalue, _ob) => {
-				assert.eql(prop, ['length'])
-				assert.eq(newvalue, 4)
-				assert.eq(oldvalue, MISS)
-				assert.eq(_ob, ob)
-			}, 1),
-			assert.executor((prop, newvalue, oldvalue, _ob) => {
-				assert.eql(prop, ['$change'])
-				assert.eq(newvalue, o)
-				assert.eq(oldvalue, proxyEnable === 'vb' ? MISS : o)
-				assert.eq(_ob, ob)
-			}, 1)
-		]
-
-		observe(o, '[0]', listeners[0])
-		observe(o, '[1]', listeners[1])
-		observe(o, 'length', listeners[2])
-		observe(o, '$change', listeners[3])
-
-		o[0]++
-		o[1]++
-		o.push(1)
+		w.obj[0]++
+		w.obj[1]++
+		w.obj.push(1)
 
 		collect()
-		assert.eq(listeners[0].called, 1)
-		assert.eq(listeners[1].called, 1)
-		assert.eq(listeners[2].called, 1)
-		assert.eq(listeners[3].called, 1)
+
+		w.called({
+			'[0]': 1,
+			'[1]': 1,
+			length: 1,
+			$change: 1
+		})
+
+		collect()
+		w.called({})
+		w.unobserve()
+
+		collect()
+		w.called({})
 	})
 
 	it('observe & unobserve', function() {
@@ -167,3 +178,158 @@ describe('observer', function() {
 
 	function watch(obj: any) {}
 })
+
+let i = 0
+function observeAll<T extends ObserverTarget>(
+	o: T,
+	watchs: {
+		[path: string]:
+			| [any, any?][]
+			| ((path: string[], value: any, original: any, observer: IObserver<T>) => [any, any?] | void)
+			| {
+					cb?: (path: string[], value: any, original: any, observer: IObserver<T>) => [any, any?] | void
+					expect?: [any, any?][]
+					scope: any
+			  }
+	}
+) {
+	const ob = observer(o)
+	const ctxs = mapObj(watchs, (w, p) => {
+		let cb: (path: string[], value: any, original: any, observer: IObserver<T>) => [any, any?] | void,
+			scope: any,
+			expect: [any, any?][]
+		if (isFn(w)) {
+			cb = w
+		} else if (isArray(w)) {
+			expect = w as [any, any?]
+		} else {
+			cb = w.cb
+			scope = w.scope
+			expect = w.expect
+		}
+
+		const ctx = {
+			obj: o,
+			ob,
+			path: parsePath(p),
+			strPath: p,
+			cb,
+			expect,
+			scope,
+			listenId: '',
+			ocalled: 0,
+			called: 0,
+			executor(path: any[], newvalue: any, oldvalue: any, ob: IObserver<T>) {
+				assert.eq(this, ctx, `invalid context {j}, expect {j}`, this, ctx)
+
+				assert.is(ctx.listenId, `context is not listened, context: {j}`, ctx)
+
+				assert.eq(ctx.ob, ob, `invalid observer on observer callback, context: {j}`, ctx)
+				assert.eql(path, ctx.path, `observer callback path: {j}, expect {j}, context: {j}`, path, ctx.path, ctx)
+
+				let expect = ctx.expect && ctx.expect[ctx.called]
+				ctx.called++
+				if (expect) {
+					expectValue(expect, newvalue, oldvalue, ctx)
+				} else if (!ctx.cb) {
+					assert(`bad test, no callback or export on {d} call, context: {j}`, ctx.called, ctx)
+				}
+				if (ctx.cb) {
+					expect = ctx.cb.call(ctx.scope || ctx, path, newvalue, oldvalue, ob)
+					if (expect) expectValue(expect, newvalue, oldvalue, ctx)
+				}
+
+				console.debug(
+					`observer notified x${ctx.called} changes at ${ctx.strPath} of context ${JSON.stringify(ctx)}`
+				)
+			}
+		}
+		if (i++ & 1) {
+			ctx.listenId = ob.observe(p, ctx.executor, ctx)
+		} else {
+			ctx.listenId = observe(o, p, ctx.executor, ctx)
+		}
+		assert.eq(
+			ctx.listenId,
+			ob.observed(p, ctx.executor, ctx),
+			`observe failed, listen-id: {}, context: {j}`,
+			ctx.listenId,
+			ctx
+		)
+		assert.is(observedId(o, p, ctx.listenId), `observe failed, listen-id: {}, context: {j}`, ctx.listenId, ctx)
+		return ctx
+	})
+	function expectValue(expect: [any, any?], newvalue: any, oldvalue: any, ctx: any) {
+		assert.eq(newvalue, expect[0], `observer notify value: {j}, expect {j}, context: {j}`, newvalue, expect[0], ctx)
+		expect.length > 1 &&
+			assert.eq(
+				oldvalue,
+				expect[1],
+				`observer notify origin value: {j}, expect {j}, context: {j}`,
+				oldvalue,
+				expect[1],
+				ctx
+			)
+	}
+	return {
+		obj: ob.proxy,
+		originObj: o,
+		ob,
+		called(nrs: { [path: string]: number } = {}) {
+			eachObj(nrs, (nr, p) => {
+				const ctx = ctxs[p]
+				assert.is(ctx, `bad test, not define callback on {}`, p)
+				assert.eq(
+					ctx.called - ctx.ocalled,
+					nr,
+					`observer callback called: {d}, expect {d}, context: {j}`,
+					ctx.called,
+					nr,
+					ctx
+				)
+			})
+			eachObj(ctxs, ctx => {
+				if (!nrs[ctx.strPath]) {
+					assert.eq(
+						ctx.called,
+						ctx.ocalled,
+						`observer callback is called and not check, origin called: {d}, called: {d}, context: {j}`,
+						ctx.ocalled,
+						ctx.called,
+						ctx
+					)
+				}
+				ctx.ocalled = ctx.called
+			})
+		},
+		unobserve(paths?: string[]) {
+			paths = paths || keys(ctxs)
+			each(paths, (p: string) => {
+				const ctx = ctxs[p]
+				assert.is(ctx, `bad test, not define callback on {}`, p)
+				if (ctx.listenId) {
+					if (i++ & 1) {
+						ctx.ob.unobserve(ctx.strPath, ctx.executor, ctx)
+					} else {
+						unobserveId(ctx.obj, ctx.path, ctx.listenId)
+					}
+
+					assert.not(
+						ob.observedId(p, ctx.listenId),
+						`unobserve failed, listen-id: {}, context: {j}`,
+						ctx.listenId,
+						ctx
+					)
+
+					assert.not(
+						observed(o, p, ctx.executor, ctx),
+						`unobserve failed, listen-id: {}, context: {j}`,
+						ctx.listenId,
+						ctx
+					)
+					ctx.listenId = null
+				}
+			})
+		}
+	}
+}

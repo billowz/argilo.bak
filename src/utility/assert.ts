@@ -2,7 +2,7 @@
  * @module utility/assert
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Nov 28 2018 11:01:45 GMT+0800 (China Standard Time)
- * @modified Tue Mar 26 2019 18:04:29 GMT+0800 (China Standard Time)
+ * @modified Thu Mar 28 2019 19:08:21 GMT+0800 (China Standard Time)
  */
 
 import {
@@ -175,19 +175,6 @@ assert.notThrow = function(fn: () => any, expect: Error | string, msg?: string):
 		throw new Error(parseMessage(msg || throwMsg[0], arguments, 2))
 	}
 	return assert
-}
-
-assert.executor = function<T extends (...args: any[]) => any>(
-	fn: T,
-	maxCall: number,
-	msg?: string
-): T & { called: number } {
-	const executor: any = function() {
-		assert.notGreater(++executor.called, maxCall, msg)
-		return applyScope(fn, this, arguments)
-	}
-	executor.called = 0
-	return executor
 }
 
 function extendAssert<T extends Function>(

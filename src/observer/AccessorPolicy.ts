@@ -3,10 +3,11 @@
  * @module observer
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Tue Mar 19 2019 14:12:23 GMT+0800 (China Standard Time)
- * @modified Tue Mar 26 2019 19:16:55 GMT+0800 (China Standard Time)
+ * @modified Thu Mar 28 2019 15:33:29 GMT+0800 (China Standard Time)
  */
 
-import { ObservePolicy, IObserver, IWatcher, ARRAY_CHANGE, ObserverTarget } from './IObserver'
+import { IObserver, IWatcher, ARRAY_CHANGE, ObserverTarget } from './IObserver'
+import { ObservePolicy } from './ObservePolicy'
 import { propAccessor, defProp } from '../utility'
 
 /**

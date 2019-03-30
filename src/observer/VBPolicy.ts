@@ -3,11 +3,12 @@
  * @module observer
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Tue Mar 19 2019 14:12:23 GMT+0800 (China Standard Time)
- * @modified Tue Mar 26 2019 19:52:26 GMT+0800 (China Standard Time)
+ * @modified Thu Mar 28 2019 15:38:05 GMT+0800 (China Standard Time)
  */
+import { ObserverTarget, IWatcher, IObserver } from './IObserver'
+import { ObservePolicy } from './ObservePolicy'
 import { GLOBAL, CONSTRUCTOR, HAS_OWN_PROP } from '../utility/consts'
 import { create, isFn, getDefaultKeys, addDefaultKeys } from '../utility'
-import { ObserverTarget, IWatcher, ObservePolicy, IObserver, ARRAY_CHANGE } from './IObserver'
 
 declare function execScript(code: string, type: string): void
 declare function parseVB(code: string): void

@@ -2,7 +2,7 @@
  * @module observer
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Dec 26 2018 13:59:10 GMT+0800 (China Standard Time)
- * @modified Tue Mar 26 2019 19:50:47 GMT+0800 (China Standard Time)
+ * @modified Sat Mar 30 2019 18:47:11 GMT+0800 (China Standard Time)
  */
 
 import {
@@ -15,7 +15,6 @@ import {
 	List,
 	parsePath,
 	formatPath,
-	isObj,
 	isPrimitive,
 	nextTick,
 	isNil,
@@ -27,19 +26,11 @@ import {
 } from '../utility'
 import { PROTOTYPE } from '../utility/consts'
 import { assert } from '../utility/assert'
-import {
-	ObserverTarget,
-	IWatcher,
-	OBSERVER_KEY,
-	IObserver,
-	ObservePolicy,
-	isArrayChangeProp,
-	MISS,
-	ObserverCallback
-} from './IObserver'
-import proxyPolicy from './proxyPolicy'
-import accessorPolicy from './accessorPolicy'
-import vbPolicy from './vbPolicy'
+import { ObserverTarget, IWatcher, OBSERVER_KEY, IObserver, ARRAY_CHANGE, MISS, ObserverCallback } from './IObserver'
+import { ObservePolicy } from './ObservePolicy'
+import proxyPolicy from './ProxyPolicy'
+import accessorPolicy from './AccessorPolicy'
+import vbPolicy from './VBPolicy'
 
 //========================================================================================
 /*                                                                                      *
@@ -55,6 +46,15 @@ const V = {}
 
 function isObserverTarget(obj: any) {
 	return obj && (isArray(obj) || isObject(obj))
+}
+
+/**
+ * is array change property
+ * @param observer 	observer
+ * @param prop 		property of the observer's target
+ */
+function isArrayChangeProp<T extends ObserverTarget>(observer: IObserver<T>, prop: string) {
+	return observer.isArray && prop === ARRAY_CHANGE
 }
 
 /**
@@ -374,7 +374,7 @@ class Topic {
 
 			this.__original = V
 
-			this.____collect(observer, observer.target, original, false)
+			observer && this.____collect(observer, observer.target, original, false)
 		}
 		// this topic has been collected, retains its dirty value
 	}
@@ -496,6 +496,8 @@ export function collect() {
 		collectQueue[i].__collect()
 	}
 
+	collectQueue.length = 0
+
 	//#if _DEBUG
 	console.log(
 		`Collect ${dirtyQueue.length} dirty topics from the collection queue (${l}), use ${Date.now() - start}ms`
@@ -550,6 +552,8 @@ function notify() {
 		}
 	}
 
+	dirtyQueue.length = 0
+
 	//#if _DEBUG
 	console.log(
 		`${listens} listen-callbacks of ${topics}/${l} dirty topics have been notified, use ${Date.now() - start}ms`
@@ -569,13 +573,12 @@ function __updateTopicCB(topic: Topic) {
 }
 
 class Watcher extends List<Topic> implements IWatcher {
-	// __originValue: any
-
 	constructor() {
 		super()
 	}
 	/**
 	 * notify topics
+	 *
 	 * @param original the original value
 	 */
 	notify(original: any) {
@@ -622,6 +625,7 @@ class Observer<T extends ObserverTarget> implements IObserver<T> {
 
 	/**
 	 * create Observer
+	 *
 	 * @param target observer target
 	 */
 	constructor(target: T) {
@@ -647,6 +651,7 @@ class Observer<T extends ObserverTarget> implements IObserver<T> {
 
 	/**
 	 * observe changes in the observer's target
+	 *
 	 * @param propPath 	property path for observe, parse string path by {@link parsePath}
 	 * @param cb		callback
 	 * @param scope		scope of callback
@@ -672,7 +677,35 @@ class Observer<T extends ObserverTarget> implements IObserver<T> {
 	}
 
 	/**
+	 * get listen-id of callback in the observer's target
+	 *
+	 * @param propPath 	property path for observe, parse string path by {@link parsePath}
+	 * @param cb		callback
+	 * @param scope		scope of callback
+	 * @return listen-id
+	 */
+	observed(propPath: string | string[], cb: ObserverCallback<T>, scope?: any): string {
+		const topic = this.__getTopic(parsePath(propPath))
+		let listeners: FnList<ObserverCallback<any>>
+		return topic && (listeners = topic.__listeners) && listeners.has(cb, scope)
+	}
+
+	/**
+	 * has listen-id in the observer's target
+	 *
+	 * @param propPath 	property path for observe, parse string path by {@link parsePath}
+	 * @param id		listen-id
+	 * @return listen-id
+	 */
+	observedId(propPath: string | string[], id: string): boolean {
+		const topic = this.__getTopic(parsePath(propPath))
+		let listeners: FnList<ObserverCallback<any>>
+		return topic && (listeners = topic.__listeners) && listeners.hasId(id)
+	}
+
+	/**
 	 * cancel observing the changes in the observer's target
+	 *
 	 * @param propPath	property path for unobserve, parse string path by {@link parsePath}
 	 * @param cb		callback
 	 * @param scope		scope of callback
@@ -684,6 +717,7 @@ class Observer<T extends ObserverTarget> implements IObserver<T> {
 
 	/**
 	 * cancel observing the changes in the observer's target by listen-id
+	 *
 	 * @param propPath	property path for unobserve, parse string path by {@link parsePath}
 	 * @param id 		listen-id
 	 */
@@ -694,6 +728,7 @@ class Observer<T extends ObserverTarget> implements IObserver<T> {
 
 	/**
 	 * notify change on the property
+	 *
 	 * @param prop		the property
 	 * @param original 	the original value
 	 */
@@ -715,6 +750,7 @@ class Observer<T extends ObserverTarget> implements IObserver<T> {
 
 	/**
 	 * get wather by property
+	 *
 	 * @protected
 	 * @param prop the property
 	 */
@@ -725,6 +761,7 @@ class Observer<T extends ObserverTarget> implements IObserver<T> {
 
 	/**
 	 * get or create wather by property
+	 *
 	 * @protected
 	 * @param prop the property
 	 */
@@ -742,6 +779,7 @@ class Observer<T extends ObserverTarget> implements IObserver<T> {
 
 	/**
 	 * watch the topic
+	 *
 	 * @private
 	 * @param topic topic
 	 * @return is successful
@@ -762,6 +800,7 @@ class Observer<T extends ObserverTarget> implements IObserver<T> {
 
 	/**
 	 * unwatched the topic
+	 *
 	 * @private
 	 * @param topic topic
 	 */
@@ -771,6 +810,7 @@ class Observer<T extends ObserverTarget> implements IObserver<T> {
 
 	/**
 	 * get topic by property path
+	 *
 	 * @param path property path of topic, parse string path by {@link parsePath}
 	 * @return topic | undefined
 	 */
@@ -786,21 +826,23 @@ class Observer<T extends ObserverTarget> implements IObserver<T> {
 	}
 
 	/**
-	 * set value
-	 * @param propPath 	property path for set, parse string path by {@link parsePath}
-	 * @param value		the value
-	 */
-	set(propPath: string | string[], value: any) {
-		$set(this.proxy, propPath, value)
-	}
-
-	/**
-	 * get value
-	 * @param propPath 	property path for get, parse string path by {@link parsePath}
+	 * get the value at path of target object
+	 *
+	 * @param propPath 	property path of target object, parse string path by {@link parsePath}
 	 * @return the value
 	 */
 	get(propPath: string | string[]): any {
 		return $get(this.target, propPath)
+	}
+
+	/**
+	 * set the value at path of target object
+	 *
+	 * @param propPath 	property path for target object, parse string path by {@link parsePath}
+	 * @param value		the value
+	 */
+	set(propPath: string | string[], value: any) {
+		$set(this.proxy, propPath, value)
 	}
 
 	/**
@@ -865,16 +907,17 @@ export const proxyEnable = policy.__proxy
 
 /**
  * get existing observer on object
+ *
  * @return existing observer
  */
 let getObserver: <T extends ObserverTarget>(target: T) => Observer<T> = target => {
-	const oserver = target[OBSERVER_KEY]
-	if ((oserver && oserver.target === target) || oserver.proxy === target) return oserver
+	const ob = target[OBSERVER_KEY]
+	if (ob && (ob.target === target || ob.proxy === target)) return ob
 }
 
 /**
- * get or create sub-observer
- * fix proxy value
+ * get or create sub-observer (well fix proxy value)
+ *
  * @param observer 	observer
  * @param prop		property of the observer's target
  * @param target	target = observer.target[prop]
@@ -892,6 +935,7 @@ let loadSubObserver: <T extends ObserverTarget>(observer: Observer<any>, prop: s
 
 /**
  * get the original object of the observer on the object
+ *
  * @param object the object
  * @return the original object | the object
  */
@@ -902,6 +946,7 @@ let source: <T extends ObserverTarget>(obj: T) => T = <T>(obj: T): T => {
 
 /**
  * get the proxy object for the observer on the object
+ *
  * @param object the object
  * @return the proxy object | the object
  */
@@ -917,11 +962,23 @@ let $eq: (o1: any, o2: any) => boolean = (o1, o2) => {
 	return eq(o1, o2) || (o1 && o2 && (o1 = getObserver(o1)) ? o1 === getObserver(o2) : false)
 }
 
-let $get: (obj: any, path: string | string[]) => any = (obj: any, path: string | string[]): any => {
-	return proxy(get(obj, path))
-}
+/**
+ * get the value at path of object
+ *
+ * @param obj 		the object
+ * @param path		property path of object, parse string path by {@link parsePath}
+ * @return the value | the proxy of value
+ */
+let $get: (obj: any, path: string | string[]) => any = (obj, path) => proxy(get(obj, path))
 
-let $set: (obj: any, path: string | string[], value: any) => void = (obj: any, path: string | string[], value: any) => {
+/**
+ * set the value at path of object
+ *
+ * @param obj 		the object
+ * @param path		property path of object, parse string path by {@link parsePath}
+ * @param value 	value
+ */
+let $set: (obj: any, path: string | string[], value: any) => void = (obj, path, value) => {
 	path = parsePath(path)
 	const l = path.length - 1
 	let i = 0,
@@ -957,14 +1014,18 @@ if (!proxyEnable) {
 
 /**
  * get or create observer on object
+ *
+ * @param target 	the target object
  */
 export function observer<T extends ObserverTarget>(target: T): Observer<T> {
 	return getObserver(target) || new Observer(target)
 }
 
 /**
- * observe changes in target object
- * @param propPath 	property path for object, parse string path by {@link parsePath}
+ * observe changes in the target object
+ *
+ * @param target 	the target object
+ * @param propPath 	property path of object, parse string path by {@link parsePath}
  * @param cb		callback
  * @param scope		scope of callback
  * @return listen-id
@@ -980,11 +1041,43 @@ export function observe<T extends ObserverTarget>(
 }
 
 /**
- * unobserve changes in target object
- * @param propPath 	property path for object, parse string path by {@link parsePath}
+ * get listen-id of callback in the target object
+ *
+ * @param target 	the target object
+ * @param propPath 	property path of object, parse string path by {@link parsePath}
  * @param cb		callback
  * @param scope		scope of callback
- * @return the proxy of target object
+ * @return listen-id
+ */
+export function observed<T extends ObserverTarget>(
+	target: T,
+	propPath: string | string[],
+	cb: ObserverCallback<T>,
+	scope?: any
+): string {
+	const __observer = getObserver(target)
+	return __observer && __observer.observed(propPath, cb, scope)
+}
+
+/**
+ * has listen-id in the target object
+ *
+ * @param target 	the target object
+ * @param propPath 	property path of object, parse string path by {@link parsePath}
+ * @param id		listen-id
+ */
+export function observedId<T extends ObserverTarget>(target: T, propPath: string | string[], id: string): boolean {
+	const __observer = getObserver(target)
+	return __observer && __observer.observedId(propPath, id)
+}
+
+/**
+ * cancel observing the changes in the target object
+ *
+ * @param target 	the target object
+ * @param propPath 	property path of object, parse string path by {@link parsePath}
+ * @param cb		callback
+ * @param scope		scope of callback
  */
 export function unobserve<T extends ObserverTarget>(
 	target: T,
@@ -996,94 +1089,16 @@ export function unobserve<T extends ObserverTarget>(
 	__observer && __observer.unobserve(propPath, cb, scope)
 }
 
-export { getObserver, source, proxy, $eq, $get, $set }
-
-//========================================================================================
-/*                                                                                      *
- *                                     test topic                                     *
- *                                                                                      */
-//========================================================================================
-/*
-const objIdGen: { [key: string]: number } = {}
-function objId(obj: any, str: string) {
-	return obj.id || (obj.id = str + '-' + (objIdGen[str] ? ++objIdGen[str] : (objIdGen[str] = 1)))
-}
-function topicState(topic: Topic) {
-	const path = []
-	let p = topic
-	while (p) {
-		path.unshift(p.__prop)
-		p = p.__parent
-	}
-	const subs = topic.__subs && topic.__subs.length
-	const listeners = topic.__listeners && topic.__listeners.size()
-
-	assert.is(!!(subs || listeners) === !!(topic.__state & TOPIC_ENABLED_FLAG))
-	assert.is(!!subs === !!(topic.__state & TOPIC_SUB_FLAG))
-	assert.is(!!listeners === !!(topic.__state & TOPIC_LISTEN_FLAG))
-	assert.is(!topic.__observer || topic.__state & TOPIC_ENABLED_FLAG)
-
-	return {
-		id: objId(topic, 'topic'),
-		path: formatPath(path),
-		obj: JSON.stringify(topic.__owner.target),
-		enabled: !!(subs || listeners),
-		listeners: listeners,
-		watched: topic.__observer && {
-			id: objId(topic.__observer, 'observer'),
-			obj: JSON.stringify(topic.__observer.target),
-			watchs: watchs(topic.__observer)
-		},
-		subCache: topic.__subCache && map(topic.__subCache, topicState),
-		subs: subs && map(topic.__subs, sub => objId(sub, 'topic'))
-	}
-}
-function observerState(observer: Observer) {
-	return {
-		id: objId(observer, 'observer'),
-		obj: JSON.stringify(observer.target),
-		watchs: watchs(observer),
-		topics: map(observer.__topics, subj => topicState(subj))
-	}
-}
-function watchs(observer: Observer) {
-	return map(observer.__watchers, w =>
-		w
-			.toArray()
-			.map(s => objId(s, 'topic'))
-			.join(', ')
-	)
-}
-
-function logState(obs: Observer) {
-	const state = observerState(obs)
-	console.log(JSON.stringify(state, null, '  '))
-}
-let obs = new Observer({ a: { b: { c: 1 } } })
-let id1 = obs.observe('a.b.c', () => {})
-let id2 = obs.observe('a.b.d', () => {})
-//logState(obs)
-obs.unobserveId('a.b.c', id1)
-obs.unobserveId('a.b.c', id1)
-//logState(obs)
-obs.unobserveId('a.b.d', id2)
-
-//logState(obs)
-id1 = obs.observe('a.b.c', function() {
-	console.log('a.b.c', arguments)
-})
-id2 = obs.observe('a.b.d', function() {
-	console.log('a.b.d', arguments)
-})
-//logState(obs)
-
-const ov = obs.target['a']
-obs.target['a'] = { b: { d: 2 } }
-obs.notify('a', ov)
-
-setTimeout(function() {
-	//logState(obs)
-}, 1000)
-
-//logState(obs)
+/**
+ * cancel observing the changes in the target object by listen-id
+ *
+ * @param target 	the target object
+ * @param propPath 	property path of object, parse string path by {@link parsePath}
+ * @param listenId	listen-id
  */
+export function unobserveId<T extends ObserverTarget>(target: T, propPath: string | string[], listenId: string) {
+	const __observer = getObserver(target)
+	__observer && __observer.unobserveId(propPath, listenId)
+}
+
+export { getObserver, source, proxy, $eq, $get, $set }

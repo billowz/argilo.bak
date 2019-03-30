@@ -3,7 +3,7 @@
  * @module utility/List
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
- * @modified Mon Mar 11 2019 19:53:56 GMT+0800 (China Standard Time)
+ * @modified Sat Mar 30 2019 16:11:18 GMT+0800 (China Standard Time)
  */
 
 import { List } from './List'
@@ -66,8 +66,12 @@ export class FnList<T extends Function> {
 	remove(fn: T, scope?: any): number {
 		return this.removeId(this.id(fn, parseScope(scope)))
 	}
-	has(fn: T, scope?: any): boolean {
-		return !!this.__nodeMap[this.id(fn, parseScope(scope))]
+	has(fn: T, scope?: any): string {
+		const id = this.id(fn, parseScope(scope))
+		return this.__nodeMap[id] && id
+	}
+	hasId(id: string): boolean {
+		return !!this.__nodeMap[id]
 	}
 	size(): number {
 		return this.__list.size()
