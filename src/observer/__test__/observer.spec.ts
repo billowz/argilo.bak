@@ -9,7 +9,9 @@ import {
 	mapObj,
 	isFn,
 	parsePath,
-	nextTick
+	nextTick,
+	eachArray,
+	formatPath
 } from '../../utility'
 import {
 	observer,
@@ -95,47 +97,73 @@ describe('observer', function() {
 	})
 
 	it('observe changes on an object property', function(done) {
-		const w = observeAll(
+		observeChain(
 			{
 				name: 'Mary',
 				email: 'mary@domain.com',
 				age: 18
 			},
-			{
-				name: [['Paul', 'Mary'], ['Paul', 'Test']],
-				email: [['paul@domain.com', 'mary@domain.com']],
-				age: () => {}
-			}
+			[
+				{
+					setup(o, c) {
+						c.collect('name', 'email', 'age')
+						o.name = 'Paul'
+						o.email = 'paul@domain.com'
+						o.age = 18
+					},
+					done(w, c) {
+						assert.eql(w, {
+							name: ['Paul', 'Mary'],
+							email: ['paul@domain.com', 'mary@domain.com'],
+							age: undefined
+						})
+					}
+				}
+			],
+			done
 		)
 
-		w.obj.name = 'Paul'
-		w.obj.email = 'paul@domain.com'
-		w.obj.age = 18
+		// const w = observeAll(
+		// 	{
+		// 		name: 'Mary',
+		// 		email: 'mary@domain.com',
+		// 		age: 18
+		// 	},
+		// 	{
+		// 		name: [['Paul', 'Mary'], ['Paul', 'Test']],
+		// 		email: [['paul@domain.com', 'mary@domain.com']],
+		// 		age: () => {}
+		// 	}
+		// )
 
-		nextTick(() => {
-			w.called({
-				name: 1,
-				email: 1
-			})
+		// w.obj.name = 'Paul'
+		// w.obj.email = 'paul@domain.com'
+		// w.obj.age = 18
 
-			w.obj.name = 'Test'
-			w.obj.email = 'test@domain.com'
+		// nextTick(() => {
+		// 	w.called({
+		// 		name: 1,
+		// 		email: 1
+		// 	})
 
-			w.unobserve(['email'])
+		// 	w.obj.name = 'Test'
+		// 	w.obj.email = 'test@domain.com'
 
-			nextTick(() => {
-				w.called({ name: 1 })
+		// 	w.unobserve(['email'])
 
-				w.obj.name = 'Test2'
+		// 	nextTick(() => {
+		// 		w.called({ name: 1 })
 
-				w.unobserve()
+		// 		w.obj.name = 'Test2'
 
-				nextTick(() => {
-					w.called({})
-					done()
-				})
-			})
-		})
+		// 		w.unobserve()
+
+		// 		nextTick(() => {
+		// 			w.called({})
+		// 			done()
+		// 		})
+		// 	})
+		// })
 	})
 
 	it('observe changes on an array property', function() {
@@ -178,6 +206,141 @@ describe('observer', function() {
 
 	function watch(obj: any) {}
 })
+
+type ObserveChain<T> = {
+	ob: IObserver<T>
+	ctxs: {
+		[path: string]: {
+			path: string
+			dirties: [any, any][]
+			called: number
+			cb: ObserverCallback<T>
+			listenId: string
+		}
+	}
+	collect(...paths: string[]): void
+	uncollect(...paths: string[]): void
+}
+let num = 0
+function observeChain<T extends ObserverTarget>(
+	o: T,
+	steps: {
+		setup?: (o: T, c: ObserveChain<T>) => void
+		done?: (
+			w: {
+				[path: string]: [any, any]
+			},
+			c: ObserveChain<T>
+		) => void
+	}[],
+	done?: () => void
+) {
+	const l = steps.length
+	let i = 0
+	const ob = observer(o)
+	const chain: ObserveChain<T> = {
+		ob,
+		ctxs: {},
+		collect() {
+			eachArray(arguments, path => watchPath(path))
+		},
+		uncollect() {
+			eachArray(arguments, path => unwatchPath(path))
+		}
+	}
+	next()
+
+	function unwatchPath(path: string) {
+		const ctx = chain[path]
+		if (ctx && ctx.listenId) {
+			if (num++ & 1) {
+				ob.unobserve(path, ctx.cb, ctx)
+			} else {
+				unobserveId(o, path, ctx.listenId)
+			}
+
+			assert.not(
+				ob.observedId(path, ctx.listenId),
+				`[{d}][{}]: unobserve failed, listen-id: {}, context: {j}`,
+				i,
+				path,
+				ctx.listenId,
+				ctx
+			)
+
+			assert.not(
+				observed(o, path, ctx.cb, ctx),
+				`[{d}][{}]: unobserve failed, listen-id: {}, context: {j}`,
+				i,
+				path,
+				ctx.listenId,
+				ctx
+			)
+			ctx.listenId = null
+		}
+	}
+
+	function watchPath(path: string) {
+		const ctx =
+			chain.ctxs[path] ||
+			(chain.ctxs[path] = {
+				called: 0,
+				cb,
+				path,
+				dirties: [],
+				listenId: null
+			})
+		if (!ctx.listenId) {
+			ctx.listenId = num++ & 1 ? observe(o, path, cb, ctx) : ob.observe(path, cb, ctx)
+
+			assert.is(observedId(o, path, ctx.listenId), `[{d}][{}]: observe failed, context: {j}`, i, path, ctx)
+			assert.eq(ctx.listenId, ob.observed(path, cb, ctx), `[{d}][{}]: observe failed, context: {j}`, i, path, ctx)
+		}
+
+		function cb(path: string[], value: any, original: any, observer: IObserver<T>) {
+			assert.eq(
+				this,
+				ctx,
+				`[{d}][{}]: invalid context on observer callback, {j} expect {j}`,
+				i,
+				ctx.path,
+				this,
+				ctx
+			)
+			assert.is(ctx.listenId, `[{d}][{}]: context is non-listened, context: {j}`, i, ctx.path, ctx)
+
+			assert.eq(ob, observer, `[{d}][{}]: invalid observer on observer callback, context: {j}`, i, ctx.path, ctx)
+			assert.eql(
+				path,
+				parsePath(ctx.path),
+				`[{d}][{}]: invalid path[{}] on observer callback, context: {j}`,
+				i,
+				ctx.path,
+				formatPath(path),
+				ctx
+			)
+			assert.not(ctx.dirties[i], `[{d}][{}]: double notified observer callback, context: {j}`, i, ctx.path, ctx)
+			ctx.dirties[i] = [value, original]
+			ctx.called++
+		}
+	}
+
+	function next() {
+		if (i === l) {
+			done && done()
+			return
+		}
+		const step = steps[i]
+
+		step.setup && step.setup(ob.proxy, chain)
+
+		nextTick(() => {
+			step.done && step.done(mapObj(chain.ctxs, ctx => ctx.dirties[i]), chain)
+			i++
+			next()
+		})
+	}
+}
 
 let i = 0
 function observeAll<T extends ObserverTarget>(
@@ -283,7 +446,7 @@ function observeAll<T extends ObserverTarget>(
 					ctx.called - ctx.ocalled,
 					nr,
 					`observer callback called: {d}, expect {d}, context: {j}`,
-					ctx.called,
+					ctx.called - ctx.ocalled,
 					nr,
 					ctx
 				)
