@@ -220,6 +220,7 @@ type ObserveChain<T> = {
 	}
 	collect(...paths: string[]): void
 	uncollect(...paths: string[]): void
+	expect(path: string, dirty?: [any, any?]): void
 }
 let num = 0
 function observeChain<T extends ObserverTarget>(
@@ -246,6 +247,16 @@ function observeChain<T extends ObserverTarget>(
 		},
 		uncollect() {
 			eachArray(arguments, path => unwatchPath(path))
+		},
+		expect(path: string, dirty?: [any, any?]) {
+			const ctx = this.ctxs[path],
+				d = ctx.dirties[i]
+
+			assert.is(!!dirty === !!d)
+			if (d) {
+				assert.eq(dirty[0], d[0])
+				assert.eq(dirty[1], d[1])
+			}
 		}
 	}
 	next()
