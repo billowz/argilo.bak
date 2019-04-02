@@ -64,6 +64,25 @@ export interface IObserver<T extends ObserverTarget> {
 	observe(propPath: string | string[], cb: ObserverCallback<T>, scope?: any): string
 
 	/**
+	 * get listen-id of callback in the observer's target
+	 *
+	 * @param propPath 	property path for observe, parse string path by {@link parsePath}
+	 * @param cb		callback
+	 * @param scope		scope of callback
+	 * @return listen-id
+	 */
+	observed(propPath: string | string[], cb: ObserverCallback<T>, scope?: any): string
+
+	/**
+	 * has listen-id in the observer's target
+	 *
+	 * @param propPath 	property path for observe, parse string path by {@link parsePath}
+	 * @param id		listen-id
+	 * @return listen-id
+	 */
+	observedId(propPath: string | string[], id: string): boolean
+
+	/**
 	 * cancel observing the changes in the observer's target
 	 * @param propPath	property path for unobserve, parse string path by {@link parsePath}
 	 * @param cb		callback

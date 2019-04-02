@@ -2,7 +2,7 @@
  * @module observer
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Dec 26 2018 13:59:10 GMT+0800 (China Standard Time)
- * @modified Sat Mar 30 2019 18:47:11 GMT+0800 (China Standard Time)
+ * @modified Tue Apr 02 2019 11:43:32 GMT+0800 (China Standard Time)
  */
 
 import {
@@ -277,7 +277,7 @@ class Topic {
 				} else {
 					const subTarget = observer.target[prop]
 					if (isObserverTarget(subTarget)) {
-						subObserver = loadSubObserver(observer, prop, subTarget)
+						subObserver = __loadSubObserver(observer, prop, subTarget)
 					}
 					//#if _DEBUG
 					else if (!isNil(subTarget)) {
@@ -434,7 +434,7 @@ class Topic {
 				//#endif
 
 				if (isObserverTarget(subTarget)) {
-					subObserver = loadSubObserver(observer, prop, subTarget)
+					subObserver = __loadSubObserver(observer, prop, subTarget)
 					if (proxyEnable) {
 						subTarget = subObserver.target
 						dirty && (dirty[0] = subObserver.proxy) // update dirty proxy
@@ -910,7 +910,7 @@ export const proxyEnable = policy.__proxy
  *
  * @return existing observer
  */
-let getObserver: <T extends ObserverTarget>(target: T) => Observer<T> = target => {
+let __getObserver: <T extends ObserverTarget>(target: T) => Observer<T> = target => {
 	const ob = target[OBSERVER_KEY]
 	if (ob && (ob.target === target || ob.proxy === target)) return ob
 }
@@ -923,12 +923,12 @@ let getObserver: <T extends ObserverTarget>(target: T) => Observer<T> = target =
  * @param target	target = observer.target[prop]
  * @return sub-observer
  */
-let loadSubObserver: <T extends ObserverTarget>(observer: Observer<any>, prop: string, target: T) => Observer<T> = (
+let __loadSubObserver: <T extends ObserverTarget>(observer: Observer<any>, prop: string, target: T) => Observer<T> = (
 	observer,
 	prop,
 	target
 ) => {
-	const subObserver: Observer<any> = getObserver(target) || new Observer(target)
+	const subObserver: Observer<any> = __getObserver(target) || new Observer(target)
 	if (subObserver.proxy !== target) observer.target[prop] = subObserver.proxy
 	return subObserver
 }
@@ -940,7 +940,7 @@ let loadSubObserver: <T extends ObserverTarget>(observer: Observer<any>, prop: s
  * @return the original object | the object
  */
 let source: <T extends ObserverTarget>(obj: T) => T = <T>(obj: T): T => {
-	const observer = obj && getObserver(obj)
+	const observer = obj && __getObserver(obj)
 	return observer ? observer.target : obj
 }
 
@@ -951,7 +951,7 @@ let source: <T extends ObserverTarget>(obj: T) => T = <T>(obj: T): T => {
  * @return the proxy object | the object
  */
 let proxy: <T extends ObserverTarget>(obj: T) => T = <T>(obj: T): T => {
-	const observer = obj && getObserver(obj)
+	const observer = obj && __getObserver(obj)
 	return observer ? observer.proxy : obj
 }
 
@@ -959,7 +959,7 @@ let proxy: <T extends ObserverTarget>(obj: T) => T = <T>(obj: T): T => {
  * support equals function between observer objects
  */
 let $eq: (o1: any, o2: any) => boolean = (o1, o2) => {
-	return eq(o1, o2) || (o1 && o2 && (o1 = getObserver(o1)) ? o1 === getObserver(o2) : false)
+	return eq(o1, o2) || (o1 && o2 && (o1 = __getObserver(o1)) ? o1 === __getObserver(o2) : false)
 }
 
 /**
@@ -992,13 +992,13 @@ let $set: (obj: any, path: string | string[], value: any) => void = (obj, path, 
 
 //──── optimize on Non-Proxy policy ──────────────────────────────────────────────────────
 if (!proxyEnable) {
-	getObserver = target => {
+	__getObserver = target => {
 		const oserver = target[OBSERVER_KEY]
 		if (oserver && oserver.target === target) return oserver
 	}
 
-	loadSubObserver = (observer, prop, target) => {
-		return getObserver(target) || new Observer(target)
+	__loadSubObserver = (observer, prop, target) => {
+		return __getObserver(target) || new Observer(target)
 	}
 
 	source = obj => obj
@@ -1017,8 +1017,8 @@ if (!proxyEnable) {
  *
  * @param target 	the target object
  */
-export function observer<T extends ObserverTarget>(target: T): Observer<T> {
-	return getObserver(target) || new Observer(target)
+export function observer<T extends ObserverTarget>(target: T): IObserver<T> {
+	return __getObserver(target) || new Observer(target)
 }
 
 /**
@@ -1055,7 +1055,7 @@ export function observed<T extends ObserverTarget>(
 	cb: ObserverCallback<T>,
 	scope?: any
 ): string {
-	const __observer = getObserver(target)
+	const __observer = __getObserver(target)
 	return __observer && __observer.observed(propPath, cb, scope)
 }
 
@@ -1067,7 +1067,7 @@ export function observed<T extends ObserverTarget>(
  * @param id		listen-id
  */
 export function observedId<T extends ObserverTarget>(target: T, propPath: string | string[], id: string): boolean {
-	const __observer = getObserver(target)
+	const __observer = __getObserver(target)
 	return __observer && __observer.observedId(propPath, id)
 }
 
@@ -1085,7 +1085,7 @@ export function unobserve<T extends ObserverTarget>(
 	cb: ObserverCallback<T>,
 	scope?: any
 ) {
-	const __observer = getObserver(target)
+	const __observer = __getObserver(target)
 	__observer && __observer.unobserve(propPath, cb, scope)
 }
 
@@ -1097,8 +1097,10 @@ export function unobserve<T extends ObserverTarget>(
  * @param listenId	listen-id
  */
 export function unobserveId<T extends ObserverTarget>(target: T, propPath: string | string[], listenId: string) {
-	const __observer = getObserver(target)
+	const __observer = __getObserver(target)
 	__observer && __observer.unobserveId(propPath, listenId)
 }
 
-export { getObserver, source, proxy, $eq, $get, $set }
+export const getObserver: <T extends ObserverTarget>(target: T) => IObserver<T> = __getObserver
+
+export { source, proxy, $eq, $get, $set }

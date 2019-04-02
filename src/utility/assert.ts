@@ -2,7 +2,7 @@
  * @module utility/assert
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Nov 28 2018 11:01:45 GMT+0800 (China Standard Time)
- * @modified Thu Mar 28 2019 19:08:21 GMT+0800 (China Standard Time)
+ * @modified Tue Apr 02 2019 19:30:29 GMT+0800 (China Standard Time)
  */
 
 import {
@@ -34,17 +34,6 @@ import { eachObj, makeArray } from '../utility/collection'
 import { formatter } from './format'
 import { deepEq } from './deepEq'
 import { TYPE_UNDEF, TYPE_FN, TYPE_STRING, TYPE_NUM, TYPE_BOOL } from './consts'
-
-const formatters = [],
-	formatArgHandlers: ((args: any[] | IArguments, offset: number) => any)[] = []
-function parseMessage(msg: string, args: any[] | IArguments, msgIdx: number): string {
-	let fs = formatters[msgIdx]
-	if (!fs) {
-		formatArgHandlers[msgIdx] = (args, offset) => args[0][offset >= msgIdx ? offset + 1 : offset]
-		formatters[msgIdx] = fs = create(null)
-	}
-	return (fs[msg] || (fs[msg] = formatter(msg, msgIdx, formatArgHandlers[msgIdx])))(args)
-}
 
 export interface assert {
 	(msg?: string, ...args: any[]): never
@@ -138,8 +127,27 @@ export interface assert {
 	executor<T extends (...args: any[]) => any>(fn: T, maxCall: number, msg?: string): T & { called: number }
 }
 
+const formatters = [],
+	formatArgHandlers: ((args: any[] | IArguments, offset: number) => any)[] = []
+function mkError(Err: { new (message?: string): Error }, msg: string, args: any[] | IArguments, msgIdx: number): Error {
+	let fs = formatters[msgIdx]
+	if (!fs) {
+		formatArgHandlers[msgIdx] = (args, offset) => args[0][offset >= msgIdx ? offset + 1 : offset]
+		formatters[msgIdx] = fs = create(null)
+	}
+	const fmtter = fs[msg] || (fs[msg] = formatter(msg, msgIdx, formatArgHandlers[msgIdx]))
+	return popErrStack(new Err(fmtter(args)), 2)
+}
+
+export function popErrStack(err: Error, i: number): Error {
+	while (i-- > 0) {
+		err.stack = err.stack.replace(/(\n\s{4}at[^\n]*)/, '')
+	}
+	return err
+}
+
 export const assert = function assert(msg?: string): never {
-	throw new Error(parseMessage(msg || 'Error', arguments, 0))
+	throw mkError(Error, msg || 'Error', arguments, 0)
 } as assert
 
 function catchErr(fn: () => any): Error {
@@ -162,7 +170,7 @@ assert.throw = function(fn: () => any, expect: Error | string, msg?: string): as
 	if (!err || (expect && !checkErr(expect, err))) {
 		arguments[0] = err
 		!expect && (arguments[2] = ERROR)
-		throw new Error(parseMessage(msg || throwMsg[0], arguments, 2))
+		throw mkError(Error, msg || throwMsg[0], arguments, 2)
 	}
 	return assert
 }
@@ -172,7 +180,7 @@ assert.notThrow = function(fn: () => any, expect: Error | string, msg?: string):
 	if (err && (!expect || !checkErr(expect, err))) {
 		arguments[0] = err
 		!expect && (arguments[2] = ERROR)
-		throw new Error(parseMessage(msg || throwMsg[0], arguments, 2))
+		throw mkError(Error, msg || throwMsg[0], arguments, 2)
 	}
 	return assert
 }
@@ -196,11 +204,11 @@ function extendAssert<T extends Function>(
 	return (assert[name] = createFn(
 		`return function assert${upperFirst(name)}(${paramStr}, msg){
 	if (${expr})
-		throw new Err(parseMsg(msg || dmsg, arguments, ${params.length}));
+		throw mkErr(Err, msg || dmsg, arguments, ${params.length});
 	return assert;
 }`,
-		['Err', 'parseMsg', 'dmsg', 'cond', 'assert']
-	)(Err || Error, parseMessage, dmsg, cond, assert))
+		['Err', 'mkErr', 'dmsg', 'cond', 'assert']
+	)(Err || Error, mkError, dmsg, cond, assert))
 }
 
 type APIDescriptor = [
