@@ -2,7 +2,7 @@
  * @module utility/format
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 03 2018 19:46:41 GMT+0800 (China Standard Time)
- * @modified Fri Feb 22 2019 11:37:25 GMT+0800 (China Standard Time)
+ * @modified Wed Apr 03 2019 11:34:07 GMT+0800 (China Standard Time)
  */
 
 import { createFn } from './fn'
@@ -494,17 +494,16 @@ function getParamCode(idx: string, prop: string): string {
 	}
 	return code
 }
+
+export type Formatter = (...args: any[]) => string
+export type FormatParamLoader = (args: IArguments, idx: number) => any
 /**
  * @see vformat
  * @param fmt		format string
  * @param offset	start offset of arguments
  * @param getParam	get parameter on arguments callback
  */
-export function formatter(
-	fmt: string,
-	offset?: number,
-	getParam?: (args: IArguments, idx: number) => any
-): (...args: any[]) => string {
+export function formatter(fmt: string, offset?: number, getParam?: FormatParamLoader): Formatter {
 	let m,
 		lastIdx = 0,
 		mStart,

@@ -2,7 +2,7 @@
  * @module utility/assert
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Nov 28 2018 11:01:45 GMT+0800 (China Standard Time)
- * @modified Tue Apr 02 2019 19:30:29 GMT+0800 (China Standard Time)
+ * @modified Wed Apr 03 2019 12:46:25 GMT+0800 (China Standard Time)
  */
 
 import {
@@ -31,9 +31,9 @@ import { create } from './create'
 import { upperFirst, escapeStr } from '../utility/string'
 import { createFn, applyScope } from '../utility/fn'
 import { eachObj, makeArray } from '../utility/collection'
-import { formatter } from './format'
+import { formatter, FormatParamLoader, Formatter } from './format'
 import { deepEq } from './deepEq'
-import { TYPE_UNDEF, TYPE_FN, TYPE_STRING, TYPE_NUM, TYPE_BOOL } from './consts'
+import { TYPE_UNDEF, TYPE_FN, TYPE_STRING, TYPE_NUM, TYPE_BOOL, CONSTRUCTOR } from './consts'
 
 export interface assert {
 	(msg?: string, ...args: any[]): never
@@ -127,15 +127,11 @@ export interface assert {
 	executor<T extends (...args: any[]) => any>(fn: T, maxCall: number, msg?: string): T & { called: number }
 }
 
-const formatters = [],
-	formatArgHandlers: ((args: any[] | IArguments, offset: number) => any)[] = []
+const formatters: { [msg: string]: Formatter } = create(null)
 function mkError(Err: { new (message?: string): Error }, msg: string, args: any[] | IArguments, msgIdx: number): Error {
-	let fs = formatters[msgIdx]
-	if (!fs) {
-		formatArgHandlers[msgIdx] = (args, offset) => args[0][offset >= msgIdx ? offset + 1 : offset]
-		formatters[msgIdx] = fs = create(null)
-	}
-	const fmtter = fs[msg] || (fs[msg] = formatter(msg, msgIdx, formatArgHandlers[msgIdx]))
+	const fmtter =
+		formatters[msg] ||
+		(formatters[msg] = formatter(msg, msgIdx, (args, offset) => args[0][offset >= msgIdx ? offset + 1 : offset]))
 	return popErrStack(new Err(fmtter(args)), 2)
 }
 
@@ -150,45 +146,46 @@ export const assert = function assert(msg?: string): never {
 	throw mkError(Error, msg || 'Error', arguments, 0)
 } as assert
 
-function catchErr(fn: () => any): Error {
-	try {
-		fn()
-	} catch (e) {
-		return e
+const ERROR = new Error()
+function mkThrowAssertor(th: boolean, dmsg: string) {
+	return function throwErr(fn: () => any, expect: Error | string, msg?: string) {
+		let err: Error
+		try {
+			fn()
+		} catch (e) {
+			err = e
+		}
+		if (
+			th !=
+			(err &&
+				(!expect ||
+					(isStr(expect)
+						? expect === err.message
+						: err[CONSTRUCTOR] === (expect as Error)[CONSTRUCTOR] &&
+						  (!(expect as Error).message || (expect as Error).message === err.message))))
+		) {
+			arguments[0] = err
+			!expect && (arguments[2] = ERROR)
+			throw mkError(Error, msg || dmsg, arguments, 2)
+		}
+		return assert
 	}
 }
 
-function checkErr(expect: Error | string, err: Error): boolean {
-	let msg = isStr(expect) ? (expect as string) : (expect as Error).message
-	return msg === err.message
-}
-const ERROR = new Error(`Expect Error`)
-const throwMsg = mkMsg(objFormatter(1), 'throw')
+assert.throw = mkThrowAssertor(true, `expected catched error {0s} is {1s}`)
+assert.notThrow = mkThrowAssertor(false, `expected catched error {0s} is not {1s}`)
 
-assert.throw = function(fn: () => any, expect: Error | string, msg?: string): assert {
-	const err = catchErr(fn)
-	if (!err || (expect && !checkErr(expect, err))) {
-		arguments[0] = err
-		!expect && (arguments[2] = ERROR)
-		throw mkError(Error, msg || throwMsg[0], arguments, 2)
-	}
-	return assert
-}
-
-assert.notThrow = function(fn: () => any, expect: Error | string, msg?: string): assert {
-	const err = catchErr(fn)
-	if (err && (!expect || !checkErr(expect, err))) {
-		arguments[0] = err
-		!expect && (arguments[2] = ERROR)
-		throw mkError(Error, msg || throwMsg[0], arguments, 2)
-	}
-	return assert
-}
-
-function extendAssert<T extends Function>(
+/**
+ * @param name 		name of the assertor
+ * @param condition condition, function or expression
+ * @param args 		name or length of the parameters
+ * @param dmsg  	the default message
+ * @param Err  		the Error Constructor, default Error
+ */
+function mkAssertor<T extends (...args: any[]) => assert>(
 	name: string,
 	condition: string | ((...args: any) => boolean) | [string | ((...args: any) => boolean), string?],
-	args: string | number | string[],
+	args: string | string[] | number,
 	dmsg: string,
 	Err?: { new (message?: string): Error }
 ): T {
@@ -211,23 +208,23 @@ function extendAssert<T extends Function>(
 	)(Err || Error, mkError, dmsg, cond, assert))
 }
 
-type APIDescriptor = [
-	string | ((...args: any) => boolean), // condition
-	string | number | string[], // arguments
-	[string, string], // expect or [err msg, not err msg]
-	({ new (message?: string): Error })?
-]
-
 // [condition, argcount?, [msg, not msg], Error]
-function extendAsserts(apis: { [method: string]: APIDescriptor }) {
-	eachObj(apis, (desc: APIDescriptor, name) => {
+function mkAssertors(apis: {
+	[method: string]: [
+		string | ((...args: any) => boolean), // condition, function or expression
+		string | number | string[], // arguments
+		[string, string], // expect or [err msg, not err msg]
+		({ new (message?: string): Error })? // the Error Constructor, default Error
+	]
+}) {
+	eachObj(apis, (desc, name) => {
 		const condition = desc[0],
 			args = desc[1],
 			msg = desc[2],
 			Err = desc[3] || TypeError
 
-		msg[0] && extendAssert(name, [condition, '!'], args, msg[0], Err)
-		msg[1] && extendAssert('not' + upperFirst(name), condition, args, msg[1], Err)
+		msg[0] && mkAssertor(name, [condition, '!'], args, msg[0], Err)
+		msg[1] && mkAssertor('not' + upperFirst(name), condition, args, msg[1], Err)
 	})
 }
 
@@ -241,9 +238,9 @@ const UNDEFINED = TYPE_UNDEF,
 	ARRAY = 'Array',
 	TYPED_ARRAY = 'TypedArray'
 
-extendAssert('is', '!o', 'o', expectMsg('Exist'))
-extendAssert('not', 'o', 'o', expectMsg('Not Exist'))
-extendAsserts({
+mkAssertor('is', '!o', 'o', expectMsg('Exist'))
+mkAssertor('not', 'o', 'o', expectMsg('Not Exist'))
+mkAssertors({
 	eq: [eq, 2, mkMsg(objFormatter(1))],
 	eql: [deepEq, 2, mkMsg(objFormatter(1))],
 	nul: [isNull, 1, mkMsg(NULL)],

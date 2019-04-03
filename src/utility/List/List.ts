@@ -3,7 +3,7 @@
  * @module utility/List
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
- * @modified Wed Mar 13 2019 19:29:16 GMT+0800 (China Standard Time)
+ * @modified Wed Apr 03 2019 19:03:02 GMT+0800 (China Standard Time)
  */
 
 import { bind } from '../fn'
@@ -15,13 +15,13 @@ import { addDefaultKey } from '../dkeys'
 const DEFAULT_BINDING = addDefaultKey('__list__')
 
 interface ListNode<T> extends Array<any> {
-	0: T
-	1?: ListNode<T>
-	2?: ListNode<T>
-	3?: List<T>
+	0: T // target
+	1: ListNode<T> // prev node
+	2: ListNode<T> // next node
+	3: List<T> // list
+	4: number // version
 	toJSON?: () => any
 }
-//type ListNode = [ListElement, IListNode, IListNode, List]
 
 export class List<T> {
 	static readonly binding: string = DEFAULT_BINDING
@@ -32,6 +32,7 @@ export class List<T> {
 	private __length: number = 0
 	private __scaning: boolean = false
 	private __lazyRemoves?: ListNode<T>[]
+	private __ver: number = 0
 	constructor(binding?: string) {
 		this.binding = binding || DEFAULT_BINDING
 	}
@@ -109,10 +110,13 @@ export class List<T> {
 		if (this.__length) {
 			assert.not(this.__scaning, 'Nested calls are not allowed.')
 			this.__scaning = true
+
+			const __ver = ++this.__ver
+
 			cb = bind(cb, scope)
 			var node = this.__head
 			while (node) {
-				if (node[3] === this && cb(node[0]) === false) break
+				if (node[3] === this && (__ver === node[4] || cb(node[0]) === false)) break
 				node = node[2]
 			}
 			this.__doLazyRemove()
@@ -146,7 +150,6 @@ export class List<T> {
 	remove(obj: T): number {
 		return this.__remove(this.__getNode(obj))
 	}
-	pop() {}
 	clean() {
 		if (this.__length) {
 			if (this.__scaning) {
@@ -172,12 +175,13 @@ export class List<T> {
 			} else if (node[3]) {
 				assert('Object is still in some List')
 			}
+			node[3] = this
+			node[4] = this.__ver
 		} else {
-			node = [obj]
+			node = [obj, , , this, this.__ver]
 			node.toJSON = EMPTY_FN
 			defPropValue(obj, binding, node, false)
 		}
-		node[3] = this
 		return node
 	}
 
@@ -244,7 +248,7 @@ export class List<T> {
 
 	private __lazyRemove(node: ListNode<T>): void {
 		const { __lazyRemoves: lazyRemoves } = this
-		node[0][this.binding] = undefined // unbind this node
+		node[0][this.binding] = null // unbind this node
 		node[3] = null
 		if (lazyRemoves) {
 			lazyRemoves.push(node)
@@ -281,7 +285,7 @@ export class List<T> {
 		} else {
 			this.__tail = prev
 		}
-		node[1] = node[2] = node[3] = null
+		node.length = 1
 	}
 
 	private __clean() {
@@ -291,8 +295,8 @@ export class List<T> {
 			next = node[2]
 			node.length = 1
 		}
-		this.__head = undefined
-		this.__tail = undefined
+		this.__head = null
+		this.__tail = null
 		this.__length = 0
 	}
 }

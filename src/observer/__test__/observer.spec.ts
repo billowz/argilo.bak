@@ -99,68 +99,86 @@ describe('observer', function() {
 	})
 
 	it('observe changes on an object property', function(done) {
-		new ObserveChain({
-			name: 'Mary',
-			email: 'mary@domain.com',
-			age: 18
-		})
-			.step(
-				(o, c) => {
-					c.collect('name', 'email', 'age')
-					o.name = 'Paul'
-					o.email = 'paul@domain.com'
-					o.age = 18
+		new ObserveChain(
+			{
+				name: 'Mary',
+				email: 'mary@domain.com',
+				age: 18
+			},
+			[
+				{
+					setup(o, c) {
+						c.collect('name', 'email', 'age')
+						o.name = 'Paul'
+						o.email = 'paul@domain.com'
+						o.age = 18
+					},
+					done(w, c) {
+						c.expect({ name: ['Paul', 'Mary'], email: ['paul@domain.com', 'mary@domain.com'] })
+					}
 				},
-				(w, c) => {
-					c.expect({ name: ['Paul', 'Mary'], email: ['paul@domain.com', 'mary@domain.com'] })
-				}
-			)
-			.step(
-				(o, c) => {
-					o.name = 'Mary'
-					o.email = 'mary@domain.com'
-					c.uncollect('email')
+				{
+					setup(o, c) {
+						o.name = 'Mary'
+						o.email = 'mary@domain.com'
+						c.uncollect('email')
+					},
+					done(w, c) {
+						c.expect({ name: ['Mary', 'Paul'] })
+					}
 				},
-				(w, c) => {
-					c.expect({ name: ['Mary', 'Paul'] })
+				{
+					setup(o, c) {
+						c.uncollect()
+						o.name = 'Paul'
+						o.email = 'paul@domain.com'
+						o.age = 20
+					},
+					done(w, c) {
+						c.expect({})
+					}
 				}
-			)
-			.step(
-				(o, c) => {
-					c.uncollect()
-					o.name = 'Paul'
-					o.email = 'paul@domain.com'
-					o.age = 20
-				},
-				(w, c) => {
-					c.expect({})
-				}
-			)
-			.run(done)
+			]
+		).run(done)
 	})
 
-	it('observe changes on an array property', function() {
-		// const w = observeAll([1, 2, 3], {
-		// 	'[0]': [[2, vb ? MISS : 1]],
-		// 	'[1]': [[3, vb ? MISS : 2]],
-		// 	length: [[4, MISS]],
-		// 	$change: () => [w.obj, vb ? MISS : w.obj]
-		// })
-		// w.obj[0]++
-		// w.obj[1]++
-		// w.obj.push(1)
-		// collect()
-		// w.called({
-		// 	'[0]': 1,
-		// 	'[1]': 1,
-		// 	length: 1,
-		// 	$change: 1
-		// })
-		// collect()
-		// w.called({})
-		// w.unobserve()
-		// collect()
-		// w.called({})
+	it('observe changes on an array property', function(done) {
+		new ObserveChain(
+			[1],
+			[
+				{
+					name: 'set index',
+					setup(o, c) {
+						c.collect('[0]', 'length', '$change')
+						o[0]++
+					},
+					done(w, c) {
+						c.expect(
+							vb
+								? {}
+								: {
+										'[0]': [2, vb ? MISS : 1],
+										$change: [c.ob.proxy, vb ? MISS : c.ob.proxy]
+								  }
+						)
+					}
+				},
+				{
+					name: 'array.push',
+					setup(o, c) {
+						c.collect('[0]', 'length', '$change')
+						o.push(1)
+					},
+					done(w, c) {
+						c.expect({
+							'[0]': [2, MISS],
+							length: [2, MISS],
+							$change: [c.ob.proxy, vb ? MISS : c.ob.proxy]
+						})
+					}
+				}
+			]
+		).run(done)
 	})
 
 	it('observe & unobserve', function() {
@@ -189,6 +207,7 @@ class ObserveChain<T extends ObserverTarget> {
 	}
 	stepIdx: number
 	steps: {
+		name?: string
 		setup?: (o: T, c: ObserveChain<T>) => void
 		done?: (
 			w: {
@@ -201,6 +220,7 @@ class ObserveChain<T extends ObserverTarget> {
 	constructor(
 		o: T,
 		steps?: {
+			name?: string
 			setup?: (o: T, c: ObserveChain<T>) => void
 			done?: (
 				w: {
@@ -208,6 +228,7 @@ class ObserveChain<T extends ObserverTarget> {
 				},
 				c: ObserveChain<T>
 			) => void
+			[key: string]: any
 		}[]
 	) {
 		this.ob = observer(o)
@@ -237,21 +258,21 @@ class ObserveChain<T extends ObserverTarget> {
 			return
 		}
 
-		console.log(`Running Step: ${stepIdx}`)
-
 		const step = steps[stepIdx]
+		if (step) {
+			step.setup && step.setup(this.ob.proxy, this)
 
-		step.setup && step.setup(this.ob.proxy, this)
+			nextTick(() => {
+				step.done && step.done(mapObj(this.ctxs, ctx => ctx.dirties[stepIdx]), this)
 
-		nextTick(() => {
-			step.done && step.done(mapObj(this.ctxs, ctx => ctx.dirties[stepIdx]), this)
+				this.stepIdx++
 
-			console.log(`Finished Step: ${stepIdx}`)
-
+				this.run(done)
+			})
+		} else {
 			this.stepIdx++
-
-			nextTick(() => this.run(done))
-		})
+			this.run(done)
+		}
 	}
 	collect(...paths: string[]): void
 	collect() {
@@ -261,61 +282,56 @@ class ObserveChain<T extends ObserverTarget> {
 	uncollect() {
 		eachArray(arguments.length ? arguments : keys(this.ctxs), path => this.uncollectPath(path))
 	}
+	stepLabel() {
+		const { stepIdx } = this
+		const step = this.steps[stepIdx]
+		return step && step.name ? stepIdx + ': ' + step.name : stepIdx
+	}
 	collectPath(path: string) {
-		const { ob, ctxs, stepIdx } = this
+		const chain = this
+		const { ob, ctxs } = this
 		const o = __p__++ & 1 ? ob.target : ob.proxy,
 			ctx =
 				ctxs[path] ||
 				(ctxs[path] = {
 					called: 0,
 					cb(path: string[], value: any, original: any, observer: IObserver<T>) {
+						const stepIdx = chain.stepLabel()
 						assert.eq(
 							this,
 							ctx,
-							`[{d}][{}]: invalid context on observer callback: {j} expect to {j}`,
+							`[{d}][{}]: invalid context on observer callback: {0j} expect to {1j}`,
 							stepIdx,
-							ctx.path,
-							this,
-							ctx
+							ctx.path
 						)
 						assert.is(
 							ctx.listenId,
-							`[{d}][{}]: context is non-listened, context: {j}`,
+							`[{d}][{}]: observer callback is not listened, listen-id: {0}`,
 							stepIdx,
-							ctx.path,
-							ctx
+							ctx.path
 						)
 
-						assert.eq(
-							ob,
-							observer,
-							`[{d}][{}]: invalid observer on observer callback, context: {j}`,
-							stepIdx,
-							ctx.path,
-							ctx
-						)
+						assert.eq(ob, observer, `[{d}][{}]: invalid observer on observer callback`, stepIdx, ctx.path)
 						assert.eql(
 							path,
 							parsePath(ctx.path),
-							`[{d}][{}]: invalid path[{}] on observer callback, context: {j}`,
+							`[{d}][{}]: invalid path[{}] on observer callback`,
 							stepIdx,
 							ctx.path,
-							formatPath(path),
-							ctx
+							formatPath(path)
 						)
 						assert.not(
 							ctx.dirties[stepIdx],
-							`[{d}][{}]: double notified observer callback, context: {j}`,
+							`[{d}][{}]: double notified observer callback`,
 							stepIdx,
-							ctx.path,
-							ctx
+							ctx.path
 						)
 						ctx.dirties[stepIdx] = [value, original]
 						ctx.called++
 
 						console.log(
 							format(
-								`[{d}][{}]: collected dirty on observer callback, value: {j}, origin: {j}`,
+								`[{d}][{}]: collected dirty, value: {j}, origin: {j}`,
 								stepIdx,
 								ctx.path,
 								value,
@@ -331,50 +347,72 @@ class ObserveChain<T extends ObserverTarget> {
 		if (!ctx.listenId) {
 			ctx.listenId = __p__++ & 1 ? observe(o, path, ctx.cb, ctx) : ob.observe(path, ctx.cb, ctx)
 
-			assert.is(observedId(o, path, ctx.listenId), `[{d}][{}]: observe failed, context: {j}`, stepIdx, path, ctx)
+			const stepIdx = this.stepLabel()
+			assert.is(
+				observedId(o, path, ctx.listenId),
+				`[{d}][{}]: observe failed, listen-id: {}`,
+				stepIdx,
+				path,
+				ctx.listenId
+			)
 			assert.eq(
 				ctx.listenId,
 				ob.observed(path, ctx.cb, ctx),
-				`[{d}][{}]: observe failed, context: {j}`,
+				`[{d}][{}]: observe failed, listen-id: {0}`,
 				stepIdx,
-				path,
-				ctx
+				path
 			)
-			console.log(`[{d}][{}]: observe: {}`, stepIdx, path, ctx.listenId)
+
+			console.log(format(`[{d}][{}]: observe: {}`, stepIdx, path, ctx.listenId))
 		}
 	}
 	uncollectPath(path: string) {
-		const { ob, stepIdx } = this
+		const { ob } = this
 		const o = __p__++ & 1 ? ob.target : ob.proxy,
 			ctx = this.ctxs[path]
 
 		if (ctx && ctx.listenId) {
+			const stepIdx = this.stepLabel()
+
+			assert.is(
+				observedId(o, path, ctx.listenId),
+				`[{d}][{}]: un-listened, listen-id: {}`,
+				stepIdx,
+				path,
+				ctx.listenId
+			)
+			assert.eq(
+				ctx.listenId,
+				ob.observed(path, ctx.cb, ctx),
+				`[{d}][{}]: un-listened, listen-id: {0}`,
+				stepIdx,
+				path
+			)
 			__p__++ & 1 ? this.ob.unobserve(path, ctx.cb, ctx) : unobserveId(o, path, ctx.listenId)
 
 			assert.not(
 				this.ob.observedId(path, ctx.listenId),
-				`[{d}][{}]: unobserve failed, listen-id: {}, context: {j}`,
+				`[{d}][{}]: unobserve failed, listen-id: {}`,
 				stepIdx,
 				path,
-				ctx.listenId,
-				ctx
+				ctx.listenId
 			)
 
 			assert.not(
 				observed(o, path, ctx.cb, ctx),
-				`[{d}][{}]: unobserve failed, listen-id: {}, context: {j}`,
+				`[{d}][{}]: unobserve failed, listen-id: {}`,
 				stepIdx,
 				path,
-				ctx.listenId,
-				ctx
+				ctx.listenId
 			)
-			console.log(`[{d}][{}]: unobserved: {}`, stepIdx, path, ctx.listenId)
+			console.log(format(`[{d}][{}]: unobserved: {}`, stepIdx, path, ctx.listenId))
 			ctx.listenId = null
 		}
 	}
-	expect(expect: { [path: string]: [any, any?] } = {}) {
-		const { stepIdx, ctxs } = this
-
+	expect(expect: { [path: string]: [any, any?] }) {
+		const { ctxs } = this
+		const stepIdx = this.stepLabel()
+		expect = expect || {}
 		try {
 			eachObj(expect, (e, path) => {
 				const ctx = ctxs[path],
@@ -382,15 +420,14 @@ class ObserveChain<T extends ObserverTarget> {
 				if (e) {
 					assert.is(
 						d,
-						'[{d}][{}]: miss the dirty, expect to value: {j}, origin: {j}',
+						'[{d}][{}]: miss the dirty, expect to value: {{[0]}j}, origin: {@{[1]}j}',
 						stepIdx,
 						path,
-						e[0],
-						e[1]
+						e
 					)
-					assert.eq(d[0], e[0])
-					assert.eq(e[0], d[0], '[{d}][{}]: expect dirty value: {j} to {j}', d[0], e[0])
-					if (e.length > 1) assert.eq(e[1], d[1], '[{d}][{}]: expect origin value: {j} to {j}', d[1], e[1])
+					assert.eq(d[0], e[0], '[{d}][{}]: expect dirty value: {0j} to {1j}', stepIdx, path)
+					if (e.length > 1)
+						assert.eq(d[1], e[1], '[{d}][{}]: expect origin value: {0j} to {0j}', stepIdx, path)
 				}
 			})
 
@@ -398,14 +435,7 @@ class ObserveChain<T extends ObserverTarget> {
 				const e = ctxs[path],
 					d = ctx.dirties[stepIdx]
 				if (!e)
-					assert.not(
-						d,
-						'[{d}][{}]: collected the dirty, value: {{[0]}j}, origin: {{[1]}j}',
-						stepIdx,
-						path,
-						d,
-						d
-					)
+					assert.not(d, '[{d}][{}]: collected the dirty, value: {0{[0]}j}, origin: {0{[1]}j}', stepIdx, path)
 			})
 		} catch (e) {
 			throw popErrStack(e, 3)
