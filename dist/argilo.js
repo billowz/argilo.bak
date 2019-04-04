@@ -11,7 +11,7 @@
  * Copyright (c) 2018 Tao Zeng <tao.zeng.zt@qq.com>
  * Released under the MIT license
  *
- * Date: Thu, 28 Mar 2019 11:44:13 GMT
+ * Date: Thu, 04 Apr 2019 12:00:00 GMT
  */
 (function (global, factory) {
 	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
@@ -355,7 +355,7 @@
 	 * @module utility
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Mon Dec 11 2017 13:57:32 GMT+0800 (China Standard Time)
-	 * @modified Thu Mar 28 2019 19:22:34 GMT+0800 (China Standard Time)
+	 * @modified Sat Mar 30 2019 15:42:28 GMT+0800 (China Standard Time)
 	 */
 
 	/*                                                                                      *
@@ -594,16 +594,6 @@
 	  return function bindProxy() {
 	    return applyScope(fn, scope, arguments);
 	  };
-	}
-
-	function executor(fn) {
-	  var executor = function executor() {
-	    executor.called++;
-	    return applyScope(fn, this, arguments);
-	  };
-
-	  executor.called = 0;
-	  return executor;
 	}
 
 	/**
@@ -866,7 +856,7 @@
 	 * @module utility/collection
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Wed Jul 25 2018 17:10:41 GMT+0800 (China Standard Time)
-	 * @modified Sat Mar 23 2019 17:29:41 GMT+0800 (China Standard Time)
+	 * @modified Thu Apr 04 2019 19:32:58 GMT+0800 (China Standard Time)
 	 */
 	/**
 	 * STOP Control
@@ -995,7 +985,7 @@
 	 * @module utility/collection
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Wed Jul 25 2018 17:12:06 GMT+0800 (China Standard Time)
-	 * @modified Sat Dec 29 2018 19:37:30 GMT+0800 (China Standard Time)
+	 * @modified Thu Apr 04 2019 19:31:21 GMT+0800 (China Standard Time)
 	 */
 	/**
 	 * SKIP Control
@@ -1114,7 +1104,7 @@
 	 * @module utility/collection
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Wed Jul 25 2018 17:12:06 GMT+0800 (China Standard Time)
-	 * @modified Tue Nov 27 2018 13:38:16 GMT+0800 (China Standard Time)
+	 * @modified Thu Apr 04 2019 19:32:32 GMT+0800 (China Standard Time)
 	 */
 
 	function parseCallback(value, scope) {
@@ -1245,7 +1235,7 @@
 	 * @module utility/collection
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Wed Jul 25 2018 17:12:06 GMT+0800 (China Standard Time)
-	 * @modified Tue Nov 27 2018 14:02:39 GMT+0800 (China Standard Time)
+	 * @modified Thu Apr 04 2019 19:30:27 GMT+0800 (China Standard Time)
 	 */
 
 	/*                                                                                      *
@@ -1345,7 +1335,7 @@
 	 * @module utility/collection
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Thu Jul 26 2018 10:47:47 GMT+0800 (China Standard Time)
-	 * @modified Sat Dec 29 2018 19:34:56 GMT+0800 (China Standard Time)
+	 * @modified Thu Apr 04 2019 19:49:02 GMT+0800 (China Standard Time)
 	 */
 
 	/*                                                                                      *
@@ -1430,7 +1420,7 @@
 	 * @module utility/collection
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Fri Nov 16 2018 16:29:04 GMT+0800 (China Standard Time)
-	 * @modified Sat Dec 29 2018 19:33:49 GMT+0800 (China Standard Time)
+	 * @modified Thu Apr 04 2019 19:38:40 GMT+0800 (China Standard Time)
 	 */
 	/**
 	 * @return STOP or SKIP or [key: string, value: any]
@@ -1657,7 +1647,7 @@
 	 * @module utility/format
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Mon Dec 03 2018 19:46:41 GMT+0800 (China Standard Time)
-	 * @modified Fri Feb 22 2019 11:37:25 GMT+0800 (China Standard Time)
+	 * @modified Wed Apr 03 2019 11:34:07 GMT+0800 (China Standard Time)
 	 */
 
 	/*                                                                                      *
@@ -2091,14 +2081,13 @@
 
 	  return code;
 	}
+
 	/**
 	 * @see vformat
 	 * @param fmt		format string
 	 * @param offset	start offset of arguments
 	 * @param getParam	get parameter on arguments callback
 	 */
-
-
 	function formatter(fmt, offset, getParam) {
 	  var m,
 	      lastIdx = 0,
@@ -2446,88 +2435,78 @@
 	 * @module utility/assert
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Wed Nov 28 2018 11:01:45 GMT+0800 (China Standard Time)
-	 * @modified Thu Mar 28 2019 19:08:21 GMT+0800 (China Standard Time)
+	 * @modified Wed Apr 03 2019 12:46:25 GMT+0800 (China Standard Time)
 	 */
-	var formatters$1 = [],
-	    formatArgHandlers = [];
+	var formatters$1 = create(null);
 
-	function parseMessage(msg, args, msgIdx) {
-	  var fs = formatters$1[msgIdx];
-
-	  if (!fs) {
-	    formatArgHandlers[msgIdx] = function (args, offset) {
-	      return args[0][offset >= msgIdx ? offset + 1 : offset];
-	    };
-
-	    formatters$1[msgIdx] = fs = create(null);
-	  }
-
-	  return (fs[msg] || (fs[msg] = formatter(msg, msgIdx, formatArgHandlers[msgIdx])))(args);
+	function mkError(Err, msg, args, msgIdx) {
+	  var fmtter = formatters$1[msg] || (formatters$1[msg] = formatter(msg, msgIdx, function (args, offset) {
+	    return args[0][offset >= msgIdx ? offset + 1 : offset];
+	  }));
+	  return popErrStack(new Err(fmtter(args)), 2);
 	}
 
+	function popErrStack(err, i) {
+	  while (i-- > 0) {
+	    err.stack = err.stack.replace(/(\n\s{4}at[^\n]*)/, '');
+	  }
+
+	  return err;
+	}
 	var assert = function assert(msg) {
-	  throw new Error(parseMessage(msg || 'Error', arguments, 0));
+	  throw mkError(Error, msg || 'Error', arguments, 0);
 	};
+	var ERROR = new Error();
 
-	function catchErr(fn) {
-	  try {
-	    fn();
-	  } catch (e) {
-	    return e;
-	  }
+	function mkThrowAssertor(th, dmsg) {
+	  return function throwErr(fn, expect, msg) {
+	    var err;
+
+	    try {
+	      fn();
+	    } catch (e) {
+	      err = e;
+	    }
+
+	    if (th != (err && (!expect || (isStr(expect) ? expect === err.message : err[CONSTRUCTOR] === expect[CONSTRUCTOR] && (!expect.message || expect.message === err.message))))) {
+	      arguments[0] = err;
+	      !expect && (arguments[2] = ERROR);
+	      throw mkError(Error, msg || dmsg, arguments, 2);
+	    }
+
+	    return assert;
+	  };
 	}
 
-	function checkErr(expect, err) {
-	  var msg = isStr(expect) ? expect : expect.message;
-	  return msg === err.message;
-	}
+	assert["throw"] = mkThrowAssertor(true, "expected catched error {0s} is {1s}");
+	assert.notThrow = mkThrowAssertor(false, "expected catched error {0s} is not {1s}");
+	/**
+	 * @param name 		name of the assertor
+	 * @param condition condition, function or expression
+	 * @param args 		name or length of the parameters
+	 * @param dmsg  	the default message
+	 * @param Err  		the Error Constructor, default Error
+	 */
 
-	var ERROR = new Error("Expect Error");
-	var throwMsg = mkMsg(objFormatter(1), 'throw');
-
-	assert["throw"] = function (fn, expect, msg) {
-	  var err = catchErr(fn);
-
-	  if (!err || expect && !checkErr(expect, err)) {
-	    arguments[0] = err;
-	    !expect && (arguments[2] = ERROR);
-	    throw new Error(parseMessage(msg || throwMsg[0], arguments, 2));
-	  }
-
-	  return assert;
-	};
-
-	assert.notThrow = function (fn, expect, msg) {
-	  var err = catchErr(fn);
-
-	  if (err && (!expect || !checkErr(expect, err))) {
-	    arguments[0] = err;
-	    !expect && (arguments[2] = ERROR);
-	    throw new Error(parseMessage(msg || throwMsg[0], arguments, 2));
-	  }
-
-	  return assert;
-	};
-
-	function extendAssert(name, condition, args, dmsg, Err) {
+	function mkAssertor(name, condition, args, dmsg, Err) {
 	  var params = isStr(args) ? args.split(/,/g) : isNum(args) ? makeArray(args, function (i) {
 	    return "arg" + (i + 1);
 	  }) : args,
 	      paramStr = params.join(', '),
 	      cond = isArray(condition) ? condition[0] : condition,
 	      expr = (isArray(condition) ? condition[1] : '') + (isStr(cond) ? "(" + cond + ")" : "cond(" + paramStr + ")");
-	  return assert[name] = createFn("return function assert" + upperFirst(name) + "(" + paramStr + ", msg){\n\tif (" + expr + ")\n\t\tthrow new Err(parseMsg(msg || dmsg, arguments, " + params.length + "));\n\treturn assert;\n}", ['Err', 'parseMsg', 'dmsg', 'cond', 'assert'])(Err || Error, parseMessage, dmsg, cond, assert);
-	}
+	  return assert[name] = createFn("return function assert" + upperFirst(name) + "(" + paramStr + ", msg){\n\tif (" + expr + ")\n\t\tthrow mkErr(Err, msg || dmsg, arguments, " + params.length + ");\n\treturn assert;\n}", ['Err', 'mkErr', 'dmsg', 'cond', 'assert'])(Err || Error, mkError, dmsg, cond, assert);
+	} // [condition, argcount?, [msg, not msg], Error]
 
-	// [condition, argcount?, [msg, not msg], Error]
-	function extendAsserts(apis) {
+
+	function mkAssertors(apis) {
 	  eachObj(apis, function (desc, name) {
 	    var condition = desc[0],
 	        args = desc[1],
 	        msg = desc[2],
 	        Err = desc[3] || TypeError;
-	    msg[0] && extendAssert(name, [condition, '!'], args, msg[0], Err);
-	    msg[1] && extendAssert('not' + upperFirst(name), condition, args, msg[1], Err);
+	    msg[0] && mkAssertor(name, [condition, '!'], args, msg[0], Err);
+	    msg[1] && mkAssertor('not' + upperFirst(name), condition, args, msg[1], Err);
 	  });
 	}
 
@@ -2540,9 +2519,9 @@
 	    INTEGER = 'integer',
 	    ARRAY = 'Array',
 	    TYPED_ARRAY = 'TypedArray';
-	extendAssert('is', '!o', 'o', expectMsg('Exist'));
-	extendAssert('not', 'o', 'o', expectMsg('Not Exist'));
-	extendAsserts({
+	mkAssertor('is', '!o', 'o', expectMsg('Exist'));
+	mkAssertor('not', 'o', 'o', expectMsg('Not Exist'));
+	mkAssertors({
 	  eq: [eq, 2, mkMsg(objFormatter(1))],
 	  eql: [deepEq, 2, mkMsg(objFormatter(1))],
 	  nul: [isNull, 1, mkMsg(NULL)],
@@ -2597,16 +2576,16 @@
 	 * @module utility/List
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
-	 * @modified Wed Mar 13 2019 19:29:16 GMT+0800 (China Standard Time)
+	 * @modified Wed Apr 03 2019 19:03:02 GMT+0800 (China Standard Time)
 	 */
 	var DEFAULT_BINDING = addDefaultKey('__list__');
-	//type ListNode = [ListElement, IListNode, IListNode, List]
 	var List =
 	/*#__PURE__*/
 	function () {
 	  function List(binding) {
 	    this.__length = 0;
 	    this.__scaning = false;
+	    this.__ver = 0;
 	    this.binding = binding || DEFAULT_BINDING;
 	  }
 
@@ -2705,11 +2684,14 @@
 	    if (this.__length) {
 	      assert.not(this.__scaning, 'Nested calls are not allowed.');
 	      this.__scaning = true;
+
+	      var __ver = ++this.__ver;
+
 	      cb = bind(cb, scope);
 	      var node = this.__head;
 
 	      while (node) {
-	        if (node[3] === this && cb(node[0]) === false) break;
+	        if (node[3] === this && (__ver === node[4] || cb(node[0]) === false)) break;
 	        node = node[2];
 	      }
 
@@ -2753,8 +2735,6 @@
 	    return this.__remove(this.__getNode(obj));
 	  };
 
-	  _proto.pop = function pop() {};
-
 	  _proto.clean = function clean() {
 	    if (this.__length) {
 	      if (this.__scaning) {
@@ -2784,13 +2764,15 @@
 	      } else if (node[3]) {
 	        assert('Object is still in some List');
 	      }
+
+	      node[3] = this;
+	      node[4] = this.__ver;
 	    } else {
-	      node = [obj];
+	      node = [obj,,, this, this.__ver];
 	      node.toJSON = EMPTY_FN;
 	      defPropValue(obj, binding, node, false);
 	    }
 
-	    node[3] = this;
 	    return node;
 	  };
 
@@ -2867,7 +2849,7 @@
 
 	  _proto.__lazyRemove = function __lazyRemove(node) {
 	    var lazyRemoves = this.__lazyRemoves;
-	    node[0][this.binding] = undefined; // unbind this node
+	    node[0][this.binding] = null; // unbind this node
 
 	    node[3] = null;
 
@@ -2914,7 +2896,7 @@
 	      this.__tail = prev;
 	    }
 
-	    node[1] = node[2] = node[3] = null;
+	    node.length = 1;
 	  };
 
 	  _proto.__clean = function __clean() {
@@ -2926,8 +2908,8 @@
 	      node.length = 1;
 	    }
 
-	    this.__head = undefined;
-	    this.__tail = undefined;
+	    this.__head = null;
+	    this.__tail = null;
 	    this.__length = 0;
 	  };
 
@@ -2940,7 +2922,7 @@
 	 * @module utility/List
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
-	 * @modified Mon Mar 11 2019 19:53:56 GMT+0800 (China Standard Time)
+	 * @modified Sat Mar 30 2019 16:11:18 GMT+0800 (China Standard Time)
 	 */
 	var DEFAULT_FN_BINDING = addDefaultKey('__flist_id__');
 	var DEFAULT_SCOPE_BINDING = addDefaultKey(DEFAULT_FN_BINDING);
@@ -3002,7 +2984,12 @@
 	  };
 
 	  _proto.has = function has(fn, scope) {
-	    return !!this.__nodeMap[this.id(fn, parseScope(scope))];
+	    var id = this.id(fn, parseScope(scope));
+	    return this.__nodeMap[id] && id;
+	  };
+
+	  _proto.hasId = function hasId(id) {
+	    return !!this.__nodeMap[id];
 	  };
 
 	  _proto.size = function size() {
@@ -3063,34 +3050,20 @@
 	 * @module utility/nextTick
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
-	 * @modified Thu Jan 31 2019 16:34:55 GMT+0800 (China Standard Time)
+	 * @modified Wed Apr 03 2019 19:45:47 GMT+0800 (China Standard Time)
 	 */
-	var ticks = new FnList();
-	var pending = false;
 	var next;
-
-	function executeTick(fn, scope) {
-	  scope ? fn.call(scope) : fn();
-	}
-
-	function flush() {
-	  ticks.each(executeTick);
-	  ticks.clean();
-	  pending = false;
-	}
 
 	if (typeof MutationObserver === TYPE_FN) {
 	  // chrome18+, safari6+, firefox14+,ie11+,opera15
-	  var counter = 0,
-	      observer = new MutationObserver(flush),
-	      textNode = document.createTextNode(counter + '');
-	  observer.observe(textNode, {
+	  var textNode = document.createTextNode(v);
+	  new MutationObserver(flush).observe(textNode, {
 	    characterData: true
 	  });
+	  var v = '';
 
 	  next = function next() {
-	    textNode.data = counter + '';
-	    counter = counter ? 0 : 1;
+	    textNode.data = v = v ? '0' : '';
 	  };
 	} else {
 	  next = function next() {
@@ -3098,16 +3071,34 @@
 	  };
 	}
 
-	function nextTick(fn, scope) {
-	  ticks.add(fn, scope);
+	var ticks = [new FnList(), new FnList()];
+	var pending,
+	    i = 0;
 
+	function executeTick(fn, scope) {
+	  scope ? fn.call(scope) : fn();
+	}
+
+	function flush() {
+	  var t = pending;
+	  pending = null;
+	  t.each(executeTick);
+	  t.clean();
+	}
+
+	function nextTick(fn, scope) {
 	  if (!pending) {
-	    pending = true;
+	    pending = ticks[++i & 1];
 	    next();
 	  }
+
+	  return pending.add(fn, scope);
 	}
 	function clearTick(fn, scope) {
-	  ticks.remove(fn, scope);
+	  return pending.remove(fn, scope);
+	}
+	function clearTickId(id) {
+	  return pending.removeId(id);
 	}
 
 	/**
@@ -4245,7 +4236,7 @@
 	 * @module utility/AST
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Tue Nov 06 2018 10:58:52 GMT+0800 (China Standard Time)
-	 * @modified Sat Dec 22 2018 15:45:10 GMT+0800 (China Standard Time)
+	 * @modified Thu Apr 04 2019 19:59:23 GMT+0800 (China Standard Time)
 	 */
 
 	/*                                                                                      *
@@ -4462,11 +4453,19 @@
 	 */
 
 	var ARRAY_CHANGE = '$change';
+	var ARRAY_LENGTH = 'length';
 	/**
 	 * The dirty collector lost the original value
 	 */
 
-	var MISS = {};
+	var MISS = {
+	  toString: function toString() {
+	    return 'MISS';
+	  },
+	  toJSON: function toJSON() {
+	    return 'MISS';
+	  }
+	};
 
 	/**
 	 * Observe implementation on the Proxy of ES6
@@ -4517,7 +4516,7 @@
 	 * @module observer
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Tue Mar 19 2019 14:12:23 GMT+0800 (China Standard Time)
-	 * @modified Thu Mar 28 2019 15:33:29 GMT+0800 (China Standard Time)
+	 * @modified Thu Apr 04 2019 18:49:04 GMT+0800 (China Standard Time)
 	 */
 	/**
 	 * @ignore
@@ -4535,7 +4534,7 @@
 	          watcher.notify(value);
 	          value = newValue;
 	        };
-	      } else if (prop !== ARRAY_CHANGE && prop !== 'length') {
+	      } else if (prop !== ARRAY_CHANGE && prop !== ARRAY_LENGTH) {
 	        var changeWatcher = observer.initWatcher(ARRAY_CHANGE);
 
 	        setter = function setter(newValue) {
@@ -4943,16 +4942,16 @@
 	          _observer = this.__observer; // 1. bind observer
 
 	      if (_observer) {
-	        var prop = this.__prop;
+	        var _prop = this.__prop;
 	        var subObserver;
 
 	        if (subs[0]) {
 	          subObserver = subs[0].__observer;
-	        } else {
-	          var subTarget = _observer.target[prop];
+	        } else if (!isArrayChangeProp(_observer, _prop)) {
+	          var subTarget = _observer.target[_prop];
 
 	          if (isObserverTarget(subTarget)) {
-	            subObserver = loadSubObserver(_observer, prop, subTarget);
+	            subObserver = __loadSubObserver(_observer, _prop, subTarget);
 	          }
 	        }
 
@@ -4994,8 +4993,8 @@
 
 	    if (!path) {
 	      var parent = this.__parent,
-	          prop = this.__prop;
-	      this.__path = path = parent ? parent.__getPath().concat(prop) : [prop];
+	          _prop2 = this.__prop;
+	      this.__path = path = parent ? parent.__getPath().concat(_prop2) : [_prop2];
 	    }
 
 	    return path;
@@ -5028,8 +5027,7 @@
 	    if (original !== V) {
 	      var _observer2 = this.__observer;
 	      this.__original = V;
-
-	      this.____collect(_observer2, _observer2.target, original, false);
+	      _observer2 && this.____collect(_observer2, _observer2.target, original, false);
 	    } // this topic has been collected, retains its dirty value
 
 	  }
@@ -5084,12 +5082,14 @@
 	          i = 0;
 
 	      if (observer) {
-	        if (isObserverTarget(subTarget)) {
-	          subObserver = loadSubObserver(observer, prop, subTarget);
+	        if (!isArrayChangeProp(observer, prop)) {
+	          if (isObserverTarget(subTarget)) {
+	            subObserver = __loadSubObserver(observer, prop, subTarget);
 
-	          if (proxyEnable) {
-	            subTarget = subObserver.target;
-	            dirty && (dirty[0] = subObserver.proxy); // update dirty proxy
+	            if (proxyEnable) {
+	              subTarget = subObserver.target;
+	              dirty && (dirty[0] = subObserver.proxy); // update dirty proxy
+	            }
 	          }
 	        }
 	      } else if (proxyEnable && dirty) {
@@ -5303,6 +5303,37 @@
 	    return topic.__listen(path, cb, scope);
 	  }
 	  /**
+	   * get listen-id of callback in the observer's target
+	   *
+	   * @param propPath 	property path for observe, parse string path by {@link parsePath}
+	   * @param cb		callback
+	   * @param scope		scope of callback
+	   * @return listen-id
+	   */
+	  ;
+
+	  _proto3.observed = function observed(propPath, cb, scope) {
+	    var topic = this.__getTopic(parsePath(propPath));
+
+	    var listeners;
+	    return topic && (listeners = topic.__listeners) && listeners.has(cb, scope);
+	  }
+	  /**
+	   * has listen-id in the observer's target
+	   *
+	   * @param propPath 	property path for observe, parse string path by {@link parsePath}
+	   * @param id		listen-id
+	   * @return listen-id
+	   */
+	  ;
+
+	  _proto3.observedId = function observedId(propPath, id) {
+	    var topic = this.__getTopic(parsePath(propPath));
+
+	    var listeners;
+	    return topic && (listeners = topic.__listeners) && listeners.hasId(id);
+	  }
+	  /**
 	   * cancel observing the changes in the observer's target
 	   *
 	   * @param propPath	property path for unobserve, parse string path by {@link parsePath}
@@ -5342,17 +5373,40 @@
 	    watcher && watcher.notify(original);
 	  }
 	  /**
-	   * notify the observer that all properties in the target have changed
-	   * the original value well be {@link MISS}
+	   * notify the observer that properties in the target have changed
+	   *
+	   * @param props 		notify properties, notify all watchers when the props is null or undefined
+	   * @param getOriginal	get the original value
+	   * @param execludes		do not notify watchers in execludes
 	   */
 	  ;
 
-	  _proto3.notifyAll = function notifyAll() {
-	    var watchers = this.__watchers,
-	        props = this.__watcherProps;
+	  _proto3.notifies = function notifies(props, getOriginal, execludes) {
+	    props || (props = this.__watcherProps);
+	    var watchers = this.__watchers;
+	    var prop,
+	        watcher,
+	        i = props.length,
+	        origin;
 
-	    for (var i = 0, l = props.length; i < l; i++) {
-	      watchers[props[i]].notify(MISS);
+	    if (execludes) {
+	      while (i--) {
+	        prop = props[i];
+
+	        if (!execludes[prop] && (watcher = watchers[prop]) && watcher.size()) {
+	          origin = getOriginal(prop, this);
+	          origin !== V && watcher.notify(origin);
+	        }
+	      }
+	    } else {
+	      while (i--) {
+	        prop = props[i];
+
+	        if ((watcher = watchers[prop]) && watcher.size()) {
+	          origin = getOriginal(prop, this);
+	          origin !== V && watcher.notify(origin);
+	        }
+	      }
 	    }
 	  }
 	  /**
@@ -5486,18 +5540,63 @@
 	//========================================================================================
 
 
-	var arrayHooks = mapArray('fill,pop,push,reverse,shift,sort,splice,unshift'.split(','), function (method) {
-	  var fn = Array[PROTOTYPE][method];
-	  return [method, function () {
-	    var observer = this[OBSERVER_KEY];
-	    observer.notifyAll();
-	    return applyScope(fn, observer.target, arguments);
-	  }];
+	var arrayHooks = [];
+	var ARRAY_LEN_CHANGE = [ARRAY_LENGTH, ARRAY_CHANGE];
+	var arrayHookCfg = {
+	  push: [ARRAY_LEN_CHANGE],
+	  pop: [ARRAY_LEN_CHANGE],
+	  splice: function splice(ob, args) {
+	    var target = ob.target,
+	        proxy = ob.proxy;
+	    var start = args[0],
+	        d = args.length - 2 - args[1];
+	    ob.notifies(null, function (prop) {
+	      return prop === ARRAY_CHANGE ? proxy : prop === ARRAY_LENGTH ? d ? target[prop] : V : prop > start && (d || prop < start + args[1]) ? target[prop] : V;
+	    });
+	  },
+	  shift: [],
+	  unshift: [],
+	  'fill,reverse,sort': [null, {
+	    length: 1
+	  }]
+	};
+	eachObj(arrayHookCfg, function (hooker, methods) {
+	  eachArray(methods.split(','), function (method) {
+	    var fn = Array[PROTOTYPE][method];
+	    var hook;
+
+	    if (isFn(hooker)) {
+	      var cb = hooker;
+
+	      hook = function hook() {
+	        var ob = this[OBSERVER_KEY];
+	        cb(ob, arguments);
+	        return applyScope(fn, ob.target, arguments);
+	      };
+	    } else {
+	      var _ref = hooker,
+	          props = _ref[0],
+	          execludes = _ref[1];
+
+	      hook = function hook() {
+	        var ob = this[OBSERVER_KEY];
+	        ob.notifies(props, getArrayOriginValue, execludes);
+	        return applyScope(fn, ob.target, arguments);
+	      };
+	    }
+
+	    arrayHooks.push([method, hook]);
+	  });
 	});
+
+	function getArrayOriginValue(prop, ob) {
+	  return prop === ARRAY_CHANGE ? ob.proxy : ob.target[prop];
+	}
 	/**
 	 * apply observer hooks on Array
 	 * @param array
 	 */
+
 
 	function applyArrayHooks(array) {
 	  var hook,
@@ -5528,7 +5627,7 @@
 	 * @return existing observer
 	 */
 
-	exports.getObserver = function getObserver(target) {
+	var __getObserver = function __getObserver(target) {
 	  var ob = target[OBSERVER_KEY];
 	  if (ob && (ob.target === target || ob.proxy === target)) return ob;
 	};
@@ -5542,8 +5641,8 @@
 	 */
 
 
-	var loadSubObserver = function loadSubObserver(observer, prop, target) {
-	  var subObserver = exports.getObserver(target) || new Observer(target);
+	var __loadSubObserver = function __loadSubObserver(observer, prop, target) {
+	  var subObserver = __getObserver(target) || new Observer(target);
 	  if (subObserver.proxy !== target) observer.target[prop] = subObserver.proxy;
 	  return subObserver;
 	};
@@ -5556,7 +5655,8 @@
 
 
 	exports.source = function source(obj) {
-	  var observer = obj && exports.getObserver(obj);
+	  var observer = obj && __getObserver(obj);
+
 	  return observer ? observer.target : obj;
 	};
 	/**
@@ -5568,7 +5668,8 @@
 
 
 	exports.proxy = function proxy(obj) {
-	  var observer = obj && exports.getObserver(obj);
+	  var observer = obj && __getObserver(obj);
+
 	  return observer ? observer.proxy : obj;
 	};
 	/**
@@ -5577,7 +5678,7 @@
 
 
 	exports.$eq = function $eq(o1, o2) {
-	  return eq(o1, o2) || (o1 && o2 && (o1 = exports.getObserver(o1)) ? o1 === exports.getObserver(o2) : false);
+	  return eq(o1, o2) || (o1 && o2 && (o1 = __getObserver(o1)) ? o1 === __getObserver(o2) : false);
 	};
 	/**
 	 * get the value at path of object
@@ -5616,13 +5717,13 @@
 
 
 	if (!proxyEnable) {
-	  exports.getObserver = function getObserver(target) {
+	  __getObserver = function __getObserver(target) {
 	    var oserver = target[OBSERVER_KEY];
 	    if (oserver && oserver.target === target) return oserver;
 	  };
 
-	  loadSubObserver = function loadSubObserver(observer, prop, target) {
-	    return exports.getObserver(target) || new Observer(target);
+	  __loadSubObserver = function __loadSubObserver(observer, prop, target) {
+	    return __getObserver(target) || new Observer(target);
 	  };
 
 	  exports.source = function source(obj) {
@@ -5641,8 +5742,8 @@
 	 */
 
 
-	function observer$1(target) {
-	  return exports.getObserver(target) || new Observer(target);
+	function observer(target) {
+	  return __getObserver(target) || new Observer(target);
 	}
 	/**
 	 * observe changes in the target object
@@ -5655,9 +5756,37 @@
 	 */
 
 	function observe(target, propPath, cb, scope) {
-	  var __observer = observer$1(target);
+	  var __observer = observer(target);
 
 	  return __observer.observe(propPath, cb, scope);
+	}
+	/**
+	 * get listen-id of callback in the target object
+	 *
+	 * @param target 	the target object
+	 * @param propPath 	property path of object, parse string path by {@link parsePath}
+	 * @param cb		callback
+	 * @param scope		scope of callback
+	 * @return listen-id
+	 */
+
+	function observed(target, propPath, cb, scope) {
+	  var __observer = __getObserver(target);
+
+	  return __observer && __observer.observed(propPath, cb, scope);
+	}
+	/**
+	 * has listen-id in the target object
+	 *
+	 * @param target 	the target object
+	 * @param propPath 	property path of object, parse string path by {@link parsePath}
+	 * @param id		listen-id
+	 */
+
+	function observedId(target, propPath, id) {
+	  var __observer = __getObserver(target);
+
+	  return __observer && __observer.observedId(propPath, id);
 	}
 	/**
 	 * cancel observing the changes in the target object
@@ -5669,7 +5798,7 @@
 	 */
 
 	function unobserve(target, propPath, cb, scope) {
-	  var __observer = exports.getObserver(target);
+	  var __observer = __getObserver(target);
 
 	  __observer && __observer.unobserve(propPath, cb, scope);
 	}
@@ -5682,10 +5811,11 @@
 	 */
 
 	function unobserveId(target, propPath, listenId) {
-	  var __observer = exports.getObserver(target);
+	  var __observer = __getObserver(target);
 
 	  __observer && __observer.unobserveId(propPath, listenId);
 	}
+	var getObserver = __getObserver;
 
 	/**
 	 * @module observer
@@ -5717,7 +5847,6 @@
 	exports.applyN = applyN;
 	exports.fnName = fnName;
 	exports.bind = bind;
-	exports.executor = executor;
 	exports.eq = eq;
 	exports.isNull = isNull;
 	exports.isUndef = isUndef;
@@ -5820,6 +5949,7 @@
 	exports.FnList = FnList;
 	exports.nextTick = nextTick;
 	exports.clearTick = clearTick;
+	exports.clearTickId = clearTickId;
 	exports.Source = Source;
 	exports.discardMatch = discardMatch;
 	exports.appendMatch = appendMatch;
@@ -5833,18 +5963,23 @@
 	exports.anyOne = anyOne;
 	exports.manyOne = manyOne;
 	exports.optionOne = optionOne;
+	exports.popErrStack = popErrStack;
 	exports.assert = assert;
 	exports.VBPROXY_KEY = VBPROXY_KEY;
 	exports.VBPROXY_CTOR_KEY = VBPROXY_CTOR_KEY;
 	exports.OBSERVER_KEY = OBSERVER_KEY;
 	exports.ARRAY_CHANGE = ARRAY_CHANGE;
+	exports.ARRAY_LENGTH = ARRAY_LENGTH;
 	exports.MISS = MISS;
 	exports.collect = collect;
 	exports.proxyEnable = proxyEnable;
-	exports.observer = observer$1;
+	exports.observer = observer;
 	exports.observe = observe;
+	exports.observed = observed;
+	exports.observedId = observedId;
 	exports.unobserve = unobserve;
 	exports.unobserveId = unobserveId;
+	exports.getObserver = getObserver;
 
 }));
 //# sourceMappingURL=argilo.js.map

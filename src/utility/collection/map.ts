@@ -2,7 +2,7 @@
  * @module utility/collection
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Jul 25 2018 17:12:06 GMT+0800 (China Standard Time)
- * @modified Sat Dec 29 2018 19:37:30 GMT+0800 (China Standard Time)
+ * @modified Thu Apr 04 2019 19:31:21 GMT+0800 (China Standard Time)
  */
 
 import { Control } from './Control'
@@ -32,25 +32,25 @@ export const SKIP = new Control('SKIP')
  * @param prop	property name
  * @param obj	map target
  */
-export type MapObjCallback<T> = (callback: any, prop: string, obj: object) => T | Control
+export type MapObjCallback<T, E> = (data: E, prop: string, obj: { [key: string]: E }) => T | Control
 
-export function doMapObj<T>(
+export function doMapObj<T, E>(
 	each: typeof eachObj,
-	obj: object,
-	callback: MapObjCallback<T>,
+	obj: { [key: string]: E },
+	callback: MapObjCallback<T, E>,
 	own?: boolean
 ): { [key: string]: T }
-export function doMapObj<T>(
+export function doMapObj<T, E>(
 	each: typeof eachObj,
-	obj: object,
-	callback: MapObjCallback<T>,
+	obj: { [key: string]: E },
+	callback: MapObjCallback<T, E>,
 	scope?: any,
 	own?: boolean
 ): { [key: string]: T }
-export function doMapObj<T>(
+export function doMapObj<T, E>(
 	each: typeof eachObj,
-	obj: object,
-	callback: MapObjCallback<T>,
+	obj: { [key: string]: E },
+	callback: MapObjCallback<T, E>,
 	scope?: any,
 	own?: boolean
 ): { [key: string]: T } {
@@ -82,9 +82,23 @@ export function doMapObj<T>(
  * @param scope		scope of callback
  * @param own		map own properties, default: true
  */
-export function mapObj<T>(obj: object, callback: MapObjCallback<T>, own?: boolean): { [key: string]: T }
-export function mapObj<T>(obj: object, callback: MapObjCallback<T>, scope?: any, own?: boolean): { [key: string]: T }
-export function mapObj<T>(obj: object, callback: MapObjCallback<T>, scope?: any, own?: boolean): { [key: string]: T } {
+export function mapObj<T, E>(
+	obj: { [key: string]: E },
+	callback: MapObjCallback<T, E>,
+	own?: boolean
+): { [key: string]: T }
+export function mapObj<T, E>(
+	obj: { [key: string]: E },
+	callback: MapObjCallback<T, E>,
+	scope?: any,
+	own?: boolean
+): { [key: string]: T }
+export function mapObj<T, E>(
+	obj: { [key: string]: E },
+	callback: MapObjCallback<T, E>,
+	scope?: any,
+	own?: boolean
+): { [key: string]: T } {
 	return doMapObj(eachObj, obj, callback, scope, own)
 }
 
@@ -102,9 +116,14 @@ export function mapObj<T>(obj: object, callback: MapObjCallback<T>, scope?: any,
  * @param index	item index
  * @param array	map target
  */
-export type MapArrayCallback<T> = (data: any, index: number, array: IArray) => T | Control
+export type MapArrayCallback<T, E> = (data: E, index: number, array: IArray<E>) => T | Control
 
-export function doMapArray<T>(each: typeof eachArray, array: IArray, callback: MapArrayCallback<T>, scope?: any): T[] {
+export function doMapArray<T, E>(
+	each: typeof eachArray,
+	array: IArray<E>,
+	callback: MapArrayCallback<T, E>,
+	scope?: any
+): T[] {
 	callback = bind(callback, scope)
 	const copy: T[] = []
 	let j = 0
@@ -125,7 +144,7 @@ export function doMapArray<T>(each: typeof eachArray, array: IArray, callback: M
  * @param scope		scope of callback
  * @return array index or -1
  */
-export function mapArray<T>(array: IArray, callback: MapArrayCallback<T>, scope?: any): T[] {
+export function mapArray<T, E>(array: IArray<E>, callback: MapArrayCallback<T, E>, scope?: any): T[] {
 	return doMapArray(eachArray, array, callback, scope)
 }
 
@@ -138,7 +157,7 @@ export function mapArray<T>(array: IArray, callback: MapArrayCallback<T>, scope?
  * @param scope		scope of callback
  * @return array index or -1
  */
-export function rmapArray<T>(array: IArray, callback: MapArrayCallback<T>, scope?: any): T[] {
+export function rmapArray<T, E>(array: IArray<E>, callback: MapArrayCallback<T, E>, scope?: any): T[] {
 	return doMapArray(reachArray, array, callback, scope)
 }
 
@@ -148,51 +167,36 @@ export function rmapArray<T>(array: IArray, callback: MapArrayCallback<T>, scope
  *                                                                                      */
 //========================================================================================
 
-export function doMap<T>(
+export function doMap<T, E>(
 	eacharray: typeof eachArray,
 	eachobj: typeof eachObj,
-	obj: IArray,
-	callback: MapArrayCallback<T>,
+	obj: IArray<E>,
+	callback: MapArrayCallback<T, E>,
 	scope?: any
-): any[]
-export function doMap<T>(
+): T[]
+export function doMap<T, E>(
 	eacharray: typeof eachArray,
 	eachobj: typeof eachObj,
-	obj: object,
-	callback: MapObjCallback<T>,
+	obj: { [key: string]: E },
+	callback: MapObjCallback<T, E>,
 	own?: boolean
 ): { [key: string]: T }
-export function doMap<T>(
+export function doMap<T, E>(
 	eacharray: typeof eachArray,
 	eachobj: typeof eachObj,
-	obj: object,
-	callback: MapObjCallback<T>,
+	obj: { [key: string]: E },
+	callback: MapObjCallback<T, E>,
 	scope?: any,
 	own?: boolean
 ): { [key: string]: T }
-export function doMap<T>(
-	eacharray: typeof eachArray,
-	eachobj: typeof eachObj,
-	obj: object | IArray,
-	callback: MapObjCallback<T> | MapArrayCallback<T>,
-	own?: boolean
-): { [key: string]: T } | any[]
-export function doMap<T>(
-	eacharray: typeof eachArray,
-	eachobj: typeof eachObj,
-	obj: object | IArray,
-	callback: MapObjCallback<T> | MapArrayCallback<T>,
-	scope?: any,
-	own?: boolean
-): { [key: string]: T } | any[]
-export function doMap<T>(
+export function doMap<T, E>(
 	eacharray: typeof eachArray,
 	eachobj: typeof eachObj,
 	obj: any,
 	callback: any,
 	scope?: any,
 	own?: boolean
-): { [key: string]: T } | any[] {
+): { [key: string]: T } | T[] {
 	if (isArrayLike(obj)) return doMapArray(eacharray, obj, callback, scope)
 	return doMapObj(eachobj, obj, callback, scope, own)
 }
@@ -207,20 +211,18 @@ export function doMap<T>(
  * @param own		map own properties on object, default: true
  * @return array index or property name or -1
  */
-export function map<T>(obj: IArray, callback: MapArrayCallback<T>, scope?: any): any[]
-export function map<T>(obj: object, callback: MapObjCallback<T>, own?: boolean): { [key: string]: T }
-export function map<T>(obj: object, callback: MapObjCallback<T>, scope?: any, own?: boolean): { [key: string]: T }
-export function map<T>(
-	obj: object | IArray,
-	callback: MapObjCallback<T> | MapArrayCallback<T>,
+export function map<T, E>(obj: IArray<E>, callback: MapArrayCallback<T, E>, scope?: any): T[]
+export function map<T, E>(
+	obj: { [key: string]: E },
+	callback: MapObjCallback<T, E>,
 	own?: boolean
-): { [key: string]: T } | any[]
-export function map<T>(
-	obj: object | IArray,
-	callback: MapObjCallback<T> | MapArrayCallback<T>,
+): { [key: string]: T }
+export function map<T, E>(
+	obj: { [key: string]: E },
+	callback: MapObjCallback<T, E>,
 	scope?: any,
 	own?: boolean
-): { [key: string]: T } | any[]
-export function map<T>(obj: object | IArray, callback: any, scope?: any, own?: boolean): { [key: string]: T } | T[] {
+): { [key: string]: T }
+export function map<T, E>(obj: any, callback: any, scope?: any, own?: boolean): { [key: string]: T } | T[] {
 	return doMap(eachArray, eachObj, obj, callback, scope, own)
 }

@@ -3,7 +3,7 @@
  * @module utility/AST
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Tue Nov 06 2018 10:58:52 GMT+0800 (China Standard Time)
- * @modified Sat Dec 22 2018 15:45:10 GMT+0800 (China Standard Time)
+ * @modified Thu Apr 04 2019 19:59:23 GMT+0800 (China Standard Time)
  */
 
 import { ComplexRuleBuilder } from './ComplexRule'
@@ -587,7 +587,7 @@ function mkComplexRule<T extends AndRule | OrRule>(
 
 function rulesBuilder(rules: ((rule: Rule) => any[]) | any[]): (rule: Rule) => Rule[] {
 	return function(_rule) {
-		return mapArray(isFn(rules) ? (rules as ((rule: Rule) => any[]))(_rule) : rules, (r, i) => {
+		return mapArray(isFn(rules) ? (rules as ((rule: Rule) => any[]))(_rule) : (rules as any[]), (r, i) => {
 			if (!r) return SKIP
 			let rule: Rule = r.$rule ? r : mkMatch(isArray(r) ? r : [r], discardMatch)
 			assert.is(rule, '{}: Invalid Rule Configuration on index {d}: {j}', _rule, i, r)

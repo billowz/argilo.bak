@@ -33,11 +33,13 @@ export const GLOBAL: any =
 		? self
 		: {}
 
-export interface ObjArray {
-	length: number
-}
-
-export type IArray = any[] | string | IArguments | ObjArray
+export type IArray<T> =
+	| T[]
+	| string
+	| {
+			length: number
+			[Symbol.iterator](): IterableIterator<T>
+	  }
 
 export function EMPTY_FN() {}
 

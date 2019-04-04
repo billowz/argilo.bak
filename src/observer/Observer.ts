@@ -2,7 +2,7 @@
  * @module observer
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Dec 26 2018 13:59:10 GMT+0800 (China Standard Time)
- * @modified Tue Apr 02 2019 11:43:32 GMT+0800 (China Standard Time)
+ * @modified Thu Apr 04 2019 20:06:01 GMT+0800 (China Standard Time)
  */
 
 import {
@@ -22,11 +22,24 @@ import {
 	get,
 	eq,
 	set,
-	isObject
+	isObject,
+	eachArray,
+	eachObj,
+	isFn,
+	SKIP
 } from '../utility'
 import { PROTOTYPE } from '../utility/consts'
 import { assert } from '../utility/assert'
-import { ObserverTarget, IWatcher, OBSERVER_KEY, IObserver, ARRAY_CHANGE, MISS, ObserverCallback } from './IObserver'
+import {
+	ObserverTarget,
+	IWatcher,
+	OBSERVER_KEY,
+	IObserver,
+	ARRAY_CHANGE,
+	MISS,
+	ObserverCallback,
+	ARRAY_LENGTH
+} from './IObserver'
 import { ObservePolicy } from './ObservePolicy'
 import proxyPolicy from './ProxyPolicy'
 import accessorPolicy from './AccessorPolicy'
@@ -267,14 +280,11 @@ class Topic {
 			if (observer) {
 				const { __prop: prop } = this
 
-				//#if _DEBUG
-				isArrayChangeProp(observer, prop) && sub.__ignorePath(2, 'Array')
-				//#endif
-
 				var subObserver: Observer<any>
+
 				if (subs[0]) {
 					subObserver = subs[0].__observer
-				} else {
+				} else if (!isArrayChangeProp(observer, prop)) {
 					const subTarget = observer.target[prop]
 					if (isObserverTarget(subTarget)) {
 						subObserver = __loadSubObserver(observer, prop, subTarget)
@@ -285,6 +295,11 @@ class Topic {
 					}
 					//#endif
 				}
+				//#if _DEBUG
+				else {
+					sub.__ignorePath(2, 'Array')
+				}
+				//#endif
 				sub.__bind(subObserver)
 			}
 
@@ -429,20 +444,23 @@ class Topic {
 				i = 0
 
 			if (observer) {
-				//#if _DEBUG
-				isArrayChangeProp(observer, prop) && this.__ignoreSubPaths(subs, l, 'Array')
-				//#endif
-
-				if (isObserverTarget(subTarget)) {
-					subObserver = __loadSubObserver(observer, prop, subTarget)
-					if (proxyEnable) {
-						subTarget = subObserver.target
-						dirty && (dirty[0] = subObserver.proxy) // update dirty proxy
+				if (!isArrayChangeProp(observer, prop)) {
+					if (isObserverTarget(subTarget)) {
+						subObserver = __loadSubObserver(observer, prop, subTarget)
+						if (proxyEnable) {
+							subTarget = subObserver.target
+							dirty && (dirty[0] = subObserver.proxy) // update dirty proxy
+						}
 					}
+					//#if _DEBUG
+					else if (!isNil(subTarget)) {
+						this.__ignoreSubPaths(subs, l, toStrType(subTarget))
+					}
+					//#endif
 				}
 				//#if _DEBUG
-				else if (!isNil(subTarget)) {
-					this.__ignoreSubPaths(subs, l, toStrType(subTarget))
+				else {
+					this.__ignoreSubPaths(subs, l, 'Array')
 				}
 				//#endif
 			} else if (proxyEnable && dirty) {
@@ -630,11 +648,8 @@ class Observer<T extends ObserverTarget> implements IObserver<T> {
 	 */
 	constructor(target: T) {
 		const arrayTarget = isArray(target)
-		if (arrayTarget) {
-			applyArrayHooks(target as any[])
-		} else {
-			assert.is(isObject(target), `the observer's target can only be an object or an array`)
-		}
+
+		assert.is(arrayTarget || isObject(target), `the observer's target can only be an object or an array`)
 
 		const watchers = create(null)
 		this.__watchers = watchers
@@ -738,13 +753,35 @@ class Observer<T extends ObserverTarget> implements IObserver<T> {
 	}
 
 	/**
-	 * notify the observer that all properties in the target have changed
-	 * the original value well be {@link MISS}
+	 * notify the observer that properties in the target have changed
+	 *
+	 * @param props 		notify properties, notify all watchers when the props is null or undefined
+	 * @param getOriginal	get the original value
+	 * @param execludes		do not notify watchers in execludes
 	 */
-	notifyAll() {
-		const { __watchers: watchers, __watcherProps: props } = this
-		for (var i = 0, l = props.length; i < l; i++) {
-			watchers[props[i]].notify(MISS)
+	notifies(props: string[], getOriginal: (prop: string, ob: Observer<T>) => any, execludes?: { [key: string]: any }) {
+		props || (props = this.__watcherProps)
+		const { __watchers: watchers } = this
+		let prop: string,
+			watcher: Watcher,
+			i = props.length,
+			origin: any
+		if (execludes) {
+			while (i--) {
+				prop = props[i]
+				if (!execludes[prop] && (watcher = watchers[prop]) && watcher.size()) {
+					origin = getOriginal(prop, this)
+					origin !== SKIP && watcher.notify(origin)
+				}
+			}
+		} else {
+			while (i--) {
+				prop = props[i]
+				if ((watcher = watchers[prop]) && watcher.size()) {
+					origin = getOriginal(prop, this)
+					origin !== SKIP && watcher.notify(origin)
+				}
+			}
 		}
 	}
 
@@ -754,7 +791,7 @@ class Observer<T extends ObserverTarget> implements IObserver<T> {
 	 * @protected
 	 * @param prop the property
 	 */
-	watcher(prop: string) {
+	watcher(prop: string): Watcher {
 		const watcher = this.__watchers[prop]
 		if (watcher && watcher.size()) return watcher
 	}
@@ -849,41 +886,6 @@ class Observer<T extends ObserverTarget> implements IObserver<T> {
 	 * @ignore
 	 */
 	toJSON() {}
-}
-
-//========================================================================================
-/*                                                                                      *
- *                                      Array Hooks                                     *
- *                                                                                      */
-//========================================================================================
-
-type ArrayHook = [string, (...args: any[]) => any]
-const arrayHooks = mapArray(
-	'fill,pop,push,reverse,shift,sort,splice,unshift'.split(','),
-	(method: string): ArrayHook => {
-		const fn = Array[PROTOTYPE][method]
-		return [
-			method,
-			function() {
-				const observer: Observer<any[]> = this[OBSERVER_KEY]
-				observer.notifyAll()
-				return applyScope(fn, observer.target, arguments)
-			}
-		]
-	}
-)
-
-/**
- * apply observer hooks on Array
- * @param array
- */
-function applyArrayHooks(array: any[]) {
-	let hook: ArrayHook,
-		i = arrayHooks.length
-	while (i--) {
-		hook = arrayHooks[i]
-		defPropValue(array, hook[0], hook[1], false, false, false)
-	}
 }
 
 //========================================================================================

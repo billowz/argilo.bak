@@ -2,7 +2,7 @@
  * @module utility/collection
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Jul 25 2018 17:12:06 GMT+0800 (China Standard Time)
- * @modified Tue Nov 27 2018 14:02:39 GMT+0800 (China Standard Time)
+ * @modified Thu Apr 04 2019 19:30:27 GMT+0800 (China Standard Time)
  */
 import { Control } from './Control'
 import { STOP, eachArray, reachArray, eachObj } from './each'
@@ -20,28 +20,28 @@ import { isArrayLike, isBool } from '../is'
  * reduce callback on object
  * - will stop reduce on return STOP
  */
-export type ReduceObjCallback<T> = (accumulator: T, value: any, prop: string, obj: object) => T | Control
+export type ReduceObjCallback<T, E> = (accumulator: T, value: E, prop: string, obj: { [key: string]: E }) => T | Control
 
-export function doReduceObj<T>(
+export function doReduceObj<T, E>(
 	each: typeof eachObj,
-	obj: object,
+	obj: { [key: string]: E },
 	accumulator: T,
-	callback: ReduceObjCallback<T>,
+	callback: ReduceObjCallback<T, E>,
 	own?: boolean
 ): T
-export function doReduceObj<T>(
+export function doReduceObj<T, E>(
 	each: typeof eachObj,
-	obj: object,
+	obj: { [key: string]: E },
 	accumulator: T,
-	callback: ReduceObjCallback<T>,
+	callback: ReduceObjCallback<T, E>,
 	scope?: any,
 	own?: boolean
 ): T
-export function doReduceObj<T>(
+export function doReduceObj<T, E>(
 	each: typeof eachObj,
-	obj: object,
+	obj: { [key: string]: E },
 	accumulator: T,
-	callback: ReduceObjCallback<T>,
+	callback: ReduceObjCallback<T, E>,
 	scope?: any,
 	own?: boolean
 ): T {
@@ -72,12 +72,23 @@ export function doReduceObj<T>(
  * @param scope			scope of callback
  * @param own			reduce own properties, default: true
  */
-export function reduceObj<T>(obj: object, accumulator: T, callback: ReduceObjCallback<T>, own?: boolean)
-export function reduceObj<T>(obj: object, accumulator: T, callback: ReduceObjCallback<T>, scope?: any, own?: boolean)
-export function reduceObj<T>(
-	obj: object,
+export function reduceObj<T, E>(
+	obj: { [key: string]: E },
 	accumulator: T,
-	callback: ReduceObjCallback<T>,
+	callback: ReduceObjCallback<T, E>,
+	own?: boolean
+)
+export function reduceObj<T, E>(
+	obj: { [key: string]: E },
+	accumulator: T,
+	callback: ReduceObjCallback<T, E>,
+	scope?: any,
+	own?: boolean
+)
+export function reduceObj<T, E>(
+	obj: { [key: string]: E },
+	accumulator: T,
+	callback: ReduceObjCallback<T, E>,
 	scope?: any,
 	own?: boolean
 ): T {
@@ -93,13 +104,13 @@ export function reduceObj<T>(
  * reduce callback on array
  * - will stop reduce on return STOP
  */
-export type ReduceArrayCallback<T> = (accumulator: T, data: any, index: number, array: IArray) => T | Control
+export type ReduceArrayCallback<T, E> = (accumulator: T, data: E, index: number, array: IArray<E>) => T | Control
 
-export function doReduceArray<T>(
+export function doReduceArray<T, E>(
 	each: typeof eachArray,
-	array: IArray,
+	array: IArray<E>,
 	accumulator: T,
-	callback: ReduceArrayCallback<T>,
+	callback: ReduceArrayCallback<T, E>,
 	scope?: any
 ): T {
 	callback = bind(callback, scope)
@@ -119,7 +130,12 @@ export function doReduceArray<T>(
  * @param callback		value callback
  * @param scope			scope of callback
  */
-export function reduceArray<T>(array: IArray, accumulator: T, callback: ReduceArrayCallback<T>, scope?: any): T {
+export function reduceArray<T, E>(
+	array: IArray<E>,
+	accumulator: T,
+	callback: ReduceArrayCallback<T, E>,
+	scope?: any
+): T {
 	return doReduceArray(eachArray, array, accumulator, callback, scope)
 }
 
@@ -131,7 +147,12 @@ export function reduceArray<T>(array: IArray, accumulator: T, callback: ReduceAr
  * @param callback		value callback
  * @param scope			scope of callback
  */
-export function rreduceArray<T>(array: IArray, accumulator: T, callback: ReduceArrayCallback<T>, scope?: any): T {
+export function rreduceArray<T, E>(
+	array: IArray<E>,
+	accumulator: T,
+	callback: ReduceArrayCallback<T, E>,
+	scope?: any
+): T {
 	return doReduceArray(reachArray, array, accumulator, callback, scope)
 }
 
@@ -141,60 +162,42 @@ export function rreduceArray<T>(array: IArray, accumulator: T, callback: ReduceA
  *                                                                                      */
 //========================================================================================
 
-export function doReduce<T>(
+export function doReduce<T, E>(
 	eacharray: typeof eachArray,
 	eachobj: typeof eachObj,
-	obj: IArray,
+	obj: IArray<E>,
 	accumulator: T,
-	callback: ReduceArrayCallback<T>,
+	callback: ReduceArrayCallback<T, E>,
 	scope?: any
 ): T
-export function doReduce<T>(
+export function doReduce<T, E>(
 	eacharray: typeof eachArray,
 	eachobj: typeof eachObj,
-	obj: object,
+	obj: { [key: string]: E },
 	accumulator: T,
-	callback: ReduceObjCallback<T>,
+	callback: ReduceObjCallback<T, E>,
 	own?: boolean
 ): T
-export function doReduce<T>(
+export function doReduce<T, E>(
 	eacharray: typeof eachArray,
 	eachobj: typeof eachObj,
-	obj: object,
+	obj: { [key: string]: E },
 	accumulator: T,
-	callback: ReduceObjCallback<T>,
+	callback: ReduceObjCallback<T, E>,
 	scope?: any,
 	own?: boolean
 ): T
-export function doReduce<T>(
+export function doReduce<T, E>(
 	eacharray: typeof eachArray,
 	eachobj: typeof eachObj,
-	obj: object | IArray,
+	obj: any,
 	accumulator: T,
-	callback: ReduceObjCallback<T> | ReduceArrayCallback<T>,
-	own?: boolean
-): T
-export function doReduce<T>(
-	eacharray: typeof eachArray,
-	eachobj: typeof eachObj,
-	obj: object | IArray,
-	accumulator: T,
-	callback: ReduceObjCallback<T> | ReduceArrayCallback<T>,
-	scope?: any,
-	own?: boolean
-): T
-export function doReduce<T>(
-	eacharray: typeof eachArray,
-	eachobj: typeof eachObj,
-	obj: object | IArray,
-	accumulator: T,
-	callback: ReduceArrayCallback<T> | ReduceObjCallback<T>,
+	callback: any,
 	scope?: any,
 	own?: boolean
 ): T {
-	if (isArrayLike(obj))
-		return doReduceArray(eacharray, obj as IArray, accumulator, callback as ReduceArrayCallback<T>, scope)
-	return doReduceObj(eachobj, obj as object, accumulator, callback as ReduceObjCallback<T>, scope, own)
+	if (isArrayLike(obj)) return doReduceArray(eacharray, obj as IArray<E>, accumulator, callback, scope)
+	return doReduceObj(eachobj, obj, accumulator, callback, scope, own)
 }
 
 /**
@@ -206,28 +209,20 @@ export function doReduce<T>(
  * @param scope			scope of callback
  * @param own			reduce own properties of reduce object, default: true
  */
-export function reduce<T>(obj: IArray, accumulator: T, callback: ReduceArrayCallback<T>, scope?: any): T
-export function reduce<T>(obj: object, accumulator: T, callback: ReduceObjCallback<T>, own?: boolean): T
-export function reduce<T>(obj: object, accumulator: T, callback: ReduceObjCallback<T>, scope?: any, own?: boolean): T
-export function reduce<T>(
-	obj: object | IArray,
+export function reduce<T, E>(obj: IArray<E>, accumulator: T, callback: ReduceArrayCallback<T, E>, scope?: any): T
+export function reduce<T, E>(
+	obj: { [key: string]: E },
 	accumulator: T,
-	callback: ReduceObjCallback<T> | ReduceArrayCallback<T>,
+	callback: ReduceObjCallback<T, E>,
 	own?: boolean
 ): T
-export function reduce<T>(
-	obj: object | IArray,
+export function reduce<T, E>(
+	obj: { [key: string]: E },
 	accumulator: T,
-	callback: ReduceObjCallback<T> | ReduceArrayCallback<T>,
+	callback: ReduceObjCallback<T, E>,
 	scope?: any,
 	own?: boolean
 ): T
-export function reduce<T>(
-	obj: object | IArray,
-	accumulator: T,
-	callback: ReduceArrayCallback<T> | ReduceObjCallback<T>,
-	scope?: any,
-	own?: boolean
-): T {
+export function reduce<T, E>(obj: any, accumulator: T, callback: any, scope?: any, own?: boolean): T {
 	return doReduce(eachArray, eachObj, obj, accumulator, callback, scope, own)
 }

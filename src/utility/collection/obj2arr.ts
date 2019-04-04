@@ -2,7 +2,7 @@
  * @module utility/collection
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Thu Jul 26 2018 10:47:47 GMT+0800 (China Standard Time)
- * @modified Sat Dec 29 2018 19:34:56 GMT+0800 (China Standard Time)
+ * @modified Thu Apr 04 2019 19:49:02 GMT+0800 (China Standard Time)
  */
 import { Control } from './Control'
 import { STOP, eachObj, eachProps } from './each'
@@ -79,31 +79,36 @@ export function keys<T>(obj: object, callback?: ObjKeyHandler<T> | boolean, scop
  *                                                                                      */
 //========================================================================================
 
-export type ObjValueHandler<T> = (value: any, prop: string, obj: object) => T | Control
+export type ObjValueHandler<T, E> = (value: E, prop: string, obj: { [key: string]: E }) => T | Control
 
-function defaultObjValueHandler(value: any, prop: string, obj: object): any {
+function defaultObjValueHandler<E>(value: any, prop: string, obj: { [key: string]: E }): any {
 	return value
 }
-export function doObjValues<T>(each: typeof eachObj, obj: object, own?: boolean): T[]
-export function doObjValues<T>(each: typeof eachObj, obj: object, callback: ObjValueHandler<T>, own?: boolean): T[]
-export function doObjValues<T>(
+export function doObjValues<T, E>(each: typeof eachObj, obj: { [key: string]: E }, own?: boolean): T[]
+export function doObjValues<T, E>(
 	each: typeof eachObj,
-	obj: object,
-	callback: ObjValueHandler<T>,
+	obj: { [key: string]: E },
+	callback: ObjValueHandler<T, E>,
+	own?: boolean
+): T[]
+export function doObjValues<T, E>(
+	each: typeof eachObj,
+	obj: { [key: string]: E },
+	callback: ObjValueHandler<T, E>,
 	scope?: any,
 	own?: boolean
 ): T[]
-export function doObjValues<T>(
+export function doObjValues<T, E>(
 	each: typeof eachObj,
-	obj: object,
-	callback_own?: ObjValueHandler<T> | boolean,
+	obj: { [key: string]: E },
+	callback_own?: ObjValueHandler<T, E> | boolean,
 	scope_own?: any,
 	own?: boolean
 ): T[]
-export function doObjValues<T>(each: typeof eachObj, obj: object): T[] {
+export function doObjValues<T, E>(each: typeof eachObj, obj: { [key: string]: E }): T[] {
 	const rs: T[] = [],
 		args = arguments
-	let handler: ObjValueHandler<T> = defaultObjValueHandler,
+	let handler: ObjValueHandler<T, E> = defaultObjValueHandler,
 		i = 1,
 		j = 0
 	if (isFn(args[i])) {
@@ -129,9 +134,19 @@ export function doObjValues<T>(each: typeof eachObj, obj: object): T[] {
  * @param scope		scope or handler
  * @param own		is get own properties, default: true
  */
-export function values<T>(obj: object, own?: boolean): T[]
-export function values<T>(obj: object, callback: ObjValueHandler<T>, own?: boolean): T[]
-export function values<T>(obj: object, callback: ObjValueHandler<T>, scope?: any, own?: boolean): T[]
-export function values<T>(obj: object, callback?: ObjValueHandler<T> | boolean, scope?: any, own?: boolean): T[] {
+export function values<T, E>(obj: { [key: string]: E }, own?: boolean): T[]
+export function values<T, E>(obj: { [key: string]: E }, callback: ObjValueHandler<T, E>, own?: boolean): T[]
+export function values<T, E>(
+	obj: { [key: string]: E },
+	callback: ObjValueHandler<T, E>,
+	scope?: any,
+	own?: boolean
+): T[]
+export function values<T, E>(
+	obj: { [key: string]: E },
+	callback?: ObjValueHandler<T, E> | boolean,
+	scope?: any,
+	own?: boolean
+): T[] {
 	return doObjValues(eachObj, obj, callback, scope, own)
 }

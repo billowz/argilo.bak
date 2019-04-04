@@ -41,7 +41,7 @@ var OBJECT_PROPERTY = and('property', [
 			], appendMatch)
 		], appendMatch),
 		'}'
-	], attachMatch(data => arr2obj(data, d => d)))
+	], attachMatch((data:any[]) => arr2obj(data, d => d)))
 
 // prettier-ignore
 var ARRAY_ELEM = and('element', [

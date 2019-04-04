@@ -9,11 +9,19 @@ export const OBSERVER_KEY = addDefaultKey('__observer__')
  * the property of observe an array change
  */
 export const ARRAY_CHANGE = '$change'
+export const ARRAY_LENGTH = 'length'
 
 /**
  * The dirty collector lost the original value
  */
-export const MISS = {}
+export const MISS = {
+	toString() {
+		return 'MISS'
+	},
+	toJSON() {
+		return 'MISS'
+	}
+}
 
 export type ObserverTarget = any[] | {}
 
@@ -119,10 +127,17 @@ export interface IObserver<T extends ObserverTarget> {
 	notify(prop: string, original: any): void
 
 	/**
-	 * notify the observer that all properties in the target have changed
-	 * the original value well be {@link MISS}
+	 * notify the observer that properties in the target have changed
+	 *
+	 * @param props 		notify properties, notify all watchers when the props is null or undefined
+	 * @param getOriginal	get the original value
+	 * @param execludes		do not notify watchers in execludes
 	 */
-	notifyAll(): void
+	notifies(
+		props: string[],
+		getOriginal: (prop: string, ob: IObserver<T>) => any,
+		execludes?: { [key: string]: any }
+	): void
 
 	/**
 	 * get wather by property

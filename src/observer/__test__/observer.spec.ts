@@ -201,7 +201,7 @@ class ObserveChain<T extends ObserverTarget> {
 			called: number
 			cb: ObserverCallback<T>
 			path: string
-			dirties: [any, any?][]
+			dirties: [any, any][]
 			listenId: string
 		}
 	}
@@ -427,7 +427,7 @@ class ObserveChain<T extends ObserverTarget> {
 					)
 					assert.eq(d[0], e[0], '[{d}][{}]: expect dirty value: {0j} to {1j}', stepIdx, path)
 					if (e.length > 1)
-						assert.eq(d[1], e[1], '[{d}][{}]: expect origin value: {0j} to {0j}', stepIdx, path)
+						assert.eq(d[1], e[1], '[{d}][{}]: expect origin value: {0j} to {1j}', stepIdx, path)
 				}
 			})
 

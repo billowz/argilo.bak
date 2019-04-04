@@ -2,7 +2,7 @@
  * @module utility/collection
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Jul 25 2018 17:10:41 GMT+0800 (China Standard Time)
- * @modified Sat Mar 23 2019 17:29:41 GMT+0800 (China Standard Time)
+ * @modified Thu Apr 04 2019 19:32:58 GMT+0800 (China Standard Time)
  */
 import { Control } from './Control'
 import { IArray } from '../consts'
@@ -26,7 +26,7 @@ export const STOP = new Control('STOP')
  * each callback on object
  * - will stop each on return STOP
  */
-export type EachPropCallback = (prop: string, obj: object) => Control | void
+export type EachPropCallback<T extends {}> = (prop: string, obj: T) => Control | void
 
 /**
  * each properties
@@ -37,9 +37,19 @@ export type EachPropCallback = (prop: string, obj: object) => Control | void
  * @param own		each own properties, default: true
  * @return stoped property name or false
  */
-export function eachProps(obj: object, callback: EachPropCallback, own: boolean): false | string
-export function eachProps(obj: object, callback: EachPropCallback, scope?: any, own?: boolean): false | string
-export function eachProps(obj: object, callback: EachPropCallback, scope?: any, own?: boolean): false | string {
+export function eachProps<T extends {}>(obj: T, callback: EachPropCallback<T>, own: boolean): false | string
+export function eachProps<T extends {}>(
+	obj: T,
+	callback: EachPropCallback<T>,
+	scope?: any,
+	own?: boolean
+): false | string
+export function eachProps<T extends {}>(
+	obj: T,
+	callback: EachPropCallback<T>,
+	scope?: any,
+	own?: boolean
+): false | string {
 	if (isBool(scope)) {
 		own = scope
 	} else {
@@ -64,7 +74,7 @@ export function eachProps(obj: object, callback: EachPropCallback, scope?: any, 
  * each callback on object
  * - will stop each on callback return STOP
  */
-export type EachObjCallback = (value: any, prop: string, obj: object) => Control | void
+export type EachObjCallback<E> = (value: E, prop: string, obj: { [key: string]: E }) => Control | void
 
 /**
  * each object
@@ -75,9 +85,19 @@ export type EachObjCallback = (value: any, prop: string, obj: object) => Control
  * @param own		each own properties, default: true
  * @return stoped property name or false
  */
-export function eachObj(obj: object, callback: EachObjCallback, own: boolean): false | string
-export function eachObj(obj: object, callback: EachObjCallback, scope?: any, own?: boolean): false | string
-export function eachObj(obj: object, callback: EachObjCallback, scope?: any, own?: boolean): false | string {
+export function eachObj<E>(obj: { [key: string]: E }, callback: EachObjCallback<E>, own: boolean): false | string
+export function eachObj<E>(
+	obj: { [key: string]: E },
+	callback: EachObjCallback<E>,
+	scope?: any,
+	own?: boolean
+): false | string
+export function eachObj<E>(
+	obj: { [key: string]: E },
+	callback: EachObjCallback<E>,
+	scope?: any,
+	own?: boolean
+): false | string {
 	const args = arguments
 	if (isBool(scope)) {
 		own = scope
@@ -103,7 +123,7 @@ export function eachObj(obj: object, callback: EachObjCallback, scope?: any, own
  * each callback on array
  * - will stop each on callback return STOP
  */
-export type EachArrayCallback = (data: any, index: number, array: IArray) => Control | void
+export type EachArrayCallback<E> = (data: E, index: number, array: IArray<E>) => Control | void
 
 /**
  * each array
@@ -113,7 +133,7 @@ export type EachArrayCallback = (data: any, index: number, array: IArray) => Con
  * @param scope		scope of callback
  * @return stoped index or false
  */
-export function eachArray(array: IArray, callback: EachArrayCallback, scope?: any): false | number {
+export function eachArray<E>(array: IArray<E>, callback: EachArrayCallback<E>, scope?: any): false | number {
 	callback = bind(callback, scope)
 	for (let i = 0, l = array.length; i < l; i++) {
 		if (callback(array[i], i, array) === STOP) return i
@@ -129,7 +149,7 @@ export function eachArray(array: IArray, callback: EachArrayCallback, scope?: an
  * @param scope		scope of callback
  * @return stoped index or false
  */
-export function reachArray(array: IArray, callback: EachArrayCallback, scope?: any): false | number {
+export function reachArray<E>(array: IArray<E>, callback: EachArrayCallback<E>, scope?: any): false | number {
 	callback = bind(callback, scope)
 	let i = array.length
 	while (i--) if (callback(array[i], i, array) === STOP) return i
@@ -142,43 +162,28 @@ export function reachArray(array: IArray, callback: EachArrayCallback, scope?: a
  *                                                                                      */
 //========================================================================================
 
-export function doEach(
+export function doEach<E>(
 	_eachArray: typeof eachArray,
 	_eachObj: typeof eachObj,
-	obj: IArray,
-	callback: EachArrayCallback,
+	obj: IArray<E>,
+	callback: EachArrayCallback<E>,
 	scope?: any
 ): false | number
-export function doEach(
+export function doEach<E>(
 	_eachArray: typeof eachArray,
 	_eachObj: typeof eachObj,
-	obj: object,
-	callback: EachObjCallback,
+	obj: { [key: string]: E },
+	callback: EachObjCallback<E>,
 	own?: boolean
 ): false | string
-export function doEach(
+export function doEach<E>(
 	_eachArray: typeof eachArray,
 	_eachObj: typeof eachObj,
-	obj: object,
-	callback: EachObjCallback,
+	obj: { [key: string]: E },
+	callback: EachObjCallback<E>,
 	scope?: any,
 	own?: boolean
 ): false | string
-export function doEach(
-	_eachArray: typeof eachArray,
-	_eachObj: typeof eachObj,
-	obj: object | IArray,
-	callback: EachObjCallback | EachArrayCallback,
-	own?: boolean
-): false | number | string
-export function doEach(
-	_eachArray: typeof eachArray,
-	_eachObj: typeof eachObj,
-	obj: object | IArray,
-	callback: EachObjCallback | EachArrayCallback,
-	scope?: any,
-	own?: boolean
-): false | number | string
 export function doEach(
 	_eachArray: typeof eachArray,
 	_eachObj: typeof eachObj,
@@ -201,20 +206,14 @@ export function doEach(
  * @return stoped index or false
  */
 
-export function each(obj: IArray, callback: EachArrayCallback, scope?: any): false | number
-export function each(obj: object, callback: EachObjCallback, own?: boolean): false | string
-export function each(obj: object, callback: EachObjCallback, scope?: any, own?: boolean): false | string
-export function each(
-	obj: object | IArray,
-	callback: EachObjCallback | EachArrayCallback,
-	own?: boolean
-): false | number | string
-export function each(
-	obj: object | IArray,
-	callback: EachObjCallback | EachArrayCallback,
+export function each<E>(obj: IArray<E>, callback: EachArrayCallback<E>, scope?: any): false | number
+export function each<E>(obj: { [key: string]: E }, callback: EachObjCallback<E>, own?: boolean): false | string
+export function each<E>(
+	obj: { [key: string]: E },
+	callback: EachObjCallback<E>,
 	scope?: any,
 	own?: boolean
-): false | number | string
-export function each(obj: any, callback: any, scope?: any, own?: boolean): false | number | string {
+): false | string
+export function each<E>(obj: any, callback: any, scope?: any, own?: boolean): false | number | string {
 	return doEach(eachArray, eachObj, obj, callback, scope, own)
 }

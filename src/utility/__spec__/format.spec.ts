@@ -4,7 +4,7 @@ import { eachArray } from '../collection'
 import { applyNoScope, createFn } from '../fn'
 import { escapeStr } from '../string'
 
-const formatCases = [
+const formatCases: any[][] = [
 	['\\{}', '{}'],
 	['{} {} {$}', '123 456 undefined', 123, 456],
 	['{$} {} {$}', '123 456 undefined', 123, 456],
