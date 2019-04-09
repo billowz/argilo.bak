@@ -1,21 +1,4 @@
 import {
-	assert,
-	create,
-	isDefaultKey,
-	assign,
-	keys,
-	eq,
-	eachObj,
-	mapObj,
-	isFn,
-	parsePath,
-	nextTick,
-	eachArray,
-	formatPath,
-	popErrStack,
-	format
-} from '../../utility'
-import {
 	observer,
 	source,
 	proxy,
@@ -27,26 +10,27 @@ import {
 	$eq,
 	proxyEnable,
 	observe,
-	collect,
 	ObserverTarget,
-	MISS,
 	ObserverCallback,
 	observedId,
 	unobserveId,
 	observed
 } from '../index'
-import { isArray } from 'util'
-import { each } from 'benchmark'
+import { format } from '../../format'
+import { parsePath, formatPath } from '../../path'
+import { nextTick } from '../../nextTick'
+import { create, isDKey, assign, keys, eq, eachObj, mapObj, eachArray } from '../../util'
+import { assert, popErrStack } from '../../assert'
 
 const vb = proxyEnable === 'vb',
 	es6proxy = proxyEnable === 'proxy'
 
 describe('observer', function() {
 	it('default keys', function() {
-		assert.is(isDefaultKey(OBSERVER_KEY))
+		assert.is(isDKey(OBSERVER_KEY))
 		if (proxyEnable === 'vb') {
-			assert.is(isDefaultKey(VBPROXY_KEY))
-			assert.is(isDefaultKey(VBPROXY_CTOR_KEY))
+			assert.is(isDKey(VBPROXY_KEY))
+			assert.is(isDKey(VBPROXY_CTOR_KEY))
 		}
 	})
 
@@ -98,48 +82,116 @@ describe('observer', function() {
 		}
 	})
 
-	it('observe changes on an object property', function(done) {
-		new ObserveChain(
+	interface SimpleObject {
+		name: string
+		email: string
+		age: number
+	}
+	const SimpleObjectName = 'Mary',
+		SimpleObjectEmail = 'mary@domain.com',
+		SimpleObjectAge = 18
+
+	function observeSimpleObject(o: SimpleObject, done: () => void) {
+		new ObserveChain(o, [
 			{
-				name: 'Mary',
-				email: 'mary@domain.com',
-				age: 18
-			},
-			[
-				{
-					setup(o, c) {
-						c.collect('name', 'email', 'age')
-						o.name = 'Paul'
-						o.email = 'paul@domain.com'
-						o.age = 18
-					},
-					done(w, c) {
-						c.expect({ name: ['Paul', 'Mary'], email: ['paul@domain.com', 'mary@domain.com'] })
-					}
+				setup(o, c) {
+					c.collect('name', 'email', 'age')
+					o.name = 'Paul'
+					o.email = 'paul@domain.com'
+					o.age = 15
+					o.age = 18
 				},
-				{
-					setup(o, c) {
-						o.name = 'Mary'
-						o.email = 'mary@domain.com'
-						c.uncollect('email')
-					},
-					done(w, c) {
-						c.expect({ name: ['Mary', 'Paul'] })
-					}
-				},
-				{
-					setup(o, c) {
-						c.uncollect()
-						o.name = 'Paul'
-						o.email = 'paul@domain.com'
-						o.age = 20
-					},
-					done(w, c) {
-						c.expect({})
-					}
+				done(w, c) {
+					c.expect({ name: ['Paul', 'Mary'], email: ['paul@domain.com', 'mary@domain.com'] })
 				}
-			]
-		).run(done)
+			},
+			{
+				setup(o, c) {
+					o.name = 'Mary2'
+					o.name = 'Mary'
+					o.email = 'mary@domain.com'
+					c.uncollect('email')
+				},
+				done(w, c) {
+					c.expect({ name: ['Mary', 'Paul'] })
+				}
+			},
+			{
+				setup(o, c) {
+					c.uncollect()
+					o.name = 'Paul'
+					o.email = 'paul@domain.com'
+					o.age = 20
+				},
+				done(w, c) {
+					c.expect({})
+
+					o.name = SimpleObjectName
+					o.email = SimpleObjectEmail
+					o.age = SimpleObjectAge
+				}
+			}
+		]).run(done)
+	}
+	it('observe changes on an literal object', function(done) {
+		observeSimpleObject(
+			{
+				name: SimpleObjectName,
+				email: SimpleObjectEmail,
+				age: SimpleObjectAge
+			},
+			done
+		)
+	})
+
+	it('observe changes on an instance of class', function(done) {
+		class A {
+			public name: string = SimpleObjectName
+			public email: string
+			constructor(email: string) {
+				this.email = email
+			}
+		}
+		class B extends A {
+			public age: number
+			constructor(age: number) {
+				super(SimpleObjectEmail)
+				this.age = age
+			}
+		}
+		observeSimpleObject(new B(SimpleObjectAge), done)
+	})
+
+	it('observe changes on an instance of constructor', function(done) {
+		function A(email: string) {
+			this.email = email
+		}
+		A.prototype.name = SimpleObjectName
+
+		function B(age: number) {
+			A.call(this, SimpleObjectEmail)
+			this.age = age
+		}
+		B.prototype = create(A.prototype)
+		observeSimpleObject(new B(SimpleObjectAge), done)
+	})
+
+	it('observe changes on an sub-object', function(done) {
+		const o = {
+			name: SimpleObjectName,
+			email: SimpleObjectEmail,
+			age: SimpleObjectAge
+		}
+		observeSimpleObject(o, () => {
+			const o2 = create(o, {
+				name: { value: SimpleObjectName, writable: true, enumerable: true, configurable: true },
+				email: { value: SimpleObjectEmail, writable: true, enumerable: true, configurable: true },
+				age: { value: SimpleObjectAge, writable: true, enumerable: true, configurable: true }
+			})
+			observeSimpleObject(o2, () => {
+				observeSimpleObject(create(o2), done)
+			})
+		})
 	})
 
 	it('observe changes on an array property', function(done) {
@@ -147,6 +199,7 @@ describe('observer', function() {
 			[1],
 			[
 				{
+					// [2]
 					name: 'set index',
 					setup(o, c) {
 						c.collect('[0]', 'length', '$change')
@@ -157,13 +210,14 @@ describe('observer', function() {
 							vb
 								? {}
 								: {
-										'[0]': [2, vb ? MISS : 1],
-										$change: [c.ob.proxy, vb ? MISS : c.ob.proxy]
+										'[0]': [2, 1],
+										$change: [c.ob.proxy, c.ob.proxy]
 								  }
 						)
 					}
 				},
 				{
+					// [2,1]
 					name: 'array.push',
 					setup(o, c) {
 						c.collect('[0]', 'length', '$change')
@@ -171,9 +225,23 @@ describe('observer', function() {
 					},
 					done(w, c) {
 						c.expect({
-							'[0]': [2, MISS],
-							length: [2, MISS],
-							$change: [c.ob.proxy, vb ? MISS : c.ob.proxy]
+							length: [2, 1],
+							$change: [c.ob.proxy, c.ob.proxy]
+						})
+					}
+				},
+				{
+					// [3,2,1]
+					name: 'array.unshift',
+					setup(o, c) {
+						c.collect('[0]', 'length', '$change')
+						o.unshift(3)
+					},
+					done(w, c) {
+						c.expect({
+							'[0]': [3, 2],
+							length: [3, 2],
+							$change: [c.ob.proxy, c.ob.proxy]
 						})
 					}
 				}
@@ -253,7 +321,7 @@ class ObserveChain<T extends ObserverTarget> {
 	run(done: () => void) {
 		const { steps, stepIdx } = this
 
-		if (stepIdx === steps.length) {
+		if (stepIdx >= steps.length) {
 			done && done()
 			return
 		}
@@ -262,13 +330,13 @@ class ObserveChain<T extends ObserverTarget> {
 		if (step) {
 			step.setup && step.setup(this.ob.proxy, this)
 
-			nextTick(() => {
+			setTimeout(() => {
 				step.done && step.done(mapObj(this.ctxs, ctx => ctx.dirties[stepIdx]), this)
 
 				this.stepIdx++
 
 				this.run(done)
-			})
+			}, 20)
 		} else {
 			this.stepIdx++
 			this.run(done)

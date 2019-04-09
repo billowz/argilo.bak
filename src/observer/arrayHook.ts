@@ -1,6 +1,13 @@
+/**
+ * @module observer
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Thu Apr 04 2019 20:42:20 GMT+0800 (China Standard Time)
+ * @modified Mon Apr 08 2019 13:31:48 GMT+0800 (China Standard Time)
+ */
+
 import { ARRAY_LENGTH, ARRAY_CHANGE, IObserver, OBSERVER_KEY } from './IObserver'
-import { eachObj, eachArray, isFn, applyScope, defPropValue, SKIP } from '../utility'
-import { PROTOTYPE } from '../utility/consts'
+import { eachObj, eachArray, isFn, applyScope, defValue, SKIP } from '../util'
+import { P_PROTOTYPE } from '../util/consts'
 
 type ArrayHook = [string, (...args: any[]) => any]
 const arrayHooks = []
@@ -32,7 +39,7 @@ const arrayHookCfg: {
 }
 eachObj(arrayHookCfg, (hooker, methods) => {
 	eachArray(methods.split(','), method => {
-		const fn = Array[PROTOTYPE][method]
+		const fn = Array[P_PROTOTYPE][method]
 		let hook: (...args: any[]) => any
 		if (isFn(hooker)) {
 			const cb: (ob: IObserver<any[]>, args: IArguments) => void = hooker as ((ob: IObserver<any[]>) => void)
@@ -66,6 +73,6 @@ export function applyArrayHooks(array: any[]) {
 		i = arrayHooks.length
 	while (i--) {
 		hook = arrayHooks[i]
-		defPropValue(array, hook[0], hook[1], false, false, false)
+		defValue(array, hook[0], hook[1], false, false, false)
 	}
 }

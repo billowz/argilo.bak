@@ -8,7 +8,7 @@ module.exports = function(config) {
 		transports: ['websocket', 'polling', 'jsonp-polling'],
 		frameworks: ['mocha', 'expect'],
 		reporters: ['spec', 'coverage'],
-		files: ['../src/**/*.spec.ts', '../src/index.ts'],
+		files: (process.env.specs || '*').split(',').map(v => `../src/**/${v}.spec.ts`).concat([ '../src/index.ts']),
 		preprocessors: {
 			'../src/**/*.ts': ['rollup', 'transformPath']
 		},

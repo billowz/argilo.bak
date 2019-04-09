@@ -2,60 +2,19 @@
  * @module observer
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Dec 26 2018 13:59:10 GMT+0800 (China Standard Time)
- * @modified Thu Apr 04 2019 20:06:01 GMT+0800 (China Standard Time)
+ * @modified Mon Apr 08 2019 18:33:01 GMT+0800 (China Standard Time)
  */
 
-import {
-	mapArray,
-	applyScope,
-	defPropValue,
-	create,
-	isArray,
-	FnList,
-	List,
-	parsePath,
-	formatPath,
-	isPrimitive,
-	nextTick,
-	isNil,
-	toStrType,
-	get,
-	eq,
-	set,
-	isObject,
-	eachArray,
-	eachObj,
-	isFn,
-	SKIP
-} from '../utility'
-import { PROTOTYPE } from '../utility/consts'
-import { assert } from '../utility/assert'
-import {
-	ObserverTarget,
-	IWatcher,
-	OBSERVER_KEY,
-	IObserver,
-	ARRAY_CHANGE,
-	MISS,
-	ObserverCallback,
-	ARRAY_LENGTH
-} from './IObserver'
+import { ObserverTarget, IWatcher, OBSERVER_KEY, IObserver, ARRAY_CHANGE, ObserverCallback } from './IObserver'
 import { ObservePolicy } from './ObservePolicy'
 import proxyPolicy from './ProxyPolicy'
 import accessorPolicy from './AccessorPolicy'
 import vbPolicy from './VBPolicy'
-
-//========================================================================================
-/*                                                                                      *
- *                                        topic                                         *
- *                                                                                      */
-//========================================================================================
-
-/**
- * special object
- * - special object indicates that the topic has not changed
- */
-const V = {}
+import { nextTick } from '../nextTick'
+import { FnList, List } from '../list'
+import { parsePath, formatPath, get, set } from '../path'
+import { defValue, create, isArray, isPrimitive, isNil, toStrType, eq, isObject, SKIP } from '../util'
+import { assert } from '../assert'
 
 function isObserverTarget(obj: any) {
 	return obj && (isArray(obj) || isObject(obj))
@@ -70,6 +29,18 @@ function isArrayChangeProp<T extends ObserverTarget>(observer: IObserver<T>, pro
 	return observer.isArray && prop === ARRAY_CHANGE
 }
 
+//========================================================================================
+/*                                                                                      *
+ *                                        topic                                         *
+ *                                                                                      */
+//========================================================================================
+
+/**
+ * special object
+ * - special object indicates that the topic has not changed
+ */
+const V = {}
+
 /**
  * get property value on object
  * @param obj 	object
@@ -77,16 +48,6 @@ function isArrayChangeProp<T extends ObserverTarget>(observer: IObserver<T>, pro
  */
 function getValue(obj: any, prop: string) {
 	return obj === undefined || obj === null ? undefined : obj[prop]
-}
-
-/**
- * get property value on the original value
- * check {@link MISS}
- * @param original 	original value
- * @param prop 		property
- */
-function getOriginalValue(original: any, prop: string) {
-	return original === undefined || original === null ? undefined : original === MISS ? original : original[prop]
 }
 
 // id generator of topic
@@ -236,16 +197,12 @@ class Topic {
 				const err: Error = observer.__watchTopic(this)
 				if (err) {
 					const path = this.__getPath()
-					assert(
-						`observer[{}]: can not watch {} on {}{}, {{message}}.`,
-						formatPath(path),
-						formatPath(path.slice(-1)),
-						toStrType(observer.target),
-						path.length > 1 ? `[${formatPath(path.slice(0, -1))}]` : '',
-						err,
-						err,
-						this.__owner.target
-					)
+					err.message = `observer[${formatPath(path)}]: can not watch ${formatPath(
+						path.slice(-1)
+					)} on ${toStrType(observer.target)}${
+						path.length > 1 ? `[${formatPath(path.slice(0, -1))}]` : ''
+					}, ${err.message}.`
+					throw err
 				}
 			}
 			this.__observer = observer
@@ -477,7 +434,7 @@ class Topic {
 						// 1. this subtopic has not been changed, using the original value of the current topic
 						// *2. this subtopic has been changed and collected, and the collector retains its original value
 						// *   this does not happen after the topics are sorted by ID before collection
-						subOriginal = sub.__dirty ? undefined : getOriginalValue(original, sub.__prop)
+						subOriginal = sub.__dirty || isNil(original) ? undefined : original[sub.__prop]
 					} else {
 						// this subtopic was changed but not collected, collected in advance
 						sub.__original = V
@@ -659,7 +616,7 @@ class Observer<T extends ObserverTarget> implements IObserver<T> {
 		this.target = target
 
 		// bind observer key on the observer's target
-		defPropValue(target, OBSERVER_KEY, this, false, false, false)
+		defValue(target, OBSERVER_KEY, this, false, false, false)
 
 		this.proxy = policy.__createProxy(this, target, arrayTarget)
 	}
@@ -934,6 +891,12 @@ let __loadSubObserver: <T extends ObserverTarget>(observer: Observer<any>, prop:
 	if (subObserver.proxy !== target) observer.target[prop] = subObserver.proxy
 	return subObserver
 }
+
+//========================================================================================
+/*                                                                                      *
+ *                                          API                                         *
+ *                                                                                      */
+//========================================================================================
 
 /**
  * get the original object of the observer on the object

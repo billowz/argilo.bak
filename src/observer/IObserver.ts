@@ -1,27 +1,23 @@
-import { addDefaultKey } from '../utility'
+/**
+ *
+ * @module observer
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Tue Mar 19 2019 14:12:23 GMT+0800 (China Standard Time)
+ * @modified Mon Apr 08 2019 13:32:29 GMT+0800 (China Standard Time)
+ */
+
+import { addDKey } from '../util'
 
 /**
  * Observer Key
  */
-export const OBSERVER_KEY = addDefaultKey('__observer__')
+export const OBSERVER_KEY = addDKey('__observer__')
 
 /**
  * the property of observe an array change
  */
-export const ARRAY_CHANGE = '$change'
-export const ARRAY_LENGTH = 'length'
-
-/**
- * The dirty collector lost the original value
- */
-export const MISS = {
-	toString() {
-		return 'MISS'
-	},
-	toJSON() {
-		return 'MISS'
-	}
-}
+export const ARRAY_CHANGE = '$change',
+	ARRAY_LENGTH = 'length'
 
 export type ObserverTarget = any[] | {}
 
@@ -29,7 +25,7 @@ export type ObserverTarget = any[] | {}
  * change callback for observer
  * @param path 		the observe path
  * @param value 	new value
- * @param original	original value. the original value is {@link MISS} when the dirty collector loses the original value
+ * @param original	original value
  */
 export type ObserverCallback<T extends ObserverTarget> = (
 	path: string[],

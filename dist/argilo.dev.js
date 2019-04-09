@@ -11,7 +11,7 @@
  * Copyright (c) 2018 Tao Zeng <tao.zeng.zt@qq.com>
  * Released under the MIT license
  *
- * Date: Thu, 04 Apr 2019 12:00:00 GMT
+ * Date: Tue, 09 Apr 2019 10:01:13 GMT
  */
 (function (global, factory) {
 	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
@@ -20,75 +20,75 @@
 }(this, function (exports) {
 	/**
 	 *
+	 * @module util
 	 * @author Tao Zeng (tao.zeng.zt@qq.com)
-	 * @module utility
 	 * @created 2018-11-09 15:23:35
 	 * @modified 2018-11-09 15:23:35 by Tao Zeng (tao.zeng.zt@qq.com)
 	 */
-	var CONSTRUCTOR = 'constructor';
-	var PROTOTYPE = 'prototype';
-	var PROTO = '__proto__';
-	var HAS_OWN_PROP = 'hasOwnProperty';
-	var TYPE_BOOL = 'boolean';
-	var TYPE_FN = 'function';
-	var TYPE_NUM = 'number';
-	var TYPE_STRING = 'string';
-	var TYPE_UNDEF = 'undefined';
-	var GLOBAL = typeof window !== TYPE_UNDEF ? window : typeof global !== TYPE_UNDEF ? global : typeof self !== TYPE_UNDEF ? self : {};
+	var P_CTOR = 'constructor';
+	var P_PROTOTYPE = 'prototype';
+	var P_PROTO = '__proto__';
+	var P_OWNPROP = 'hasOwnProperty';
+	var T_BOOL = 'boolean';
+	var T_FN = 'function';
+	var T_NUM = 'number';
+	var T_STRING = 'string';
+	var T_UNDEF = 'undefined';
+	var GLOBAL = typeof window !== T_UNDEF ? window : typeof global !== T_UNDEF ? global : typeof self !== T_UNDEF ? self : {};
 	function EMPTY_FN() {}
-	function NULL_CONSTRUCTOR() {}
-	NULL_CONSTRUCTOR[PROTOTYPE] = null;
+	function NULL_CTOR() {}
+	NULL_CTOR[P_PROTOTYPE] = null;
 
 	/**
-	 * @module utility/dkeys
+	 * @module util/dkeys
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Mon Mar 11 2019 17:22:13 GMT+0800 (China Standard Time)
 	 * @modified Sat Mar 23 2019 17:42:04 GMT+0800 (China Standard Time)
 	 */
-	var defaultKeyMap = new NULL_CONSTRUCTOR();
-	var defaultKeys = [];
-	function isDefaultKey(key) {
-	  return defaultKeyMap[key] || false;
+	var DKeyMap = new NULL_CTOR();
+	var DKeys = [];
+	function isDKey(key) {
+	  return DKeyMap[key] || false;
 	}
-	function addDefaultKey(key) {
-	  if (!defaultKeyMap[key]) {
-	    defaultKeyMap[key] = true;
-	    defaultKeys.push(key);
+	function addDKey(key) {
+	  if (!DKeyMap[key]) {
+	    DKeyMap[key] = true;
+	    DKeys.push(key);
 	  }
 
 	  return key;
 	}
-	function addDefaultKeys() {
+	function addDKeys() {
 	  var args = arguments,
 	      l = args.length;
 
 	  for (var i = 0; i < l; i++) {
-	    addDefaultKey(args[i] + '');
+	    addDKey(args[i] + '');
 	  }
 	}
-	function getDefaultKeys() {
-	  return defaultKeys;
+	function getDKeys() {
+	  return DKeys;
 	}
-	function getDefaultKeyMap() {
-	  return defaultKeys;
+	function getDKeyMap() {
+	  return DKeys;
 	}
 
 	/**
-	 * @module utility
+	 * @module util
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Mon Dec 11 2017 13:57:32 GMT+0800 (China Standard Time)
-	 * @modified Sat Feb 16 2019 10:53:30 GMT+0800 (China Standard Time)
+	 * @modified Mon Apr 08 2019 11:50:32 GMT+0800 (China Standard Time)
 	 */
-	function getConstructor(o) {
-	  var C = o[CONSTRUCTOR];
-	  return typeof C === TYPE_FN ? C : Object;
+	function getCtor(o) {
+	  var C = o[P_CTOR];
+	  return typeof C === T_FN ? C : Object;
 	}
 
 	/**
-	 * @module utility
+	 * @module util
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Mon Dec 11 2017 13:57:32 GMT+0800 (China Standard Time)
-	 * @modified Sat Mar 23 2019 18:50:53 GMT+0800 (China Standard Time)
+	 * @modified Mon Apr 08 2019 13:26:55 GMT+0800 (China Standard Time)
 	 */
 	var toString = Object.prototype.toString;
 	function toStr(obj) {
@@ -99,11 +99,10 @@
 	}
 
 	/**
-	 * type checker
-	 * @module utility
+	 * @module util
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Mon Dec 11 2017 13:57:32 GMT+0800 (China Standard Time)
-	 * @modified Sat Mar 23 2019 18:55:31 GMT+0800 (China Standard Time)
+	 * @modified Mon Apr 08 2019 13:26:03 GMT+0800 (China Standard Time)
 	 */
 	/**
 	 * is equals
@@ -144,28 +143,28 @@
 	 * is boolean
 	 */
 
-	var isBool = mkIsPrimitive(TYPE_BOOL);
+	var isBool = mkIsPrimitive(T_BOOL);
 	/**
 	 * is a number
 	 */
 
-	var isNum = mkIsPrimitive(TYPE_NUM);
+	var isNum = mkIsPrimitive(T_NUM);
 	/**
 	 * is a string
 	 */
 
-	var isStr = mkIsPrimitive(TYPE_STRING);
+	var isStr = mkIsPrimitive(T_STRING);
 	/**
 	 * is a function
 	 */
 
-	var isFn = mkIsPrimitive(TYPE_FN);
+	var isFn = mkIsPrimitive(T_FN);
 	/**
 	 * is integer number
 	 */
 
 	function isInt(o) {
-	  return o === 0 || (o ? typeof o === TYPE_NUM && o % 1 === 0 : false);
+	  return o === 0 || (o ? typeof o === T_NUM && o % 1 === 0 : false);
 	}
 	/**
 	 * is primitive type
@@ -183,10 +182,10 @@
 	  }
 
 	  switch (typeof o) {
-	    case TYPE_BOOL:
-	    case TYPE_NUM:
-	    case TYPE_STRING:
-	    case TYPE_FN:
+	    case T_BOOL:
+	    case T_NUM:
+	    case T_STRING:
+	    case T_FN:
 	      return true;
 	  }
 
@@ -218,9 +217,9 @@
 
 	function is(o, Type) {
 	  if (o !== undefined && o !== null) {
-	    var C = o[CONSTRUCTOR] || Object;
+	    var C = o[P_CTOR] || Object;
 
-	    if (Type[CONSTRUCTOR] === Array) {
+	    if (Type[P_CTOR] === Array) {
 	      var i = Type.length;
 
 	      while (i--) {
@@ -284,8 +283,8 @@
 	 */
 
 	function isArrayLike(o) {
-	  if (o && o[CONSTRUCTOR]) {
-	    switch (o[CONSTRUCTOR]) {
+	  if (o && o[P_CTOR]) {
+	    switch (o[P_CTOR]) {
 	      case Array:
 	      case String:
 	      case GLOBAL.NodeList:
@@ -302,7 +301,7 @@
 	    }
 
 	    var len = o.length;
-	    return typeof len === TYPE_NUM && (len === 0 || len > 0 && len % 1 === 0 && len - 1 in o);
+	    return typeof len === T_NUM && (len === 0 || len > 0 && len % 1 === 0 && len - 1 in o);
 	  }
 
 	  return o === '';
@@ -313,7 +312,7 @@
 	 */
 
 	function isObj(o) {
-	  return o !== undefined && o !== null && getConstructor(o) === Object;
+	  return o !== undefined && o !== null && getCtor(o) === Object;
 	}
 	/**
 	 * is simple Object
@@ -326,7 +325,7 @@
 
 	function mkIs(Type) {
 	  return function is(o) {
-	    return o !== undefined && o !== null && o[CONSTRUCTOR] === Type;
+	    return o !== undefined && o !== null && o[P_CTOR] === Type;
 	  };
 	}
 
@@ -340,7 +339,7 @@
 
 	function isBlank(o) {
 	  if (o) {
-	    if (o[CONSTRUCTOR] === String) {
+	    if (o[P_CTOR] === String) {
 	      return blankStrReg.test(o);
 	    }
 
@@ -351,11 +350,10 @@
 	}
 
 	/**
-	 * Function utilities
-	 * @module utility
+	 * @module util
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Mon Dec 11 2017 13:57:32 GMT+0800 (China Standard Time)
-	 * @modified Sat Mar 30 2019 15:42:28 GMT+0800 (China Standard Time)
+	 * @modified Mon Apr 08 2019 13:26:23 GMT+0800 (China Standard Time)
 	 */
 
 	/*                                                                                      *
@@ -484,7 +482,7 @@
 
 	var _bind;
 
-	var funcProto = Function[PROTOTYPE];
+	var funcProto = Function[P_PROTOTYPE];
 
 	if (funcProto.bind) {
 	  _bind = function bind(fn, scope) {
@@ -597,11 +595,10 @@
 	}
 
 	/**
-	 * regexp utilities
-	 * @module utility/reg
+	 * @module util
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Thu Sep 06 2018 18:27:51 GMT+0800 (China Standard Time)
-	 * @modified Sat Dec 29 2018 19:29:00 GMT+0800 (China Standard Time)
+	 * @modified Mon Apr 08 2019 13:25:13 GMT+0800 (China Standard Time)
 	 */
 	/**
 	 * whether to support sticky on RegExp
@@ -623,36 +620,35 @@
 	}
 
 	var _ref;
-	var PROTO_PROP = '__proto__';
-	var __getProto = Object.getPrototypeOf,
-	    ____setProto = Object.setPrototypeOf;
+	var $getProto = Object.getPrototypeOf,
+	    $setProto = Object.setPrototypeOf;
 	/**
 	 * whether to support Object.getPrototypeOf and Object.setPrototypeOf
 	 */
 
-	var prototypeOf = !!____setProto;
+	var prototypeOf = !!$setProto;
 	/**
 	 * whether to support `__proto__`
 	 */
 
-	var protoProp = (_ref = {}, _ref[PROTO_PROP] = [], _ref) instanceof Array;
-	!protoProp && addDefaultKey(PROTO_PROP);
+	var protoProp = (_ref = {}, _ref[P_PROTO] = [], _ref) instanceof Array;
+	!protoProp && addDKey(P_PROTO);
 	/**
 	 * get prototype
 	 */
 
-	var protoOf = ____setProto ? __getProto : __getProto ? function getPrototypeOf(obj) {
-	  return obj[PROTO] || __getProto(obj);
+	var protoOf = $setProto ? $getProto : $getProto ? function getPrototypeOf(obj) {
+	  return obj[P_PROTO] || $getProto(obj);
 	} : function getPrototypeOf(obj) {
-	  return obj[PROTO] || obj[CONSTRUCTOR][PROTOTYPE];
+	  return obj[P_PROTO] || obj[P_CTOR][P_PROTOTYPE];
 	};
 	/**
 	 * set prototype
 	 * > properties on the prototype are not inherited on older browsers
 	 */
 
-	var __setProto = ____setProto || function setPrototypeOf(obj, proto) {
-	  obj[PROTO] = proto;
+	var __setProto = $setProto || function setPrototypeOf(obj, proto) {
+	  obj[P_PROTO] = proto;
 	  return obj;
 	};
 	/**
@@ -660,7 +656,7 @@
 	 * > the properties on the prototype will be copied on the older browser
 	 */
 
-	var setProto = ____setProto || (protoProp ? __setProto : function setPrototypeOf(obj, proto) {
+	var setProto = $setProto || (protoProp ? __setProto : function setPrototypeOf(obj, proto) {
 	  for (var p in proto) {
 	    if (!(p in obj)) obj[p] = proto[p];
 	  }
@@ -669,34 +665,39 @@
 	});
 
 	/**
-	 * prototype utilities
-	 * @module utility
+	 * @module util
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Wed Jul 25 2018 15:24:47 GMT+0800 (China Standard Time)
-	 * @modified Thu Mar 14 2019 09:20:31 GMT+0800 (China Standard Time)
+	 * @modified Mon Apr 08 2019 13:27:56 GMT+0800 (China Standard Time)
 	 */
+	/*#else
+
+	export { prototypeOf, protoProp, protoOf, __setProto, setProto } from './main'
+
+	//#endif */
 
 	/**
-	 * prop utilities
-	 * @module utility
+	 * @module util
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Wed Jul 25 2018 15:22:57 GMT+0800 (China Standard Time)
-	 * @modified Thu Mar 14 2019 09:18:39 GMT+0800 (China Standard Time)
+	 * @modified Mon Apr 08 2019 13:28:30 GMT+0800 (China Standard Time)
 	 */
-	var __defProp = Object.defineProperty;
-	var _ref$1 = Object[PROTOTYPE],
+	var _ref$1 = Object[P_PROTOTYPE],
 	    __defineGetter__ = _ref$1.__defineGetter__,
 	    __defineSetter__ = _ref$1.__defineSetter__;
+	var $defProp = Object.defineProperty;
 	/**
 	 * whether to support Object.defineProperty
+	 * @constant
 	 */
 
-	var propDescriptor = __defProp && !!function () {
+	exports.propDescriptor = false;
+
+	if ($defProp) {
 	  try {
 	    var val,
 	        obj = {};
-
-	    __defProp(obj, 's', {
+	    $defProp(obj, 's', {
 	      get: function get() {
 	        return val;
 	      },
@@ -704,17 +705,17 @@
 	        val = value;
 	      }
 	    });
-
 	    obj.s = 1;
-	    return obj.s === val;
+	    exports.propDescriptor = obj.s === val;
 	  } catch (e) {}
-	}();
+	}
 	/**
 	 * whether to support `__defineGetter__` and `__defineSetter__`
 	 */
 
-	var propAccessor = propDescriptor || !!__defineSetter__;
-	if (!propDescriptor) __defProp = __defineSetter__ ? function defineProperty(obj, prop, desc) {
+
+	var propAccessor = exports.propDescriptor || !!__defineSetter__;
+	if (!exports.propDescriptor) $defProp = __defineSetter__ ? function defineProperty(obj, prop, desc) {
 	  var get = desc.get,
 	      set = desc.set;
 	  if ('value' in desc || !(prop in obj)) obj[prop] = desc.value;
@@ -730,40 +731,43 @@
 	 * define property
 	 */
 
-	var defProp = __defProp;
+	var defProp = $defProp;
 	/**
 	 * define property by value
 	 */
 
-	var defPropValue = propDescriptor ? function defPropValue(obj, prop, value, configurable, writable, enumerable) {
-	  __defProp(obj, prop, {
+	var defValue = exports.propDescriptor ? function defValue(obj, prop, value, configurable, writable, enumerable) {
+	  $defProp(obj, prop, {
 	    value: value,
 	    enumerable: enumerable !== false,
 	    configurable: configurable !== false,
 	    writable: writable !== false
 	  });
-
 	  return value;
-	} : function defPropValue(obj, prop, value) {
+	} : function defValue(obj, prop, value) {
 	  obj[prop] = value;
 	  return value;
 	};
 
 	/**
-	 * property utilities
-	 * @module utility
+	 * @module util
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Wed Jul 25 2018 15:24:47 GMT+0800 (China Standard Time)
-	 * @modified Thu Mar 14 2019 09:21:12 GMT+0800 (China Standard Time)
+	 * @modified Mon Apr 08 2019 13:28:25 GMT+0800 (China Standard Time)
 	 */
+	/*#else
+
+	export { propDescriptor, propAccessor, defProp, defValue } from './main'
+
+	//#endif */
 
 	/**
-	 * @module utility
+	 * @module util
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Wed Jul 25 2018 15:22:57 GMT+0800 (China Standard Time)
-	 * @modified Thu Mar 14 2019 09:22:38 GMT+0800 (China Standard Time)
+	 * @modified Mon Apr 08 2019 12:42:51 GMT+0800 (China Standard Time)
 	 */
-	var __hasOwn = Object[PROTOTYPE][HAS_OWN_PROP];
+	var __hasOwn = Object[P_PROTOTYPE][P_OWNPROP];
 	/**
 	 * has own property
 	 */
@@ -783,10 +787,10 @@
 
 	/**
 	 * Object.create polyfill
-	 * @module utility/create
+	 * @module util
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Wed Jul 25 2018 15:24:47 GMT+0800 (China Standard Time)
-	 * @modified Wed Mar 13 2019 20:08:04 GMT+0800 (China Standard Time)
+	 * @modified Mon Apr 08 2019 14:11:37 GMT+0800 (China Standard Time)
 	 */
 
 	function __() {}
@@ -796,9 +800,9 @@
 
 
 	function doCreate(o, props) {
-	  __[PROTOTYPE] = o;
+	  __[P_PROTOTYPE] = o;
 	  var obj = new __();
-	  __[PROTOTYPE] = null;
+	  __[P_PROTOTYPE] = null;
 
 	  if (props) {
 	    for (var k in props) {
@@ -824,14 +828,268 @@
 	});
 
 	/**
-	 * @module utility/create
+	 * @module util
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Wed Jul 25 2018 15:24:47 GMT+0800 (China Standard Time)
-	 * @modified Mon Mar 04 2019 18:35:26 GMT+0800 (China Standard Time)
+	 * @modified Mon Apr 08 2019 14:11:29 GMT+0800 (China Standard Time)
 	 */
+	/*#else
+
+	export { create } from './main'
+
+	//#endif */
 
 	/**
-	 * @module utility/collection
+	 * @module util
+	 * @author Tao Zeng <tao.zeng.zt@qq.com>
+	 * @created Wed Jul 25 2018 15:24:47 GMT+0800 (China Standard Time)
+	 * @modified Mon Apr 08 2019 12:14:41 GMT+0800 (China Standard Time)
+	 */
+	var REG_PROPS = ['source', 'global', 'ignoreCase', 'multiline'];
+	function deepEq(actual, expected) {
+	  return doDeepEq(actual, expected, eq, doDeepEqObj);
+	}
+	function doDeepEq(actual, expected, eq, eqObj) {
+	  if (eq(actual, expected)) return true;
+
+	  if (actual && expected && getCtor(actual) === getCtor(expected)) {
+	    if (isPrimitive(actual)) return String(actual) === String(expected);
+	    if (isDate(actual)) return actual.getTime() === expected.getTime();
+	    if (isReg(actual)) return eqProps(actual, expected, REG_PROPS);
+	    if (isArray(actual)) return eqArray(actual, expected, eq, eqObj);
+	    if (isTypedArray(actual)) return eqTypeArray(actual, expected);
+	    return eqObj(actual, expected);
+	  }
+
+	  return false;
+	}
+	function doDeepEqObj(actual, expected) {
+	  var cache = create(null);
+	  var k;
+
+	  for (k in actual) {
+	    if (!DKeyMap[k] && notEqObjKey(actual, expected, k)) {
+	      return false;
+	    }
+
+	    cache[k] = true;
+	  }
+
+	  for (k in expected) {
+	    if (!cache[k] && !DKeyMap[k] && notEqObjKey(actual, expected, k)) {
+	      return false;
+	    }
+	  }
+
+	  return true;
+	}
+
+	function notEqObjKey(actual, expected, k) {
+	  return hasOwnProp(actual, k) ? !hasOwnProp(expected, k) || !deepEq(actual[k], expected[k]) : hasOwnProp(expected, k);
+	}
+
+	function eqProps(actual, expected, props) {
+	  var i = props.length;
+
+	  while (i--) {
+	    if (actual[props[i]] !== expected[props[i]]) {
+	      return false;
+	    }
+	  }
+
+	  return true;
+	}
+
+	function eqTypeArray(actual, expected) {
+	  var i = actual.length;
+
+	  if (i !== expected.length) {
+	    return false;
+	  }
+
+	  while (i--) {
+	    if (actual[i] !== expected[i]) {
+	      return false;
+	    }
+	  }
+
+	  return true;
+	}
+
+	function eqArray(actual, expected, eq, eqObj) {
+	  var i = actual.length;
+
+	  if (i !== expected.length) {
+	    return false;
+	  }
+
+	  while (i--) {
+	    if (!doDeepEq(actual[i], expected[i], eq, eqObj)) {
+	      return false;
+	    }
+	  }
+
+	  return true;
+	}
+
+	/**
+	 * @module util
+	 * @author Tao Zeng <tao.zeng.zt@qq.com>
+	 * @created Mon Dec 11 2017 13:57:32 GMT+0800 (China Standard Time)
+	 * @modified Mon Apr 08 2019 14:10:44 GMT+0800 (China Standard Time)
+	 */
+	//========================================================================================
+
+	/*                                                                                      *
+	 *                                       char code                                      *
+	 *                                                                                      */
+	//========================================================================================
+
+	/**
+	 * get char code
+	 * > string.charCodeAt
+	 */
+	function charCode(str, index) {
+	  return str.charCodeAt(index || 0);
+	}
+	/**
+	 * get char by char code
+	 * > String.fromCharCode
+	 */
+
+	function char(code) {
+	  return String.fromCharCode(code);
+	}
+	function cutStr(str, start, end) {
+	  return str.substring(start, end);
+	}
+	function cutLStr(str, start, len) {
+	  return str.substr(start, len);
+	} //========================================================================================
+
+	/*                                                                                      *
+	 *                                         trim                                         *
+	 *                                                                                      */
+	//========================================================================================
+
+	var TRIM_REG = /(^\s+)|(\s+$)/g;
+	/**
+	 * trim
+	 */
+
+	function trim(str) {
+	  return str.replace(TRIM_REG, '');
+	} //========================================================================================
+
+	/*                                                                                      *
+	 *                                         case                                         *
+	 *                                                                                      */
+	//========================================================================================
+
+	var FIRST_LOWER_LETTER_REG = /^[a-z]/,
+	    FIRST_UPPER_LETTER_REG = /^[A-Z]/;
+	function upper(str) {
+	  return str.toUpperCase();
+	}
+	function lower(str) {
+	  return str.toLowerCase();
+	}
+	function upperFirst(str) {
+	  return str.replace(FIRST_LOWER_LETTER_REG, upper);
+	}
+	function lowerFirst(str) {
+	  return str.replace(FIRST_UPPER_LETTER_REG, lower);
+	} //========================================================================================
+
+	/*                                                                                      *
+	 *                                        escape                                        *
+	 *                                                                                      */
+	//========================================================================================
+
+	var STR_ESCAPE_MAP = {
+	  '\n': '\\n',
+	  '\t': '\\t',
+	  '\f': '\\f',
+	  '"': '\\"',
+	  "'": "\\'"
+	},
+	    STR_ESCAPE = /[\n\t\f"']/g;
+	function escapeStr(str) {
+	  return str.replace(STR_ESCAPE, function (str) {
+	    return STR_ESCAPE_MAP[str];
+	  });
+	}
+
+	/**
+	 * Object.assign shim
+	 * @module util
+	 * @author Tao Zeng <tao.zeng.zt@qq.com>
+	 * @created Wed Jul 25 2018 15:22:13 GMT+0800 (China Standard Time)
+	 * @modified Mon Apr 08 2019 14:11:20 GMT+0800 (China Standard Time)
+	 */
+	/**
+	 * @param prop
+	 * @param target
+	 * @param source
+	 * @return is assign
+	 */
+
+	function doAssign(target, sources, filter, startOffset, endOffset) {
+	  var l = endOffset || sources.length;
+	  var i = startOffset || 0,
+	      source,
+	      prop;
+	  target || (target = {});
+
+	  for (; i < l; i++) {
+	    if (source = sources[i]) {
+	      for (prop in source) {
+	        if (!DKeyMap[prop] && filter(prop, target, source)) {
+	          target[prop] = source[prop];
+	        }
+	      }
+	    }
+	  }
+
+	  return target;
+	}
+	/**
+	 * assign properties
+	 * > Object.assign shim
+	 */
+
+	function assign(target) {
+	  return doAssign(target, arguments, defaultAssignFilter, 1);
+	}
+	/**
+	 * assign un-exist properties
+	 */
+
+	function assignIf(target) {
+	  return doAssign(target, arguments, assignIfFilter, 1);
+	}
+	/**
+	 * default assign filter
+	 * - property is owner in source
+	 * @see {AssignFilter}
+	 */
+
+	function defaultAssignFilter(prop, target, source) {
+	  return hasOwnProp(source, prop);
+	}
+	/**
+	 * assign if filter
+	 * - property is owner in source
+	 * - property not in target object
+	 * @see {AssignFilter}
+	 */
+
+	function assignIfFilter(prop, target, source) {
+	  return hasOwnProp(source, prop) && !(prop in target);
+	}
+
+	/**
+	 * @module util/collection
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Wed Jul 25 2018 17:10:41 GMT+0800 (China Standard Time)
 	 * @modified Sat Dec 29 2018 19:37:44 GMT+0800 (China Standard Time)
@@ -853,10 +1111,10 @@
 	}();
 
 	/**
-	 * @module utility/collection
+	 * @module util/collection
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Wed Jul 25 2018 17:10:41 GMT+0800 (China Standard Time)
-	 * @modified Thu Apr 04 2019 19:32:58 GMT+0800 (China Standard Time)
+	 * @modified Mon Apr 08 2019 09:49:19 GMT+0800 (China Standard Time)
 	 */
 	/**
 	 * STOP Control
@@ -886,11 +1144,11 @@
 
 	  if (own === false) {
 	    for (k in obj) {
-	      if (!defaultKeyMap[k] && callback(k, obj) === STOP) return k;
+	      if (!DKeyMap[k] && callback(k, obj) === STOP) return k;
 	    }
 	  } else {
 	    for (k in obj) {
-	      if (!defaultKeyMap[k] && hasOwnProp(obj, k) && callback(k, obj) === STOP) return k;
+	      if (!DKeyMap[k] && hasOwnProp(obj, k) && callback(k, obj) === STOP) return k;
 	    }
 	  }
 
@@ -919,11 +1177,11 @@
 
 	  if (own === false) {
 	    for (k in obj) {
-	      if (!defaultKeyMap[k] && callback(obj[k], k, obj) === STOP) return k;
+	      if (!DKeyMap[k] && callback(obj[k], k, obj) === STOP) return k;
 	    }
 	  } else {
 	    for (k in obj) {
-	      if (!defaultKeyMap[k] && hasOwnProp(obj, k) && callback(obj[k], k, obj) === STOP) return k;
+	      if (!DKeyMap[k] && hasOwnProp(obj, k) && callback(obj[k], k, obj) === STOP) return k;
 	    }
 	  }
 
@@ -982,7 +1240,7 @@
 	}
 
 	/**
-	 * @module utility/collection
+	 * @module util/collection
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Wed Jul 25 2018 17:12:06 GMT+0800 (China Standard Time)
 	 * @modified Thu Apr 04 2019 19:31:21 GMT+0800 (China Standard Time)
@@ -1101,7 +1359,7 @@
 	}
 
 	/**
-	 * @module utility/collection
+	 * @module util/collection
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Wed Jul 25 2018 17:12:06 GMT+0800 (China Standard Time)
 	 * @modified Thu Apr 04 2019 19:32:32 GMT+0800 (China Standard Time)
@@ -1232,7 +1490,7 @@
 	}
 
 	/**
-	 * @module utility/collection
+	 * @module util/collection
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Wed Jul 25 2018 17:12:06 GMT+0800 (China Standard Time)
 	 * @modified Thu Apr 04 2019 19:30:27 GMT+0800 (China Standard Time)
@@ -1332,7 +1590,7 @@
 	}
 
 	/**
-	 * @module utility/collection
+	 * @module util/collection
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Thu Jul 26 2018 10:47:47 GMT+0800 (China Standard Time)
 	 * @modified Thu Apr 04 2019 19:49:02 GMT+0800 (China Standard Time)
@@ -1417,7 +1675,7 @@
 	}
 
 	/**
-	 * @module utility/collection
+	 * @module util/collection
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Fri Nov 16 2018 16:29:04 GMT+0800 (China Standard Time)
 	 * @modified Thu Apr 04 2019 19:38:40 GMT+0800 (China Standard Time)
@@ -1462,7 +1720,7 @@
 	}
 
 	/**
-	 * @module utility/collection
+	 * @module util/collection
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Thu Nov 15 2018 12:13:54 GMT+0800 (China Standard Time)
 	 * @modified Thu Mar 28 2019 19:39:52 GMT+0800 (China Standard Time)
@@ -1479,11 +1737,38 @@
 	}
 
 	/**
-	 * @module utility/defProp
+	 * @module util
+	 * @author Tao Zeng <tao.zeng.zt@qq.com>
+	 * @created Tue Dec 18 2018 16:41:03 GMT+0800 (China Standard Time)
+	 * @modified Mon Apr 08 2019 13:25:40 GMT+0800 (China Standard Time)
+	 */
+	function mixin(behaviour) {
+	  return function mixin(Class) {
+	    var proto = Class.prototype;
+
+	    for (var k in behaviour) {
+	      if (hasOwnProp(behaviour, k)) proto[k] = behaviour[k];
+	    }
+
+	    return Class;
+	  };
+	}
+
+	/**
+	 * @module util
+	 * @preferred
+	 * @author Tao Zeng <tao.zeng.zt@qq.com>
+	 * @created Wed Nov 21 2018 10:21:41 GMT+0800 (China Standard Time)
+	 * @modified Mon Apr 08 2019 14:07:41 GMT+0800 (China Standard Time)
+	 */
+
+	/**
+	 * @module util/path
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Fri Nov 30 2018 14:41:02 GMT+0800 (China Standard Time)
-	 * @modified Tue Mar 26 2019 19:39:49 GMT+0800 (China Standard Time)
+	 * @modified Mon Apr 08 2019 13:47:29 GMT+0800 (China Standard Time)
 	 */
+	var PATH_BINDING = addDKey('__path__');
 	var pathCache = create(null); // (^ | .) prop | (index | "string prop" | 'string prop')
 
 	var pathReg = /(?:^|\.)([a-zA-Z$_][\w$]*)|\[\s*(?:(\d+)|"((?:[^\\"]|\\.)*)"|'((?:[^\\']|\\.)*)')\s*\]/g;
@@ -1521,7 +1806,7 @@
 	  return path;
 	}
 	function formatPath(path) {
-	  return isArray(path) ? path.path || (path.path = mapArray(path, formatPathHandler).join('')) : path;
+	  return isArray(path) ? path.path || defValue(path, PATH_BINDING, mapArray(path, formatPathHandler).join('')) : path;
 	}
 
 	function formatPathHandler(prop) {
@@ -1555,99 +1840,10 @@
 	}
 
 	/**
-	 * String utilities
-	 * @module utility/string
-	 * @author Tao Zeng <tao.zeng.zt@qq.com>
-	 * @created Mon Dec 11 2017 13:57:32 GMT+0800 (China Standard Time)
-	 * @modified Sat Mar 23 2019 18:50:35 GMT+0800 (China Standard Time)
-	 */
-	//========================================================================================
-
-	/*                                                                                      *
-	 *                                       char code                                      *
-	 *                                                                                      */
-	//========================================================================================
-
-	/**
-	 * get char code
-	 * > string.charCodeAt
-	 */
-	function charCode(str, index) {
-	  return str.charCodeAt(index || 0);
-	}
-	/**
-	 * get char by char code
-	 * > String.fromCharCode
-	 */
-
-	function char(code) {
-	  return String.fromCharCode(code);
-	}
-	function cutStr(str, start, end) {
-	  return str.substring(start, end);
-	}
-	function cutLStr(str, start, len) {
-	  return str.substr(start, len);
-	} //========================================================================================
-
-	/*                                                                                      *
-	 *                                         trim                                         *
-	 *                                                                                      */
-	//========================================================================================
-
-	var TRIM_REG = /(^\s+)|(\s+$)/g;
-	/**
-	 * trim
-	 */
-
-	function trim(str) {
-	  return str.replace(TRIM_REG, '');
-	} //========================================================================================
-
-	/*                                                                                      *
-	 *                                         case                                         *
-	 *                                                                                      */
-	//========================================================================================
-
-	var FIRST_LOWER_LETTER_REG = /^[a-z]/,
-	    FIRST_UPPER_LETTER_REG = /^[A-Z]/;
-	function upper(str) {
-	  return str.toUpperCase();
-	}
-	function lower(str) {
-	  return str.toLowerCase();
-	}
-	function upperFirst(str) {
-	  return str.replace(FIRST_LOWER_LETTER_REG, upper);
-	}
-	function lowerFirst(str) {
-	  return str.replace(FIRST_UPPER_LETTER_REG, lower);
-	} //========================================================================================
-
-	/*                                                                                      *
-	 *                                        escape                                        *
-	 *                                                                                      */
-	//========================================================================================
-
-	var STR_ESCAPE_MAP = {
-	  '\n': '\\n',
-	  '\t': '\\t',
-	  '\f': '\\f',
-	  '"': '\\"',
-	  "'": "\\'"
-	},
-	    STR_ESCAPE = /[\n\t\f"']/g;
-	function escapeStr(str) {
-	  return str.replace(STR_ESCAPE, function (str) {
-	    return STR_ESCAPE_MAP[str];
-	  });
-	}
-
-	/**
-	 * @module utility/format
+	 * @module format
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Mon Dec 03 2018 19:46:41 GMT+0800 (China Standard Time)
-	 * @modified Wed Apr 03 2019 11:34:07 GMT+0800 (China Standard Time)
+	 * @modified Mon Apr 08 2019 13:50:54 GMT+0800 (China Standard Time)
 	 */
 
 	/*                                                                                      *
@@ -1720,12 +1916,12 @@
 	//========================================================================================
 
 
-	var FORMAT_XPREFIX = 0x1;
-	var FORMAT_PLUS = 0x2;
-	var FORMAT_ZERO = 0x4;
-	var FORMAT_SPACE = 0x8;
-	var FORMAT_SEPARATOR = 0x10;
-	var FORMAT_LEFT = 0x20;
+	var FORMAT_XPREFIX = 0x1,
+	    FORMAT_PLUS = 0x2,
+	    FORMAT_ZERO = 0x4,
+	    FORMAT_SPACE = 0x8,
+	    FORMAT_SEPARATOR = 0x10,
+	    FORMAT_LEFT = 0x20;
 	var FLAG_MAPPING = {
 	  '#': FORMAT_XPREFIX,
 	  '+': FORMAT_PLUS,
@@ -2232,7 +2428,7 @@
 	extendFormatter({
 	  s: strFormatter(toStr$1),
 	  j: strFormatter(function (v) {
-	    return v === undefined || isFn(v) || v.toJSON && v.toJSON() === undefined ? toStr$1(v) : JSON.stringify(v);
+	    return isNil(v) || isFn(v) ? toStr$1(v) : (v = JSON.stringify(v), v === undefined) ? toStr$1(v) : v;
 	  }),
 	  c: function c(val) {
 	    var num = val >> 0;
@@ -2260,182 +2456,10 @@
 	}
 
 	/**
-	 * Object.assign shim
-	 * @module utility/assign
-	 * @author Tao Zeng <tao.zeng.zt@qq.com>
-	 * @created Wed Jul 25 2018 15:22:13 GMT+0800 (China Standard Time)
-	 * @modified Thu Mar 14 2019 09:28:49 GMT+0800 (China Standard Time)
-	 */
-	/**
-	 * @param prop
-	 * @param target
-	 * @param override
-	 * @return is assign
-	 */
-
-	/**
-	 *
-	 * @param target
-	 * @param overrides
-	 * @param filter
-	 * @param startOffset 	start offset in overrides, default: 0
-	 * @param endOffset 	end offset in overrides, default: overrides.length-1
-	 */
-	function doAssign(target, overrides, filter, startOffset, endOffset) {
-	  if (!target) {
-	    target = {};
-	  }
-
-	  var l = endOffset || overrides.length;
-	  var i = startOffset || 0,
-	      override,
-	      prop;
-
-	  for (; i < l; i++) {
-	    if (override = overrides[i]) {
-	      for (prop in override) {
-	        if (!defaultKeyMap[prop] && filter(prop, target, override)) {
-	          target[prop] = override[prop];
-	        }
-	      }
-	    }
-	  }
-
-	  return target;
-	}
-	/**
-	 * assign properties
-	 * > Object.assign shim
-	 */
-
-	function assign(target) {
-	  return doAssign(target, arguments, defaultAssignFilter, 1);
-	}
-	/**
-	 * assign un-exist properties
-	 */
-
-	function assignIf(target) {
-	  return doAssign(target, arguments, assignIfFilter, 1);
-	}
-	/**
-	 * default assign filter
-	 * - property is owner in override
-	 * @see {AssignFilter}
-	 */
-
-	function defaultAssignFilter(prop, target, override) {
-	  return hasOwnProp(override, prop);
-	}
-	/**
-	 * assign if filter
-	 * - property is owner in override
-	 * - property not in target object
-	 * @see {AssignFilter}
-	 */
-
-	function assignIfFilter(prop, target, override) {
-	  return hasOwnProp(override, prop) && !(prop in target);
-	}
-
-	/**
-	 * @module utility
-	 * @author Tao Zeng <tao.zeng.zt@qq.com>
-	 * @created Wed Jul 25 2018 15:24:47 GMT+0800 (China Standard Time)
-	 * @modified Thu Mar 14 2019 15:05:03 GMT+0800 (China Standard Time)
-	 */
-	var REG_PROPS = ['source', 'global', 'ignoreCase', 'multiline'];
-	function deepEq(actual, expected) {
-	  return doDeepEq(actual, expected, eq, doDeepEqObj);
-	}
-	function doDeepEq(actual, expected, eq, eqObj) {
-	  if (eq(actual, expected)) return true;
-
-	  if (actual && expected && getConstructor(actual) === getConstructor(expected)) {
-	    if (isPrimitive(actual)) return String(actual) === String(expected);
-	    if (isDate(actual)) return actual.getTime() === expected.getTime();
-	    if (isReg(actual)) return eqProps(actual, expected, REG_PROPS);
-	    if (isArray(actual)) return eqArray(actual, expected, eq, eqObj);
-	    if (isTypedArray(actual)) return eqTypeArray(actual, expected);
-	    return eqObj(actual, expected);
-	  }
-
-	  return false;
-	}
-	function doDeepEqObj(actual, expected) {
-	  var cache = create(null);
-	  var k;
-
-	  for (k in actual) {
-	    if (!defaultKeyMap[k] && notEqObjKey(actual, expected, k)) {
-	      return false;
-	    }
-
-	    cache[k] = true;
-	  }
-
-	  for (k in expected) {
-	    if (!cache[k] && !defaultKeyMap[k] && notEqObjKey(actual, expected, k)) {
-	      return false;
-	    }
-	  }
-
-	  return true;
-	}
-
-	function notEqObjKey(actual, expected, k) {
-	  return hasOwnProp(actual, k) ? !hasOwnProp(expected, k) || !deepEq(actual[k], expected[k]) : hasOwnProp(expected, k);
-	}
-
-	function eqProps(actual, expected, props) {
-	  var i = props.length;
-
-	  while (i--) {
-	    if (actual[props[i]] !== expected[props[i]]) {
-	      return false;
-	    }
-	  }
-
-	  return true;
-	}
-
-	function eqTypeArray(actual, expected) {
-	  var i = actual.length;
-
-	  if (i !== expected.length) {
-	    return false;
-	  }
-
-	  while (i--) {
-	    if (actual[i] !== expected[i]) {
-	      return false;
-	    }
-	  }
-
-	  return true;
-	}
-
-	function eqArray(actual, expected, eq, eqObj) {
-	  var i = actual.length;
-
-	  if (i !== expected.length) {
-	    return false;
-	  }
-
-	  while (i--) {
-	    if (!doDeepEq(actual[i], expected[i], eq, eqObj)) {
-	      return false;
-	    }
-	  }
-
-	  return true;
-	}
-
-	/**
-	 * @module utility/assert
+	 * @module assert
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Wed Nov 28 2018 11:01:45 GMT+0800 (China Standard Time)
-	 * @modified Wed Apr 03 2019 12:46:25 GMT+0800 (China Standard Time)
+	 * @modified Mon Apr 08 2019 17:42:54 GMT+0800 (China Standard Time)
 	 */
 	var formatters$1 = create(null);
 
@@ -2456,9 +2480,8 @@
 	var assert = function assert(msg) {
 	  throw mkError(Error, msg || 'Error', arguments, 0);
 	};
-	var ERROR = new Error();
 
-	function mkThrowAssertor(th, dmsg) {
+	function mkThrowAssertor(th, dmsg, ERROR) {
 	  return function throwErr(fn, expect, msg) {
 	    var err;
 
@@ -2468,9 +2491,9 @@
 	      err = e;
 	    }
 
-	    if (th != (err && (!expect || (isStr(expect) ? expect === err.message : err[CONSTRUCTOR] === expect[CONSTRUCTOR] && (!expect.message || expect.message === err.message))))) {
+	    if (th !== !!(err && (!expect || (isStr(expect) ? expect === err.message : err[P_CTOR] === expect[P_CTOR] && (!expect.message || expect.message === err.message))))) {
 	      arguments[0] = err;
-	      !expect && (arguments[2] = ERROR);
+	      !expect && (arguments[1] = ERROR);
 	      throw mkError(Error, msg || dmsg, arguments, 2);
 	    }
 
@@ -2478,7 +2501,7 @@
 	  };
 	}
 
-	assert["throw"] = mkThrowAssertor(true, "expected catched error {0s} is {1s}");
+	assert["throw"] = mkThrowAssertor(true, "expected catched error {0s} is {1s}", new Error());
 	assert.notThrow = mkThrowAssertor(false, "expected catched error {0s} is not {1s}");
 	/**
 	 * @param name 		name of the assertor
@@ -2510,17 +2533,17 @@
 	  });
 	}
 
-	var UNDEFINED = TYPE_UNDEF,
-	    BOOLEAN = TYPE_BOOL,
-	    NUMBER = TYPE_NUM,
-	    STRING = TYPE_STRING,
-	    FUNCTION = TYPE_FN,
+	var UNDEFINED = T_UNDEF,
+	    BOOLEAN = T_BOOL,
+	    NUMBER = T_NUM,
+	    STRING = T_STRING,
+	    FUNCTION = T_FN,
 	    NULL = 'null',
 	    INTEGER = 'integer',
 	    ARRAY = 'Array',
 	    TYPED_ARRAY = 'TypedArray';
-	mkAssertor('is', '!o', 'o', expectMsg('Exist'));
-	mkAssertor('not', 'o', 'o', expectMsg('Not Exist'));
+	mkAssertor('is', '!o', 'o', expectMsg('exist'));
+	mkAssertor('not', 'o', 'o', expectMsg('exist', true));
 	mkAssertors({
 	  eq: [eq, 2, mkMsg(objFormatter(1))],
 	  eql: [deepEq, 2, mkMsg(objFormatter(1))],
@@ -2556,7 +2579,7 @@
 	}
 
 	function expectMsg(expect, not, to) {
-	  return "Expected " + objFormatter(0) + " " + (not ? 'not ' : '') + (to || 'to') + " " + expect;
+	  return "expected " + objFormatter(0) + " " + (not ? 'not ' : '') + (to || 'to') + " " + expect;
 	}
 
 	function objFormatter(idx) {
@@ -2573,12 +2596,12 @@
 
 	/**
 	 * Double Linked List
-	 * @module utility/List
+	 * @module util/list
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
-	 * @modified Wed Apr 03 2019 19:03:02 GMT+0800 (China Standard Time)
+	 * @modified Mon Apr 08 2019 18:28:27 GMT+0800 (China Standard Time)
 	 */
-	var DEFAULT_BINDING = addDefaultKey('__list__');
+	var DEFAULT_BINDING = addDKey('__list__');
 	var List =
 	/*#__PURE__*/
 	function () {
@@ -2688,16 +2711,27 @@
 	      var __ver = ++this.__ver;
 
 	      cb = bind(cb, scope);
-	      var node = this.__head;
+	      var node = this.__head,
+	          err;
 
 	      while (node) {
-	        if (node[3] === this && (__ver === node[4] || cb(node[0]) === false)) break;
+	        if (node[3] === this) {
+	          if (__ver === node[4]) break;
+
+	          try {
+	            if (cb(node[0]) === false) break;
+	          } catch (e) {
+	            err = e;
+	          }
+	        }
+
 	        node = node[2];
 	      }
 
 	      this.__doLazyRemove();
 
 	      this.__scaning = false;
+	      if (err) throw err;
 	    }
 	  };
 
@@ -2770,7 +2804,7 @@
 	    } else {
 	      node = [obj,,, this, this.__ver];
 	      node.toJSON = EMPTY_FN;
-	      defPropValue(obj, binding, node, false);
+	      defValue(obj, binding, node, false);
 	    }
 
 	    return node;
@@ -2919,13 +2953,13 @@
 
 	/**
 	 * Function List
-	 * @module utility/List
+	 * @module util/list
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
-	 * @modified Sat Mar 30 2019 16:11:18 GMT+0800 (China Standard Time)
+	 * @modified Mon Apr 08 2019 14:05:16 GMT+0800 (China Standard Time)
 	 */
-	var DEFAULT_FN_BINDING = addDefaultKey('__flist_id__');
-	var DEFAULT_SCOPE_BINDING = addDefaultKey(DEFAULT_FN_BINDING);
+	var DEFAULT_FN_BINDING = addDKey('__flist_id__');
+	var DEFAULT_SCOPE_BINDING = addDKey(DEFAULT_FN_BINDING);
 	var FnList =
 	/*#__PURE__*/
 	function () {
@@ -3021,8 +3055,8 @@
 	        scopeBinding = this.scopeBinding;
 	    var fnId = fn[fnBinding],
 	        scopeId = scope ? scope[scopeBinding] : DEFAULT_SCOPE_ID;
-	    if (!fnId) fnId = defPropValue(fn, fnBinding, ++fnIdGenerator, false, false, false);
-	    if (!scopeId) scopeId = defPropValue(scope, scopeBinding, ++scopeIdGenerator, false, false, false);
+	    if (!fnId) fnId = defValue(fn, fnBinding, ++fnIdGenerator, false, false, false);
+	    if (!scopeId) scopeId = defValue(scope, scopeBinding, ++scopeIdGenerator, false, false, false);
 	    return fnId + "#" + scopeId;
 	  };
 
@@ -3039,22 +3073,21 @@
 	}
 
 	/**
-	 * @module utility/List
+	 * @module util/list
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Tue Nov 27 2018 19:06:18 GMT+0800 (China Standard Time)
-	 * @modified Tue Nov 27 2018 19:07:34 GMT+0800 (China Standard Time)
+	 * @modified Mon Apr 08 2019 14:05:08 GMT+0800 (China Standard Time)
 	 */
 
 	/**
-	 * String format
-	 * @module utility/nextTick
+	 * @module util/nextTick
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
-	 * @modified Wed Apr 03 2019 19:45:47 GMT+0800 (China Standard Time)
+	 * @modified Mon Apr 08 2019 14:04:49 GMT+0800 (China Standard Time)
 	 */
 	var next;
 
-	if (typeof MutationObserver === TYPE_FN) {
+	if (typeof MutationObserver === T_FN) {
 	  // chrome18+, safari6+, firefox14+,ie11+,opera15
 	  var textNode = document.createTextNode(v);
 	  new MutationObserver(flush).observe(textNode, {
@@ -3063,7 +3096,7 @@
 	  var v = '';
 
 	  next = function next() {
-	    textNode.data = v = v ? '0' : '';
+	    textNode.data = v = v ? '' : '0';
 	  };
 	} else {
 	  next = function next() {
@@ -3102,10 +3135,10 @@
 	}
 
 	/**
-	 * @module utility/Source
+	 * @module util/Source
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Mon Dec 17 2018 10:41:21 GMT+0800 (China Standard Time)
-	 * @modified Sat Dec 22 2018 14:37:32 GMT+0800 (China Standard Time)
+	 * @modified Mon Apr 08 2019 13:58:29 GMT+0800 (China Standard Time)
 	 */
 	var LINE_REG = /([^\n]+)?(\n|$)/g;
 	var Source =
@@ -3171,20 +3204,36 @@
 	  return s ? escapeStr(s) + t : t;
 	}
 
-	function _inheritsLoose(subClass, superClass) {
-	  subClass.prototype = Object.create(superClass.prototype);
-	  subClass.prototype.constructor = subClass;
-	  subClass.__proto__ = superClass;
-	}
-
 	/**
 	 * utilities for ast builder
 	 *
-	 * @module utility/AST
+	 * @module util/AST
 	 * @author Tao Zeng (tao.zeng.zt@qq.com)
 	 * @created 2018-11-09 13:22:51
 	 * @modified 2018-11-09 13:22:51 by Tao Zeng (tao.zeng.zt@qq.com)
 	 */
+	function genCharCodes(start, end, ignoreCase) {
+	  var s = isNum(start) ? start : charCode(start),
+	      e = isNum(end) ? end : charCode(end),
+	      codes = new Array(e - s),
+	      i = 0;
+
+	  if (ignoreCase) {
+	    var c;
+
+	    for (; s <= e; s++) {
+	      codes[i++] = s;
+	      c = getAnotherCode(s);
+	      codes[i++] = c;
+	    }
+	  } else {
+	    for (; s <= e; s++) {
+	      codes[i++] = s;
+	    }
+	  }
+
+	  return codes;
+	}
 	/**
 	 * each char codes
 	 */
@@ -3220,24 +3269,6 @@
 
 	function getAnotherCode(code) {
 	  return code <= 90 ? code >= 65 ? code + 32 : 0 : code <= 122 ? code - 32 : 0;
-	}
-
-	/**
-	 * @module utility/mixin
-	 * @author Tao Zeng <tao.zeng.zt@qq.com>
-	 * @created Tue Dec 18 2018 16:41:03 GMT+0800 (China Standard Time)
-	 * @modified Wed Mar 13 2019 20:03:31 GMT+0800 (China Standard Time)
-	 */
-	function mixin(behaviour) {
-	  return function mixin(Class) {
-	    var proto = Class.prototype;
-
-	    for (var k in behaviour) {
-	      if (hasOwnProp(behaviour, k)) proto[k] = behaviour[k];
-	    }
-
-	    return Class;
-	  };
 	}
 
 	var _dec, _class, _dec2, _class2;
@@ -3442,236 +3473,10 @@
 	}()) || _class2);
 
 	/**
-	 * Match Rule Interface
-	 */
-	var MatchRule =
-	/*#__PURE__*/
-	function (_Rule) {
-	  _inheritsLoose(MatchRule, _Rule);
-
-	  /**
-	   * @param name 			match name
-	   * @param start 		start char codes, prepare test by start char codes before match
-	   * @param ignoreCase	ignore case for the start char codes
-	   * @param options		Rule Options
-	   */
-	  function MatchRule(name, start, ignoreCase, options) {
-	    var _this;
-
-	    _this = _Rule.call(this, name, options) || this;
-
-	    _this.setStartCodes(start, ignoreCase);
-
-	    return _this;
-	  }
-	  /**
-	   * consume matched result
-	   * @param data 		matched result
-	   * @param len 		matched chars
-	   * @param context 	match context
-	   */
-
-
-	  var _proto = MatchRule.prototype;
-
-	  _proto.comsume = function comsume(data, len, context) {
-	    context.advance(len);
-	    return this.matched(data, len, context);
-	  };
-
-	  return MatchRule;
-	}(Rule);
-
-	var _dec$1, _class$1;
-	/**
-	 * match a character in the allowed list
-	 * > well match any character if the allowed list is empty
-	 *
-	 * > must call test() before match
-	 */
-
-	var CharMatchRule = (_dec$1 = mixin({
-	  type: 'Character'
-	}), _dec$1(_class$1 =
-	/*#__PURE__*/
-	function (_MatchRule) {
-	  _inheritsLoose(CharMatchRule, _MatchRule);
-
-	  /**
-	   * @param name 			match name
-	   * @param allows 		allowed character codes for match
-	   * 						well match any character if the allowed list is empty
-	   * @param ignoreCase	ignore case for the allowed character codes
-	   * @param options		Rule Options
-	   */
-	  function CharMatchRule(name, allows, ignoreCase, options) {
-	    var _this;
-
-	    _this = _MatchRule.call(this, name, allows, ignoreCase, options) || this; // generate expression for debug
-
-	    var codes = _this.startCodes;
-	    var i = codes.length,
-	        expr = '*';
-
-	    if (i) {
-	      var chars = [];
-
-	      while (i--) {
-	        chars[i] = char(codes[i]);
-	      }
-
-	      expr = "\"" + chars.join('" | "') + "\"";
-	    }
-
-	    _this.setExpr(expr);
-
-	    return _this;
-	  }
-
-	  var _proto = CharMatchRule.prototype;
-
-	  _proto.match = function match(context) {
-	    return this.comsume(context.nextChar(), 1, context);
-	  };
-
-	  return CharMatchRule;
-	}(MatchRule)) || _class$1);
-
-	var _dec$2, _class$2;
-	/**
-	 * match string by RegExp
-	 *
-	 * optimization:
-	 * - Priority use sticky mode {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp/sticky}
-	 *
-	 */
-
-	var RegMatchRule = (_dec$2 = mixin({
-	  type: 'RegExp'
-	}), _dec$2(_class$2 =
-	/*#__PURE__*/
-	function (_MatchRule) {
-	  _inheritsLoose(RegMatchRule, _MatchRule);
-
-	  /**
-	   * @param name 			match name
-	   * @param regexp		regular
-	   * @param pick			pick regular matching results
-	   * 						    0: pick results[0] (optimize: test and substring in sticky mode)
-	   * 						  > 0: pick results[{pick}]
-	   * 						  < 0: pick first non-blank string from 1 to -{pick} index on results
-	   * 						 true: pick results
-	   * 						false: not pick result, result is null (optimize: just test string in sticky mode)
-	   * @param start			start character codes in the regular, optimize performance by start character codes
-	   * @param capturable	error is capturable
-	   * @param onMatch		match callback
-	   * @param onErr			error callback
-	   */
-	  function RegMatchRule(name, regexp, pick, start, options) {
-	    var _this;
-
-	    pick = pick === false || isInt(pick) ? pick : !!pick || 0;
-	    var sticky = stickyReg && !pick,
-	        // use exec mode when need pick match group data
-	    pattern = regexp.source,
-	        ignoreCase = regexp.ignoreCase; // always wrapping in a none capturing group preceded by '^' to make sure
-	    // matching can only work on start of input. duplicate/redundant start of
-	    // input markers have no meaning (/^^^^A/ === /^A/)
-	    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp/sticky
-	    // When the y flag is used with a pattern, ^ always matches only at the
-	    // beginning of the input, or (if multiline is true) at the beginning of a
-	    // line.
-
-	    regexp = new RegExp(sticky ? pattern : "^(?:" + pattern + ")", (ignoreCase ? 'i' : '') + (regexp.multiline ? 'm' : '') + (sticky ? 'y' : ''));
-	    _this = _MatchRule.call(this, name, start, ignoreCase, options) || this;
-	    _this.regexp = regexp;
-	    _this.pick = pick;
-	    _this.match = sticky ? _this.stickyMatch : _this.execMatch;
-	    sticky ? _this.spicker = pick === false ? pickNone : pickTestStr : _this.picker = mkPicker(pick);
-
-	    _this.setExpr(pattern);
-
-	    return _this;
-	  }
-	  /**
-	   * match on sticky mode
-	   */
-
-
-	  var _proto = RegMatchRule.prototype;
-
-	  _proto.stickyMatch = function stickyMatch(context) {
-	    var reg = this.regexp,
-	        buff = context.buff(),
-	        start = context.offset();
-	    reg.lastIndex = start;
-	    var len;
-	    return reg.test(buff) ? (len = reg.lastIndex - start, this.comsume(this.spicker(buff, start, len), len, context)) : this.error(this.EXPECT, context);
-	  }
-	  /**
-	   * match on exec mode
-	   */
-	  ;
-
-	  _proto.execMatch = function execMatch(context) {
-	    var m = this.regexp.exec(context.buff(true));
-	    return m ? this.comsume(this.picker(m), m[0].length, context) : this.error(this.EXPECT, context);
-	  };
-
-	  return RegMatchRule;
-	}(MatchRule)) || _class$2);
-	var cache = create(null);
-
-	function mkPicker(pick) {
-	  return cache[pick] || (cache[pick] = pick === false ? pickNone : pick === true ? pickAll : pick >= 0 ? createFn("return m[" + pick + "]", ['m'], "pick_" + pick) : createFn("return " + mapArray(new Array(-pick), function (v, i) {
-	    return "m[" + (i + 1) + "]";
-	  }).join(' || '), ['m'], "pick_1_" + -pick));
-	}
-
-	function pickNone() {
-	  return null;
-	}
-
-	function pickAll(m) {
-	  return m;
-	}
-
-	function pickTestStr(buff, start, end) {
-	  return cutLStr(buff, start, end);
-	}
-
-	var _dec$3, _class$3;
-	var StringMatchRule = (_dec$3 = mixin({
-	  type: 'String'
-	}), _dec$3(_class$3 =
-	/*#__PURE__*/
-	function (_RegMatchRule) {
-	  _inheritsLoose(StringMatchRule, _RegMatchRule);
-
-	  /**
-	   * @param name 			match name
-	   * @param str 			match string
-	   * @param ignoreCase	ignore case
-	   * @param options		Rule Options
-	   */
-	  function StringMatchRule(name, str, ignoreCase, options) {
-	    var _this;
-
-	    _this = _RegMatchRule.call(this, name, new RegExp(reEscape(str), ignoreCase ? 'i' : ''), 0, charCode(str), options) || this;
-
-	    _this.setExpr(str);
-
-	    return _this;
-	  }
-
-	  return StringMatchRule;
-	}(RegMatchRule)) || _class$3);
-
-	/**
-	 * @module utility/AST
+	 * @module util/AST
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Tue Dec 11 2018 15:36:42 GMT+0800 (China Standard Time)
-	 * @modified Sat Dec 22 2018 16:32:31 GMT+0800 (China Standard Time)
+	 * @modified Mon Apr 08 2019 13:57:26 GMT+0800 (China Standard Time)
 	 */
 
 	/**
@@ -3878,6 +3683,12 @@
 	  return MatchContext;
 	}();
 
+	function _inheritsLoose(subClass, superClass) {
+	  subClass.prototype = Object.create(superClass.prototype);
+	  subClass.prototype.constructor = subClass;
+	  subClass.__proto__ = superClass;
+	}
+
 	var MAX = -1 >>> 0;
 	/**
 	 * Abstract Complex Rule
@@ -4008,15 +3819,15 @@
 	  return ComplexRule;
 	}(Rule);
 
-	var _dec$4, _class$4;
+	var _dec$1, _class$1;
 	/**
 	 * AND Complex Rule
 	 */
 
-	var AndRule = (_dec$4 = mixin({
+	var AndRule = (_dec$1 = mixin({
 	  type: 'And',
 	  split: ' '
-	}), _dec$4(_class$4 =
+	}), _dec$1(_class$1 =
 	/*#__PURE__*/
 	function (_ComplexRule) {
 	  _inheritsLoose(AndRule, _ComplexRule);
@@ -4083,17 +3894,17 @@
 	  };
 
 	  return AndRule;
-	}(ComplexRule)) || _class$4);
+	}(ComplexRule)) || _class$1);
 
-	var _dec$5, _class$5;
+	var _dec$2, _class$2;
 	/**
 	 * OR Complex Rule
 	 */
 
-	var OrRule = (_dec$5 = mixin({
+	var OrRule = (_dec$2 = mixin({
 	  type: 'Or',
 	  split: ' | '
-	}), _dec$5(_class$5 =
+	}), _dec$2(_class$2 =
 	/*#__PURE__*/
 	function (_ComplexRule) {
 	  _inheritsLoose(OrRule, _ComplexRule);
@@ -4229,11 +4040,237 @@
 	  };
 
 	  return OrRule;
-	}(ComplexRule)) || _class$5);
+	}(ComplexRule)) || _class$2);
+
+	/**
+	 * Match Rule Interface
+	 */
+	var MatchRule =
+	/*#__PURE__*/
+	function (_Rule) {
+	  _inheritsLoose(MatchRule, _Rule);
+
+	  /**
+	   * @param name 			match name
+	   * @param start 		start char codes, prepare test by start char codes before match
+	   * @param ignoreCase	ignore case for the start char codes
+	   * @param options		Rule Options
+	   */
+	  function MatchRule(name, start, ignoreCase, options) {
+	    var _this;
+
+	    _this = _Rule.call(this, name, options) || this;
+
+	    _this.setStartCodes(start, ignoreCase);
+
+	    return _this;
+	  }
+	  /**
+	   * consume matched result
+	   * @param data 		matched result
+	   * @param len 		matched chars
+	   * @param context 	match context
+	   */
+
+
+	  var _proto = MatchRule.prototype;
+
+	  _proto.comsume = function comsume(data, len, context) {
+	    context.advance(len);
+	    return this.matched(data, len, context);
+	  };
+
+	  return MatchRule;
+	}(Rule);
+
+	var _dec$3, _class$3;
+	/**
+	 * match a character in the allowed list
+	 * > well match any character if the allowed list is empty
+	 *
+	 * > must call test() before match
+	 */
+
+	var CharMatchRule = (_dec$3 = mixin({
+	  type: 'Character'
+	}), _dec$3(_class$3 =
+	/*#__PURE__*/
+	function (_MatchRule) {
+	  _inheritsLoose(CharMatchRule, _MatchRule);
+
+	  /**
+	   * @param name 			match name
+	   * @param allows 		allowed character codes for match
+	   * 						well match any character if the allowed list is empty
+	   * @param ignoreCase	ignore case for the allowed character codes
+	   * @param options		Rule Options
+	   */
+	  function CharMatchRule(name, allows, ignoreCase, options) {
+	    var _this;
+
+	    _this = _MatchRule.call(this, name, allows, ignoreCase, options) || this; // generate expression for debug
+
+	    var codes = _this.startCodes;
+	    var i = codes.length,
+	        expr = '*';
+
+	    if (i) {
+	      var chars = [];
+
+	      while (i--) {
+	        chars[i] = char(codes[i]);
+	      }
+
+	      expr = "\"" + chars.join('" | "') + "\"";
+	    }
+
+	    _this.setExpr(expr);
+
+	    return _this;
+	  }
+
+	  var _proto = CharMatchRule.prototype;
+
+	  _proto.match = function match(context) {
+	    return this.comsume(context.nextChar(), 1, context);
+	  };
+
+	  return CharMatchRule;
+	}(MatchRule)) || _class$3);
+
+	var _dec$4, _class$4;
+	/**
+	 * match string by RegExp
+	 *
+	 * optimization:
+	 * - Priority use sticky mode {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp/sticky}
+	 *
+	 */
+
+	var RegMatchRule = (_dec$4 = mixin({
+	  type: 'RegExp'
+	}), _dec$4(_class$4 =
+	/*#__PURE__*/
+	function (_MatchRule) {
+	  _inheritsLoose(RegMatchRule, _MatchRule);
+
+	  /**
+	   * @param name 			match name
+	   * @param regexp		regular
+	   * @param pick			pick regular matching results
+	   * 						    0: pick results[0] (optimize: test and substring in sticky mode)
+	   * 						  > 0: pick results[{pick}]
+	   * 						  < 0: pick first non-blank string from 1 to -{pick} index on results
+	   * 						 true: pick results
+	   * 						false: not pick result, result is null (optimize: just test string in sticky mode)
+	   * @param start			start character codes in the regular, optimize performance by start character codes
+	   * @param capturable	error is capturable
+	   * @param onMatch		match callback
+	   * @param onErr			error callback
+	   */
+	  function RegMatchRule(name, regexp, pick, start, options) {
+	    var _this;
+
+	    pick = pick === false || isInt(pick) ? pick : !!pick || 0;
+	    var sticky = stickyReg && !pick,
+	        // use exec mode when need pick match group data
+	    pattern = regexp.source,
+	        ignoreCase = regexp.ignoreCase; // always wrapping in a none capturing group preceded by '^' to make sure
+	    // matching can only work on start of input. duplicate/redundant start of
+	    // input markers have no meaning (/^^^^A/ === /^A/)
+	    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp/sticky
+	    // When the y flag is used with a pattern, ^ always matches only at the
+	    // beginning of the input, or (if multiline is true) at the beginning of a
+	    // line.
+
+	    regexp = new RegExp(sticky ? pattern : "^(?:" + pattern + ")", (ignoreCase ? 'i' : '') + (regexp.multiline ? 'm' : '') + (sticky ? 'y' : ''));
+	    _this = _MatchRule.call(this, name, start, ignoreCase, options) || this;
+	    _this.regexp = regexp;
+	    _this.pick = pick;
+	    _this.match = sticky ? _this.stickyMatch : _this.execMatch;
+	    sticky ? _this.spicker = pick === false ? pickNone : pickTestStr : _this.picker = mkPicker(pick);
+
+	    _this.setExpr(pattern);
+
+	    return _this;
+	  }
+	  /**
+	   * match on sticky mode
+	   */
+
+
+	  var _proto = RegMatchRule.prototype;
+
+	  _proto.stickyMatch = function stickyMatch(context) {
+	    var reg = this.regexp,
+	        buff = context.buff(),
+	        start = context.offset();
+	    reg.lastIndex = start;
+	    var len;
+	    return reg.test(buff) ? (len = reg.lastIndex - start, this.comsume(this.spicker(buff, start, len), len, context)) : this.error(this.EXPECT, context);
+	  }
+	  /**
+	   * match on exec mode
+	   */
+	  ;
+
+	  _proto.execMatch = function execMatch(context) {
+	    var m = this.regexp.exec(context.buff(true));
+	    return m ? this.comsume(this.picker(m), m[0].length, context) : this.error(this.EXPECT, context);
+	  };
+
+	  return RegMatchRule;
+	}(MatchRule)) || _class$4);
+	var cache = create(null);
+
+	function mkPicker(pick) {
+	  return cache[pick] || (cache[pick] = pick === false ? pickNone : pick === true ? pickAll : pick >= 0 ? createFn("return m[" + pick + "]", ['m'], "pick_" + pick) : createFn("return " + mapArray(new Array(-pick), function (v, i) {
+	    return "m[" + (i + 1) + "]";
+	  }).join(' || '), ['m'], "pick_1_" + -pick));
+	}
+
+	function pickNone() {
+	  return null;
+	}
+
+	function pickAll(m) {
+	  return m;
+	}
+
+	function pickTestStr(buff, start, end) {
+	  return cutLStr(buff, start, end);
+	}
+
+	var _dec$5, _class$5;
+	var StringMatchRule = (_dec$5 = mixin({
+	  type: 'String'
+	}), _dec$5(_class$5 =
+	/*#__PURE__*/
+	function (_RegMatchRule) {
+	  _inheritsLoose(StringMatchRule, _RegMatchRule);
+
+	  /**
+	   * @param name 			match name
+	   * @param str 			match string
+	   * @param ignoreCase	ignore case
+	   * @param options		Rule Options
+	   */
+	  function StringMatchRule(name, str, ignoreCase, options) {
+	    var _this;
+
+	    _this = _RegMatchRule.call(this, name, new RegExp(reEscape(str), ignoreCase ? 'i' : ''), 0, charCode(str), options) || this;
+
+	    _this.setExpr(str);
+
+	    return _this;
+	  }
+
+	  return StringMatchRule;
+	}(RegMatchRule)) || _class$5);
 
 	/**
 	 * AST Parser API
-	 * @module utility/AST
+	 * @module util/AST
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Tue Nov 06 2018 10:58:52 GMT+0800 (China Standard Time)
 	 * @modified Thu Apr 04 2019 19:59:23 GMT+0800 (China Standard Time)
@@ -4435,44 +4472,38 @@
 	}
 
 	/**
-	 * utility utilities
-	 * @module utility
-	 * @preferred
+	 *
+	 * @module util/AST
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
-	 * @created Wed Nov 21 2018 10:21:41 GMT+0800 (China Standard Time)
-	 * @modified Sat Mar 23 2019 18:50:43 GMT+0800 (China Standard Time)
+	 * @created Tue Nov 27 2018 19:05:48 GMT+0800 (China Standard Time)
+	 * @modified Mon Apr 08 2019 11:36:55 GMT+0800 (China Standard Time)
 	 */
 
+	/**
+	 *
+	 * @module observer
+	 * @author Tao Zeng <tao.zeng.zt@qq.com>
+	 * @created Tue Mar 19 2019 14:12:23 GMT+0800 (China Standard Time)
+	 * @modified Mon Apr 08 2019 13:32:29 GMT+0800 (China Standard Time)
+	 */
 	/**
 	 * Observer Key
 	 */
 
-	var OBSERVER_KEY = addDefaultKey('__observer__');
+	var OBSERVER_KEY = addDKey('__observer__');
 	/**
 	 * the property of observe an array change
 	 */
 
-	var ARRAY_CHANGE = '$change';
-	var ARRAY_LENGTH = 'length';
-	/**
-	 * The dirty collector lost the original value
-	 */
-
-	var MISS = {
-	  toString: function toString() {
-	    return 'MISS';
-	  },
-	  toJSON: function toJSON() {
-	    return 'MISS';
-	  }
-	};
+	var ARRAY_CHANGE = '$change',
+	    ARRAY_LENGTH = 'length';
 
 	/**
 	 * Observe implementation on the Proxy of ES6
 	 * @module observer
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Tue Mar 19 2019 14:12:23 GMT+0800 (China Standard Time)
-	 * @modified Thu Mar 28 2019 15:37:58 GMT+0800 (China Standard Time)
+	 * @modified Tue Apr 09 2019 10:49:10 GMT+0800 (China Standard Time)
 	 */
 	/**
 	 * @ignore
@@ -4512,11 +4543,85 @@
 	}
 
 	/**
+	 * @module observer
+	 * @author Tao Zeng <tao.zeng.zt@qq.com>
+	 * @created Thu Apr 04 2019 20:42:20 GMT+0800 (China Standard Time)
+	 * @modified Mon Apr 08 2019 13:31:48 GMT+0800 (China Standard Time)
+	 */
+	var arrayHooks = [];
+	var ARRAY_LEN_CHANGE = [ARRAY_LENGTH, ARRAY_CHANGE];
+	var arrayHookCfg = {
+	  push: [ARRAY_LEN_CHANGE],
+	  pop: [ARRAY_LEN_CHANGE],
+	  splice: function splice(ob, args) {
+	    var target = ob.target,
+	        proxy = ob.proxy;
+	    var start = args[0],
+	        d = args.length - 2 - args[1];
+	    ob.notifies(null, function (prop) {
+	      return prop === ARRAY_CHANGE ? proxy : prop === ARRAY_LENGTH ? d ? target[prop] : SKIP : prop > start && (d || prop < start + args[1]) ? target[prop] : SKIP;
+	    });
+	  },
+	  shift: [],
+	  unshift: [],
+	  'fill,reverse,sort': [null, {
+	    length: 1
+	  }]
+	};
+	eachObj(arrayHookCfg, function (hooker, methods) {
+	  eachArray(methods.split(','), function (method) {
+	    var fn = Array[P_PROTOTYPE][method];
+	    var hook;
+
+	    if (isFn(hooker)) {
+	      var cb = hooker;
+
+	      hook = function hook() {
+	        var ob = this[OBSERVER_KEY];
+	        cb(ob, arguments);
+	        return applyScope(fn, ob.target, arguments);
+	      };
+	    } else {
+	      var _ref = hooker,
+	          props = _ref[0],
+	          execludes = _ref[1];
+
+	      hook = function hook() {
+	        var ob = this[OBSERVER_KEY];
+	        ob.notifies(props, getArrayOriginValue, execludes);
+	        return applyScope(fn, ob.target, arguments);
+	      };
+	    }
+
+	    arrayHooks.push([method, hook]);
+	  });
+	});
+
+	function getArrayOriginValue(prop, ob) {
+	  return prop === ARRAY_CHANGE ? ob.proxy : ob.target[prop];
+	}
+	/**
+	 * apply observer hooks on Array
+	 * @param array
+	 */
+
+
+	function applyArrayHooks(array) {
+	  var hook,
+	      i = arrayHooks.length;
+
+	  while (i--) {
+	    hook = arrayHooks[i];
+	    defValue(array, hook[0], hook[1], false, false, false);
+	  }
+	}
+
+	/**
 	 * Observe implementation on the Object.defineProperty of ES5 or `__defineGetter__` and `__defineSetter__`
 	 * @module observer
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Tue Mar 19 2019 14:12:23 GMT+0800 (China Standard Time)
-	 * @modified Thu Apr 04 2019 18:49:04 GMT+0800 (China Standard Time)
+	 * @modified Thu Apr 04 2019 20:46:05 GMT+0800 (China Standard Time)
 	 */
 	/**
 	 * @ignore
@@ -4525,6 +4630,10 @@
 	function accessorPolicy () {
 	  if (propAccessor) return {
 	    __name: 'Accessor',
+	    __createProxy: function __createProxy(observer, target, isArray) {
+	      isArray && applyArrayHooks(target);
+	      return target;
+	    },
 	    __watch: function __watch(observer, prop, watcher) {
 	      var target = observer.target;
 	      var setter;
@@ -4567,18 +4676,18 @@
 	 * @module observer
 	 * @author Tao Zeng <tao.zeng.zt@qq.com>
 	 * @created Tue Mar 19 2019 14:12:23 GMT+0800 (China Standard Time)
-	 * @modified Thu Mar 28 2019 15:38:05 GMT+0800 (China Standard Time)
+	 * @modified Thu Apr 04 2019 20:45:57 GMT+0800 (China Standard Time)
 	 */
 	function vbPolicy () {
 	  if (GLOBAL.VBArray) {
 	    try {
 	      execScript(['Function parseVB(code)', '\tExecuteGlobal(code)', 'End Function'].join('\n'), 'VBScript');
-	      addDefaultKeys(VBPROXY_KEY, VBPROXY_CTOR_KEY);
+	      addDKeys(VBPROXY_KEY, VBPROXY_CTOR_KEY);
 	      return {
 	        __name: 'VBProxy',
 	        __proxy: 'vb',
 	        __createProxy: function __createProxy(observer, target, isArray) {
-	          return isArray ? target : new VBProxy(target, observer).__proxy;
+	          return isArray ? (applyArrayHooks(target), target) : new VBProxy(target, observer).__proxy;
 	        },
 	        __watch: function __watch(observer, prop, watcher) {
 	          if (!observer.isArray && !observer.target[VBPROXY_KEY].__props[prop]) {
@@ -4615,7 +4724,7 @@
 	    }
 
 	    applyProps(props, propMap, OBJECT_DEFAULT_PROPS);
-	    applyProps(props, propMap, getDefaultKeys());
+	    applyProps(props, propMap, getDKeys());
 	    var proxy = loadClassFactory(props)(this);
 
 	    while (j--) {
@@ -4674,7 +4783,7 @@
 
 	var VBPROXY_KEY = '__vbclass_binding__',
 	    VBPROXY_CTOR_KEY = '__vbclass_constructor__',
-	    OBJECT_DEFAULT_PROPS = [VBPROXY_KEY, CONSTRUCTOR, HAS_OWN_PROP, 'isPrototypeOf', 'propertyIsEnumerable', 'toLocaleString', 'toString', 'valueOf'];
+	    OBJECT_DEFAULT_PROPS = [VBPROXY_KEY, P_CTOR, P_OWNPROP, 'isPrototypeOf', 'propertyIsEnumerable', 'toLocaleString', 'toString', 'valueOf'];
 	var CONSTRUCTOR_SCRIPT = "\n\tPublic [" + VBPROXY_KEY + "]\n\tPublic Default Function [" + VBPROXY_CTOR_KEY + "](source)\n\t\tSet [" + VBPROXY_KEY + "] = source\n\t\tSet [" + VBPROXY_CTOR_KEY + "] = Me\n\tEnd Function\n\t",
 	    classPool = create(null);
 
@@ -4713,18 +4822,6 @@
 	  return GLOBAL[factoryName];
 	}
 
-	/*                                                                                      *
-	 *                                        topic                                         *
-	 *                                                                                      */
-	//========================================================================================
-
-	/**
-	 * special object
-	 * - special object indicates that the topic has not changed
-	 */
-
-	var V = {};
-
 	function isObserverTarget(obj) {
 	  return obj && (isArray(obj) || isObject(obj));
 	}
@@ -4737,27 +4834,28 @@
 
 	function isArrayChangeProp(observer, prop) {
 	  return observer.isArray && prop === ARRAY_CHANGE;
-	}
+	} //========================================================================================
+
+	/*                                                                                      *
+	 *                                        topic                                         *
+	 *                                                                                      */
+	//========================================================================================
+
+	/**
+	 * special object
+	 * - special object indicates that the topic has not changed
+	 */
+
+
+	var V = {};
 	/**
 	 * get property value on object
 	 * @param obj 	object
 	 * @param prop 	property
 	 */
 
-
 	function getValue(obj, prop) {
 	  return obj === undefined || obj === null ? undefined : obj[prop];
-	}
-	/**
-	 * get property value on the original value
-	 * check {@link MISS}
-	 * @param original 	original value
-	 * @param prop 		property
-	 */
-
-
-	function getOriginalValue(original, prop) {
-	  return original === undefined || original === null ? undefined : original === MISS ? original : original[prop];
 	} // id generator of topic
 
 
@@ -4908,7 +5006,8 @@
 	        if (err) {
 	          var path = this.__getPath();
 
-	          assert("observer[{}]: can not watch {} on {}{}, {{message}}.", formatPath(path), formatPath(path.slice(-1)), toStrType(observer.target), path.length > 1 ? "[" + formatPath(path.slice(0, -1)) + "]" : '', err, err, this.__owner.target);
+	          err.message = "observer[" + formatPath(path) + "]: can not watch " + formatPath(path.slice(-1)) + " on " + toStrType(observer.target) + (path.length > 1 ? "[" + formatPath(path.slice(0, -1)) + "]" : '') + ", " + err.message + ".";
+	          throw err;
 	        }
 	      }
 
@@ -4942,22 +5041,26 @@
 	          _observer = this.__observer; // 1. bind observer
 
 	      if (_observer) {
-	        var _prop = this.__prop;
+	        var prop = this.__prop;
 	        var subObserver;
 
 	        if (subs[0]) {
 	          subObserver = subs[0].__observer;
-	        } else if (!isArrayChangeProp(_observer, _prop)) {
-	          var subTarget = _observer.target[_prop];
+	        } else if (!isArrayChangeProp(_observer, prop)) {
+	          var subTarget = _observer.target[prop];
 
 	          if (isObserverTarget(subTarget)) {
-	            subObserver = __loadSubObserver(_observer, _prop, subTarget);
-	          } else if (!isNil(subTarget)) {
-	            sub.__ignorePath(2, toStrType(subTarget));
-	          }
-	        } else {
-	          sub.__ignorePath(2, 'Array');
-	        }
+	            subObserver = __loadSubObserver(_observer, prop, subTarget);
+	          } //#if _DEBUG
+	          else if (!isNil(subTarget)) {
+	              sub.__ignorePath(2, toStrType(subTarget));
+	            } //#endif
+
+	        } //#if _DEBUG
+	        else {
+	            sub.__ignorePath(2, 'Array');
+	          } //#endif
+
 
 	        sub.__bind(subObserver);
 	      } // 2. attach subtopic
@@ -4990,7 +5093,8 @@
 	    }
 
 	    assert('un-attached topic');
-	  };
+	  } //#if _DEBUG
+	  ;
 
 	  _proto.__ignorePath = function __ignorePath(i, type, msg) {
 	    var path = this.__getPath();
@@ -5002,15 +5106,16 @@
 	    for (var i = 0; i < len; i++) {
 	      subs[i].__ignorePath(2, type);
 	    }
-	  };
+	  } //#endif
+	  ;
 
 	  _proto.__getPath = function __getPath() {
 	    var path = this.__path;
 
 	    if (!path) {
 	      var parent = this.__parent,
-	          _prop2 = this.__prop;
-	      this.__path = path = parent ? parent.__getPath().concat(_prop2) : [_prop2];
+	          prop = this.__prop;
+	      this.__path = path = parent ? parent.__getPath().concat(prop) : [prop];
 	    }
 
 	    return path;
@@ -5106,12 +5211,16 @@
 	              subTarget = subObserver.target;
 	              dirty && (dirty[0] = subObserver.proxy); // update dirty proxy
 	            }
-	          } else if (!isNil(subTarget)) {
-	            this.__ignoreSubPaths(subs, l, toStrType(subTarget));
-	          }
-	        } else {
-	          this.__ignoreSubPaths(subs, l, 'Array');
-	        }
+	          } //#if _DEBUG
+	          else if (!isNil(subTarget)) {
+	              this.__ignoreSubPaths(subs, l, toStrType(subTarget));
+	            } //#endif
+
+	        } //#if _DEBUG
+	        else {
+	            this.__ignoreSubPaths(subs, l, 'Array');
+	          } //#endif
+
 	      } else if (proxyEnable && dirty) {
 	        dirty[0] = exports.proxy(dirty[0]);
 	      }
@@ -5127,7 +5236,7 @@
 	            // 1. this subtopic has not been changed, using the original value of the current topic
 	            // *2. this subtopic has been changed and collected, and the collector retains its original value
 	            // *   this does not happen after the topics are sorted by ID before collection
-	            subOriginal = sub.__dirty ? undefined : getOriginalValue(original, sub.__prop);
+	            subOriginal = sub.__dirty || isNil(original) ? undefined : original[sub.__prop];
 	          } else {
 	            // this subtopic was changed but not collected, collected in advance
 	            sub.__original = V;
@@ -5153,7 +5262,9 @@
 
 
 	function collect() {
-	  var start = Date.now();
+	  //#if _DEBUG
+	  var start = Date.now(); //#endif
+
 	  var l = collectQueue.length,
 	      i = 0; // sort by topic id
 
@@ -5163,8 +5274,10 @@
 	    collectQueue[i].__collect();
 	  }
 
-	  collectQueue.length = 0;
-	  console.log("Collect " + dirtyQueue.length + " dirty topics from the collection queue (" + l + "), use " + (Date.now() - start) + "ms");
+	  collectQueue.length = 0; //#if _DEBUG
+
+	  console.log("Collect " + dirtyQueue.length + " dirty topics from the collection queue (" + l + "), use " + (Date.now() - start) + "ms"); //#endif
+
 	  notify();
 	}
 	/**
@@ -5172,9 +5285,11 @@
 	 */
 
 	function notify() {
+	  //#if _DEBUG
 	  var start = Date.now();
 	  var topics = 0,
-	      listens = 0;
+	      listens = 0; //#endif
+
 	  var l = dirtyQueue.length;
 	  var topic,
 	      owner,
@@ -5197,16 +5312,19 @@
 	      path = topic.__path;
 
 	      topic.__listeners.each(function (fn, scope) {
-	        scope ? fn.call(scope, path, value, original, owner) : fn(path, value, original, owner);
-	        listens++;
-	      });
+	        scope ? fn.call(scope, path, value, original, owner) : fn(path, value, original, owner); //#if _DEBUG
 
-	      topics++;
+	        listens++; //#endif
+	      }); //#if _DEBUG
+
+
+	      topics++; //#endif
 	    }
 	  }
 
-	  dirtyQueue.length = 0;
-	  console.log(listens + " listen-callbacks of " + topics + "/" + l + " dirty topics have been notified, use " + (Date.now() - start) + "ms");
+	  dirtyQueue.length = 0; //#if _DEBUG
+
+	  console.log(listens + " listen-callbacks of " + topics + "/" + l + " dirty topics have been notified, use " + (Date.now() - start) + "ms"); //#endif
 	} //========================================================================================
 
 	/*                                                                                      *
@@ -5285,20 +5403,14 @@
 	   */
 	  function Observer(target) {
 	    var arrayTarget = isArray(target);
-
-	    if (arrayTarget) {
-	      applyArrayHooks(target);
-	    } else {
-	      assert.is(isObject(target), "the observer's target can only be an object or an array");
-	    }
-
+	    assert.is(arrayTarget || isObject(target), "the observer's target can only be an object or an array");
 	    var watchers = create(null);
 	    this.__watchers = watchers;
 	    this.__watcherProps = [];
 	    this.isArray = arrayTarget;
 	    this.target = target; // bind observer key on the observer's target
 
-	    defPropValue(target, OBSERVER_KEY, this, false, false, false);
+	    defValue(target, OBSERVER_KEY, this, false, false, false);
 	    this.proxy = policy.__createProxy(this, target, arrayTarget);
 	  }
 	  /**
@@ -5424,7 +5536,7 @@
 
 	        if (!execludes[prop] && (watcher = watchers[prop]) && watcher.size()) {
 	          origin = getOriginal(prop, this);
-	          origin !== V && watcher.notify(origin);
+	          origin !== SKIP && watcher.notify(origin);
 	        }
 	      }
 	    } else {
@@ -5433,7 +5545,7 @@
 
 	        if ((watcher = watchers[prop]) && watcher.size()) {
 	          origin = getOriginal(prop, this);
-	          origin !== V && watcher.notify(origin);
+	          origin !== SKIP && watcher.notify(origin);
 	        }
 	      }
 	    }
@@ -5564,88 +5676,16 @@
 	}(); //========================================================================================
 
 	/*                                                                                      *
-	 *                                      Array Hooks                                     *
-	 *                                                                                      */
-	//========================================================================================
-
-
-	var arrayHooks = [];
-	var ARRAY_LEN_CHANGE = [ARRAY_LENGTH, ARRAY_CHANGE];
-	var arrayHookCfg = {
-	  push: [ARRAY_LEN_CHANGE],
-	  pop: [ARRAY_LEN_CHANGE],
-	  splice: function splice(ob, args) {
-	    var target = ob.target,
-	        proxy = ob.proxy;
-	    var start = args[0],
-	        d = args.length - 2 - args[1];
-	    ob.notifies(null, function (prop) {
-	      return prop === ARRAY_CHANGE ? proxy : prop === ARRAY_LENGTH ? d ? target[prop] : V : prop > start && (d || prop < start + args[1]) ? target[prop] : V;
-	    });
-	  },
-	  shift: [],
-	  unshift: [],
-	  'fill,reverse,sort': [null, {
-	    length: 1
-	  }]
-	};
-	eachObj(arrayHookCfg, function (hooker, methods) {
-	  eachArray(methods.split(','), function (method) {
-	    var fn = Array[PROTOTYPE][method];
-	    var hook;
-
-	    if (isFn(hooker)) {
-	      var cb = hooker;
-
-	      hook = function hook() {
-	        var ob = this[OBSERVER_KEY];
-	        cb(ob, arguments);
-	        return applyScope(fn, ob.target, arguments);
-	      };
-	    } else {
-	      var _ref = hooker,
-	          props = _ref[0],
-	          execludes = _ref[1];
-
-	      hook = function hook() {
-	        var ob = this[OBSERVER_KEY];
-	        ob.notifies(props, getArrayOriginValue, execludes);
-	        return applyScope(fn, ob.target, arguments);
-	      };
-	    }
-
-	    arrayHooks.push([method, hook]);
-	  });
-	});
-
-	function getArrayOriginValue(prop, ob) {
-	  return prop === ARRAY_CHANGE ? ob.proxy : ob.target[prop];
-	}
-	/**
-	 * apply observer hooks on Array
-	 * @param array
-	 */
-
-
-	function applyArrayHooks(array) {
-	  var hook,
-	      i = arrayHooks.length;
-
-	  while (i--) {
-	    hook = arrayHooks[i];
-	    defPropValue(array, hook[0], hook[1], false, false, false);
-	  }
-	} //========================================================================================
-
-	/*                                                                                      *
 	 *                                        policy                                        *
 	 *                                                                                      */
 	//========================================================================================
 
 
 	var policy = proxyPolicy() || accessorPolicy() || vbPolicy();
-	assert.is(policy, 'The observer module is not supported.');
-	console.info("the observer policy: " + policy.__name + " -> ", policy);
+	assert.is(policy, 'The observer module is not supported.'); //#if _DEBUG
+
+	console.info("the observer policy: " + policy.__name + " -> ", policy); //#endif
+
 	if (!policy.__createProxy) policy.__createProxy = function (observer, target) {
 	  return target;
 	};
@@ -5675,7 +5715,13 @@
 	  var subObserver = __getObserver(target) || new Observer(target);
 	  if (subObserver.proxy !== target) observer.target[prop] = subObserver.proxy;
 	  return subObserver;
-	};
+	}; //========================================================================================
+
+	/*                                                                                      *
+	 *                                          API                                         *
+	 *                                                                                      */
+	//========================================================================================
+
 	/**
 	 * get the original object of the observer on the object
 	 *
@@ -5853,6 +5899,7 @@
 	 * @created Fri Mar 01 2019 18:17:27 GMT+0800 (China Standard Time)
 	 * @modified Thu Mar 28 2019 19:40:22 GMT+0800 (China Standard Time)
 	 */
+	 //#endif
 
 	/**
 	 *
@@ -5860,14 +5907,14 @@
 	 * @module main
 	 * @preferred
 	 * @created Wed Nov 21 2018 10:21:20 GMT+0800 (China Standard Time)
-	 * @modified Fri Mar 08 2019 15:35:52 GMT+0800 (China Standard Time)
+	 * @modified Mon Apr 08 2019 14:07:50 GMT+0800 (China Standard Time)
 	 */
 
-	exports.isDefaultKey = isDefaultKey;
-	exports.addDefaultKey = addDefaultKey;
-	exports.addDefaultKeys = addDefaultKeys;
-	exports.getDefaultKeys = getDefaultKeys;
-	exports.getDefaultKeyMap = getDefaultKeyMap;
+	exports.isDKey = isDKey;
+	exports.addDKey = addDKey;
+	exports.addDKeys = addDKeys;
+	exports.getDKeys = getDKeys;
+	exports.getDKeyMap = getDKeyMap;
 	exports.createFn = createFn;
 	exports.applyScope = applyScope;
 	exports.applyNoScope = applyNoScope;
@@ -5908,16 +5955,14 @@
 	exports.protoOf = protoOf;
 	exports.__setProto = __setProto;
 	exports.setProto = setProto;
-	exports.propDescriptor = propDescriptor;
 	exports.propAccessor = propAccessor;
 	exports.defProp = defProp;
-	exports.defPropValue = defPropValue;
+	exports.defValue = defValue;
 	exports.hasOwnProp = hasOwnProp;
 	exports.getOwnProp = getOwnProp;
-	exports.parsePath = parsePath;
-	exports.formatPath = formatPath;
-	exports.get = get;
-	exports.set = set;
+	exports.deepEq = deepEq;
+	exports.doDeepEq = doDeepEq;
+	exports.doDeepEqObj = doDeepEqObj;
 	exports.toStr = toStr;
 	exports.toStrType = toStrType;
 	exports.charCode = charCode;
@@ -5930,25 +5975,6 @@
 	exports.upperFirst = upperFirst;
 	exports.lowerFirst = lowerFirst;
 	exports.escapeStr = escapeStr;
-	exports.pad = pad;
-	exports.shorten = shorten;
-	exports.thousandSeparate = thousandSeparate;
-	exports.binarySeparate = binarySeparate;
-	exports.octalSeparate = octalSeparate;
-	exports.hexSeparate = hexSeparate;
-	exports.plural = plural;
-	exports.singular = singular;
-	exports.FORMAT_XPREFIX = FORMAT_XPREFIX;
-	exports.FORMAT_PLUS = FORMAT_PLUS;
-	exports.FORMAT_ZERO = FORMAT_ZERO;
-	exports.FORMAT_SPACE = FORMAT_SPACE;
-	exports.FORMAT_SEPARATOR = FORMAT_SEPARATOR;
-	exports.FORMAT_LEFT = FORMAT_LEFT;
-	exports.extendFormatter = extendFormatter;
-	exports.getFormatter = getFormatter;
-	exports.vformat = vformat;
-	exports.format = format;
-	exports.formatter = formatter;
 	exports.create = create;
 	exports.doAssign = doAssign;
 	exports.assign = assign;
@@ -5975,12 +6001,46 @@
 	exports.values = values;
 	exports.arr2obj = arr2obj;
 	exports.makeMap = makeMap;
+	exports.mixin = mixin;
+	exports.popErrStack = popErrStack;
+	exports.assert = assert;
+	exports.pad = pad;
+	exports.shorten = shorten;
+	exports.thousandSeparate = thousandSeparate;
+	exports.binarySeparate = binarySeparate;
+	exports.octalSeparate = octalSeparate;
+	exports.hexSeparate = hexSeparate;
+	exports.plural = plural;
+	exports.singular = singular;
+	exports.FORMAT_XPREFIX = FORMAT_XPREFIX;
+	exports.FORMAT_PLUS = FORMAT_PLUS;
+	exports.FORMAT_ZERO = FORMAT_ZERO;
+	exports.FORMAT_SPACE = FORMAT_SPACE;
+	exports.FORMAT_SEPARATOR = FORMAT_SEPARATOR;
+	exports.FORMAT_LEFT = FORMAT_LEFT;
+	exports.extendFormatter = extendFormatter;
+	exports.getFormatter = getFormatter;
+	exports.vformat = vformat;
+	exports.format = format;
+	exports.formatter = formatter;
+	exports.PATH_BINDING = PATH_BINDING;
+	exports.parsePath = parsePath;
+	exports.formatPath = formatPath;
+	exports.get = get;
+	exports.set = set;
 	exports.List = List;
 	exports.FnList = FnList;
 	exports.nextTick = nextTick;
 	exports.clearTick = clearTick;
 	exports.clearTickId = clearTickId;
+	exports.genCharCodes = genCharCodes;
 	exports.Source = Source;
+	exports.MatchError = MatchError;
+	exports.Rule = Rule;
+	exports.MatchContext = MatchContext;
+	exports.ComplexRule = ComplexRule;
+	exports.AndRule = AndRule;
+	exports.OrRule = OrRule;
 	exports.discardMatch = discardMatch;
 	exports.appendMatch = appendMatch;
 	exports.attachMatch = attachMatch;
@@ -5993,14 +6053,11 @@
 	exports.anyOne = anyOne;
 	exports.manyOne = manyOne;
 	exports.optionOne = optionOne;
-	exports.popErrStack = popErrStack;
-	exports.assert = assert;
 	exports.VBPROXY_KEY = VBPROXY_KEY;
 	exports.VBPROXY_CTOR_KEY = VBPROXY_CTOR_KEY;
 	exports.OBSERVER_KEY = OBSERVER_KEY;
 	exports.ARRAY_CHANGE = ARRAY_CHANGE;
 	exports.ARRAY_LENGTH = ARRAY_LENGTH;
-	exports.MISS = MISS;
 	exports.collect = collect;
 	exports.proxyEnable = proxyEnable;
 	exports.observer = observer;

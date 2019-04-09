@@ -3,12 +3,13 @@
  * @module observer
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Tue Mar 19 2019 14:12:23 GMT+0800 (China Standard Time)
- * @modified Thu Mar 28 2019 15:38:05 GMT+0800 (China Standard Time)
+ * @modified Thu Apr 04 2019 20:45:57 GMT+0800 (China Standard Time)
  */
 import { ObserverTarget, IWatcher, IObserver } from './IObserver'
 import { ObservePolicy } from './ObservePolicy'
-import { GLOBAL, CONSTRUCTOR, HAS_OWN_PROP } from '../utility/consts'
-import { create, isFn, getDefaultKeys, addDefaultKeys } from '../utility'
+import { GLOBAL, P_CTOR, P_OWNPROP } from '../util/consts'
+import { create, isFn, getDKeys, addDKeys } from '../util'
+import { applyArrayHooks } from './arrayHook';
 
 declare function execScript(code: string, type: string): void
 declare function parseVB(code: string): void
@@ -18,13 +19,13 @@ export default function(): ObservePolicy {
 		try {
 			execScript(['Function parseVB(code)', '\tExecuteGlobal(code)', 'End Function'].join('\n'), 'VBScript')
 
-			addDefaultKeys(VBPROXY_KEY, VBPROXY_CTOR_KEY)
+			addDKeys(VBPROXY_KEY, VBPROXY_CTOR_KEY)
 
 			return {
 				__name: 'VBProxy',
 				__proxy: 'vb',
 				__createProxy<T extends ObserverTarget>(observer: IObserver<T>, target: T, isArray: boolean): T {
-					return isArray ? target : new VBProxy(target, observer).__proxy
+					return isArray ? (applyArrayHooks(target as any[]), target) : new VBProxy(target, observer).__proxy
 				},
 				__watch<T extends ObserverTarget>(observer: IObserver<T>, prop: string, watcher: IWatcher): Error {
 					if (!observer.isArray && !observer.target[VBPROXY_KEY].__props[prop]) {
@@ -65,7 +66,7 @@ export class VBProxy<T extends {}> {
 			if (isFn(source[prop])) __fns[j++] = prop
 		}
 		applyProps(props, propMap, OBJECT_DEFAULT_PROPS)
-		applyProps(props, propMap, getDefaultKeys())
+		applyProps(props, propMap, getDKeys())
 		const proxy = loadClassFactory(props)(this)
 
 		while (j--) {
@@ -116,8 +117,8 @@ export const VBPROXY_KEY = '__vbclass_binding__',
 	VBPROXY_CTOR_KEY = '__vbclass_constructor__',
 	OBJECT_DEFAULT_PROPS = [
 		VBPROXY_KEY,
-		CONSTRUCTOR,
-		HAS_OWN_PROP,
+		P_CTOR,
+		P_OWNPROP,
 		'isPrototypeOf',
 		'propertyIsEnumerable',
 		'toLocaleString',

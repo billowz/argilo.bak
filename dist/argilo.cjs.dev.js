@@ -11,80 +11,81 @@
  * Copyright (c) 2018 Tao Zeng <tao.zeng.zt@qq.com>
  * Released under the MIT license
  *
- * Date: Thu, 04 Apr 2019 12:00:00 GMT
+ * Date: Tue, 09 Apr 2019 10:01:13 GMT
  */
 Object.defineProperty(exports, '__esModule', { value: true });
 
 /**
  *
+ * @module util
  * @author Tao Zeng (tao.zeng.zt@qq.com)
- * @module utility
  * @created 2018-11-09 15:23:35
  * @modified 2018-11-09 15:23:35 by Tao Zeng (tao.zeng.zt@qq.com)
  */
-const CONSTRUCTOR = 'constructor';
-const PROTOTYPE = 'prototype';
-const HAS_OWN_PROP = 'hasOwnProperty';
-const TYPE_BOOL = 'boolean';
-const TYPE_FN = 'function';
-const TYPE_NUM = 'number';
-const TYPE_STRING = 'string';
-const TYPE_UNDEF = 'undefined';
-const GLOBAL = typeof window !== TYPE_UNDEF ? window : typeof global !== TYPE_UNDEF ? global : typeof self !== TYPE_UNDEF ? self : {};
+const P_CTOR = 'constructor';
+const P_PROTOTYPE = 'prototype';
+const P_PROTO = '__proto__';
+const P_OWNPROP = 'hasOwnProperty';
+const T_BOOL = 'boolean';
+const T_FN = 'function';
+const T_NUM = 'number';
+const T_STRING = 'string';
+const T_UNDEF = 'undefined';
+const GLOBAL = typeof window !== T_UNDEF ? window : typeof global !== T_UNDEF ? global : typeof self !== T_UNDEF ? self : {};
 function EMPTY_FN() {}
-function NULL_CONSTRUCTOR() {}
-NULL_CONSTRUCTOR[PROTOTYPE] = null;
+function NULL_CTOR() {}
+NULL_CTOR[P_PROTOTYPE] = null;
 
 /**
- * @module utility/dkeys
+ * @module util/dkeys
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Mar 11 2019 17:22:13 GMT+0800 (China Standard Time)
  * @modified Sat Mar 23 2019 17:42:04 GMT+0800 (China Standard Time)
  */
-const defaultKeyMap = new NULL_CONSTRUCTOR();
-const defaultKeys = [];
-function isDefaultKey(key) {
-  return defaultKeyMap[key] || false;
+const DKeyMap = new NULL_CTOR();
+const DKeys = [];
+function isDKey(key) {
+  return DKeyMap[key] || false;
 }
-function addDefaultKey(key) {
-  if (!defaultKeyMap[key]) {
-    defaultKeyMap[key] = true;
-    defaultKeys.push(key);
+function addDKey(key) {
+  if (!DKeyMap[key]) {
+    DKeyMap[key] = true;
+    DKeys.push(key);
   }
 
   return key;
 }
-function addDefaultKeys() {
+function addDKeys() {
   const args = arguments,
         l = args.length;
 
   for (var i = 0; i < l; i++) {
-    addDefaultKey(args[i] + '');
+    addDKey(args[i] + '');
   }
 }
-function getDefaultKeys() {
-  return defaultKeys;
+function getDKeys() {
+  return DKeys;
 }
-function getDefaultKeyMap() {
-  return defaultKeys;
+function getDKeyMap() {
+  return DKeys;
 }
 
 /**
- * @module utility
+ * @module util
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 13:57:32 GMT+0800 (China Standard Time)
- * @modified Sat Feb 16 2019 10:53:30 GMT+0800 (China Standard Time)
+ * @modified Mon Apr 08 2019 11:50:32 GMT+0800 (China Standard Time)
  */
-function getConstructor(o) {
-  let C = o[CONSTRUCTOR];
-  return typeof C === TYPE_FN ? C : Object;
+function getCtor(o) {
+  let C = o[P_CTOR];
+  return typeof C === T_FN ? C : Object;
 }
 
 /**
- * @module utility
+ * @module util
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 13:57:32 GMT+0800 (China Standard Time)
- * @modified Sat Mar 23 2019 18:50:53 GMT+0800 (China Standard Time)
+ * @modified Mon Apr 08 2019 13:26:55 GMT+0800 (China Standard Time)
  */
 const toString = Object.prototype.toString;
 function toStr(obj) {
@@ -95,11 +96,10 @@ function toStrType(obj) {
 }
 
 /**
- * type checker
- * @module utility
+ * @module util
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 13:57:32 GMT+0800 (China Standard Time)
- * @modified Sat Mar 23 2019 18:55:31 GMT+0800 (China Standard Time)
+ * @modified Mon Apr 08 2019 13:26:03 GMT+0800 (China Standard Time)
  */
 /**
  * is equals
@@ -140,28 +140,28 @@ function isNil(o) {
  * is boolean
  */
 
-const isBool = mkIsPrimitive(TYPE_BOOL);
+const isBool = mkIsPrimitive(T_BOOL);
 /**
  * is a number
  */
 
-const isNum = mkIsPrimitive(TYPE_NUM);
+const isNum = mkIsPrimitive(T_NUM);
 /**
  * is a string
  */
 
-const isStr = mkIsPrimitive(TYPE_STRING);
+const isStr = mkIsPrimitive(T_STRING);
 /**
  * is a function
  */
 
-const isFn = mkIsPrimitive(TYPE_FN);
+const isFn = mkIsPrimitive(T_FN);
 /**
  * is integer number
  */
 
 function isInt(o) {
-  return o === 0 || (o ? typeof o === TYPE_NUM && o % 1 === 0 : false);
+  return o === 0 || (o ? typeof o === T_NUM && o % 1 === 0 : false);
 }
 /**
  * is primitive type
@@ -179,10 +179,10 @@ function isPrimitive(o) {
   }
 
   switch (typeof o) {
-    case TYPE_BOOL:
-    case TYPE_NUM:
-    case TYPE_STRING:
-    case TYPE_FN:
+    case T_BOOL:
+    case T_NUM:
+    case T_STRING:
+    case T_FN:
       return true;
   }
 
@@ -214,9 +214,9 @@ function instOf(obj, Cls) {
 
 function is(o, Type) {
   if (o !== undefined && o !== null) {
-    const C = o[CONSTRUCTOR] || Object;
+    const C = o[P_CTOR] || Object;
 
-    if (Type[CONSTRUCTOR] === Array) {
+    if (Type[P_CTOR] === Array) {
       var i = Type.length;
 
       while (i--) {
@@ -278,8 +278,8 @@ const isTypedArray = isFn(ArrayBuffer) ? ArrayBuffer.isView : () => false;
  */
 
 function isArrayLike(o) {
-  if (o && o[CONSTRUCTOR]) {
-    switch (o[CONSTRUCTOR]) {
+  if (o && o[P_CTOR]) {
+    switch (o[P_CTOR]) {
       case Array:
       case String:
       case GLOBAL.NodeList:
@@ -296,7 +296,7 @@ function isArrayLike(o) {
     }
 
     const len = o.length;
-    return typeof len === TYPE_NUM && (len === 0 || len > 0 && len % 1 === 0 && len - 1 in o);
+    return typeof len === T_NUM && (len === 0 || len > 0 && len % 1 === 0 && len - 1 in o);
   }
 
   return o === '';
@@ -307,7 +307,7 @@ function isArrayLike(o) {
  */
 
 function isObj(o) {
-  return o !== undefined && o !== null && getConstructor(o) === Object;
+  return o !== undefined && o !== null && getCtor(o) === Object;
 }
 /**
  * is simple Object
@@ -320,7 +320,7 @@ function isObject(o) {
 
 function mkIs(Type) {
   return function is(o) {
-    return o !== undefined && o !== null && o[CONSTRUCTOR] === Type;
+    return o !== undefined && o !== null && o[P_CTOR] === Type;
   };
 }
 
@@ -334,7 +334,7 @@ const blankStrReg = /^\s*$/;
 
 function isBlank(o) {
   if (o) {
-    if (o[CONSTRUCTOR] === String) {
+    if (o[P_CTOR] === String) {
       return blankStrReg.test(o);
     }
 
@@ -345,11 +345,10 @@ function isBlank(o) {
 }
 
 /**
- * Function utilities
- * @module utility
+ * @module util
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 13:57:32 GMT+0800 (China Standard Time)
- * @modified Sat Mar 30 2019 15:42:28 GMT+0800 (China Standard Time)
+ * @modified Mon Apr 08 2019 13:26:23 GMT+0800 (China Standard Time)
  */
 
 /*                                                                                      *
@@ -485,7 +484,7 @@ function fnName(fn) {
 
 let _bind;
 
-const funcProto = Function[PROTOTYPE];
+const funcProto = Function[P_PROTOTYPE];
 
 if (funcProto.bind) {
   _bind = function bind(fn, scope) {
@@ -598,11 +597,10 @@ function bindPolyfill(fn, scope, bindArgs, argOffset) {
 }
 
 /**
- * regexp utilities
- * @module utility/reg
+ * @module util
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Thu Sep 06 2018 18:27:51 GMT+0800 (China Standard Time)
- * @modified Sat Dec 29 2018 19:29:00 GMT+0800 (China Standard Time)
+ * @modified Mon Apr 08 2019 13:25:13 GMT+0800 (China Standard Time)
  */
 /**
  * whether to support sticky on RegExp
@@ -624,59 +622,166 @@ function reEscape(str) {
 }
 
 /**
- * @module utility
+ * @module util
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Jul 25 2018 15:23:56 GMT+0800 (China Standard Time)
- * @modified Thu Jan 31 2019 10:10:48 GMT+0800 (China Standard Time)
+ * @modified Mon Apr 08 2019 11:49:38 GMT+0800 (China Standard Time)
  */
-const prototypeOf = true;
-const protoProp = true;
-const protoOf = Object.getPrototypeOf;
-const __setProto = Object.setPrototypeOf;
-const setProto = __setProto;
+const $getProto = Object.getPrototypeOf,
+      $setProto = Object.setPrototypeOf;
+/**
+ * whether to support Object.getPrototypeOf and Object.setPrototypeOf
+ */
+
+const prototypeOf = !!$setProto;
+/**
+ * whether to support `__proto__`
+ */
+
+const protoProp = {
+  [P_PROTO]: []
+} instanceof Array;
+!protoProp && addDKey(P_PROTO);
+/**
+ * get prototype
+ */
+
+const protoOf = $setProto ? $getProto : $getProto ? function getPrototypeOf(obj) {
+  return obj[P_PROTO] || $getProto(obj);
+} : function getPrototypeOf(obj) {
+  return obj[P_PROTO] || obj[P_CTOR][P_PROTOTYPE];
+};
+/**
+ * set prototype
+ * > properties on the prototype are not inherited on older browsers
+ */
+
+const __setProto = $setProto || function setPrototypeOf(obj, proto) {
+  obj[P_PROTO] = proto;
+  return obj;
+};
+/**
+ * set prototype
+ * > the properties on the prototype will be copied on the older browser
+ */
+
+const setProto = $setProto || (protoProp ? __setProto : function setPrototypeOf(obj, proto) {
+  for (let p in proto) {
+    if (!(p in obj)) obj[p] = proto[p];
+  }
+
+  return __setProto(obj, proto);
+});
 
 /**
- * prototype utilities
- * @module utility
+ * @module util
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Jul 25 2018 15:24:47 GMT+0800 (China Standard Time)
- * @modified Thu Mar 14 2019 09:20:31 GMT+0800 (China Standard Time)
+ * @modified Mon Apr 08 2019 13:27:56 GMT+0800 (China Standard Time)
  */
+/*#else
+
+export { prototypeOf, protoProp, protoOf, __setProto, setProto } from './main'
+
+//#endif */
 
 /**
- * @module utility
+ * @module util
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Jul 25 2018 15:22:57 GMT+0800 (China Standard Time)
- * @modified Sat Dec 29 2018 18:57:32 GMT+0800 (China Standard Time)
+ * @modified Mon Apr 08 2019 13:28:30 GMT+0800 (China Standard Time)
  */
-const propDescriptor = true;
-const propAccessor = true;
-const defProp = Object.defineProperty;
-function defPropValue(obj, prop, value, enumerable, configurable, writable) {
-  defProp(obj, prop, {
+const {
+  __defineGetter__,
+  __defineSetter__
+} = Object[P_PROTOTYPE];
+let $defProp = Object.defineProperty;
+/**
+ * whether to support Object.defineProperty
+ * @constant
+ */
+
+exports.propDescriptor = false;
+
+if ($defProp) {
+  try {
+    var val,
+        obj = {};
+    $defProp(obj, 's', {
+      get() {
+        return val;
+      },
+
+      set(value) {
+        val = value;
+      }
+
+    });
+    obj.s = 1;
+    exports.propDescriptor = obj.s === val;
+  } catch (e) {}
+}
+/**
+ * whether to support `__defineGetter__` and `__defineSetter__`
+ */
+
+
+const propAccessor = exports.propDescriptor || !!__defineSetter__;
+if (!exports.propDescriptor) $defProp = __defineSetter__ ? function defineProperty(obj, prop, desc) {
+  const {
+    get,
+    set
+  } = desc;
+  if ('value' in desc || !(prop in obj)) obj[prop] = desc.value;
+  get && __defineGetter__.call(obj, prop, get);
+  set && __defineSetter__.call(obj, prop, set);
+  return obj;
+} : function defineProperty(obj, prop, desc) {
+  if (desc.get || desc.set) throw new TypeError('property accessors are not supported.');
+  if ('value' in desc || !(prop in obj)) obj[prop] = desc.value;
+  return obj;
+};
+/**
+ * define property
+ */
+
+const defProp = $defProp;
+/**
+ * define property by value
+ */
+
+const defValue = exports.propDescriptor ? function defValue(obj, prop, value, configurable, writable, enumerable) {
+  $defProp(obj, prop, {
     value,
     enumerable: enumerable !== false,
     configurable: configurable !== false,
     writable: writable !== false
   });
   return value;
-}
+} : function defValue(obj, prop, value) {
+  obj[prop] = value;
+  return value;
+};
 
 /**
- * property utilities
- * @module utility
+ * @module util
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Jul 25 2018 15:24:47 GMT+0800 (China Standard Time)
- * @modified Thu Mar 14 2019 09:21:12 GMT+0800 (China Standard Time)
+ * @modified Mon Apr 08 2019 13:28:25 GMT+0800 (China Standard Time)
  */
+/*#else
+
+export { propDescriptor, propAccessor, defProp, defValue } from './main'
+
+//#endif */
 
 /**
- * @module utility
+ * @module util
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Jul 25 2018 15:22:57 GMT+0800 (China Standard Time)
- * @modified Thu Mar 14 2019 09:22:38 GMT+0800 (China Standard Time)
+ * @modified Mon Apr 08 2019 12:42:51 GMT+0800 (China Standard Time)
  */
-const __hasOwn = Object[PROTOTYPE][HAS_OWN_PROP];
+const __hasOwn = Object[P_PROTOTYPE][P_OWNPROP];
 /**
  * has own property
  */
@@ -695,22 +800,302 @@ function getOwnProp(obj, prop, defaultVal) {
 }
 
 /**
- * @module utility/create
+ * Object.create polyfill
+ * @module util
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Jul 25 2018 15:24:47 GMT+0800 (China Standard Time)
- * @modified Tue Feb 19 2019 11:52:42 GMT+0800 (China Standard Time)
+ * @modified Mon Apr 08 2019 14:11:37 GMT+0800 (China Standard Time)
  */
-const create = Object.create;
+
+function __() {}
+/**
+ * create shim
+ */
+
+
+function doCreate(o, props) {
+  __[P_PROTOTYPE] = o;
+  const obj = new __();
+  __[P_PROTOTYPE] = null;
+
+  if (props) {
+    for (var k in props) {
+      if (hasOwnProp(props, k)) {
+        defProp(obj, k, props[k]);
+      }
+    }
+  }
+
+  return obj;
+}
+/**
+ * create object
+ */
+
+
+const create = Object.create || (Object.create = Object.getPrototypeOf ? doCreate : function create(o, props) {
+  const obj = doCreate(o, props);
+
+  __setProto(obj, o);
+
+  return obj;
+});
 
 /**
- * @module utility/create
+ * @module util
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Jul 25 2018 15:24:47 GMT+0800 (China Standard Time)
- * @modified Mon Mar 04 2019 18:35:26 GMT+0800 (China Standard Time)
+ * @modified Mon Apr 08 2019 14:11:29 GMT+0800 (China Standard Time)
  */
+/*#else
+
+export { create } from './main'
+
+//#endif */
 
 /**
- * @module utility/collection
+ * @module util
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Wed Jul 25 2018 15:24:47 GMT+0800 (China Standard Time)
+ * @modified Mon Apr 08 2019 12:14:41 GMT+0800 (China Standard Time)
+ */
+const REG_PROPS = ['source', 'global', 'ignoreCase', 'multiline'];
+function deepEq(actual, expected) {
+  return doDeepEq(actual, expected, eq, doDeepEqObj);
+}
+function doDeepEq(actual, expected, eq, eqObj) {
+  if (eq(actual, expected)) return true;
+
+  if (actual && expected && getCtor(actual) === getCtor(expected)) {
+    if (isPrimitive(actual)) return String(actual) === String(expected);
+    if (isDate(actual)) return actual.getTime() === expected.getTime();
+    if (isReg(actual)) return eqProps(actual, expected, REG_PROPS);
+    if (isArray(actual)) return eqArray(actual, expected, eq, eqObj);
+    if (isTypedArray(actual)) return eqTypeArray(actual, expected);
+    return eqObj(actual, expected);
+  }
+
+  return false;
+}
+function doDeepEqObj(actual, expected) {
+  const cache = create(null);
+  let k;
+
+  for (k in actual) {
+    if (!DKeyMap[k] && notEqObjKey(actual, expected, k)) {
+      return false;
+    }
+
+    cache[k] = true;
+  }
+
+  for (k in expected) {
+    if (!cache[k] && !DKeyMap[k] && notEqObjKey(actual, expected, k)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function notEqObjKey(actual, expected, k) {
+  return hasOwnProp(actual, k) ? !hasOwnProp(expected, k) || !deepEq(actual[k], expected[k]) : hasOwnProp(expected, k);
+}
+
+function eqProps(actual, expected, props) {
+  let i = props.length;
+
+  while (i--) if (actual[props[i]] !== expected[props[i]]) {
+    return false;
+  }
+
+  return true;
+}
+
+function eqTypeArray(actual, expected) {
+  let i = actual.length;
+
+  if (i !== expected.length) {
+    return false;
+  }
+
+  while (i--) if (actual[i] !== expected[i]) {
+    return false;
+  }
+
+  return true;
+}
+
+function eqArray(actual, expected, eq, eqObj) {
+  let i = actual.length;
+
+  if (i !== expected.length) {
+    return false;
+  }
+
+  while (i--) if (!doDeepEq(actual[i], expected[i], eq, eqObj)) {
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * @module util
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Mon Dec 11 2017 13:57:32 GMT+0800 (China Standard Time)
+ * @modified Mon Apr 08 2019 14:10:44 GMT+0800 (China Standard Time)
+ */
+//========================================================================================
+
+/*                                                                                      *
+ *                                       char code                                      *
+ *                                                                                      */
+//========================================================================================
+
+/**
+ * get char code
+ * > string.charCodeAt
+ */
+function charCode(str, index) {
+  return str.charCodeAt(index || 0);
+}
+/**
+ * get char by char code
+ * > String.fromCharCode
+ */
+
+function char(code) {
+  return String.fromCharCode(code);
+}
+function cutStr(str, start, end) {
+  return str.substring(start, end);
+}
+function cutLStr(str, start, len) {
+  return str.substr(start, len);
+} //========================================================================================
+
+/*                                                                                      *
+ *                                         trim                                         *
+ *                                                                                      */
+//========================================================================================
+
+const TRIM_REG = /(^\s+)|(\s+$)/g;
+/**
+ * trim
+ */
+
+function trim(str) {
+  return str.replace(TRIM_REG, '');
+} //========================================================================================
+
+/*                                                                                      *
+ *                                         case                                         *
+ *                                                                                      */
+//========================================================================================
+
+const FIRST_LOWER_LETTER_REG = /^[a-z]/,
+      FIRST_UPPER_LETTER_REG = /^[A-Z]/;
+function upper(str) {
+  return str.toUpperCase();
+}
+function lower(str) {
+  return str.toLowerCase();
+}
+function upperFirst(str) {
+  return str.replace(FIRST_LOWER_LETTER_REG, upper);
+}
+function lowerFirst(str) {
+  return str.replace(FIRST_UPPER_LETTER_REG, lower);
+} //========================================================================================
+
+/*                                                                                      *
+ *                                        escape                                        *
+ *                                                                                      */
+//========================================================================================
+
+const STR_ESCAPE_MAP = {
+  '\n': '\\n',
+  '\t': '\\t',
+  '\f': '\\f',
+  '"': '\\"',
+  "'": "\\'"
+},
+      STR_ESCAPE = /[\n\t\f"']/g;
+function escapeStr(str) {
+  return str.replace(STR_ESCAPE, str => STR_ESCAPE_MAP[str]);
+}
+
+/**
+ * Object.assign shim
+ * @module util
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Wed Jul 25 2018 15:22:13 GMT+0800 (China Standard Time)
+ * @modified Mon Apr 08 2019 14:11:20 GMT+0800 (China Standard Time)
+ */
+/**
+ * @param prop
+ * @param target
+ * @param source
+ * @return is assign
+ */
+
+function doAssign(target, sources, filter, startOffset, endOffset) {
+  const l = endOffset || sources.length;
+  let i = startOffset || 0,
+      source,
+      prop;
+  target || (target = {});
+
+  for (; i < l; i++) {
+    if (source = sources[i]) {
+      for (prop in source) {
+        if (!DKeyMap[prop] && filter(prop, target, source)) {
+          target[prop] = source[prop];
+        }
+      }
+    }
+  }
+
+  return target;
+}
+/**
+ * assign properties
+ * > Object.assign shim
+ */
+
+function assign(target) {
+  return doAssign(target, arguments, defaultAssignFilter, 1);
+}
+/**
+ * assign un-exist properties
+ */
+
+function assignIf(target) {
+  return doAssign(target, arguments, assignIfFilter, 1);
+}
+/**
+ * default assign filter
+ * - property is owner in source
+ * @see {AssignFilter}
+ */
+
+function defaultAssignFilter(prop, target, source) {
+  return hasOwnProp(source, prop);
+}
+/**
+ * assign if filter
+ * - property is owner in source
+ * - property not in target object
+ * @see {AssignFilter}
+ */
+
+function assignIfFilter(prop, target, source) {
+  return hasOwnProp(source, prop) && !(prop in target);
+}
+
+/**
+ * @module util/collection
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Jul 25 2018 17:10:41 GMT+0800 (China Standard Time)
  * @modified Sat Dec 29 2018 19:37:44 GMT+0800 (China Standard Time)
@@ -727,10 +1112,10 @@ class Control {
 }
 
 /**
- * @module utility/collection
+ * @module util/collection
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Jul 25 2018 17:10:41 GMT+0800 (China Standard Time)
- * @modified Thu Apr 04 2019 19:32:58 GMT+0800 (China Standard Time)
+ * @modified Mon Apr 08 2019 09:49:19 GMT+0800 (China Standard Time)
  */
 /**
  * STOP Control
@@ -759,9 +1144,9 @@ function eachProps(obj, callback, scope, own) {
   let k;
 
   if (own === false) {
-    for (k in obj) if (!defaultKeyMap[k] && callback(k, obj) === STOP) return k;
+    for (k in obj) if (!DKeyMap[k] && callback(k, obj) === STOP) return k;
   } else {
-    for (k in obj) if (!defaultKeyMap[k] && hasOwnProp(obj, k) && callback(k, obj) === STOP) return k;
+    for (k in obj) if (!DKeyMap[k] && hasOwnProp(obj, k) && callback(k, obj) === STOP) return k;
   }
 
   return false;
@@ -788,9 +1173,9 @@ function eachObj(obj, callback, scope, own) {
   let k;
 
   if (own === false) {
-    for (k in obj) if (!defaultKeyMap[k] && callback(obj[k], k, obj) === STOP) return k;
+    for (k in obj) if (!DKeyMap[k] && callback(obj[k], k, obj) === STOP) return k;
   } else {
-    for (k in obj) if (!defaultKeyMap[k] && hasOwnProp(obj, k) && callback(obj[k], k, obj) === STOP) return k;
+    for (k in obj) if (!DKeyMap[k] && hasOwnProp(obj, k) && callback(obj[k], k, obj) === STOP) return k;
   }
 
   return false;
@@ -848,7 +1233,7 @@ function each(obj, callback, scope, own) {
 }
 
 /**
- * @module utility/collection
+ * @module util/collection
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Jul 25 2018 17:12:06 GMT+0800 (China Standard Time)
  * @modified Thu Apr 04 2019 19:31:21 GMT+0800 (China Standard Time)
@@ -967,7 +1352,7 @@ function map(obj, callback, scope, own) {
 }
 
 /**
- * @module utility/collection
+ * @module util/collection
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Jul 25 2018 17:12:06 GMT+0800 (China Standard Time)
  * @modified Thu Apr 04 2019 19:32:32 GMT+0800 (China Standard Time)
@@ -1098,7 +1483,7 @@ function idxOf(obj, value, scope, own) {
 }
 
 /**
- * @module utility/collection
+ * @module util/collection
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Jul 25 2018 17:12:06 GMT+0800 (China Standard Time)
  * @modified Thu Apr 04 2019 19:30:27 GMT+0800 (China Standard Time)
@@ -1198,7 +1583,7 @@ function reduce(obj, accumulator, callback, scope, own) {
 }
 
 /**
- * @module utility/collection
+ * @module util/collection
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Thu Jul 26 2018 10:47:47 GMT+0800 (China Standard Time)
  * @modified Thu Apr 04 2019 19:49:02 GMT+0800 (China Standard Time)
@@ -1283,7 +1668,7 @@ function values(obj, callback, scope, own) {
 }
 
 /**
- * @module utility/collection
+ * @module util/collection
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Fri Nov 16 2018 16:29:04 GMT+0800 (China Standard Time)
  * @modified Thu Apr 04 2019 19:38:40 GMT+0800 (China Standard Time)
@@ -1326,7 +1711,7 @@ function makeMap(array, val, split) {
 }
 
 /**
- * @module utility/collection
+ * @module util/collection
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Thu Nov 15 2018 12:13:54 GMT+0800 (China Standard Time)
  * @modified Thu Mar 28 2019 19:39:52 GMT+0800 (China Standard Time)
@@ -1341,11 +1726,36 @@ function makeArray(len, callback) {
 }
 
 /**
- * @module utility/defProp
+ * @module util
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Tue Dec 18 2018 16:41:03 GMT+0800 (China Standard Time)
+ * @modified Mon Apr 08 2019 13:25:40 GMT+0800 (China Standard Time)
+ */
+function mixin(behaviour) {
+  return function mixin(Class) {
+    const proto = Class.prototype;
+
+    for (var k in behaviour) if (hasOwnProp(behaviour, k)) proto[k] = behaviour[k];
+
+    return Class;
+  };
+}
+
+/**
+ * @module util
+ * @preferred
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Wed Nov 21 2018 10:21:41 GMT+0800 (China Standard Time)
+ * @modified Mon Apr 08 2019 14:07:41 GMT+0800 (China Standard Time)
+ */
+
+/**
+ * @module util/path
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Fri Nov 30 2018 14:41:02 GMT+0800 (China Standard Time)
- * @modified Tue Mar 26 2019 19:39:49 GMT+0800 (China Standard Time)
+ * @modified Mon Apr 08 2019 13:47:29 GMT+0800 (China Standard Time)
  */
+const PATH_BINDING = addDKey('__path__');
 const pathCache = create(null); // (^ | .) prop | (index | "string prop" | 'string prop')
 
 const pathReg = /(?:^|\.)([a-zA-Z$_][\w$]*)|\[\s*(?:(\d+)|"((?:[^\\"]|\\.)*)"|'((?:[^\\']|\\.)*)')\s*\]/g;
@@ -1383,7 +1793,7 @@ function parsePath(propPath, cacheable) {
   return path;
 }
 function formatPath(path) {
-  return isArray(path) ? path.path || (path.path = mapArray(path, formatPathHandler).join('')) : path;
+  return isArray(path) ? path.path || defValue(path, PATH_BINDING, mapArray(path, formatPathHandler).join('')) : path;
 }
 
 function formatPathHandler(prop) {
@@ -1417,97 +1827,10 @@ function set(obj, path, value) {
 }
 
 /**
- * String utilities
- * @module utility/string
- * @author Tao Zeng <tao.zeng.zt@qq.com>
- * @created Mon Dec 11 2017 13:57:32 GMT+0800 (China Standard Time)
- * @modified Sat Mar 23 2019 18:50:35 GMT+0800 (China Standard Time)
- */
-//========================================================================================
-
-/*                                                                                      *
- *                                       char code                                      *
- *                                                                                      */
-//========================================================================================
-
-/**
- * get char code
- * > string.charCodeAt
- */
-function charCode(str, index) {
-  return str.charCodeAt(index || 0);
-}
-/**
- * get char by char code
- * > String.fromCharCode
- */
-
-function char(code) {
-  return String.fromCharCode(code);
-}
-function cutStr(str, start, end) {
-  return str.substring(start, end);
-}
-function cutLStr(str, start, len) {
-  return str.substr(start, len);
-} //========================================================================================
-
-/*                                                                                      *
- *                                         trim                                         *
- *                                                                                      */
-//========================================================================================
-
-const TRIM_REG = /(^\s+)|(\s+$)/g;
-/**
- * trim
- */
-
-function trim(str) {
-  return str.replace(TRIM_REG, '');
-} //========================================================================================
-
-/*                                                                                      *
- *                                         case                                         *
- *                                                                                      */
-//========================================================================================
-
-const FIRST_LOWER_LETTER_REG = /^[a-z]/,
-      FIRST_UPPER_LETTER_REG = /^[A-Z]/;
-function upper(str) {
-  return str.toUpperCase();
-}
-function lower(str) {
-  return str.toLowerCase();
-}
-function upperFirst(str) {
-  return str.replace(FIRST_LOWER_LETTER_REG, upper);
-}
-function lowerFirst(str) {
-  return str.replace(FIRST_UPPER_LETTER_REG, lower);
-} //========================================================================================
-
-/*                                                                                      *
- *                                        escape                                        *
- *                                                                                      */
-//========================================================================================
-
-const STR_ESCAPE_MAP = {
-  '\n': '\\n',
-  '\t': '\\t',
-  '\f': '\\f',
-  '"': '\\"',
-  "'": "\\'"
-},
-      STR_ESCAPE = /[\n\t\f"']/g;
-function escapeStr(str) {
-  return str.replace(STR_ESCAPE, str => STR_ESCAPE_MAP[str]);
-}
-
-/**
- * @module utility/format
+ * @module format
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 03 2018 19:46:41 GMT+0800 (China Standard Time)
- * @modified Wed Apr 03 2019 11:34:07 GMT+0800 (China Standard Time)
+ * @modified Mon Apr 08 2019 13:50:54 GMT+0800 (China Standard Time)
  */
 
 /*                                                                                      *
@@ -1578,12 +1901,12 @@ function singularHandler(m, v, ies, es, ys, s) {
 //========================================================================================
 
 
-const FORMAT_XPREFIX = 0x1;
-const FORMAT_PLUS = 0x2;
-const FORMAT_ZERO = 0x4;
-const FORMAT_SPACE = 0x8;
-const FORMAT_SEPARATOR = 0x10;
-const FORMAT_LEFT = 0x20;
+const FORMAT_XPREFIX = 0x1,
+      FORMAT_PLUS = 0x2,
+      FORMAT_ZERO = 0x4,
+      FORMAT_SPACE = 0x8,
+      FORMAT_SEPARATOR = 0x10,
+      FORMAT_LEFT = 0x20;
 const FLAG_MAPPING = {
   '#': FORMAT_XPREFIX,
   '+': FORMAT_PLUS,
@@ -2080,7 +2403,7 @@ function toFixed(num, precision) {
 
 extendFormatter({
   s: strFormatter(toStr$1),
-  j: strFormatter(v => v === undefined || isFn(v) || v.toJSON && v.toJSON() === undefined ? toStr$1(v) : JSON.stringify(v)),
+  j: strFormatter(v => isNil(v) || isFn(v) ? toStr$1(v) : (v = JSON.stringify(v), v === undefined) ? toStr$1(v) : v),
 
   c(val) {
     const num = val >> 0;
@@ -2107,176 +2430,10 @@ function toStr$1(v) {
 }
 
 /**
- * Object.assign shim
- * @module utility/assign
- * @author Tao Zeng <tao.zeng.zt@qq.com>
- * @created Wed Jul 25 2018 15:22:13 GMT+0800 (China Standard Time)
- * @modified Thu Mar 14 2019 09:28:49 GMT+0800 (China Standard Time)
- */
-/**
- * @param prop
- * @param target
- * @param override
- * @return is assign
- */
-
-/**
- *
- * @param target
- * @param overrides
- * @param filter
- * @param startOffset 	start offset in overrides, default: 0
- * @param endOffset 	end offset in overrides, default: overrides.length-1
- */
-function doAssign(target, overrides, filter, startOffset, endOffset) {
-  if (!target) {
-    target = {};
-  }
-
-  const l = endOffset || overrides.length;
-  let i = startOffset || 0,
-      override,
-      prop;
-
-  for (; i < l; i++) {
-    if (override = overrides[i]) {
-      for (prop in override) {
-        if (!defaultKeyMap[prop] && filter(prop, target, override)) {
-          target[prop] = override[prop];
-        }
-      }
-    }
-  }
-
-  return target;
-}
-/**
- * assign properties
- * > Object.assign shim
- */
-
-function assign(target) {
-  return doAssign(target, arguments, defaultAssignFilter, 1);
-}
-/**
- * assign un-exist properties
- */
-
-function assignIf(target) {
-  return doAssign(target, arguments, assignIfFilter, 1);
-}
-/**
- * default assign filter
- * - property is owner in override
- * @see {AssignFilter}
- */
-
-function defaultAssignFilter(prop, target, override) {
-  return hasOwnProp(override, prop);
-}
-/**
- * assign if filter
- * - property is owner in override
- * - property not in target object
- * @see {AssignFilter}
- */
-
-function assignIfFilter(prop, target, override) {
-  return hasOwnProp(override, prop) && !(prop in target);
-}
-
-/**
- * @module utility
- * @author Tao Zeng <tao.zeng.zt@qq.com>
- * @created Wed Jul 25 2018 15:24:47 GMT+0800 (China Standard Time)
- * @modified Thu Mar 14 2019 15:05:03 GMT+0800 (China Standard Time)
- */
-const REG_PROPS = ['source', 'global', 'ignoreCase', 'multiline'];
-function deepEq(actual, expected) {
-  return doDeepEq(actual, expected, eq, doDeepEqObj);
-}
-function doDeepEq(actual, expected, eq, eqObj) {
-  if (eq(actual, expected)) return true;
-
-  if (actual && expected && getConstructor(actual) === getConstructor(expected)) {
-    if (isPrimitive(actual)) return String(actual) === String(expected);
-    if (isDate(actual)) return actual.getTime() === expected.getTime();
-    if (isReg(actual)) return eqProps(actual, expected, REG_PROPS);
-    if (isArray(actual)) return eqArray(actual, expected, eq, eqObj);
-    if (isTypedArray(actual)) return eqTypeArray(actual, expected);
-    return eqObj(actual, expected);
-  }
-
-  return false;
-}
-function doDeepEqObj(actual, expected) {
-  const cache = create(null);
-  let k;
-
-  for (k in actual) {
-    if (!defaultKeyMap[k] && notEqObjKey(actual, expected, k)) {
-      return false;
-    }
-
-    cache[k] = true;
-  }
-
-  for (k in expected) {
-    if (!cache[k] && !defaultKeyMap[k] && notEqObjKey(actual, expected, k)) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-function notEqObjKey(actual, expected, k) {
-  return hasOwnProp(actual, k) ? !hasOwnProp(expected, k) || !deepEq(actual[k], expected[k]) : hasOwnProp(expected, k);
-}
-
-function eqProps(actual, expected, props) {
-  let i = props.length;
-
-  while (i--) if (actual[props[i]] !== expected[props[i]]) {
-    return false;
-  }
-
-  return true;
-}
-
-function eqTypeArray(actual, expected) {
-  let i = actual.length;
-
-  if (i !== expected.length) {
-    return false;
-  }
-
-  while (i--) if (actual[i] !== expected[i]) {
-    return false;
-  }
-
-  return true;
-}
-
-function eqArray(actual, expected, eq, eqObj) {
-  let i = actual.length;
-
-  if (i !== expected.length) {
-    return false;
-  }
-
-  while (i--) if (!doDeepEq(actual[i], expected[i], eq, eqObj)) {
-    return false;
-  }
-
-  return true;
-}
-
-/**
- * @module utility/assert
+ * @module assert
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Nov 28 2018 11:01:45 GMT+0800 (China Standard Time)
- * @modified Wed Apr 03 2019 12:46:25 GMT+0800 (China Standard Time)
+ * @modified Mon Apr 08 2019 17:42:54 GMT+0800 (China Standard Time)
  */
 const formatters$1 = create(null);
 
@@ -2295,9 +2452,8 @@ function popErrStack(err, i) {
 const assert = function assert(msg) {
   throw mkError(Error, msg || 'Error', arguments, 0);
 };
-const ERROR = new Error();
 
-function mkThrowAssertor(th, dmsg) {
+function mkThrowAssertor(th, dmsg, ERROR) {
   return function throwErr(fn, expect, msg) {
     let err;
 
@@ -2307,9 +2463,9 @@ function mkThrowAssertor(th, dmsg) {
       err = e;
     }
 
-    if (th != (err && (!expect || (isStr(expect) ? expect === err.message : err[CONSTRUCTOR] === expect[CONSTRUCTOR] && (!expect.message || expect.message === err.message))))) {
+    if (th !== !!(err && (!expect || (isStr(expect) ? expect === err.message : err[P_CTOR] === expect[P_CTOR] && (!expect.message || expect.message === err.message))))) {
       arguments[0] = err;
-      !expect && (arguments[2] = ERROR);
+      !expect && (arguments[1] = ERROR);
       throw mkError(Error, msg || dmsg, arguments, 2);
     }
 
@@ -2317,7 +2473,7 @@ function mkThrowAssertor(th, dmsg) {
   };
 }
 
-assert["throw"] = mkThrowAssertor(true, `expected catched error {0s} is {1s}`);
+assert["throw"] = mkThrowAssertor(true, `expected catched error {0s} is {1s}`, new Error());
 assert.notThrow = mkThrowAssertor(false, `expected catched error {0s} is not {1s}`);
 /**
  * @param name 		name of the assertor
@@ -2351,17 +2507,17 @@ function mkAssertors(apis) {
   });
 }
 
-const UNDEFINED = TYPE_UNDEF,
-      BOOLEAN = TYPE_BOOL,
-      NUMBER = TYPE_NUM,
-      STRING = TYPE_STRING,
-      FUNCTION = TYPE_FN,
+const UNDEFINED = T_UNDEF,
+      BOOLEAN = T_BOOL,
+      NUMBER = T_NUM,
+      STRING = T_STRING,
+      FUNCTION = T_FN,
       NULL = 'null',
       INTEGER = 'integer',
       ARRAY = 'Array',
       TYPED_ARRAY = 'TypedArray';
-mkAssertor('is', '!o', 'o', expectMsg('Exist'));
-mkAssertor('not', 'o', 'o', expectMsg('Not Exist'));
+mkAssertor('is', '!o', 'o', expectMsg('exist'));
+mkAssertor('not', 'o', 'o', expectMsg('exist', true));
 mkAssertors({
   eq: [eq, 2, mkMsg(objFormatter(1))],
   eql: [deepEq, 2, mkMsg(objFormatter(1))],
@@ -2397,7 +2553,7 @@ function mkMsg(expect, to) {
 }
 
 function expectMsg(expect, not, to) {
-  return `Expected ${objFormatter(0)} ${not ? 'not ' : ''}${to || 'to'} ${expect}`;
+  return `expected ${objFormatter(0)} ${not ? 'not ' : ''}${to || 'to'} ${expect}`;
 }
 
 function objFormatter(idx) {
@@ -2414,12 +2570,12 @@ function typeExpect() {
 
 /**
  * Double Linked List
- * @module utility/List
+ * @module util/list
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
- * @modified Wed Apr 03 2019 19:03:02 GMT+0800 (China Standard Time)
+ * @modified Mon Apr 08 2019 18:28:27 GMT+0800 (China Standard Time)
  */
-const DEFAULT_BINDING = addDefaultKey('__list__');
+const DEFAULT_BINDING = addDKey('__list__');
 class List {
   constructor(binding) {
     this.__length = 0;
@@ -2525,16 +2681,27 @@ class List {
       const __ver = ++this.__ver;
 
       cb = bind(cb, scope);
-      var node = this.__head;
+      var node = this.__head,
+          err;
 
       while (node) {
-        if (node[3] === this && (__ver === node[4] || cb(node[0]) === false)) break;
+        if (node[3] === this) {
+          if (__ver === node[4]) break;
+
+          try {
+            if (cb(node[0]) === false) break;
+          } catch (e) {
+            err = e;
+          }
+        }
+
         node = node[2];
       }
 
       this.__doLazyRemove();
 
       this.__scaning = false;
+      if (err) throw err;
     }
   }
 
@@ -2609,7 +2776,7 @@ class List {
     } else {
       node = [obj,,, this, this.__ver];
       node.toJSON = EMPTY_FN;
-      defPropValue(obj, binding, node, false);
+      defValue(obj, binding, node, false);
     }
 
     return node;
@@ -2759,13 +2926,13 @@ List.binding = DEFAULT_BINDING;
 
 /**
  * Function List
- * @module utility/List
+ * @module util/list
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
- * @modified Sat Mar 30 2019 16:11:18 GMT+0800 (China Standard Time)
+ * @modified Mon Apr 08 2019 14:05:16 GMT+0800 (China Standard Time)
  */
-const DEFAULT_FN_BINDING = addDefaultKey('__flist_id__');
-const DEFAULT_SCOPE_BINDING = addDefaultKey(DEFAULT_FN_BINDING);
+const DEFAULT_FN_BINDING = addDKey('__flist_id__');
+const DEFAULT_SCOPE_BINDING = addDKey(DEFAULT_FN_BINDING);
 class FnList {
   constructor(fnBinding, scopeBinding) {
     this.__nodeMap = create(null);
@@ -2859,8 +3026,8 @@ class FnList {
     } = this;
     let fnId = fn[fnBinding],
         scopeId = scope ? scope[scopeBinding] : DEFAULT_SCOPE_ID;
-    if (!fnId) fnId = defPropValue(fn, fnBinding, ++fnIdGenerator, false, false, false);
-    if (!scopeId) scopeId = defPropValue(scope, scopeBinding, ++scopeIdGenerator, false, false, false);
+    if (!fnId) fnId = defValue(fn, fnBinding, ++fnIdGenerator, false, false, false);
+    if (!scopeId) scopeId = defValue(scope, scopeBinding, ++scopeIdGenerator, false, false, false);
     return `${fnId}#${scopeId}`;
   }
 
@@ -2876,22 +3043,21 @@ function parseScope(scope) {
 }
 
 /**
- * @module utility/List
+ * @module util/list
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Tue Nov 27 2018 19:06:18 GMT+0800 (China Standard Time)
- * @modified Tue Nov 27 2018 19:07:34 GMT+0800 (China Standard Time)
+ * @modified Mon Apr 08 2019 14:05:08 GMT+0800 (China Standard Time)
  */
 
 /**
- * String format
- * @module utility/nextTick
+ * @module util/nextTick
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
- * @modified Wed Apr 03 2019 19:45:47 GMT+0800 (China Standard Time)
+ * @modified Mon Apr 08 2019 14:04:49 GMT+0800 (China Standard Time)
  */
 let next;
 
-if (typeof MutationObserver === TYPE_FN) {
+if (typeof MutationObserver === T_FN) {
   // chrome18+, safari6+, firefox14+,ie11+,opera15
   const textNode = document.createTextNode(v);
   new MutationObserver(flush).observe(textNode, {
@@ -2900,7 +3066,7 @@ if (typeof MutationObserver === TYPE_FN) {
   var v = '';
 
   next = function () {
-    textNode.data = v = v ? '0' : '';
+    textNode.data = v = v ? '' : '0';
   };
 } else {
   next = function () {
@@ -2939,10 +3105,10 @@ function clearTickId(id) {
 }
 
 /**
- * @module utility/Source
+ * @module util/Source
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 17 2018 10:41:21 GMT+0800 (China Standard Time)
- * @modified Sat Dec 22 2018 14:37:32 GMT+0800 (China Standard Time)
+ * @modified Mon Apr 08 2019 13:58:29 GMT+0800 (China Standard Time)
  */
 const LINE_REG = /([^\n]+)?(\n|$)/g;
 class Source {
@@ -3008,11 +3174,31 @@ function escapeSourceStr(m, s, t) {
 /**
  * utilities for ast builder
  *
- * @module utility/AST
+ * @module util/AST
  * @author Tao Zeng (tao.zeng.zt@qq.com)
  * @created 2018-11-09 13:22:51
  * @modified 2018-11-09 13:22:51 by Tao Zeng (tao.zeng.zt@qq.com)
  */
+function genCharCodes(start, end, ignoreCase) {
+  let s = isNum(start) ? start : charCode(start),
+      e = isNum(end) ? end : charCode(end),
+      codes = new Array(e - s),
+      i = 0;
+
+  if (ignoreCase) {
+    var c;
+
+    for (; s <= e; s++) {
+      codes[i++] = s;
+      c = getAnotherCode(s);
+      codes[i++] = c;
+    }
+  } else {
+    for (; s <= e; s++) codes[i++] = s;
+  }
+
+  return codes;
+}
 /**
  * each char codes
  */
@@ -3044,22 +3230,6 @@ function eachCharCode(code, ignoreCase, cb) {
 
 function getAnotherCode(code) {
   return code <= 90 ? code >= 65 ? code + 32 : 0 : code <= 122 ? code - 32 : 0;
-}
-
-/**
- * @module utility/mixin
- * @author Tao Zeng <tao.zeng.zt@qq.com>
- * @created Tue Dec 18 2018 16:41:03 GMT+0800 (China Standard Time)
- * @modified Wed Mar 13 2019 20:03:31 GMT+0800 (China Standard Time)
- */
-function mixin(behaviour) {
-  return function mixin(Class) {
-    const proto = Class.prototype;
-
-    for (var k in behaviour) if (hasOwnProp(behaviour, k)) proto[k] = behaviour[k];
-
-    return Class;
-  };
 }
 
 var _dec, _class, _dec2, _class2;
@@ -3254,194 +3424,10 @@ let Rule = (_dec2 = mixin({
 }) || _class2);
 
 /**
- * @module utility/AST
- * @author Tao Zeng <tao.zeng.zt@qq.com>
- * @created Tue Nov 06 2018 10:06:22 GMT+0800 (China Standard Time)
- * @modified Sat Dec 22 2018 15:11:19 GMT+0800 (China Standard Time)
- */
-
-/**
- * Match Rule Interface
- */
-class MatchRule extends Rule {
-  /**
-   * @param name 			match name
-   * @param start 		start char codes, prepare test by start char codes before match
-   * @param ignoreCase	ignore case for the start char codes
-   * @param options		Rule Options
-   */
-  constructor(name, start, ignoreCase, options) {
-    super(name, options);
-    this.setStartCodes(start, ignoreCase);
-  }
-  /**
-   * consume matched result
-   * @param data 		matched result
-   * @param len 		matched chars
-   * @param context 	match context
-   */
-
-
-  comsume(data, len, context) {
-    context.advance(len);
-    return this.matched(data, len, context);
-  }
-
-}
-
-var _dec$1, _class$1;
-/**
- * match a character in the allowed list
- * > well match any character if the allowed list is empty
- *
- * > must call test() before match
- */
-
-let CharMatchRule = (_dec$1 = mixin({
-  type: 'Character'
-}), _dec$1(_class$1 = class CharMatchRule extends MatchRule {
-  /**
-   * @param name 			match name
-   * @param allows 		allowed character codes for match
-   * 						well match any character if the allowed list is empty
-   * @param ignoreCase	ignore case for the allowed character codes
-   * @param options		Rule Options
-   */
-  constructor(name, allows, ignoreCase, options) {
-    super(name, allows, ignoreCase, options); // generate expression for debug
-
-    const codes = this.startCodes;
-    let i = codes.length,
-        expr = '*';
-
-    if (i) {
-      const chars = [];
-
-      while (i--) chars[i] = char(codes[i]);
-
-      expr = `"${chars.join('" | "')}"`;
-    }
-
-    this.setExpr(expr);
-  }
-
-  match(context) {
-    return this.comsume(context.nextChar(), 1, context);
-  }
-
-}) || _class$1);
-
-var _dec$2, _class$2;
-/**
- * match string by RegExp
- *
- * optimization:
- * - Priority use sticky mode {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp/sticky}
- *
- */
-
-let RegMatchRule = (_dec$2 = mixin({
-  type: 'RegExp'
-}), _dec$2(_class$2 = class RegMatchRule extends MatchRule {
-  /**
-   * @param name 			match name
-   * @param regexp		regular
-   * @param pick			pick regular matching results
-   * 						    0: pick results[0] (optimize: test and substring in sticky mode)
-   * 						  > 0: pick results[{pick}]
-   * 						  < 0: pick first non-blank string from 1 to -{pick} index on results
-   * 						 true: pick results
-   * 						false: not pick result, result is null (optimize: just test string in sticky mode)
-   * @param start			start character codes in the regular, optimize performance by start character codes
-   * @param capturable	error is capturable
-   * @param onMatch		match callback
-   * @param onErr			error callback
-   */
-  constructor(name, regexp, pick, start, options) {
-    pick = pick === false || isInt(pick) ? pick : !!pick || 0;
-    const sticky = stickyReg && !pick,
-          // use exec mode when need pick match group data
-    pattern = regexp.source,
-          ignoreCase = regexp.ignoreCase; // always wrapping in a none capturing group preceded by '^' to make sure
-    // matching can only work on start of input. duplicate/redundant start of
-    // input markers have no meaning (/^^^^A/ === /^A/)
-    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp/sticky
-    // When the y flag is used with a pattern, ^ always matches only at the
-    // beginning of the input, or (if multiline is true) at the beginning of a
-    // line.
-
-    regexp = new RegExp(sticky ? pattern : `^(?:${pattern})`, (ignoreCase ? 'i' : '') + (regexp.multiline ? 'm' : '') + (sticky ? 'y' : ''));
-    super(name, start, ignoreCase, options);
-    this.regexp = regexp;
-    this.pick = pick;
-    this.match = sticky ? this.stickyMatch : this.execMatch;
-    sticky ? this.spicker = pick === false ? pickNone : pickTestStr : this.picker = mkPicker(pick);
-    this.setExpr(pattern);
-  }
-  /**
-   * match on sticky mode
-   */
-
-
-  stickyMatch(context) {
-    const reg = this.regexp,
-          buff = context.buff(),
-          start = context.offset();
-    reg.lastIndex = start;
-    let len;
-    return reg.test(buff) ? (len = reg.lastIndex - start, this.comsume(this.spicker(buff, start, len), len, context)) : this.error(this.EXPECT, context);
-  }
-  /**
-   * match on exec mode
-   */
-
-
-  execMatch(context) {
-    const m = this.regexp.exec(context.buff(true));
-    return m ? this.comsume(this.picker(m), m[0].length, context) : this.error(this.EXPECT, context);
-  }
-
-}) || _class$2);
-const cache = create(null);
-
-function mkPicker(pick) {
-  return cache[pick] || (cache[pick] = pick === false ? pickNone : pick === true ? pickAll : pick >= 0 ? createFn(`return m[${pick}]`, ['m'], `pick_${pick}`) : createFn(`return ${mapArray(new Array(-pick), (v, i) => `m[${i + 1}]`).join(' || ')}`, ['m'], `pick_1_${-pick}`));
-}
-
-function pickNone() {
-  return null;
-}
-
-function pickAll(m) {
-  return m;
-}
-
-function pickTestStr(buff, start, end) {
-  return cutLStr(buff, start, end);
-}
-
-var _dec$3, _class$3;
-let StringMatchRule = (_dec$3 = mixin({
-  type: 'String'
-}), _dec$3(_class$3 = class StringMatchRule extends RegMatchRule {
-  /**
-   * @param name 			match name
-   * @param str 			match string
-   * @param ignoreCase	ignore case
-   * @param options		Rule Options
-   */
-  constructor(name, str, ignoreCase, options) {
-    super(name, new RegExp(reEscape(str), ignoreCase ? 'i' : ''), 0, charCode(str), options);
-    this.setExpr(str);
-  }
-
-}) || _class$3);
-
-/**
- * @module utility/AST
+ * @module util/AST
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Tue Dec 11 2018 15:36:42 GMT+0800 (China Standard Time)
- * @modified Sat Dec 22 2018 16:32:31 GMT+0800 (China Standard Time)
+ * @modified Mon Apr 08 2019 13:57:26 GMT+0800 (China Standard Time)
  */
 
 /**
@@ -3656,10 +3642,10 @@ class MatchContext {
 }
 
 /**
- * @module utility/AST
+ * @module util/AST
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Tue Nov 06 2018 10:06:22 GMT+0800 (China Standard Time)
- * @modified Sat Dec 22 2018 15:24:21 GMT+0800 (China Standard Time)
+ * @modified Mon Apr 08 2019 13:56:06 GMT+0800 (China Standard Time)
  */
 const MAX = -1 >>> 0;
 /**
@@ -3779,15 +3765,15 @@ class ComplexRule extends Rule {
 
 }
 
-var _dec$4, _class$4;
+var _dec$1, _class$1;
 /**
  * AND Complex Rule
  */
 
-let AndRule = (_dec$4 = mixin({
+let AndRule = (_dec$1 = mixin({
   type: 'And',
   split: ' '
-}), _dec$4(_class$4 = class AndRule extends ComplexRule {
+}), _dec$1(_class$1 = class AndRule extends ComplexRule {
   __init(rules) {
     this.setStartCodes(rules[0].getStart([this.id]));
   }
@@ -3843,17 +3829,17 @@ let AndRule = (_dec$4 = mixin({
 
   }
 
-}) || _class$4);
+}) || _class$1);
 
-var _dec$5, _class$5;
+var _dec$2, _class$2;
 /**
  * OR Complex Rule
  */
 
-let OrRule = (_dec$5 = mixin({
+let OrRule = (_dec$2 = mixin({
   type: 'Or',
   split: ' | '
-}), _dec$5(_class$5 = class OrRule extends ComplexRule {
+}), _dec$2(_class$2 = class OrRule extends ComplexRule {
   __init(rules) {
     const {
       id
@@ -3982,11 +3968,195 @@ let OrRule = (_dec$5 = mixin({
     return this.consume(ctx);
   }
 
+}) || _class$2);
+
+/**
+ * @module util/AST
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Tue Nov 06 2018 10:06:22 GMT+0800 (China Standard Time)
+ * @modified Sat Dec 22 2018 15:11:19 GMT+0800 (China Standard Time)
+ */
+
+/**
+ * Match Rule Interface
+ */
+class MatchRule extends Rule {
+  /**
+   * @param name 			match name
+   * @param start 		start char codes, prepare test by start char codes before match
+   * @param ignoreCase	ignore case for the start char codes
+   * @param options		Rule Options
+   */
+  constructor(name, start, ignoreCase, options) {
+    super(name, options);
+    this.setStartCodes(start, ignoreCase);
+  }
+  /**
+   * consume matched result
+   * @param data 		matched result
+   * @param len 		matched chars
+   * @param context 	match context
+   */
+
+
+  comsume(data, len, context) {
+    context.advance(len);
+    return this.matched(data, len, context);
+  }
+
+}
+
+var _dec$3, _class$3;
+/**
+ * match a character in the allowed list
+ * > well match any character if the allowed list is empty
+ *
+ * > must call test() before match
+ */
+
+let CharMatchRule = (_dec$3 = mixin({
+  type: 'Character'
+}), _dec$3(_class$3 = class CharMatchRule extends MatchRule {
+  /**
+   * @param name 			match name
+   * @param allows 		allowed character codes for match
+   * 						well match any character if the allowed list is empty
+   * @param ignoreCase	ignore case for the allowed character codes
+   * @param options		Rule Options
+   */
+  constructor(name, allows, ignoreCase, options) {
+    super(name, allows, ignoreCase, options); // generate expression for debug
+
+    const codes = this.startCodes;
+    let i = codes.length,
+        expr = '*';
+
+    if (i) {
+      const chars = [];
+
+      while (i--) chars[i] = char(codes[i]);
+
+      expr = `"${chars.join('" | "')}"`;
+    }
+
+    this.setExpr(expr);
+  }
+
+  match(context) {
+    return this.comsume(context.nextChar(), 1, context);
+  }
+
+}) || _class$3);
+
+var _dec$4, _class$4;
+/**
+ * match string by RegExp
+ *
+ * optimization:
+ * - Priority use sticky mode {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp/sticky}
+ *
+ */
+
+let RegMatchRule = (_dec$4 = mixin({
+  type: 'RegExp'
+}), _dec$4(_class$4 = class RegMatchRule extends MatchRule {
+  /**
+   * @param name 			match name
+   * @param regexp		regular
+   * @param pick			pick regular matching results
+   * 						    0: pick results[0] (optimize: test and substring in sticky mode)
+   * 						  > 0: pick results[{pick}]
+   * 						  < 0: pick first non-blank string from 1 to -{pick} index on results
+   * 						 true: pick results
+   * 						false: not pick result, result is null (optimize: just test string in sticky mode)
+   * @param start			start character codes in the regular, optimize performance by start character codes
+   * @param capturable	error is capturable
+   * @param onMatch		match callback
+   * @param onErr			error callback
+   */
+  constructor(name, regexp, pick, start, options) {
+    pick = pick === false || isInt(pick) ? pick : !!pick || 0;
+    const sticky = stickyReg && !pick,
+          // use exec mode when need pick match group data
+    pattern = regexp.source,
+          ignoreCase = regexp.ignoreCase; // always wrapping in a none capturing group preceded by '^' to make sure
+    // matching can only work on start of input. duplicate/redundant start of
+    // input markers have no meaning (/^^^^A/ === /^A/)
+    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp/sticky
+    // When the y flag is used with a pattern, ^ always matches only at the
+    // beginning of the input, or (if multiline is true) at the beginning of a
+    // line.
+
+    regexp = new RegExp(sticky ? pattern : `^(?:${pattern})`, (ignoreCase ? 'i' : '') + (regexp.multiline ? 'm' : '') + (sticky ? 'y' : ''));
+    super(name, start, ignoreCase, options);
+    this.regexp = regexp;
+    this.pick = pick;
+    this.match = sticky ? this.stickyMatch : this.execMatch;
+    sticky ? this.spicker = pick === false ? pickNone : pickTestStr : this.picker = mkPicker(pick);
+    this.setExpr(pattern);
+  }
+  /**
+   * match on sticky mode
+   */
+
+
+  stickyMatch(context) {
+    const reg = this.regexp,
+          buff = context.buff(),
+          start = context.offset();
+    reg.lastIndex = start;
+    let len;
+    return reg.test(buff) ? (len = reg.lastIndex - start, this.comsume(this.spicker(buff, start, len), len, context)) : this.error(this.EXPECT, context);
+  }
+  /**
+   * match on exec mode
+   */
+
+
+  execMatch(context) {
+    const m = this.regexp.exec(context.buff(true));
+    return m ? this.comsume(this.picker(m), m[0].length, context) : this.error(this.EXPECT, context);
+  }
+
+}) || _class$4);
+const cache = create(null);
+
+function mkPicker(pick) {
+  return cache[pick] || (cache[pick] = pick === false ? pickNone : pick === true ? pickAll : pick >= 0 ? createFn(`return m[${pick}]`, ['m'], `pick_${pick}`) : createFn(`return ${mapArray(new Array(-pick), (v, i) => `m[${i + 1}]`).join(' || ')}`, ['m'], `pick_1_${-pick}`));
+}
+
+function pickNone() {
+  return null;
+}
+
+function pickAll(m) {
+  return m;
+}
+
+function pickTestStr(buff, start, end) {
+  return cutLStr(buff, start, end);
+}
+
+var _dec$5, _class$5;
+let StringMatchRule = (_dec$5 = mixin({
+  type: 'String'
+}), _dec$5(_class$5 = class StringMatchRule extends RegMatchRule {
+  /**
+   * @param name 			match name
+   * @param str 			match string
+   * @param ignoreCase	ignore case
+   * @param options		Rule Options
+   */
+  constructor(name, str, ignoreCase, options) {
+    super(name, new RegExp(reEscape(str), ignoreCase ? 'i' : ''), 0, charCode(str), options);
+    this.setExpr(str);
+  }
+
 }) || _class$5);
 
 /**
  * AST Parser API
- * @module utility/AST
+ * @module util/AST
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Tue Nov 06 2018 10:58:52 GMT+0800 (China Standard Time)
  * @modified Thu Apr 04 2019 19:59:23 GMT+0800 (China Standard Time)
@@ -4186,46 +4356,38 @@ function parseRuleOptions(args, i) {
 }
 
 /**
- * utility utilities
- * @module utility
- * @preferred
+ *
+ * @module util/AST
  * @author Tao Zeng <tao.zeng.zt@qq.com>
- * @created Wed Nov 21 2018 10:21:41 GMT+0800 (China Standard Time)
- * @modified Sat Mar 23 2019 18:50:43 GMT+0800 (China Standard Time)
+ * @created Tue Nov 27 2018 19:05:48 GMT+0800 (China Standard Time)
+ * @modified Mon Apr 08 2019 11:36:55 GMT+0800 (China Standard Time)
  */
 
+/**
+ *
+ * @module observer
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Tue Mar 19 2019 14:12:23 GMT+0800 (China Standard Time)
+ * @modified Mon Apr 08 2019 13:32:29 GMT+0800 (China Standard Time)
+ */
 /**
  * Observer Key
  */
 
-const OBSERVER_KEY = addDefaultKey('__observer__');
+const OBSERVER_KEY = addDKey('__observer__');
 /**
  * the property of observe an array change
  */
 
-const ARRAY_CHANGE = '$change';
-const ARRAY_LENGTH = 'length';
-/**
- * The dirty collector lost the original value
- */
-
-const MISS = {
-  toString() {
-    return 'MISS';
-  },
-
-  toJSON() {
-    return 'MISS';
-  }
-
-};
+const ARRAY_CHANGE = '$change',
+      ARRAY_LENGTH = 'length';
 
 /**
  * Observe implementation on the Proxy of ES6
  * @module observer
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Tue Mar 19 2019 14:12:23 GMT+0800 (China Standard Time)
- * @modified Thu Mar 28 2019 15:37:58 GMT+0800 (China Standard Time)
+ * @modified Tue Apr 09 2019 10:49:10 GMT+0800 (China Standard Time)
  */
 /**
  * @ignore
@@ -4267,19 +4429,98 @@ function proxyPolicy () {
 }
 
 /**
+ * @module observer
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Thu Apr 04 2019 20:42:20 GMT+0800 (China Standard Time)
+ * @modified Mon Apr 08 2019 13:31:48 GMT+0800 (China Standard Time)
+ */
+const arrayHooks = [];
+const ARRAY_LEN_CHANGE = [ARRAY_LENGTH, ARRAY_CHANGE];
+const arrayHookCfg = {
+  push: [ARRAY_LEN_CHANGE],
+  pop: [ARRAY_LEN_CHANGE],
+
+  splice(ob, args) {
+    const {
+      target,
+      proxy
+    } = ob;
+    const start = args[0],
+          d = args.length - 2 - args[1];
+    ob.notifies(null, prop => prop === ARRAY_CHANGE ? proxy : prop === ARRAY_LENGTH ? d ? target[prop] : SKIP : prop > start && (d || prop < start + args[1]) ? target[prop] : SKIP);
+  },
+
+  shift: [],
+  unshift: [],
+  'fill,reverse,sort': [null, {
+    length: 1
+  }]
+};
+eachObj(arrayHookCfg, (hooker, methods) => {
+  eachArray(methods.split(','), method => {
+    const fn = Array[P_PROTOTYPE][method];
+    let hook;
+
+    if (isFn(hooker)) {
+      const cb = hooker;
+
+      hook = function () {
+        const ob = this[OBSERVER_KEY];
+        cb(ob, arguments);
+        return applyScope(fn, ob.target, arguments);
+      };
+    } else {
+      const [props, execludes] = hooker;
+
+      hook = function () {
+        const ob = this[OBSERVER_KEY];
+        ob.notifies(props, getArrayOriginValue, execludes);
+        return applyScope(fn, ob.target, arguments);
+      };
+    }
+
+    arrayHooks.push([method, hook]);
+  });
+});
+
+function getArrayOriginValue(prop, ob) {
+  return prop === ARRAY_CHANGE ? ob.proxy : ob.target[prop];
+}
+/**
+ * apply observer hooks on Array
+ * @param array
+ */
+
+
+function applyArrayHooks(array) {
+  let hook,
+      i = arrayHooks.length;
+
+  while (i--) {
+    hook = arrayHooks[i];
+    defValue(array, hook[0], hook[1], false, false, false);
+  }
+}
+
+/**
  * Observe implementation on the Object.defineProperty of ES5 or `__defineGetter__` and `__defineSetter__`
  * @module observer
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Tue Mar 19 2019 14:12:23 GMT+0800 (China Standard Time)
- * @modified Thu Apr 04 2019 18:49:04 GMT+0800 (China Standard Time)
+ * @modified Thu Apr 04 2019 20:46:05 GMT+0800 (China Standard Time)
  */
 /**
  * @ignore
  */
 
 function accessorPolicy () {
-  return {
+  if (propAccessor) return {
     __name: 'Accessor',
+
+    __createProxy(observer, target, isArray) {
+      isArray && applyArrayHooks(target);
+      return target;
+    },
 
     __watch(observer, prop, watcher) {
       const {
@@ -4327,19 +4568,19 @@ function accessorPolicy () {
  * @module observer
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Tue Mar 19 2019 14:12:23 GMT+0800 (China Standard Time)
- * @modified Thu Mar 28 2019 15:38:05 GMT+0800 (China Standard Time)
+ * @modified Thu Apr 04 2019 20:45:57 GMT+0800 (China Standard Time)
  */
 function vbPolicy () {
   if (GLOBAL.VBArray) {
     try {
       execScript(['Function parseVB(code)', '\tExecuteGlobal(code)', 'End Function'].join('\n'), 'VBScript');
-      addDefaultKeys(VBPROXY_KEY, VBPROXY_CTOR_KEY);
+      addDKeys(VBPROXY_KEY, VBPROXY_CTOR_KEY);
       return {
         __name: 'VBProxy',
         __proxy: 'vb',
 
         __createProxy(observer, target, isArray) {
-          return isArray ? target : new VBProxy(target, observer).__proxy;
+          return isArray ? (applyArrayHooks(target), target) : new VBProxy(target, observer).__proxy;
         },
 
         __watch(observer, prop, watcher) {
@@ -4376,7 +4617,7 @@ class VBProxy {
     }
 
     applyProps(props, propMap, OBJECT_DEFAULT_PROPS);
-    applyProps(props, propMap, getDefaultKeys());
+    applyProps(props, propMap, getDKeys());
     const proxy = loadClassFactory(props)(this);
 
     while (j--) {
@@ -4434,7 +4675,7 @@ function applyProps(props, propMap, applyProps) {
 
 const VBPROXY_KEY = '__vbclass_binding__',
       VBPROXY_CTOR_KEY = '__vbclass_constructor__',
-      OBJECT_DEFAULT_PROPS = [VBPROXY_KEY, CONSTRUCTOR, HAS_OWN_PROP, 'isPrototypeOf', 'propertyIsEnumerable', 'toLocaleString', 'toString', 'valueOf'];
+      OBJECT_DEFAULT_PROPS = [VBPROXY_KEY, P_CTOR, P_OWNPROP, 'isPrototypeOf', 'propertyIsEnumerable', 'toLocaleString', 'toString', 'valueOf'];
 const CONSTRUCTOR_SCRIPT = `
 	Public [${VBPROXY_KEY}]
 	Public Default Function [${VBPROXY_CTOR_KEY}](source)
@@ -4503,20 +4744,8 @@ End Function`);
  * @module observer
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Dec 26 2018 13:59:10 GMT+0800 (China Standard Time)
- * @modified Thu Apr 04 2019 15:48:17 GMT+0800 (China Standard Time)
+ * @modified Mon Apr 08 2019 18:33:01 GMT+0800 (China Standard Time)
  */
-
-/*                                                                                      *
- *                                        topic                                         *
- *                                                                                      */
-//========================================================================================
-
-/**
- * special object
- * - special object indicates that the topic has not changed
- */
-
-const V = {};
 
 function isObserverTarget(obj) {
   return obj && (isArray(obj) || isObject(obj));
@@ -4530,27 +4759,28 @@ function isObserverTarget(obj) {
 
 function isArrayChangeProp(observer, prop) {
   return observer.isArray && prop === ARRAY_CHANGE;
-}
+} //========================================================================================
+
+/*                                                                                      *
+ *                                        topic                                         *
+ *                                                                                      */
+//========================================================================================
+
+/**
+ * special object
+ * - special object indicates that the topic has not changed
+ */
+
+
+const V = {};
 /**
  * get property value on object
  * @param obj 	object
  * @param prop 	property
  */
 
-
 function getValue(obj, prop) {
   return obj === undefined || obj === null ? undefined : obj[prop];
-}
-/**
- * get property value on the original value
- * check {@link MISS}
- * @param original 	original value
- * @param prop 		property
- */
-
-
-function getOriginalValue(original, prop) {
-  return original === undefined || original === null ? undefined : original === MISS ? original : original[prop];
 } // id generator of topic
 
 
@@ -4705,7 +4935,8 @@ class Topic {
         if (err) {
           const path = this.__getPath();
 
-          assert(`observer[{}]: can not watch {} on {}{}, {{message}}.`, formatPath(path), formatPath(path.slice(-1)), toStrType(observer.target), path.length > 1 ? `[${formatPath(path.slice(0, -1))}]` : '', err, err, this.__owner.target);
+          err.message = `observer[${formatPath(path)}]: can not watch ${formatPath(path.slice(-1))} on ${toStrType(observer.target)}${path.length > 1 ? `[${formatPath(path.slice(0, -1))}]` : ''}, ${err.message}.`;
+          throw err;
         }
       }
 
@@ -4755,12 +4986,16 @@ class Topic {
 
           if (isObserverTarget(subTarget)) {
             subObserver = __loadSubObserver(observer, prop, subTarget);
-          } else if (!isNil(subTarget)) {
-            sub.__ignorePath(2, toStrType(subTarget));
-          }
-        } else {
-          sub.__ignorePath(2, 'Array');
-        }
+          } //#if _DEBUG
+          else if (!isNil(subTarget)) {
+              sub.__ignorePath(2, toStrType(subTarget));
+            } //#endif
+
+        } //#if _DEBUG
+        else {
+            sub.__ignorePath(2, 'Array');
+          } //#endif
+
 
         sub.__bind(subObserver);
       } // 2. attach subtopic
@@ -4795,7 +5030,8 @@ class Topic {
     }
 
     assert('un-attached topic');
-  }
+  } //#if _DEBUG
+
 
   __ignorePath(i, type, msg) {
     const path = this.__getPath();
@@ -4807,7 +5043,8 @@ class Topic {
     for (let i = 0; i < len; i++) {
       subs[i].__ignorePath(2, type);
     }
-  }
+  } //#endif
+
 
   __getPath() {
     let path = this.__path;
@@ -4921,12 +5158,16 @@ class Topic {
               subTarget = subObserver.target;
               dirty && (dirty[0] = subObserver.proxy); // update dirty proxy
             }
-          } else if (!isNil(subTarget)) {
-            this.__ignoreSubPaths(subs, l, toStrType(subTarget));
-          }
-        } else {
-          this.__ignoreSubPaths(subs, l, 'Array');
-        }
+          } //#if _DEBUG
+          else if (!isNil(subTarget)) {
+              this.__ignoreSubPaths(subs, l, toStrType(subTarget));
+            } //#endif
+
+        } //#if _DEBUG
+        else {
+            this.__ignoreSubPaths(subs, l, 'Array');
+          } //#endif
+
       } else if (proxyEnable && dirty) {
         dirty[0] = exports.proxy(dirty[0]);
       }
@@ -4942,7 +5183,7 @@ class Topic {
             // 1. this subtopic has not been changed, using the original value of the current topic
             // *2. this subtopic has been changed and collected, and the collector retains its original value
             // *   this does not happen after the topics are sorted by ID before collection
-            subOriginal = sub.__dirty ? undefined : getOriginalValue(original, sub.__prop);
+            subOriginal = sub.__dirty || isNil(original) ? undefined : original[sub.__prop];
           } else {
             // this subtopic was changed but not collected, collected in advance
             sub.__original = V;
@@ -4967,7 +5208,9 @@ function compareTopic(topic1, topic2) {
 
 
 function collect() {
-  const start = Date.now();
+  //#if _DEBUG
+  const start = Date.now(); //#endif
+
   let l = collectQueue.length,
       i = 0; // sort by topic id
 
@@ -4977,8 +5220,10 @@ function collect() {
     collectQueue[i].__collect();
   }
 
-  collectQueue.length = 0;
-  console.log(`Collect ${dirtyQueue.length} dirty topics from the collection queue (${l}), use ${Date.now() - start}ms`);
+  collectQueue.length = 0; //#if _DEBUG
+
+  console.log(`Collect ${dirtyQueue.length} dirty topics from the collection queue (${l}), use ${Date.now() - start}ms`); //#endif
+
   notify();
 }
 /**
@@ -4986,9 +5231,11 @@ function collect() {
  */
 
 function notify() {
+  //#if _DEBUG
   const start = Date.now();
   let topics = 0,
-      listens = 0;
+      listens = 0; //#endif
+
   const l = dirtyQueue.length;
   let topic,
       owner,
@@ -5011,16 +5258,19 @@ function notify() {
       path = topic.__path;
 
       topic.__listeners.each((fn, scope) => {
-        scope ? fn.call(scope, path, value, original, owner) : fn(path, value, original, owner);
-        listens++;
-      });
+        scope ? fn.call(scope, path, value, original, owner) : fn(path, value, original, owner); //#if _DEBUG
 
-      topics++;
+        listens++; //#endif
+      }); //#if _DEBUG
+
+
+      topics++; //#endif
     }
   }
 
-  dirtyQueue.length = 0;
-  console.log(`${listens} listen-callbacks of ${topics}/${l} dirty topics have been notified, use ${Date.now() - start}ms`);
+  dirtyQueue.length = 0; //#if _DEBUG
+
+  console.log(`${listens} listen-callbacks of ${topics}/${l} dirty topics have been notified, use ${Date.now() - start}ms`); //#endif
 } //========================================================================================
 
 /*                                                                                      *
@@ -5090,20 +5340,14 @@ class Observer {
    */
   constructor(target) {
     const arrayTarget = isArray(target);
-
-    if (arrayTarget) {
-      applyArrayHooks(target);
-    } else {
-      assert.is(isObject(target), `the observer's target can only be an object or an array`);
-    }
-
+    assert.is(arrayTarget || isObject(target), `the observer's target can only be an object or an array`);
     const watchers = create(null);
     this.__watchers = watchers;
     this.__watcherProps = [];
     this.isArray = arrayTarget;
     this.target = target; // bind observer key on the observer's target
 
-    defPropValue(target, OBSERVER_KEY, this, false, false, false);
+    defValue(target, OBSERVER_KEY, this, false, false, false);
     this.proxy = policy.__createProxy(this, target, arrayTarget);
   }
   /**
@@ -5229,7 +5473,7 @@ class Observer {
 
         if (!execludes[prop] && (watcher = watchers[prop]) && watcher.size()) {
           origin = getOriginal(prop, this);
-          origin !== V && watcher.notify(origin);
+          origin !== SKIP && watcher.notify(origin);
         }
       }
     } else {
@@ -5238,7 +5482,7 @@ class Observer {
 
         if ((watcher = watchers[prop]) && watcher.size()) {
           origin = getOriginal(prop, this);
-          origin !== V && watcher.notify(origin);
+          origin !== SKIP && watcher.notify(origin);
         }
       }
     }
@@ -5376,88 +5620,16 @@ class Observer {
 } //========================================================================================
 
 /*                                                                                      *
- *                                      Array Hooks                                     *
- *                                                                                      */
-//========================================================================================
-
-
-const arrayHooks = [];
-const ARRAY_LEN_CHANGE = [ARRAY_LENGTH, ARRAY_CHANGE];
-const arrayHookCfg = {
-  push: [ARRAY_LEN_CHANGE],
-  pop: [ARRAY_LEN_CHANGE],
-
-  splice(ob, args) {
-    const {
-      target,
-      proxy
-    } = ob;
-    const start = args[0],
-          d = args.length - 2 - args[1];
-    ob.notifies(null, prop => prop === ARRAY_CHANGE ? proxy : prop === ARRAY_LENGTH ? d ? target[prop] : V : prop > start && (d || prop < start + args[1]) ? target[prop] : V);
-  },
-
-  shift: [],
-  unshift: [],
-  'fill,reverse,sort': [null, {
-    length: 1
-  }]
-};
-eachObj(arrayHookCfg, (hooker, methods) => {
-  eachArray(methods.split(','), method => {
-    const fn = Array[PROTOTYPE][method];
-    let hook;
-
-    if (isFn(hooker)) {
-      const cb = hooker;
-
-      hook = function () {
-        const ob = this[OBSERVER_KEY];
-        cb(ob, arguments);
-        return applyScope(fn, ob.target, arguments);
-      };
-    } else {
-      const [props, execludes] = hooker;
-
-      hook = function () {
-        const ob = this[OBSERVER_KEY];
-        ob.notifies(props, getArrayOriginValue, execludes);
-        return applyScope(fn, ob.target, arguments);
-      };
-    }
-
-    arrayHooks.push([method, hook]);
-  });
-});
-
-function getArrayOriginValue(prop, ob) {
-  return prop === ARRAY_CHANGE ? ob.proxy : ob.target[prop];
-}
-/**
- * apply observer hooks on Array
- * @param array
- */
-
-
-function applyArrayHooks(array) {
-  let hook,
-      i = arrayHooks.length;
-
-  while (i--) {
-    hook = arrayHooks[i];
-    defPropValue(array, hook[0], hook[1], false, false, false);
-  }
-} //========================================================================================
-
-/*                                                                                      *
  *                                        policy                                        *
  *                                                                                      */
 //========================================================================================
 
 
 const policy = proxyPolicy() || accessorPolicy() || vbPolicy();
-assert.is(policy, 'The observer module is not supported.');
-console.info(`the observer policy: ${policy.__name} -> `, policy);
+assert.is(policy, 'The observer module is not supported.'); //#if _DEBUG
+
+console.info(`the observer policy: ${policy.__name} -> `, policy); //#endif
+
 if (!policy.__createProxy) policy.__createProxy = (observer, target) => target;
 if (!policy.__watch) policy.__watch = () => {};
 const proxyEnable = policy.__proxy;
@@ -5485,7 +5657,13 @@ let __loadSubObserver = (observer, prop, target) => {
   const subObserver = __getObserver(target) || new Observer(target);
   if (subObserver.proxy !== target) observer.target[prop] = subObserver.proxy;
   return subObserver;
-};
+}; //========================================================================================
+
+/*                                                                                      *
+ *                                          API                                         *
+ *                                                                                      */
+//========================================================================================
+
 /**
  * get the original object of the observer on the object
  *
@@ -5659,6 +5837,7 @@ const getObserver = __getObserver;
  * @created Fri Mar 01 2019 18:17:27 GMT+0800 (China Standard Time)
  * @modified Thu Mar 28 2019 19:40:22 GMT+0800 (China Standard Time)
  */
+ //#endif
 
 /**
  *
@@ -5666,14 +5845,14 @@ const getObserver = __getObserver;
  * @module main
  * @preferred
  * @created Wed Nov 21 2018 10:21:20 GMT+0800 (China Standard Time)
- * @modified Fri Mar 08 2019 15:35:52 GMT+0800 (China Standard Time)
+ * @modified Mon Apr 08 2019 14:07:50 GMT+0800 (China Standard Time)
  */
 
-exports.isDefaultKey = isDefaultKey;
-exports.addDefaultKey = addDefaultKey;
-exports.addDefaultKeys = addDefaultKeys;
-exports.getDefaultKeys = getDefaultKeys;
-exports.getDefaultKeyMap = getDefaultKeyMap;
+exports.isDKey = isDKey;
+exports.addDKey = addDKey;
+exports.addDKeys = addDKeys;
+exports.getDKeys = getDKeys;
+exports.getDKeyMap = getDKeyMap;
 exports.createFn = createFn;
 exports.applyScope = applyScope;
 exports.applyNoScope = applyNoScope;
@@ -5714,16 +5893,14 @@ exports.protoProp = protoProp;
 exports.protoOf = protoOf;
 exports.__setProto = __setProto;
 exports.setProto = setProto;
-exports.propDescriptor = propDescriptor;
 exports.propAccessor = propAccessor;
 exports.defProp = defProp;
-exports.defPropValue = defPropValue;
+exports.defValue = defValue;
 exports.hasOwnProp = hasOwnProp;
 exports.getOwnProp = getOwnProp;
-exports.parsePath = parsePath;
-exports.formatPath = formatPath;
-exports.get = get;
-exports.set = set;
+exports.deepEq = deepEq;
+exports.doDeepEq = doDeepEq;
+exports.doDeepEqObj = doDeepEqObj;
 exports.toStr = toStr;
 exports.toStrType = toStrType;
 exports.charCode = charCode;
@@ -5736,25 +5913,6 @@ exports.lower = lower;
 exports.upperFirst = upperFirst;
 exports.lowerFirst = lowerFirst;
 exports.escapeStr = escapeStr;
-exports.pad = pad;
-exports.shorten = shorten;
-exports.thousandSeparate = thousandSeparate;
-exports.binarySeparate = binarySeparate;
-exports.octalSeparate = octalSeparate;
-exports.hexSeparate = hexSeparate;
-exports.plural = plural;
-exports.singular = singular;
-exports.FORMAT_XPREFIX = FORMAT_XPREFIX;
-exports.FORMAT_PLUS = FORMAT_PLUS;
-exports.FORMAT_ZERO = FORMAT_ZERO;
-exports.FORMAT_SPACE = FORMAT_SPACE;
-exports.FORMAT_SEPARATOR = FORMAT_SEPARATOR;
-exports.FORMAT_LEFT = FORMAT_LEFT;
-exports.extendFormatter = extendFormatter;
-exports.getFormatter = getFormatter;
-exports.vformat = vformat;
-exports.format = format;
-exports.formatter = formatter;
 exports.create = create;
 exports.doAssign = doAssign;
 exports.assign = assign;
@@ -5781,12 +5939,46 @@ exports.keys = keys;
 exports.values = values;
 exports.arr2obj = arr2obj;
 exports.makeMap = makeMap;
+exports.mixin = mixin;
+exports.popErrStack = popErrStack;
+exports.assert = assert;
+exports.pad = pad;
+exports.shorten = shorten;
+exports.thousandSeparate = thousandSeparate;
+exports.binarySeparate = binarySeparate;
+exports.octalSeparate = octalSeparate;
+exports.hexSeparate = hexSeparate;
+exports.plural = plural;
+exports.singular = singular;
+exports.FORMAT_XPREFIX = FORMAT_XPREFIX;
+exports.FORMAT_PLUS = FORMAT_PLUS;
+exports.FORMAT_ZERO = FORMAT_ZERO;
+exports.FORMAT_SPACE = FORMAT_SPACE;
+exports.FORMAT_SEPARATOR = FORMAT_SEPARATOR;
+exports.FORMAT_LEFT = FORMAT_LEFT;
+exports.extendFormatter = extendFormatter;
+exports.getFormatter = getFormatter;
+exports.vformat = vformat;
+exports.format = format;
+exports.formatter = formatter;
+exports.PATH_BINDING = PATH_BINDING;
+exports.parsePath = parsePath;
+exports.formatPath = formatPath;
+exports.get = get;
+exports.set = set;
 exports.List = List;
 exports.FnList = FnList;
 exports.nextTick = nextTick;
 exports.clearTick = clearTick;
 exports.clearTickId = clearTickId;
+exports.genCharCodes = genCharCodes;
 exports.Source = Source;
+exports.MatchError = MatchError;
+exports.Rule = Rule;
+exports.MatchContext = MatchContext;
+exports.ComplexRule = ComplexRule;
+exports.AndRule = AndRule;
+exports.OrRule = OrRule;
 exports.discardMatch = discardMatch;
 exports.appendMatch = appendMatch;
 exports.attachMatch = attachMatch;
@@ -5799,12 +5991,11 @@ exports.or = or;
 exports.anyOne = anyOne;
 exports.manyOne = manyOne;
 exports.optionOne = optionOne;
-exports.popErrStack = popErrStack;
-exports.assert = assert;
+exports.VBPROXY_KEY = VBPROXY_KEY;
+exports.VBPROXY_CTOR_KEY = VBPROXY_CTOR_KEY;
 exports.OBSERVER_KEY = OBSERVER_KEY;
 exports.ARRAY_CHANGE = ARRAY_CHANGE;
 exports.ARRAY_LENGTH = ARRAY_LENGTH;
-exports.MISS = MISS;
 exports.collect = collect;
 exports.proxyEnable = proxyEnable;
 exports.observer = observer;
