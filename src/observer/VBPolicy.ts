@@ -3,13 +3,13 @@
  * @module observer
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Tue Mar 19 2019 14:12:23 GMT+0800 (China Standard Time)
- * @modified Thu Apr 04 2019 20:45:57 GMT+0800 (China Standard Time)
+ * @modified Wed Apr 10 2019 19:55:47 GMT+0800 (China Standard Time)
  */
 import { ObserverTarget, IWatcher, IObserver } from './IObserver'
 import { ObservePolicy } from './ObservePolicy'
 import { GLOBAL, P_CTOR, P_OWNPROP } from '../util/consts'
 import { create, isFn, getDKeys, addDKeys } from '../util'
-import { applyArrayHooks } from './arrayHook';
+import { applyArrayHooks } from './arrayHook'
 
 declare function execScript(code: string, type: string): void
 declare function parseVB(code: string): void
@@ -61,13 +61,15 @@ export class VBProxy<T extends {}> {
 			j = 0
 
 		for (prop in source) {
-			propMap[prop] = true
-			props[i++] = prop
-			if (isFn(source[prop])) __fns[j++] = prop
+			if (!isKey(prop)) {
+				propMap[prop] = true
+				props[i++] = prop
+				if (isFn(source[prop])) __fns[j++] = prop
+			}
 		}
 		applyProps(props, propMap, OBJECT_DEFAULT_PROPS)
 		applyProps(props, propMap, getDKeys())
-		const proxy = loadClassFactory(props)(this)
+		const proxy = createVBClass(props, this)
 
 		while (j--) {
 			prop = __fns[j]
@@ -82,19 +84,21 @@ export class VBProxy<T extends {}> {
 		source[VBPROXY_KEY] = this
 	}
 
-	private set(prop: string, value: any) {
+	set(prop: string, value: any) {
 		const { __source: source, __fns: fns } = this
 		if (isFn(value)) {
 			fns[prop] = [, value]
 		} else if (fns[prop]) {
 			fns[prop] = null
 		}
-		const watcher = this.__observer.watcher(prop)
-		watcher && watcher.notify(source[prop])
+		const original = source[prop]
+		if (original !== value) {
+			this.__observer.notify(prop, original)
+		}
 		source[prop] = value
 	}
 
-	private get(prop: string) {
+	get(prop: string) {
 		const fn = this.__fns[prop]
 		return fn ? fn[0] || (fn[0] = fn[1].bind(this.__proxy)) : this.__source[prop]
 	}
@@ -106,17 +110,19 @@ function applyProps(props: string[], propMap: { [key: string]: boolean }, applyP
 		prop: string
 	while (i--) {
 		prop = applyProps[i]
-		if (!propMap[prop]) {
+		if (!isKey(prop) && propMap[prop] !== true) {
 			propMap[prop] = true
 			props[j++] = prop
 		}
 	}
 }
+function isKey(prop: string) {
+	return prop === VBPROXY_KEY || prop === VBPROXY_CTOR_KEY
+}
 
 export const VBPROXY_KEY = '__vbclass_binding__',
 	VBPROXY_CTOR_KEY = '__vbclass_constructor__',
 	OBJECT_DEFAULT_PROPS = [
-		VBPROXY_KEY,
 		P_CTOR,
 		P_OWNPROP,
 		'isPrototypeOf',
@@ -138,10 +144,10 @@ const CONSTRUCTOR_SCRIPT = `
 function genAccessorScript(prop: string): string {
 	return `
 	Public Property Let [${prop}](value)
-		Call [${VBPROXY_KEY}].set("${prop}", val)
+		Call [${VBPROXY_KEY}].set("${prop}", value)
 	End Property
 	Public Property Set [${prop}](value)
-		Call [${VBPROXY_KEY}].set("${prop}", val)
+		Call [${VBPROXY_KEY}].set("${prop}", value)
 	End Property
 
 	Public Property Get [${prop}]
@@ -157,7 +163,7 @@ function genAccessorScript(prop: string): string {
 }
 
 function genClassScript(className: string, props: string[]): string {
-	const buffer = ['Class ', className, CONSTRUCTOR_SCRIPT],
+	const buffer = ['Class ' + className, CONSTRUCTOR_SCRIPT],
 		l = props.length
 	let i = 0
 	for (; i < l; i++) buffer[i + 3] = genAccessorScript(props[i])
@@ -166,7 +172,7 @@ function genClassScript(className: string, props: string[]): string {
 }
 
 let classNameGenerator = 1
-function loadClassFactory(props: string[]): <T extends {}>(source: VBProxy<T>) => T {
+function createVBClass<T extends {}>(props: string[], desc: VBProxy<T>): T {
 	const classKey = props.sort().join('|')
 	let factoryName = classPool[classKey]
 	if (!factoryName) {
@@ -185,5 +191,5 @@ End Function`)
 
 		classPool[classKey] = factoryName
 	}
-	return GLOBAL[factoryName]
+	return GLOBAL[factoryName](desc)
 }

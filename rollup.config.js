@@ -27,7 +27,6 @@ const input = './src/index.ts',
 		banner,
 		outDir,
 		target: 'es3',
-		strict: false,
 		output: {
 			format: 'umd',
 			name: namespace,
@@ -40,7 +39,6 @@ const input = './src/index.ts',
 		banner,
 		outDir,
 		target: 'es6',
-		strict: false,
 		sourceRoot: '/' + moduleName,
 		output: [
 			{
@@ -60,7 +58,7 @@ module.exports = [browserConfig, moduleConfig]
 		process.env.NODE_ENV === 'production' && [
 			assignIf({ debug: false }, moduleConfig),
 			assignIf({ debug: false }, browserConfig),
-			assignIf({ debug: false, compact: true }, browserConfig)
+			assignIf({ debug: false, compact: true, codeAnalysis: true }, browserConfig)
 		]
 	)
 	.filter(cfg => cfg)

@@ -27,10 +27,10 @@ const vb = proxyEnable === 'vb',
 
 describe('observer', function() {
 	it('default keys', function() {
-		assert.is(isDKey(OBSERVER_KEY))
+		assert.is(isDKey(OBSERVER_KEY), `require Default Key: ${OBSERVER_KEY}`)
 		if (proxyEnable === 'vb') {
-			assert.is(isDKey(VBPROXY_KEY))
-			assert.is(isDKey(VBPROXY_CTOR_KEY))
+			assert.is(isDKey(VBPROXY_KEY), `require Default Key: ${VBPROXY_KEY}`)
+			assert.is(isDKey(VBPROXY_CTOR_KEY), `require Default Key: ${VBPROXY_CTOR_KEY}`)
 		}
 	})
 
@@ -64,7 +64,7 @@ describe('observer', function() {
 		assert.eq(proxy(o), o)
 
 		function createObserver<T extends ObserverTarget>(obj: T): IObserver<T> {
-			assert.not(getObserver(obj))
+			assert.not(getObserver(obj), `got the observer on new unobservable object`)
 
 			const obs = observer(obj)
 			assert.eq(obj, obs.target)
@@ -75,8 +75,8 @@ describe('observer', function() {
 
 			assert.is($eq(obj, obs.target))
 			assert.is($eq(obj, obs.proxy))
-			if (proxyEnable) {
-				assert.not(eq(obj, obs.proxy))
+			if (proxyEnable && (es6proxy || !obs.isArray)) {
+				assert.notEq(obj, obs.proxy)
 			}
 			return obs
 		}
@@ -220,7 +220,6 @@ describe('observer', function() {
 					// [2,1]
 					name: 'array.push',
 					setup(o, c) {
-						c.collect('[0]', 'length', '$change')
 						o.push(1)
 					},
 					done(w, c) {
@@ -234,13 +233,135 @@ describe('observer', function() {
 					// [3,2,1]
 					name: 'array.unshift',
 					setup(o, c) {
-						c.collect('[0]', 'length', '$change')
 						o.unshift(3)
 					},
 					done(w, c) {
 						c.expect({
 							'[0]': [3, 2],
 							length: [3, 2],
+							$change: [c.ob.proxy, c.ob.proxy]
+						})
+					}
+				},
+				{
+					// [4,2,1]
+					name: 'array.splice 0',
+					setup(o, c) {
+						o.splice(0, 1, 4)
+					},
+					done(w, c) {
+						c.expect({
+							'[0]': [4, 3],
+							$change: [c.ob.proxy, c.ob.proxy]
+						})
+					}
+				},
+				{
+					// [4,3,2,1]
+					name: 'array.splice 1',
+					setup(o, c) {
+						o.splice(1, 0, 3)
+					},
+					done(w, c) {
+						c.expect({
+							length: [4, 3],
+							$change: [c.ob.proxy, c.ob.proxy]
+						})
+					}
+				},
+				{
+					// [3,2,1]
+					name: 'array.splice -1',
+					setup(o, c) {
+						o.splice(0, 1)
+					},
+					done(w, c) {
+						c.expect({
+							length: [3, 4],
+							$change: [c.ob.proxy, c.ob.proxy]
+						})
+					}
+				},
+				{
+					// [3,2]
+					name: 'array.pop',
+					setup(o, c) {
+						o.pop()
+					},
+					done(w, c) {
+						c.expect({
+							length: [2, 3],
+							$change: [c.ob.proxy, c.ob.proxy]
+						})
+					}
+				},
+				{
+					// [2]
+					name: 'array.shift',
+					setup(o, c) {
+						o.shift()
+					},
+					done(w, c) {
+						c.expect({
+							length: [1, 2],
+							$change: [c.ob.proxy, c.ob.proxy]
+						})
+					}
+				},
+				{
+					// [2,3,4,5]
+					name: 'set out index',
+					setup(o, c) {
+						o[1] = 3
+						o[2] = 4
+						o[3] = 5
+					},
+					done(w, c) {
+						c.expect(
+							es6proxy
+								? {
+										length: [4, 1],
+										$change: [c.ob.proxy, c.ob.proxy]
+								  }
+								: {}
+						)
+					}
+				},
+				{
+					// [5,4,3,2]
+					name: 'array.sort',
+					setup(o, c) {
+						o.sort((a, b) => b - a)
+					},
+					done(w, c) {
+						c.expect({
+							'[0]': [5, 2],
+							$change: [c.ob.proxy, c.ob.proxy]
+						})
+					}
+				},
+				[].reverse && {
+					// [2,3,4,5]
+					name: 'array.reverse',
+					setup(o, c) {
+						o.reverse()
+					},
+					done(w, c) {
+						c.expect({
+							'[0]': [2, 5],
+							$change: [c.ob.proxy, c.ob.proxy]
+						})
+					}
+				},
+				[].fill && {
+					// [0,0,0,0]
+					name: 'array.fill',
+					setup(o, c) {
+						o.fill(0)
+					},
+					done(w, c) {
+						c.expect({
+							'[0]': [0, 2],
 							$change: [c.ob.proxy, c.ob.proxy]
 						})
 					}

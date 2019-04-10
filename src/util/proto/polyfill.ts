@@ -2,7 +2,7 @@
  * @module util
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Jul 25 2018 15:23:56 GMT+0800 (China Standard Time)
- * @modified Mon Apr 08 2019 11:49:38 GMT+0800 (China Standard Time)
+ * @modified Wed Apr 10 2019 11:38:30 GMT+0800 (China Standard Time)
  */
 import { P_CTOR, P_PROTO, P_PROTOTYPE } from '../consts'
 import { addDKey } from '../dkeys'
@@ -25,7 +25,7 @@ export const protoProp = { [P_PROTO]: [] } instanceof Array
 /**
  * get prototype
  */
-export const protoOf: (o: any) => any = $setProto
+export const protoOf: typeof Object.getPrototypeOf = $setProto
 	? $getProto
 	: $getProto
 	? function getPrototypeOf(obj) {
@@ -39,7 +39,7 @@ export const protoOf: (o: any) => any = $setProto
  * set prototype
  * > properties on the prototype are not inherited on older browsers
  */
-export const __setProto: <T>(obj: any, proto: any) => any =
+export const __setProto: typeof Object.setPrototypeOf =
 	$setProto ||
 	function setPrototypeOf(obj, proto) {
 		obj[P_PROTO] = proto
@@ -50,7 +50,7 @@ export const __setProto: <T>(obj: any, proto: any) => any =
  * set prototype
  * > the properties on the prototype will be copied on the older browser
  */
-export const setProto: <T>(obj: any, proto: any) => any =
+export const setProto: typeof Object.setPrototypeOf =
 	$setProto ||
 	(protoProp
 		? __setProto

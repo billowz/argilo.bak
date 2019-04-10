@@ -2,7 +2,7 @@
  * @module observer
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Dec 26 2018 13:59:10 GMT+0800 (China Standard Time)
- * @modified Mon Apr 08 2019 18:33:01 GMT+0800 (China Standard Time)
+ * @modified Wed Apr 10 2019 13:51:37 GMT+0800 (China Standard Time)
  */
 
 import { ObserverTarget, IWatcher, OBSERVER_KEY, IObserver, ARRAY_CHANGE, ObserverCallback } from './IObserver'
@@ -584,19 +584,19 @@ class Observer<T extends ObserverTarget> implements IObserver<T> {
 	 * 	- key: property of topic in the observer's target
 	 * 	- value: topic
 	 */
-	__topics: { [key: string]: Topic }
+	private __topics: { [key: string]: Topic }
 
 	/**
 	 * watchers
 	 * 	- key: property of watcher in the observer's target
 	 * 	- value: watcher
 	 */
-	readonly __watchers: { [key: string]: Watcher }
+	private readonly __watchers: { [key: string]: Watcher }
 
 	/**
 	 * properties of watchers in the observer's target
 	 */
-	readonly __watcherProps: string[]
+	private readonly __watcherProps: string[]
 
 	/**
 	 * create Observer
@@ -743,35 +743,6 @@ class Observer<T extends ObserverTarget> implements IObserver<T> {
 	}
 
 	/**
-	 * get wather by property
-	 *
-	 * @protected
-	 * @param prop the property
-	 */
-	watcher(prop: string): Watcher {
-		const watcher = this.__watchers[prop]
-		if (watcher && watcher.size()) return watcher
-	}
-
-	/**
-	 * get or create wather by property
-	 *
-	 * @protected
-	 * @param prop the property
-	 */
-	initWatcher(prop: string): Watcher {
-		const { __watchers: watchers } = this
-		let watcher: Watcher = watchers[prop]
-		if (!watcher) {
-			watchers[prop] = watcher = new Watcher()
-			this.__watcherProps.push(prop)
-			const err: Error | void = policy.__watch(this as IObserver<T>, prop, watcher)
-			assert.not(err, `can not watch property[{}] on the Observer, {{message}}`, prop, err, err, this.target)
-		}
-		return watcher
-	}
-
-	/**
 	 * watch the topic
 	 *
 	 * @private
@@ -864,11 +835,6 @@ if (!policy.__watch) policy.__watch = () => {}
 
 export const proxyEnable = policy.__proxy
 
-/**
- * get existing observer on object
- *
- * @return existing observer
- */
 let __getObserver: <T extends ObserverTarget>(target: T) => Observer<T> = target => {
 	const ob = target[OBSERVER_KEY]
 	if (ob && (ob.target === target || ob.proxy === target)) return ob
@@ -981,9 +947,20 @@ if (!proxyEnable) {
  * get or create observer on object
  *
  * @param target 	the target object
+ * @return the observer
  */
 export function observer<T extends ObserverTarget>(target: T): IObserver<T> {
 	return __getObserver(target) || new Observer(target)
+}
+
+/**
+ * get or create observer on object
+ *
+ * @param target 	the target object
+ * @return the proxy object
+ */
+export function observable<T extends ObserverTarget>(target: T): T {
+	return observer(target).proxy
 }
 
 /**
@@ -1066,6 +1043,11 @@ export function unobserveId<T extends ObserverTarget>(target: T, propPath: strin
 	__observer && __observer.unobserveId(propPath, listenId)
 }
 
+/**
+ * get existing observer on object
+ *
+ * @return existing observer
+ */
 export const getObserver: <T extends ObserverTarget>(target: T) => IObserver<T> = __getObserver
 
 export { source, proxy, $eq, $get, $set }

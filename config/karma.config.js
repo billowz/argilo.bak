@@ -6,26 +6,24 @@ module.exports = function(config) {
 	config.set({
 		browsers: ['Chrome'],
 		transports: ['websocket', 'polling', 'jsonp-polling'],
-		frameworks: ['mocha', 'expect'],
+		frameworks: ['mocha'],
 		reporters: ['spec', 'coverage'],
-		files: (process.env.specs || '*').split(',').map(v => `../src/**/${v}.spec.ts`).concat([ '../src/index.ts']),
+		files: (process.env.specs || '*')
+			.split(',')
+			.map(v => `../src/**/${v}.spec.ts`)
+			.concat(['../src/index.ts']),
 		preprocessors: {
 			'../src/**/*.ts': ['rollup', 'transformPath']
 		},
 		rollupPreprocessor: rollupConfig({
 			plugins: [json()],
 			progress: false,
-			treeshake: false,
-			strict: false,
+			//treeshake: false,
 			sourcemap: 'inline',
-			external: ['expect.js'],
 			output: {
 				name: 'argilo',
 				format: 'umd',
-				file: false,
-				globals: {
-					'expect.js': 'expect'
-				}
+				file: false
 			}
 		}),
 		transformPathPreprocessor: {

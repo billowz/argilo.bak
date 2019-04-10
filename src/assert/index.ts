@@ -2,7 +2,7 @@
  * @module assert
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Nov 28 2018 11:01:45 GMT+0800 (China Standard Time)
- * @modified Mon Apr 08 2019 17:42:54 GMT+0800 (China Standard Time)
+ * @modified Wed Apr 10 2019 14:01:35 GMT+0800 (China Standard Time)
  */
 
 import {
@@ -137,9 +137,10 @@ function mkError(Err: { new (message?: string): Error }, msg: string, args: any[
 }
 
 export function popErrStack(err: Error, i: number): Error {
-	while (i-- > 0) {
-		err.stack = err.stack.replace(/(\n\s{4}at[^\n]*)/, '')
-	}
+	if (err.stack)
+		while (i-- > 0) {
+			err.stack = err.stack.replace(/(\n\s{4}at[^\n]*)/, '')
+		}
 	return err
 }
 

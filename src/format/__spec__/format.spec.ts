@@ -66,7 +66,7 @@ const formatCases: any[][] = [
 	[`===={:.10="..."}====`, '====abcdefg...====', 'abcdefghijh']
 ]
 
-describe('util/format', () => {
+describe('format', () => {
 	/**
 	 * @test {pad}
 	 */
@@ -76,36 +76,17 @@ describe('util/format', () => {
 		assert.eq(pad('123', 3, '#'), '123')
 		assert.eq(pad('123', 3, '#', true), '123')
 	})
-	/**
-	 * @test {vformat}
-	 */
-	describe('vformat', function() {
-		eachArray(formatCases, t => {
-			it(`vformat: ${t[0]}`, () => {
-				assert.eq(vformat(t[0], t, 0, (args, i) => args[i + 2]), t[1])
-			})
+	eachArray(formatCases, t => {
+		it(`vformat: ${t[0]}`, () => {
+			assert.eq(vformat(t[0], t, 0, (args, i) => args[i + 2]), t[1])
 		})
-	})
-	/**
-	 * @test {format}
-	 */
-	describe('format', function() {
-		eachArray(formatCases, t => {
-			it(`format: ${t[0]}`, () => {
-				assert.eq(applyNoScope(format, [t[0]].concat(t.slice(2))), t[1])
-			})
+		it(`format: ${t[0]}`, () => {
+			assert.eq(applyNoScope(format, [t[0]].concat(t.slice(2))), t[1])
 		})
-	})
-	/**
-	 * @test {formatter}
-	 */
-	describe('formatter', function() {
-		eachArray(formatCases, t => {
-			it(`formatter: ${t[0]}`, () => {
-				const f = formatter(t[0], 0, (args, i) => args[i + 2])
-				assert.eq(applyNoScope(f, t), t[1])
-				assert.eq(applyNoScope(f, t), t[1])
-			})
+		it(`formatter: ${t[0]}`, () => {
+			const f = formatter(t[0], 0, (args, i) => args[i + 2])
+			assert.eq(applyNoScope(f, t), t[1])
+			assert.eq(applyNoScope(f, t), t[1])
 		})
 	})
 })

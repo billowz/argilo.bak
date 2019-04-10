@@ -2,7 +2,7 @@
  * @module util
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Jul 25 2018 15:24:47 GMT+0800 (China Standard Time)
- * @modified Mon Apr 08 2019 12:14:41 GMT+0800 (China Standard Time)
+ * @modified Wed Apr 10 2019 11:19:57 GMT+0800 (China Standard Time)
  */
 import { eq, isReg, isTypedArray, isDate, isArray, isPrimitive } from './is'
 import { hasOwnProp } from './ownProp'
@@ -38,21 +38,17 @@ export function doDeepEqObj(actual: any, expected: any): boolean {
 	const cache = create(null)
 	let k: string
 	for (k in actual) {
-		if (!DKeyMap[k] && notEqObjKey(actual, expected, k)) {
+		if (!DKeyMap[k] && (!(k in expected) || !deepEq(actual[k], expected[k]))) {
 			return false
 		}
 		cache[k] = true
 	}
 	for (k in expected) {
-		if (!cache[k] && !DKeyMap[k] && notEqObjKey(actual, expected, k)) {
+		if (!cache[k] && !DKeyMap[k] && (!(k in actual) || !deepEq(actual[k], expected[k]))) {
 			return false
 		}
 	}
 	return true
-}
-
-function notEqObjKey(actual: any, expected: any, k: string): boolean {
-	return hasOwnProp(actual, k) ? !hasOwnProp(expected, k) || !deepEq(actual[k], expected[k]) : hasOwnProp(expected, k)
 }
 
 function eqProps(actual: any, expected: any, props: string[]): boolean {

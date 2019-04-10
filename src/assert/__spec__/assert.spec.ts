@@ -7,7 +7,7 @@ describe('assert', function() {
 			throw new Error(`assert() expect to throw Error("test error.")`)
 		} catch (e) {
 			if ('test error.' !== e.message) {
-				throw new Error(`assert() expect error message "${e.message} to "test error."`)
+				throw new Error(`assert() expect error message "${e.message}" to "test error."`)
 			}
 		}
 	})

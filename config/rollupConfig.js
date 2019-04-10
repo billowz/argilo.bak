@@ -51,6 +51,8 @@ function mkConfig(config) {
 			{
 				modules: false,
 				loose: es3,
+				useBuiltIns: false,
+				spec: false,
 				targets: es6
 					? {
 							chrome: '59'
@@ -59,7 +61,9 @@ function mkConfig(config) {
 					? {
 							ie: '9'
 					  }
-					: {}
+					: {
+							ie: '6'
+					  }
 			},
 			k => !babelConfigOptions[k],
 			config.babel

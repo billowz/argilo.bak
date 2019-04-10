@@ -3,7 +3,7 @@
  * @module observer
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Tue Mar 19 2019 14:12:23 GMT+0800 (China Standard Time)
- * @modified Mon Apr 08 2019 13:32:29 GMT+0800 (China Standard Time)
+ * @modified Wed Apr 10 2019 10:11:52 GMT+0800 (China Standard Time)
  */
 
 import { addDKey } from '../util'
@@ -134,16 +134,4 @@ export interface IObserver<T extends ObserverTarget> {
 		getOriginal: (prop: string, ob: IObserver<T>) => any,
 		execludes?: { [key: string]: any }
 	): void
-
-	/**
-	 * get wather by property
-	 * @param prop the property
-	 */
-	watcher(prop: string): IWatcher
-
-	/**
-	 * get or create wather by property
-	 * @param prop the property
-	 */
-	initWatcher(prop: string): IWatcher
 }

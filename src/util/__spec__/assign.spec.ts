@@ -21,9 +21,6 @@ describe('util/assign', function() {
 		// assign array source
 		assert.eql(assign({}, [1, , 3]), { '0': 1, '2': 3 })
 
-		// assign string  source
-		assert.eql(assign({}, 'a'), { '0': 'a' })
-
 		// assign values of prototype objects
 		function Foo() {}
 		Foo.prototype.a = 1
@@ -48,9 +45,6 @@ describe('util/assign', function() {
 
 		// assignIf array source
 		assert.eql(assignIf({}, [1, , 3]), { '0': 1, '2': 3 })
-
-		// assignIf string  source
-		assert.eql(assignIf({}, 'a'), { '0': 'a' })
 
 		// assignIf values of prototype objects
 		function Foo() {}

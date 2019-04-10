@@ -5,7 +5,7 @@ function _parsePath(p: string) {
 	return parsePath(p).slice()
 }
 
-describe('util/path', () => {
+describe('path', () => {
 	it('formatPath', () => {
 		assert.eql(formatPath(['0']), '["0"]')
 		assert.eql(formatPath(['a', 'b', 'c']), '["a"]["b"]["c"]')

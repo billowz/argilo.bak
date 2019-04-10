@@ -1,16 +1,15 @@
 /// <reference types="node" />
 
-export declare function isDefaultKey(key: string): any;
-export declare function addDefaultKey(key: string): string;
-export declare function addDefaultKeys(...keys: string[]): void;
-export declare function getDefaultKeys(): any[];
-export declare function getDefaultKeyMap(): any[];
+export declare function isDKey(key: string): any;
+export declare function addDKey(key: string): string;
+export declare function addDKeys(...keys: string[]): void;
+export declare function getDKeys(): any[];
+export declare function getDKeyMap(): any[];
 /**
- * Function utilities
- * @module utility
+ * @module util
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 13:57:32 GMT+0800 (China Standard Time)
- * @modified Thu Mar 28 2019 19:22:34 GMT+0800 (China Standard Time)
+ * @modified Mon Apr 08 2019 13:26:23 GMT+0800 (China Standard Time)
  */
 /**
  * create function by code string
@@ -18,20 +17,20 @@ export declare function getDefaultKeyMap(): any[];
  * @param args	function argument names
  * @param name	function name
  */
-export declare function createFn<T extends Function>(body: string, args?: string[], name?: string): T;
+export declare function createFn<T extends (...args: any[]) => any>(body: string, args?: string[], name?: string): T;
 /**
  * apply function with scope
  * @param fn	target function
  * @param scope	scope of function
  * @param args	arguments of function
  */
-export declare const applyScope: (fn: Function, scope: any, args: any[] | IArguments) => any;
+export declare const applyScope: (fn: (...args: any[]) => any, scope: any, args: any[] | IArguments) => any;
 /**
  * apply function without scope
  * @param fn		target function
  * @param args	arguments of function
  */
-export declare const applyNoScope: (fn: Function, args: any[] | IArguments) => any;
+export declare const applyNoScope: (fn: (...args: any[]) => any, args: any[] | IArguments) => any;
 /**
  * apply function with scope
  * @param fn		target function
@@ -40,7 +39,7 @@ export declare const applyNoScope: (fn: Function, args: any[] | IArguments) => a
  * @param offset	start offset of args
  * @param len		arg size from offset
  */
-export declare const applyScopeN: (fn: Function, scope: any, args: any[] | IArguments, offset: number, len: number) => any;
+export declare const applyScopeN: (fn: (...args: any[]) => any, scope: any, args: any[] | IArguments, offset: number, len: number) => any;
 /**
  * apply function without scope
  * @param fn		target function
@@ -48,14 +47,14 @@ export declare const applyScopeN: (fn: Function, scope: any, args: any[] | IArgu
  * @param offset	start offset of args
  * @param len		arg size from offset
  */
-export declare const applyNoScopeN: (fn: Function, args: any[] | IArguments, offset: number, len: number) => any;
+export declare const applyNoScopeN: (fn: (...args: any[]) => any, args: any[] | IArguments, offset: number, len: number) => any;
 /**
  * apply function
  * @param fn		target function
  * @param scope		scope of function
  * @param args		arguments of function
  */
-export declare function apply(fn: Function, scope: any, args: any[] | IArguments): any;
+export declare function apply(fn: (...args: any[]) => any, scope: any, args: any[] | IArguments): any;
 /**
  * apply function
  * @param fn		target function
@@ -64,11 +63,11 @@ export declare function apply(fn: Function, scope: any, args: any[] | IArguments
  * @param offset	start offset of args
  * @param len		arg size from offset
  */
-export declare function applyN(fn: Function, scope: any, args: any[] | IArguments, offset: number, len: number): any;
+export declare function applyN(fn: (...args: any[]) => any, scope: any, args: any[] | IArguments, offset: number, len: number): any;
 /**
  * get function name
  */
-export declare function fnName(fn: Function): string;
+export declare function fnName(fn: (...args: any[]) => any): string;
 /**
  * bind scope or arguments on function
  * - return source function when without arguments and scope is undefined or null
@@ -97,17 +96,12 @@ export declare function fnName(fn: Function): string;
  * @param args	bind arguments
  * @return function proxy
  */
-export declare const bind: <T extends Function>(fn: T, scope: any, ...args: any[]) => T;
-export declare type Executor<T extends (...args: any[]) => any> = T & {
-	called: number;
-};
-export declare function executor<T extends (...args: any[]) => any>(fn: T): Executor<T>;
+export declare const bind: <T extends (...args: any[]) => any>(fn: T, scope: any, ...args: any[]) => T;
 /**
- * type checker
- * @module utility
+ * @module util
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 13:57:32 GMT+0800 (China Standard Time)
- * @modified Sat Mar 23 2019 18:55:31 GMT+0800 (China Standard Time)
+ * @modified Mon Apr 08 2019 13:26:03 GMT+0800 (China Standard Time)
  */
 /**
  * is equals
@@ -221,11 +215,10 @@ export declare function isObject(o: any): boolean;
  */
 export declare function isBlank(o: any): boolean;
 /**
- * regexp utilities
- * @module utility/reg
+ * @module util
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Thu Sep 06 2018 18:27:51 GMT+0800 (China Standard Time)
- * @modified Sat Dec 29 2018 19:29:00 GMT+0800 (China Standard Time)
+ * @modified Mon Apr 08 2019 13:25:13 GMT+0800 (China Standard Time)
  */
 /**
  * whether to support sticky on RegExp
@@ -250,21 +243,22 @@ export declare const protoProp: boolean;
 /**
  * get prototype
  */
-export declare const protoOf: (o: any) => any;
+export declare const protoOf: typeof Object.getPrototypeOf;
 /**
  * set prototype
  * > properties on the prototype are not inherited on older browsers
  */
-export declare const __setProto: <T>(obj: any, proto: any) => any;
+export declare const __setProto: typeof Object.setPrototypeOf;
 /**
  * set prototype
  * > the properties on the prototype will be copied on the older browser
  */
-export declare const setProto: <T>(obj: any, proto: any) => any;
+export declare const setProto: typeof Object.setPrototypeOf;
 /**
  * whether to support Object.defineProperty
+ * @constant
  */
-export declare const propDescriptor: boolean;
+export declare let propDescriptor: boolean;
 /**
  * whether to support `__defineGetter__` and `__defineSetter__`
  */
@@ -272,16 +266,14 @@ export declare const propAccessor: boolean;
 /**
  * define property
  */
-export declare const defProp: (o: any, p: string | number | symbol, attributes: PropertyDescriptor & ThisType<any>) => any;
+export declare const defProp: typeof Object.defineProperty;
+export declare function defValue<V>(obj: any, prop: string, value: V, enumerable?: boolean, configurable?: boolean, writable?: boolean): V;
+export declare function defAccessor(obj: any, prop: string, get: () => any, set: (v: any) => void, enumerable?: boolean, configurable?: boolean): void;
 /**
- * define property by value
- */
-export declare const defPropValue: <V>(obj: any, prop: string, value: V, enumerable?: boolean, configurable?: boolean, writable?: boolean) => V;
-/**
- * @module utility
+ * @module util
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Jul 25 2018 15:22:57 GMT+0800 (China Standard Time)
- * @modified Thu Mar 14 2019 09:22:38 GMT+0800 (China Standard Time)
+ * @modified Mon Apr 08 2019 12:42:51 GMT+0800 (China Standard Time)
  */
 /**
  * has own property
@@ -293,26 +285,16 @@ export declare const hasOwnProp: (obj: any, prop: string) => boolean;
  * @param defaultVal 	default value
  */
 export declare function getOwnProp(obj: any, prop: string, defaultVal?: any): any;
-/**
- * @module utility/defProp
- * @author Tao Zeng <tao.zeng.zt@qq.com>
- * @created Fri Nov 30 2018 14:41:02 GMT+0800 (China Standard Time)
- * @modified Tue Mar 26 2019 19:39:49 GMT+0800 (China Standard Time)
- */
-export declare function parsePath(propPath: string | string[], cacheable?: boolean): string[];
-export declare function formatPath(path: string | (string[] & {
-	path?: string;
-})): string;
-export declare function get(obj: any, path: string | string[]): any;
-export declare function set(obj: any, path: string | string[], value: any): void;
+export declare function deepEq(actual: any, expected: any): boolean;
+export declare function doDeepEq(actual: any, expected: any, eq: (actual: any, expected: any) => boolean, eqObj: (actual: any, expected: any) => boolean): boolean;
+export declare function doDeepEqObj(actual: any, expected: any): boolean;
 export declare function toStr(obj: any): String;
 export declare function toStrType(obj: any): any;
 /**
- * String utilities
- * @module utility/string
+ * @module util
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 13:57:32 GMT+0800 (China Standard Time)
- * @modified Sat Mar 23 2019 18:50:35 GMT+0800 (China Standard Time)
+ * @modified Mon Apr 08 2019 14:10:44 GMT+0800 (China Standard Time)
  */
 /**
  * get char code
@@ -336,10 +318,488 @@ export declare function upperFirst(str: string): string;
 export declare function lowerFirst(str: string): string;
 export declare function escapeStr(str: string): string;
 /**
- * @module utility/format
+ * Object.create polyfill
+ * @module util
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Wed Jul 25 2018 15:24:47 GMT+0800 (China Standard Time)
+ * @modified Mon Apr 08 2019 14:11:37 GMT+0800 (China Standard Time)
+ */
+/**
+ * create object
+ */
+export declare const create: {
+	(o: object): any;
+	(o: object, properties: PropertyDescriptorMap & ThisType<any>): any;
+};
+/**
+ * @param prop
+ * @param target
+ * @param source
+ * @return is assign
+ */
+export declare type AssignFilter<T, O> = (prop: string, target: T, source: O) => boolean;
+/**
+ *
+ * @param target
+ * @param sources
+ * @param filter
+ * @param startOffset 	start offset in sources, default: 0
+ * @param endOffset 	end offset in sources, default: sources.length-1
+ */
+export declare function doAssign<T extends object, U>(target: T, sources: [U], filter: AssignFilter<T, U>): T & U;
+export declare function doAssign<T extends object, U, V>(target: T, sources: [U, V], filter: AssignFilter<T, U | V>): T & U & V;
+export declare function doAssign<T extends object, U, V, W>(target: T, sources: [U, V], filter: AssignFilter<T, U | V | W>): T & U & W;
+export declare function doAssign<T extends object>(target: T, sources: any[] | IArguments, filter: AssignFilter<T, object>, startOffset?: number, endOffset?: number): any;
+/**
+ * assign properties
+ * > Object.assign shim
+ */
+export declare function assign<T, U>(target: T, source: U): T & U;
+export declare function assign<T, U, V>(target: T, source: U, source2: V): T & U & V;
+export declare function assign<T, U, V, W>(target: T, source: U, source2: V, source3: W): T & U & W;
+export declare function assign(target: object, ...args: any[]): any;
+/**
+ * assign un-exist properties
+ */
+export declare function assignIf<T, U>(target: T, source: U): T & U;
+export declare function assignIf<T, U, V>(target: T, source: U, source2: V): T & U & V;
+export declare function assignIf<T, U, V, W>(target: T, source: U, source2: V, source3: W): T & U & W;
+export declare function assignIf(target: object, ...args: any[]): any;
+/**
+ * default assign filter
+ * - property is owner in source
+ * @see {AssignFilter}
+ */
+export declare function defaultAssignFilter(prop: string, target: object, source: object): boolean;
+/**
+ * assign if filter
+ * - property is owner in source
+ * - property not in target object
+ * @see {AssignFilter}
+ */
+export declare function assignIfFilter(prop: string, target: object, source: object): boolean;
+declare class Control {
+	private __desc;
+	constructor(desc: string);
+	toString(): string;
+}
+export declare type IArray<T> = T[] | string | {
+	length: number;
+	[Symbol.iterator](): IterableIterator<T>;
+};
+/**
+ * STOP Control
+ * > stop each/map/indexOf...
+ */
+export declare const STOP: Control;
+/**
+ * each callback on object
+ * - will stop each on return STOP
+ */
+export declare type EachPropCallback<T extends {}> = (prop: string, obj: T) => Control | void;
+/**
+ * each properties
+ * - will stop each on callback return STOP
+ * @param obj		each target
+ * @param callback	callback
+ * @param scope		scope of callback
+ * @param own		each own properties, default: true
+ * @return stoped property name or false
+ */
+export declare function eachProps<T extends {}>(obj: T, callback: EachPropCallback<T>, own: boolean): false | string;
+export declare function eachProps<T extends {}>(obj: T, callback: EachPropCallback<T>, scope?: any, own?: boolean): false | string;
+/**
+ * each callback on object
+ * - will stop each on callback return STOP
+ */
+export declare type EachObjCallback<E> = (value: E, prop: string, obj: {
+	[key: string]: E;
+}) => Control | void;
+/**
+ * each object
+ * - will stop each on callback return STOP
+ * @param obj		each target
+ * @param callback	callback
+ * @param scope		scope of callback
+ * @param own		each own properties, default: true
+ * @return stoped property name or false
+ */
+export declare function eachObj<E>(obj: {
+	[key: string]: E;
+}, callback: EachObjCallback<E>, own: boolean): false | string;
+export declare function eachObj<E>(obj: {
+	[key: string]: E;
+}, callback: EachObjCallback<E>, scope?: any, own?: boolean): false | string;
+/**
+ * each callback on array
+ * - will stop each on callback return STOP
+ */
+export declare type EachArrayCallback<E> = (data: E, index: number, array: IArray<E>) => Control | void;
+/**
+ * each array
+ * - will stop each on callback return STOP
+ * @param array		each target
+ * @param callback	callback
+ * @param scope		scope of callback
+ * @return stoped index or false
+ */
+export declare function eachArray<E>(array: IArray<E>, callback: EachArrayCallback<E>, scope?: any): false | number;
+/**
+ * each
+ * - will stop each on callback return STOP
+ * @param obj		each target
+ * @param callback	callback
+ * @param scope		scope of callback
+ * @param own		each own properties on object, default: true
+ * @return stoped index or false
+ */
+export declare function each<E>(obj: IArray<E>, callback: EachArrayCallback<E>, scope?: any): false | number;
+export declare function each<E>(obj: {
+	[key: string]: E;
+}, callback: EachObjCallback<E>, own?: boolean): false | string;
+export declare function each<E>(obj: {
+	[key: string]: E;
+}, callback: EachObjCallback<E>, scope?: any, own?: boolean): false | string;
+/**
+ * SKIP Control
+ * > skip map
+ */
+export declare const SKIP: Control;
+/**
+ * callback on object
+ * - will stop map on callback return STOP
+ * - will ignore item on callback return SKIP
+ * @param value	property value
+ * @param prop	property name
+ * @param obj	map target
+ */
+export declare type MapObjCallback<T, E> = (data: E, prop: string, obj: {
+	[key: string]: E;
+}) => T | Control;
+/**
+ * object: map
+ * - will stop map on callback return STOP
+ * - will ignore item on callback return SKIP
+ * @param obj		map target
+ * @param callback	callback
+ * @param scope		scope of callback
+ * @param own		map own properties, default: true
+ */
+export declare function mapObj<T, E>(obj: {
+	[key: string]: E;
+}, callback: MapObjCallback<T, E>, own?: boolean): {
+	[key: string]: T;
+};
+export declare function mapObj<T, E>(obj: {
+	[key: string]: E;
+}, callback: MapObjCallback<T, E>, scope?: any, own?: boolean): {
+	[key: string]: T;
+};
+/**
+ * callback on array
+ * - will stop map on callback return STOP
+ * - will ignore item on callback return SKIP
+ * @param data	item data
+ * @param index	item index
+ * @param array	map target
+ */
+export declare type MapArrayCallback<T, E> = (data: E, index: number, array: IArray<E>) => T | Control;
+/**
+ * array: map
+ * - will stop map on callback return STOP
+ * - will ignore item on callback return SKIP
+ * @param array		map target
+ * @param value		callback
+ * @param scope		scope of callback
+ * @return array index or -1
+ */
+export declare function mapArray<T, E>(array: IArray<E>, callback: MapArrayCallback<T, E>, scope?: any): T[];
+/**
+ * map
+ * - will stop map on callback return STOP
+ * - will ignore item on callback return SKIP
+ * @param obj		map target
+ * @param value		map value of callback
+ * @param scope		scope of callback
+ * @param own		map own properties on object, default: true
+ * @return array index or property name or -1
+ */
+export declare function map<T, E>(obj: IArray<E>, callback: MapArrayCallback<T, E>, scope?: any): T[];
+export declare function map<T, E>(obj: {
+	[key: string]: E;
+}, callback: MapObjCallback<T, E>, own?: boolean): {
+	[key: string]: T;
+};
+export declare function map<T, E>(obj: {
+	[key: string]: E;
+}, callback: MapObjCallback<T, E>, scope?: any, own?: boolean): {
+	[key: string]: T;
+};
+/**
+ * indexOf callback on object
+ * - will stop find on callback return STOP
+ * @param value	property value
+ * @param prop	property name
+ * @param obj		indexOf target
+ * @return
+ * - boolean: is finded
+ * - void: find next
+ * - STOP: stop find
+ */
+export declare type IdxOfObjCallback<E> = (value: E, prop: string, obj: {
+	[key: string]: E;
+}) => boolean | Control | void;
+/**
+ * object: indexOf
+ * - will stop find on callback return STOP
+ * @param obj		find target
+ * @param callback	find value or callback
+ * @param scope		scope of callback
+ * @param own		find own properties, default: true
+ * @return property name or -1
+ */
+export declare function idxOfObj<E>(obj: {
+	[key: string]: E;
+}, value: E, own?: boolean): -1 | string;
+export declare function idxOfObj<E>(obj: {
+	[key: string]: E;
+}, value: IdxOfObjCallback<E>, own?: boolean): -1 | string;
+export declare function idxOfObj<E>(obj: {
+	[key: string]: E;
+}, value: IdxOfObjCallback<E>, scope?: any, own?: boolean): -1 | string;
+/**
+ * indexOf callback on array
+ * - will stop find on callback return STOP
+ * @param data	item data
+ * @param index	item index
+ * @param array	indexOf target
+ * @return
+ * - boolean: is finded
+ * - void: find next
+ * - STOP: stop find
+ */
+export declare type IdxOfArrayCallback<E> = (data: E, index: number, array: IArray<E>) => boolean | Control | void;
+/**
+ * array: indexOf
+ * - will stop find on callback return STOP
+ * @param array		find target
+ * @param value		find value or callback
+ * @param scope		scope of callback
+ * @return array index or -1
+ */
+export declare function idxOfArray<E>(array: IArray<E>, value: E): number;
+export declare function idxOfArray<E>(array: IArray<E>, value: IdxOfArrayCallback<E>, scope?: any): number;
+/**
+ * indexOf
+ * - will stop find on callback return STOP
+ * @param obj		find target
+ * @param value		find value of callback
+ * @param scope		scope of callback
+ * @param own		find own properties on object, default: true
+ * @return array index or property name or -1
+ */
+export declare function idxOf<E>(obj: IArray<E>, value: E): number | string;
+export declare function idxOf<E>(obj: {
+	[key: string]: E;
+}, value: E, own?: boolean): number | string;
+export declare function idxOf<E>(obj: {
+	[key: string]: E;
+} | IArray<E>, value: E, own?: boolean): number | string;
+export declare function idxOf<E>(obj: IArray<E>, value: IdxOfArrayCallback<E>, scope?: any): number;
+export declare function idxOf<E>(obj: {
+	[key: string]: E;
+}, value: IdxOfObjCallback<E>, own?: boolean): -1 | string;
+export declare function idxOf<E>(obj: {
+	[key: string]: E;
+}, value: IdxOfObjCallback<E>, scope?: any, own?: boolean): -1 | string;
+/**
+ * reduce callback on object
+ * - will stop reduce on return STOP
+ */
+export declare type ReduceObjCallback<T, E> = (accumulator: T, value: E, prop: string, obj: {
+	[key: string]: E;
+}) => T | Control;
+/**
+ * reduce object
+ * - will stop reduce on callback return STOP
+ * @param obj			reduce target
+ * @param accumulator	accumulator
+ * @param callback		value callback
+ * @param scope			scope of callback
+ * @param own			reduce own properties, default: true
+ */
+export declare function reduceObj<T, E>(obj: {
+	[key: string]: E;
+}, accumulator: T, callback: ReduceObjCallback<T, E>, own?: boolean): any;
+export declare function reduceObj<T, E>(obj: {
+	[key: string]: E;
+}, accumulator: T, callback: ReduceObjCallback<T, E>, scope?: any, own?: boolean): any;
+/**
+ * reduce callback on array
+ * - will stop reduce on return STOP
+ */
+export declare type ReduceArrayCallback<T, E> = (accumulator: T, data: E, index: number, array: IArray<E>) => T | Control;
+/**
+ * reduce array
+ * - will stop reduce on callback return STOP
+ * @param array			reduce target
+ * @param accumulator	accumulator
+ * @param callback		value callback
+ * @param scope			scope of callback
+ */
+export declare function reduceArray<T, E>(array: IArray<E>, accumulator: T, callback: ReduceArrayCallback<T, E>, scope?: any): T;
+/**
+ * reduce
+ * - will stop reduce on callback return STOP
+ * @param obj			reduce target
+ * @param accumulator	accumulator
+ * @param callback		value callback
+ * @param scope			scope of callback
+ * @param own			reduce own properties of reduce object, default: true
+ */
+export declare function reduce<T, E>(obj: IArray<E>, accumulator: T, callback: ReduceArrayCallback<T, E>, scope?: any): T;
+export declare function reduce<T, E>(obj: {
+	[key: string]: E;
+}, accumulator: T, callback: ReduceObjCallback<T, E>, own?: boolean): T;
+export declare function reduce<T, E>(obj: {
+	[key: string]: E;
+}, accumulator: T, callback: ReduceObjCallback<T, E>, scope?: any, own?: boolean): T;
+export declare type ObjKeyHandler<T> = (prop: string, obj: object) => T | Control;
+/**
+ * @param obj		target
+ * @param handler	key handler
+ * @param scope		scope or handler
+ * @param own		is get own properties, default: true
+ */
+export declare function keys<T>(obj: object, own?: boolean): T[];
+export declare function keys<T>(obj: object, callback: ObjKeyHandler<T>, own?: boolean): T[];
+export declare function keys<T>(obj: object, callback: ObjKeyHandler<T>, scope?: any, own?: boolean): T[];
+export declare type ObjValueHandler<T, E> = (value: E, prop: string, obj: {
+	[key: string]: E;
+}) => T | Control;
+/**
+ * @param obj		target
+ * @param handler	value handler
+ * @param scope		scope or handler
+ * @param own		is get own properties, default: true
+ */
+export declare function values<T, E>(obj: {
+	[key: string]: E;
+}, own?: boolean): T[];
+export declare function values<T, E>(obj: {
+	[key: string]: E;
+}, callback: ObjValueHandler<T, E>, own?: boolean): T[];
+export declare function values<T, E>(obj: {
+	[key: string]: E;
+}, callback: ObjValueHandler<T, E>, scope?: any, own?: boolean): T[];
+/**
+ * @return STOP or SKIP or [key: string, value: any]
+ */
+export declare type Arr2ObjCallback<E, T> = (data: E, index: number, array: IArray<E>) => Control | [string, T];
+/**
+ * convert array to object
+ */
+export declare function arr2obj<E, T>(array: IArray<E>, callback: Arr2ObjCallback<E, T>, scope?: any): {
+	[key: string]: T;
+};
+/**
+ * convert array or string to object
+ * @param array
+ * @param val	value or callback
+ * @param split	split char on string
+ */
+export declare function makeMap<E, T>(array: IArray<E>, val: Arr2ObjCallback<E, T>, split?: string): {
+	[key: string]: T;
+};
+export declare function makeMap<E, T>(array: IArray<E>, val?: T, split?: string): {
+	[key: string]: T;
+};
+export declare function makeArray<T>(len: number, callback: (index: number) => T): T[];
+export declare type EachControl = Control;
+/**
+ * @module util
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Tue Dec 18 2018 16:41:03 GMT+0800 (China Standard Time)
+ * @modified Mon Apr 08 2019 13:25:40 GMT+0800 (China Standard Time)
+ */
+export declare function mixin<B>(behaviour: B): <M extends B, T extends new (...args: any[]) => M>(Class: T) => T;
+/**
+ * @module assert
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Wed Nov 28 2018 11:01:45 GMT+0800 (China Standard Time)
+ * @modified Mon Apr 08 2019 17:42:54 GMT+0800 (China Standard Time)
+ */
+export interface assert {
+	(msg?: string, ...args: any[]): never;
+	is(actual: any, msg?: string, ...args: any[]): assert;
+	not(actual: any, msg?: string, ...args: any[]): assert;
+	eq(actual: any, expect: any, msg?: string, ...args: any[]): assert;
+	notEq(actual: any, expect: any, msg?: string, ...args: any[]): assert;
+	eql(actual: any, expect: any, msg?: string, ...args: any[]): assert;
+	notEql(actual: any, expect: any, msg?: string, ...args: any[]): assert;
+	blank(actual: any, msg?: string, ...args: any[]): assert;
+	notBlank(actual: any, msg?: string, ...args: any[]): assert;
+	nul(actual: any, msg?: string, ...args: any[]): assert;
+	notNul(actual: any, msg?: string, ...args: any[]): assert;
+	nil(actual: any, msg?: string, ...args: any[]): assert;
+	notNil(actual: any, msg?: string, ...args: any[]): assert;
+	undef(actual: any, msg?: string, ...args: any[]): assert;
+	notUndef(actual: any, msg?: string, ...args: any[]): assert;
+	bool(actual: any, msg?: string, ...args: any[]): assert;
+	notBool(actual: any, msg?: string, ...args: any[]): assert;
+	num(actual: any, msg?: string, ...args: any[]): assert;
+	notNum(actual: any, msg?: string, ...args: any[]): assert;
+	int(actual: any, msg?: string, ...args: any[]): assert;
+	notInt(actual: any, msg?: string, ...args: any[]): assert;
+	str(actual: any, msg?: string, ...args: any[]): assert;
+	notStr(actual: any, msg?: string, ...args: any[]): assert;
+	fn(actual: any, msg?: string, ...args: any[]): assert;
+	notFn(actual: any, msg?: string, ...args: any[]): assert;
+	primitive(actual: any, msg?: string, ...args: any[]): assert;
+	notPrimitive(actual: any, msg?: string, ...args: any[]): assert;
+	boolean(actual: any, msg?: string, ...args: any[]): assert;
+	notBoolean(actual: any, msg?: string, ...args: any[]): assert;
+	number(actual: any, msg?: string, ...args: any[]): assert;
+	notNumber(actual: any, msg?: string, ...args: any[]): assert;
+	string(actual: any, msg?: string, ...args: any[]): assert;
+	notString(actual: any, msg?: string, ...args: any[]): assert;
+	date(actual: any, msg?: string, ...args: any[]): assert;
+	notDate(actual: any, msg?: string, ...args: any[]): assert;
+	reg(actual: any, msg?: string, ...args: any[]): assert;
+	notReg(actual: any, msg?: string, ...args: any[]): assert;
+	array(actual: any, msg?: string, ...args: any[]): assert;
+	notArray(actual: any, msg?: string, ...args: any[]): assert;
+	typedArray(actual: any, msg?: string, ...args: any[]): assert;
+	notTypedArray(actual: any, msg?: string, ...args: any[]): assert;
+	arrayLike(actual: any, msg?: string, ...args: any[]): assert;
+	notArrayLike(actual: any, msg?: string, ...args: any[]): assert;
+	obj(actual: any, msg?: string, ...args: any[]): assert;
+	notObj(actual: any, msg?: string, ...args: any[]): assert;
+	nan(actual: any, msg?: string, ...args: any[]): assert;
+	notNan(actual: any, msg?: string, ...args: any[]): assert;
+	finite(actual: number | string, msg?: string, ...args: any[]): assert;
+	notFinite(actual: any, msg?: string, ...args: any[]): assert;
+	less(actual: number, expect: number, msg?: string, ...args: any[]): assert;
+	notLess(actual: number, expect: number, msg?: string, ...args: any[]): assert;
+	greater(actual: number, expect: number, msg?: string, ...args: any[]): assert;
+	notGreater(actual: number, expect: number, msg?: string, ...args: any[]): assert;
+	match(actual: string, expect: any, msg?: string, ...args: any[]): assert;
+	notMatch(actual: string, expect: any, msg?: string, ...args: any[]): assert;
+	range(actual: number, start: number, end: number, msg?: string, ...args: any[]): assert;
+	notRange(actual: number, start: number, end: number, msg?: string, ...args: any[]): assert;
+	throw(fn: () => any, err?: Error | string, msg?: string, ...args: any[]): assert;
+	notThrow(fn: () => any, err?: Error | string, msg?: string, ...args: any[]): assert;
+	executor<T extends (...args: any[]) => any>(fn: T, maxCall: number, msg?: string): T & {
+		called: number;
+	};
+}
+export declare function popErrStack(err: Error, i: number): Error;
+export declare const assert: assert;
+/**
+ * @module format
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 03 2018 19:46:41 GMT+0800 (China Standard Time)
- * @modified Fri Feb 22 2019 11:37:25 GMT+0800 (China Standard Time)
+ * @modified Mon Apr 08 2019 13:50:54 GMT+0800 (China Standard Time)
  */
 export declare function pad(str: string, len: number, chr?: string, leftAlign?: boolean | number): string;
 export declare function shorten(str: string, len: number, suffix?: string): string;
@@ -347,12 +807,7 @@ export declare const thousandSeparate: (numStr: string) => string, binarySeparat
 export declare function plural(str: string): string;
 export declare function singular(str: string): string;
 export declare type FormatFlags = number;
-export declare const FORMAT_XPREFIX: FormatFlags;
-export declare const FORMAT_PLUS: FormatFlags;
-export declare const FORMAT_ZERO: FormatFlags;
-export declare const FORMAT_SPACE: FormatFlags;
-export declare const FORMAT_SEPARATOR: FormatFlags;
-export declare const FORMAT_LEFT: FormatFlags;
+export declare const FORMAT_XPREFIX: FormatFlags, FORMAT_PLUS: FormatFlags, FORMAT_ZERO: FormatFlags, FORMAT_SPACE: FormatFlags, FORMAT_SEPARATOR: FormatFlags, FORMAT_LEFT: FormatFlags;
 export declare type FormatCallback = (val: any, flags: FormatFlags, width: number, fill: string, precision: number, shortenSuffix: string) => string;
 export declare function extendFormatter(obj: {
 	[key: string]: FormatCallback;
@@ -573,361 +1028,34 @@ export declare function vformat<T>(fmt: string, args: T, offset?: number, getPar
  * @param args	format arguments
  */
 export declare function format(fmt: string, ...args: any): string;
+export declare type Formatter = (...args: any[]) => string;
+export declare type FormatParamLoader = (args: IArguments, idx: number) => any;
 /**
  * @see vformat
  * @param fmt		format string
  * @param offset	start offset of arguments
  * @param getParam	get parameter on arguments callback
  */
-export declare function formatter(fmt: string, offset?: number, getParam?: (args: IArguments, idx: number) => any): (...args: any[]) => string;
+export declare function formatter(fmt: string, offset?: number, getParam?: FormatParamLoader): Formatter;
 /**
- * Object.create polyfill
- * @module utility/create
+ * @module util/path
  * @author Tao Zeng <tao.zeng.zt@qq.com>
- * @created Wed Jul 25 2018 15:24:47 GMT+0800 (China Standard Time)
- * @modified Wed Mar 13 2019 20:08:04 GMT+0800 (China Standard Time)
+ * @created Fri Nov 30 2018 14:41:02 GMT+0800 (China Standard Time)
+ * @modified Mon Apr 08 2019 13:47:29 GMT+0800 (China Standard Time)
  */
-/**
- * create object
- */
-export declare const create: {
-	(o: object): any;
-	(o: object, properties: PropertyDescriptorMap & ThisType<any>): any;
-};
-/**
- * @param prop
- * @param target
- * @param override
- * @return is assign
- */
-export declare type AssignFilter = (prop: string, target: any, override: any) => boolean;
-/**
- *
- * @param target
- * @param overrides
- * @param filter
- * @param startOffset 	start offset in overrides, default: 0
- * @param endOffset 	end offset in overrides, default: overrides.length-1
- */
-export declare function doAssign(target: any, overrides: any[] | IArguments, filter: AssignFilter, startOffset?: number, endOffset?: number): any;
-/**
- * assign properties
- * > Object.assign shim
- */
-export declare function assign(target: any, ...args: any[]): any;
-/**
- * assign un-exist properties
- */
-export declare function assignIf(target: any, ...args: any[]): any;
-/**
- * default assign filter
- * - property is owner in override
- * @see {AssignFilter}
- */
-export declare function defaultAssignFilter(prop: string, target: any, override: any): boolean;
-/**
- * assign if filter
- * - property is owner in override
- * - property not in target object
- * @see {AssignFilter}
- */
-export declare function assignIfFilter(prop: string, target: any, override: any): boolean;
-declare class Control {
-	private __desc;
-	constructor(desc: string);
-	toString(): string;
-}
-export interface ObjArray {
-	length: number;
-}
-export declare type IArray = any[] | string | IArguments | ObjArray;
-/**
- * STOP Control
- * > stop each/map/indexOf...
- */
-export declare const STOP: Control;
-/**
- * each callback on object
- * - will stop each on return STOP
- */
-export declare type EachPropCallback = (prop: string, obj: object) => Control | void;
-/**
- * each properties
- * - will stop each on callback return STOP
- * @param obj		each target
- * @param callback	callback
- * @param scope		scope of callback
- * @param own		each own properties, default: true
- * @return stoped property name or false
- */
-export declare function eachProps(obj: object, callback: EachPropCallback, own: boolean): false | string;
-export declare function eachProps(obj: object, callback: EachPropCallback, scope?: any, own?: boolean): false | string;
-/**
- * each callback on object
- * - will stop each on callback return STOP
- */
-export declare type EachObjCallback = (value: any, prop: string, obj: object) => Control | void;
-/**
- * each object
- * - will stop each on callback return STOP
- * @param obj		each target
- * @param callback	callback
- * @param scope		scope of callback
- * @param own		each own properties, default: true
- * @return stoped property name or false
- */
-export declare function eachObj(obj: object, callback: EachObjCallback, own: boolean): false | string;
-export declare function eachObj(obj: object, callback: EachObjCallback, scope?: any, own?: boolean): false | string;
-/**
- * each callback on array
- * - will stop each on callback return STOP
- */
-export declare type EachArrayCallback = (data: any, index: number, array: IArray) => Control | void;
-/**
- * each array
- * - will stop each on callback return STOP
- * @param array		each target
- * @param callback	callback
- * @param scope		scope of callback
- * @return stoped index or false
- */
-export declare function eachArray(array: IArray, callback: EachArrayCallback, scope?: any): false | number;
-/**
- * each
- * - will stop each on callback return STOP
- * @param obj		each target
- * @param callback	callback
- * @param scope		scope of callback
- * @param own		each own properties on object, default: true
- * @return stoped index or false
- */
-export declare function each(obj: IArray, callback: EachArrayCallback, scope?: any): false | number;
-export declare function each(obj: object, callback: EachObjCallback, own?: boolean): false | string;
-export declare function each(obj: object, callback: EachObjCallback, scope?: any, own?: boolean): false | string;
-export declare function each(obj: object | IArray, callback: EachObjCallback | EachArrayCallback, own?: boolean): false | number | string;
-export declare function each(obj: object | IArray, callback: EachObjCallback | EachArrayCallback, scope?: any, own?: boolean): false | number | string;
-/**
- * SKIP Control
- * > skip map
- */
-export declare const SKIP: Control;
-/**
- * callback on object
- * - will stop map on callback return STOP
- * - will ignore item on callback return SKIP
- * @param value	property value
- * @param prop	property name
- * @param obj	map target
- */
-export declare type MapObjCallback<T> = (callback: any, prop: string, obj: object) => T | Control;
-/**
- * object: map
- * - will stop map on callback return STOP
- * - will ignore item on callback return SKIP
- * @param obj		map target
- * @param callback	callback
- * @param scope		scope of callback
- * @param own		map own properties, default: true
- */
-export declare function mapObj<T>(obj: object, callback: MapObjCallback<T>, own?: boolean): {
-	[key: string]: T;
-};
-export declare function mapObj<T>(obj: object, callback: MapObjCallback<T>, scope?: any, own?: boolean): {
-	[key: string]: T;
-};
-/**
- * callback on array
- * - will stop map on callback return STOP
- * - will ignore item on callback return SKIP
- * @param data	item data
- * @param index	item index
- * @param array	map target
- */
-export declare type MapArrayCallback<T> = (data: any, index: number, array: IArray) => T | Control;
-/**
- * array: map
- * - will stop map on callback return STOP
- * - will ignore item on callback return SKIP
- * @param array		map target
- * @param value		callback
- * @param scope		scope of callback
- * @return array index or -1
- */
-export declare function mapArray<T>(array: IArray, callback: MapArrayCallback<T>, scope?: any): T[];
-/**
- * map
- * - will stop map on callback return STOP
- * - will ignore item on callback return SKIP
- * @param obj		map target
- * @param value		map value of callback
- * @param scope		scope of callback
- * @param own		map own properties on object, default: true
- * @return array index or property name or -1
- */
-export declare function map<T>(obj: IArray, callback: MapArrayCallback<T>, scope?: any): any[];
-export declare function map<T>(obj: object, callback: MapObjCallback<T>, own?: boolean): {
-	[key: string]: T;
-};
-export declare function map<T>(obj: object, callback: MapObjCallback<T>, scope?: any, own?: boolean): {
-	[key: string]: T;
-};
-export declare function map<T>(obj: object | IArray, callback: MapObjCallback<T> | MapArrayCallback<T>, own?: boolean): {
-	[key: string]: T;
-} | any[];
-export declare function map<T>(obj: object | IArray, callback: MapObjCallback<T> | MapArrayCallback<T>, scope?: any, own?: boolean): {
-	[key: string]: T;
-} | any[];
-/**
- * indexOf callback on object
- * - will stop find on callback return STOP
- * @param value	property value
- * @param prop	property name
- * @param obj		indexOf target
- * @return
- * - boolean: is finded
- * - void: find next
- * - STOP: stop find
- */
-export declare type IdxOfObjCallback = (value: any, prop: string, obj: object) => boolean | Control | void;
-/**
- * object: indexOf
- * - will stop find on callback return STOP
- * @param obj		find target
- * @param callback	find value or callback
- * @param scope		scope of callback
- * @param own		find own properties, default: true
- * @return property name or -1
- */
-export declare function idxOfObj(obj: object, value: any, own?: boolean): -1 | string;
-export declare function idxOfObj(obj: object, value: IdxOfObjCallback, own?: boolean): -1 | string;
-export declare function idxOfObj(obj: object, value: IdxOfObjCallback, scope?: any, own?: boolean): -1 | string;
-/**
- * indexOf callback on array
- * - will stop find on callback return STOP
- * @param data	item data
- * @param index	item index
- * @param array	indexOf target
- * @return
- * - boolean: is finded
- * - void: find next
- * - STOP: stop find
- */
-export declare type IdxOfArrayCallback = (data: any, index: number, array: IArray) => boolean | Control | void;
-/**
- * array: indexOf
- * - will stop find on callback return STOP
- * @param array		find target
- * @param value		find value or callback
- * @param scope		scope of callback
- * @return array index or -1
- */
-export declare function idxOfArray(array: IArray, value: any): number;
-export declare function idxOfArray(array: IArray, value: IdxOfArrayCallback, scope?: any): number;
-/**
- * indexOf
- * - will stop find on callback return STOP
- * @param obj		find target
- * @param value		find value of callback
- * @param scope		scope of callback
- * @param own		find own properties on object, default: true
- * @return array index or property name or -1
- */
-export declare function idxOf(obj: IArray, value: any): number | string;
-export declare function idxOf(obj: object, value: any, own?: boolean): number | string;
-export declare function idxOf(obj: object | IArray, value: any, own?: boolean): number | string;
-export declare function idxOf(obj: IArray, value: IdxOfArrayCallback, scope?: any): number;
-export declare function idxOf(obj: object, value: IdxOfObjCallback, own?: boolean): -1 | string;
-export declare function idxOf(obj: object, value: IdxOfObjCallback, scope?: any, own?: boolean): -1 | string;
-export declare function idxOf(obj: object | IArray, value: IdxOfObjCallback | IdxOfArrayCallback, own?: boolean): number | string;
-export declare function idxOf(obj: object | IArray, value: IdxOfObjCallback | IdxOfArrayCallback, scope?: any, own?: boolean): number | string;
-/**
- * reduce callback on object
- * - will stop reduce on return STOP
- */
-export declare type ReduceObjCallback<T> = (accumulator: T, value: any, prop: string, obj: object) => T | Control;
-/**
- * reduce object
- * - will stop reduce on callback return STOP
- * @param obj			reduce target
- * @param accumulator	accumulator
- * @param callback		value callback
- * @param scope			scope of callback
- * @param own			reduce own properties, default: true
- */
-export declare function reduceObj<T>(obj: object, accumulator: T, callback: ReduceObjCallback<T>, own?: boolean): any;
-export declare function reduceObj<T>(obj: object, accumulator: T, callback: ReduceObjCallback<T>, scope?: any, own?: boolean): any;
-/**
- * reduce callback on array
- * - will stop reduce on return STOP
- */
-export declare type ReduceArrayCallback<T> = (accumulator: T, data: any, index: number, array: IArray) => T | Control;
-/**
- * reduce array
- * - will stop reduce on callback return STOP
- * @param array			reduce target
- * @param accumulator	accumulator
- * @param callback		value callback
- * @param scope			scope of callback
- */
-export declare function reduceArray<T>(array: IArray, accumulator: T, callback: ReduceArrayCallback<T>, scope?: any): T;
-/**
- * reduce
- * - will stop reduce on callback return STOP
- * @param obj			reduce target
- * @param accumulator	accumulator
- * @param callback		value callback
- * @param scope			scope of callback
- * @param own			reduce own properties of reduce object, default: true
- */
-export declare function reduce<T>(obj: IArray, accumulator: T, callback: ReduceArrayCallback<T>, scope?: any): T;
-export declare function reduce<T>(obj: object, accumulator: T, callback: ReduceObjCallback<T>, own?: boolean): T;
-export declare function reduce<T>(obj: object, accumulator: T, callback: ReduceObjCallback<T>, scope?: any, own?: boolean): T;
-export declare function reduce<T>(obj: object | IArray, accumulator: T, callback: ReduceObjCallback<T> | ReduceArrayCallback<T>, own?: boolean): T;
-export declare function reduce<T>(obj: object | IArray, accumulator: T, callback: ReduceObjCallback<T> | ReduceArrayCallback<T>, scope?: any, own?: boolean): T;
-export declare type ObjKeyHandler<T> = (prop: string, obj: object) => T | Control;
-/**
- * @param obj		target
- * @param handler	key handler
- * @param scope		scope or handler
- * @param own		is get own properties, default: true
- */
-export declare function keys<T>(obj: object, own?: boolean): T[];
-export declare function keys<T>(obj: object, callback: ObjKeyHandler<T>, own?: boolean): T[];
-export declare function keys<T>(obj: object, callback: ObjKeyHandler<T>, scope?: any, own?: boolean): T[];
-export declare type ObjValueHandler<T> = (value: any, prop: string, obj: object) => T | Control;
-/**
- * @param obj		target
- * @param handler	value handler
- * @param scope		scope or handler
- * @param own		is get own properties, default: true
- */
-export declare function values<T>(obj: object, own?: boolean): T[];
-export declare function values<T>(obj: object, callback: ObjValueHandler<T>, own?: boolean): T[];
-export declare function values<T>(obj: object, callback: ObjValueHandler<T>, scope?: any, own?: boolean): T[];
-/**
- * @return STOP or SKIP or [key: string, value: any]
- */
-export declare type Arr2ObjCallback = (data: any, index: number, array: IArray) => Control | [string, any];
-/**
- * convert array to object
- */
-export declare function arr2obj(array: IArray, callback: Arr2ObjCallback, scope?: any): object;
-/**
- * convert array or string to object
- * @param array
- * @param val	value or callback
- * @param split	split char on string
- */
-export declare function makeMap(array: IArray, val: Arr2ObjCallback, split?: string): object;
-export declare function makeMap(array: IArray, val?: any, split?: string): object;
-export declare function makeArray<T>(len: number, callback: (index: number) => T): T[];
-export declare type EachControl = Control;
+export declare const PATH_BINDING: string;
+export declare function parsePath(propPath: string | string[], cacheable?: boolean): string[];
+export declare function formatPath(path: string | (string[] & {
+	path?: string;
+})): string;
+export declare function get<T>(obj: any, path: string | string[]): any;
+export declare function set(obj: any, path: string | string[], value: any): void;
 /**
  * Double Linked List
- * @module utility/List
+ * @module util/list
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
- * @modified Wed Mar 13 2019 19:29:16 GMT+0800 (China Standard Time)
+ * @modified Mon Apr 08 2019 18:28:27 GMT+0800 (China Standard Time)
  */
 export declare class List<T> {
 	static readonly binding: string;
@@ -937,6 +1065,7 @@ export declare class List<T> {
 	private __length;
 	private __scaning;
 	private __lazyRemoves?;
+	private __ver;
 	constructor(binding?: string);
 	size(): number;
 	has(obj: T): boolean;
@@ -986,7 +1115,6 @@ export declare class List<T> {
 	 * @return new length
 	 */
 	remove(obj: T): number;
-	pop(): void;
 	clean(): void;
 	private __initNode;
 	private __getNode;
@@ -1002,10 +1130,10 @@ export declare class List<T> {
 }
 /**
  * Function List
- * @module utility/List
+ * @module util/list
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 14:35:32 GMT+0800 (China Standard Time)
- * @modified Mon Mar 11 2019 19:53:56 GMT+0800 (China Standard Time)
+ * @modified Mon Apr 08 2019 14:05:16 GMT+0800 (China Standard Time)
  */
 export declare type FnNode<T extends Function> = [string, T, any, any];
 export declare class FnList<T extends Function> {
@@ -1031,20 +1159,22 @@ export declare class FnList<T extends Function> {
 	 */
 	removeId(id: string): number;
 	remove(fn: T, scope?: any): number;
-	has(fn: T, scope?: any): boolean;
+	has(fn: T, scope?: any): string;
+	hasId(id: string): boolean;
 	size(): number;
 	clean(): void;
 	each(cb: (fn: T, scope: any, data: any, __node: FnNode<T>) => boolean | void, scope?: any): void;
 	eachUnsafe(cb: (fn: T, scope: any, data: any, __node: FnNode<T>) => boolean | void, scope?: any): void;
 	id(fn: T, scope?: any): string;
 }
-export declare function nextTick(fn: Function, scope?: any): void;
-export declare function clearTick(fn: Function, scope?: any): void;
+export declare function nextTick(fn: () => void, scope?: any): string;
+export declare function clearTick(fn: () => void, scope?: any): number;
+export declare function clearTickId(id: string): number;
 /**
- * @module utility/Source
+ * @module util/Source
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 17 2018 10:41:21 GMT+0800 (China Standard Time)
- * @modified Sat Dec 22 2018 14:37:32 GMT+0800 (China Standard Time)
+ * @modified Mon Apr 08 2019 13:58:29 GMT+0800 (China Standard Time)
  */
 export declare class Source {
 	readonly buff: string;
@@ -1056,7 +1186,10 @@ export declare class Source {
 	source(escape?: boolean): string;
 }
 export declare type CheckPoint = [number, number];
-declare class MatchContext {
+/**
+ * Match Context of Rule
+ */
+export declare class MatchContext {
 	readonly source: Source;
 	readonly parent: MatchContext;
 	result: any[];
@@ -1127,7 +1260,7 @@ declare class MatchContext {
 	 */
 	resultSize(): number;
 }
-declare class MatchError {
+export declare class MatchError {
 	readonly $ruleErr: boolean;
 	readonly rule: Rule;
 	readonly context: MatchContext;
@@ -1155,7 +1288,10 @@ export declare type RuleOptions = {
 	 */
 	err?: (err: MatchError, context: MatchContext, rule: Rule) => MatchError | string | void;
 };
-declare class Rule {
+/**
+ * Abstract Rule
+ */
+export declare class Rule {
 	readonly $rule: boolean;
 	type: string;
 	readonly id: number;
@@ -1234,24 +1370,11 @@ declare class Rule {
 	 */
 	toString(): string;
 }
-declare class MatchRule extends Rule {
-	/**
-	 * @param name 			match name
-	 * @param start 		start char codes, prepare test by start char codes before match
-	 * @param ignoreCase	ignore case for the start char codes
-	 * @param options		Rule Options
-	 */
-	constructor(name: string, start: number | string | any[], ignoreCase: boolean, options: RuleOptions);
-	/**
-	 * consume matched result
-	 * @param data 		matched result
-	 * @param len 		matched chars
-	 * @param context 	match context
-	 */
-	comsume(data: string | string[], len: number, context: MatchContext): MatchError;
-}
 export declare type ComplexRuleBuilder = (rule: Rule) => Rule[];
-declare class ComplexRule extends Rule {
+/**
+ * Abstract Complex Rule
+ */
+export declare class ComplexRule extends Rule {
 	readonly split: string;
 	private builder;
 	protected EXPECTS: string[];
@@ -1275,17 +1398,39 @@ declare class ComplexRule extends Rule {
 	private rnames;
 	getExpr(stack?: number[]): string;
 }
-declare class AndRule extends ComplexRule {
+/**
+ * AND Complex Rule
+ */
+export declare class AndRule extends ComplexRule {
 	__init(rules: Rule[]): void;
 	match(context: MatchContext): MatchError;
 	protected rmatch(context: MatchContext): MatchError;
 	testRule(rule: Rule, i: number, ctx: MatchContext): MatchError;
 }
-declare class OrRule extends ComplexRule {
+/**
+ * OR Complex Rule
+ */
+export declare class OrRule extends ComplexRule {
 	index: Rule[][];
 	__init(rules: Rule[]): void;
 	match(context: MatchContext): MatchError;
 	protected rmatch(context: MatchContext): MatchError;
+}
+declare class MatchRule extends Rule {
+	/**
+	 * @param name 			match name
+	 * @param start 		start char codes, prepare test by start char codes before match
+	 * @param ignoreCase	ignore case for the start char codes
+	 * @param options		Rule Options
+	 */
+	constructor(name: string, start: number | string | any[], ignoreCase: boolean, options: RuleOptions);
+	/**
+	 * consume matched result
+	 * @param data 		matched result
+	 * @param len 		matched chars
+	 * @param context 	match context
+	 */
+	comsume(data: string | string[], len: number, context: MatchContext): MatchError;
 }
 export declare const discardMatch: onMatchCallback;
 export declare function appendMatch(data: any, len: number, context: MatchContext): void;
@@ -1371,77 +1516,14 @@ export declare type ComplexRuleDescriptor = {
 	onMatch?: onMatchCallback;
 	onErr?: onErrorCallback;
 } & RuleOptions;
+export declare function genCharCodes(start: number | string, end: number | string, ignoreCase?: boolean): number[];
 /**
- * @module utility/assert
+ *
+ * @module observer
  * @author Tao Zeng <tao.zeng.zt@qq.com>
- * @created Wed Nov 28 2018 11:01:45 GMT+0800 (China Standard Time)
- * @modified Thu Mar 28 2019 19:08:21 GMT+0800 (China Standard Time)
+ * @created Tue Mar 19 2019 14:12:23 GMT+0800 (China Standard Time)
+ * @modified Wed Apr 10 2019 10:11:52 GMT+0800 (China Standard Time)
  */
-export interface assert {
-	(msg?: string, ...args: any[]): never;
-	is(actual: any, msg?: string, ...args: any[]): assert;
-	not(actual: any, msg?: string, ...args: any[]): assert;
-	eq(actual: any, expect: any, msg?: string, ...args: any[]): assert;
-	notEq(actual: any, expect: any, msg?: string, ...args: any[]): assert;
-	eql(actual: any, expect: any, msg?: string, ...args: any[]): assert;
-	notEql(actual: any, expect: any, msg?: string, ...args: any[]): assert;
-	blank(actual: any, msg?: string, ...args: any[]): assert;
-	notBlank(actual: any, msg?: string, ...args: any[]): assert;
-	nul(actual: any, msg?: string, ...args: any[]): assert;
-	notNul(actual: any, msg?: string, ...args: any[]): assert;
-	nil(actual: any, msg?: string, ...args: any[]): assert;
-	notNil(actual: any, msg?: string, ...args: any[]): assert;
-	undef(actual: any, msg?: string, ...args: any[]): assert;
-	notUndef(actual: any, msg?: string, ...args: any[]): assert;
-	bool(actual: any, msg?: string, ...args: any[]): assert;
-	notBool(actual: any, msg?: string, ...args: any[]): assert;
-	num(actual: any, msg?: string, ...args: any[]): assert;
-	notNum(actual: any, msg?: string, ...args: any[]): assert;
-	int(actual: any, msg?: string, ...args: any[]): assert;
-	notInt(actual: any, msg?: string, ...args: any[]): assert;
-	str(actual: any, msg?: string, ...args: any[]): assert;
-	notStr(actual: any, msg?: string, ...args: any[]): assert;
-	fn(actual: any, msg?: string, ...args: any[]): assert;
-	notFn(actual: any, msg?: string, ...args: any[]): assert;
-	primitive(actual: any, msg?: string, ...args: any[]): assert;
-	notPrimitive(actual: any, msg?: string, ...args: any[]): assert;
-	boolean(actual: any, msg?: string, ...args: any[]): assert;
-	notBoolean(actual: any, msg?: string, ...args: any[]): assert;
-	number(actual: any, msg?: string, ...args: any[]): assert;
-	notNumber(actual: any, msg?: string, ...args: any[]): assert;
-	string(actual: any, msg?: string, ...args: any[]): assert;
-	notString(actual: any, msg?: string, ...args: any[]): assert;
-	date(actual: any, msg?: string, ...args: any[]): assert;
-	notDate(actual: any, msg?: string, ...args: any[]): assert;
-	reg(actual: any, msg?: string, ...args: any[]): assert;
-	notReg(actual: any, msg?: string, ...args: any[]): assert;
-	array(actual: any, msg?: string, ...args: any[]): assert;
-	notArray(actual: any, msg?: string, ...args: any[]): assert;
-	typedArray(actual: any, msg?: string, ...args: any[]): assert;
-	notTypedArray(actual: any, msg?: string, ...args: any[]): assert;
-	arrayLike(actual: any, msg?: string, ...args: any[]): assert;
-	notArrayLike(actual: any, msg?: string, ...args: any[]): assert;
-	obj(actual: any, msg?: string, ...args: any[]): assert;
-	notObj(actual: any, msg?: string, ...args: any[]): assert;
-	nan(actual: any, msg?: string, ...args: any[]): assert;
-	notNan(actual: any, msg?: string, ...args: any[]): assert;
-	finite(actual: number | string, msg?: string, ...args: any[]): assert;
-	notFinite(actual: any, msg?: string, ...args: any[]): assert;
-	less(actual: number, expect: number, msg?: string, ...args: any[]): assert;
-	notLess(actual: number, expect: number, msg?: string, ...args: any[]): assert;
-	greater(actual: number, expect: number, msg?: string, ...args: any[]): assert;
-	notGreater(actual: number, expect: number, msg?: string, ...args: any[]): assert;
-	match(actual: string, expect: any, msg?: string, ...args: any[]): assert;
-	notMatch(actual: string, expect: any, msg?: string, ...args: any[]): assert;
-	range(actual: number, start: number, end: number, msg?: string, ...args: any[]): assert;
-	notRange(actual: number, start: number, end: number, msg?: string, ...args: any[]): assert;
-	throw(fn: () => any, err?: Error | string, msg?: string, ...args: any[]): assert;
-	notThrow(fn: () => any, err?: Error | string, msg?: string, ...args: any[]): assert;
-	executor<T extends (...args: any[]) => any>(fn: T, maxCall: number, msg?: string): T & {
-		called: number;
-	};
-}
-export declare const assert: assert;
 /**
  * Observer Key
  */
@@ -1449,19 +1531,15 @@ export declare const OBSERVER_KEY: string;
 /**
  * the property of observe an array change
  */
-export declare const ARRAY_CHANGE = "$change";
-/**
- * The dirty collector lost the original value
- */
-export declare const MISS: {};
+export declare const ARRAY_CHANGE = "$change", ARRAY_LENGTH = "length";
 export declare type ObserverTarget = any[] | {};
 /**
  * change callback for observer
  * @param path 		the observe path
  * @param value 	new value
- * @param original	original value. the original value is {@link MISS} when the dirty collector loses the original value
+ * @param original	original value
  */
-export declare type ObserverCallback<T extends ObserverTarget> = (path: string[], value: any, original: any, observer: T) => void;
+export declare type ObserverCallback<T extends ObserverTarget> = (path: string[], value: any, original: any, observer: IObserver<T>) => void;
 export declare type IWatcher = {
 	/**
 	 * notify topics
@@ -1490,6 +1568,23 @@ export interface IObserver<T extends ObserverTarget> {
 	 * @return listen-id
 	 */
 	observe(propPath: string | string[], cb: ObserverCallback<T>, scope?: any): string;
+	/**
+	 * get listen-id of callback in the observer's target
+	 *
+	 * @param propPath 	property path for observe, parse string path by {@link parsePath}
+	 * @param cb		callback
+	 * @param scope		scope of callback
+	 * @return listen-id
+	 */
+	observed(propPath: string | string[], cb: ObserverCallback<T>, scope?: any): string;
+	/**
+	 * has listen-id in the observer's target
+	 *
+	 * @param propPath 	property path for observe, parse string path by {@link parsePath}
+	 * @param id		listen-id
+	 * @return listen-id
+	 */
+	observedId(propPath: string | string[], id: string): boolean;
 	/**
 	 * cancel observing the changes in the observer's target
 	 * @param propPath	property path for unobserve, parse string path by {@link parsePath}
@@ -1522,274 +1617,21 @@ export interface IObserver<T extends ObserverTarget> {
 	 */
 	notify(prop: string, original: any): void;
 	/**
-	 * notify the observer that all properties in the target have changed
-	 * the original value well be {@link MISS}
-	 */
-	notifyAll(): void;
-	/**
-	 * get wather by property
-	 * @param prop the property
-	 */
-	watcher(prop: string): IWatcher;
-	/**
-	 * get or create wather by property
-	 * @param prop the property
-	 */
-	initWatcher(prop: string): IWatcher;
-}
-declare class Topic {
-	readonly __id: number;
-	readonly __parent: Topic;
-	readonly __owner: Observer<any>;
-	readonly __prop: string;
-	__observer: Observer<any>;
-	__path: string[];
-	__listeners: FnList<ObserverCallback<any>>;
-	__original: any;
-	__dirty: [any, any, boolean];
-	__subs: Topic[];
-	__subCache: {
-		[key: string]: Topic;
-	};
-	__state: number;
-	/**
-	 * create a Topic
-	 * @param owner		own observer
-	 * @param prop		watch property
-	 * @param parent	parent topic
-	 */
-	constructor(owner: Observer<any>, prop: string, parent?: Topic);
-	/**
-	 * add listener
-	 * @param path		path of topic
-	 * @param cb		observe callback
-	 * @param scope		scope of the callback
-	 * @return listen-id | undefined
-	 */
-	__listen(path: string[], cb: ObserverCallback<any>, scope: any): string;
-	/**
-	 * remove listener by callback
-	 * @param cb		observe callback
-	 * @param scope		scope of the callback
-	 */
-	__unlisten(cb: ObserverCallback<any>, scope: any): void;
-	/**
-	 * remove listener by listen-id
-	 * @param id	listen-id
-	 */
-	__unlistenId(id: string): void;
-	/**
-	 * Clear all unlistening leaf topics (!TOPIC_LISTEN_FLAG && !TOPIC_SUB_FLAG)
-	 * @param listeners	listeners
-	 */
-	private ____unlisten;
-	/**
-	 * bind observer
-	 * @param observer new observer
-	 */
-	__bind(observer?: Observer<any>): void;
-	/**
-	 * get a subtopic from the cache
-	 * @param prop property
-	 */
-	__getSub(prop: string): Topic;
-	/**
-	 * get or create a subtopic on the cache
-	 * @param subProp	property of the subtopic
-	 * @return subtopic
-	 */
-	__addSub(subProp: string): Topic;
-	/**
-	 * remove the subtopic from the subs
-	 * @param topic topic
-	 */
-	__removeSub(topic: Topic): void;
-	private __ignorePath;
-	private __ignoreSubPaths;
-	private __getPath;
-	/**
-	 * mark the change in topic
+	 * notify the observer that properties in the target have changed
 	 *
-	 * @param original original value
+	 * @param props 		notify properties, notify all watchers when the props is null or undefined
+	 * @param getOriginal	get the original value
+	 * @param execludes		do not notify watchers in execludes
 	 */
-	__update(original: any): void;
-	/**
-	 * collect the dirty topics(this topic and subtopics) from collectQueue
-	 * may collected by parent-topic
-	 */
-	__collect(): void;
-	/**
-	 * collect the dirty topics(this topic and subtopics)
-	 * - collect from collectQueue
-	 * 	1. this topic has been collected, stop collect
-	 * 	2. save the dirty value when the topic has a listener
-	 * 	3. clean the change state
-	 * 	4. collect the subtopics
-	 *		use this original value when subtopic has not changed
-	 *		use the subtopic's original value when subtopic is changed
-	 * 		clean the change state
-	 *		replace the new value on subtopics
-	 * - re-collect by parent-topic (this does not happen after the topics are sorted by ID before collection)
-	 * 	1. replace the new value and discard the original value(keep the existing original value)
-	 * 	2. re-collect subtopics
-	 *
-	 * @param observer 	observer of this topic
-	 * @param target 	new target of this topic
-	 * @param original 	original value of this topic
-	 * @param force  	force notify
-	 */
-	private ____collect;
+	notifies(props: string[], getOriginal: (prop: string, ob: IObserver<T>) => any, execludes?: {
+		[key: string]: any;
+	}): void;
 }
 /**
  * collect the dirty topics on the collectQueue
  */
 export declare function collect(): void;
-declare class Watcher extends List<Topic> implements IWatcher {
-	constructor();
-	/**
-	 * notify topics
-	 *
-	 * @param original the original value
-	 */
-	notify(original: any): void;
-}
-declare class Observer<T extends ObserverTarget> implements IObserver<T> {
-	/**
-	 * observer target
-	 */
-	readonly target: T;
-	/**
-	 * observer proxy
-	 */
-	readonly proxy: T;
-	/**
-	 * is array target
-	 */
-	readonly isArray: boolean;
-	/**
-	 * topics
-	 * 	- key: property of topic in the observer's target
-	 * 	- value: topic
-	 */
-	__topics: {
-		[key: string]: Topic;
-	};
-	/**
-	 * watchers
-	 * 	- key: property of watcher in the observer's target
-	 * 	- value: watcher
-	 */
-	readonly __watchers: {
-		[key: string]: Watcher;
-	};
-	/**
-	 * properties of watchers in the observer's target
-	 */
-	readonly __watcherProps: string[];
-	/**
-	 * create Observer
-	 *
-	 * @param target observer target
-	 */
-	constructor(target: T);
-	/**
-	 * observe changes in the observer's target
-	 *
-	 * @param propPath 	property path for observe, parse string path by {@link parsePath}
-	 * @param cb		callback
-	 * @param scope		scope of callback
-	 * @return listen-id
-	 */
-	observe(propPath: string | string[], cb: ObserverCallback<T>, scope?: any): string;
-	/**
-	 * cancel observing the changes in the observer's target
-	 *
-	 * @param propPath	property path for unobserve, parse string path by {@link parsePath}
-	 * @param cb		callback
-	 * @param scope		scope of callback
-	 */
-	unobserve(propPath: string | string[], cb: ObserverCallback<T>, scope?: any): void;
-	/**
-	 * cancel observing the changes in the observer's target by listen-id
-	 *
-	 * @param propPath	property path for unobserve, parse string path by {@link parsePath}
-	 * @param id 		listen-id
-	 */
-	unobserveId(propPath: string | string[], id: string): void;
-	/**
-	 * notify change on the property
-	 *
-	 * @param prop		the property
-	 * @param original 	the original value
-	 */
-	notify(prop: string, original: any): void;
-	/**
-	 * notify the observer that all properties in the target have changed
-	 * the original value well be {@link MISS}
-	 */
-	notifyAll(): void;
-	/**
-	 * get wather by property
-	 *
-	 * @protected
-	 * @param prop the property
-	 */
-	watcher(prop: string): Watcher;
-	/**
-	 * get or create wather by property
-	 *
-	 * @protected
-	 * @param prop the property
-	 */
-	initWatcher(prop: string): Watcher;
-	/**
-	 * watch the topic
-	 *
-	 * @private
-	 * @param topic topic
-	 * @return is successful
-	 */
-	__watchTopic(topic: Topic): Error;
-	/**
-	 * unwatched the topic
-	 *
-	 * @private
-	 * @param topic topic
-	 */
-	__unwatchTopic(topic: Topic): void;
-	/**
-	 * get topic by property path
-	 *
-	 * @param path property path of topic, parse string path by {@link parsePath}
-	 * @return topic | undefined
-	 */
-	private __getTopic;
-	/**
-	 * get the value at path of target object
-	 *
-	 * @param propPath 	property path of target object, parse string path by {@link parsePath}
-	 * @return the value
-	 */
-	get(propPath: string | string[]): any;
-	/**
-	 * set the value at path of target object
-	 *
-	 * @param propPath 	property path for target object, parse string path by {@link parsePath}
-	 * @param value		the value
-	 */
-	set(propPath: string | string[], value: any): void;
-	/**
-	 * @ignore
-	 */
-	toJSON(): void;
-}
 export declare const proxyEnable: "vb" | "proxy";
-/**
- * get existing observer on object
- *
- * @return existing observer
- */
-export declare let getObserver: <T extends ObserverTarget>(target: T) => Observer<T>;
 /**
  * get the original object of the observer on the object
  *
@@ -1828,8 +1670,16 @@ export declare let $set: (obj: any, path: string | string[], value: any) => void
  * get or create observer on object
  *
  * @param target 	the target object
+ * @return the observer
  */
-export declare function observer<T extends ObserverTarget>(target: T): Observer<T>;
+export declare function observer<T extends ObserverTarget>(target: T): IObserver<T>;
+/**
+ * get or create observer on object
+ *
+ * @param target 	the target object
+ * @return the proxy object
+ */
+export declare function observable<T extends ObserverTarget>(target: T): T;
 /**
  * observe changes in the target object
  *
@@ -1840,6 +1690,24 @@ export declare function observer<T extends ObserverTarget>(target: T): Observer<
  * @return listen-id
  */
 export declare function observe<T extends ObserverTarget>(target: T, propPath: string | string[], cb: ObserverCallback<T>, scope?: any): string;
+/**
+ * get listen-id of callback in the target object
+ *
+ * @param target 	the target object
+ * @param propPath 	property path of object, parse string path by {@link parsePath}
+ * @param cb		callback
+ * @param scope		scope of callback
+ * @return listen-id
+ */
+export declare function observed<T extends ObserverTarget>(target: T, propPath: string | string[], cb: ObserverCallback<T>, scope?: any): string;
+/**
+ * has listen-id in the target object
+ *
+ * @param target 	the target object
+ * @param propPath 	property path of object, parse string path by {@link parsePath}
+ * @param id		listen-id
+ */
+export declare function observedId<T extends ObserverTarget>(target: T, propPath: string | string[], id: string): boolean;
 /**
  * cancel observing the changes in the target object
  *
@@ -1857,4 +1725,5 @@ export declare function unobserve<T extends ObserverTarget>(target: T, propPath:
  * @param listenId	listen-id
  */
 export declare function unobserveId<T extends ObserverTarget>(target: T, propPath: string | string[], listenId: string): void;
+export declare const getObserver: <T extends ObserverTarget>(target: T) => IObserver<T>;
 export declare const VBPROXY_KEY = "__vbclass_binding__", VBPROXY_CTOR_KEY = "__vbclass_constructor__", OBJECT_DEFAULT_PROPS: string[];

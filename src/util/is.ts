@@ -2,7 +2,7 @@
  * @module util
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 13:57:32 GMT+0800 (China Standard Time)
- * @modified Mon Apr 08 2019 13:26:03 GMT+0800 (China Standard Time)
+ * @modified Wed Apr 10 2019 13:55:08 GMT+0800 (China Standard Time)
  */
 
 import { P_CTOR, GLOBAL, T_BOOL, T_FN, T_NUM, T_STRING, T_UNDEF } from './consts'
@@ -166,7 +166,7 @@ export const isArray: (o: any) => boolean = Array.isArray || mkIs(Array)
 /**
  * is Typed Array
  */
-export const isTypedArray: (o: any) => boolean = isFn(ArrayBuffer) ? ArrayBuffer.isView : () => false
+export const isTypedArray: (o: any) => boolean = typeof ArrayBuffer === T_FN ? ArrayBuffer.isView : () => false
 
 /**
  * is Array or pseudo-array
