@@ -22,9 +22,9 @@
 		"unit:node": "cross-env NODE_ENV=test nyc mocha src/**/*.spec.ts",
 		"unit:browser": "cross-env NODE_ENV=test karma start config/karma.config.js",
 		"unit:sauce": "cross-env NODE_ENV=test karma start config/karma.sauce.config.js",
-		"compile": "npm run dts && rollup -c --environment NODE_ENV:production",
+		"compile": "rollup -c --environment NODE_ENV:production",
 		"compile:dev": "rollup -c --environment NODE_ENV:development",
-		"build": "npm-run-all clean lint check unit:node compile dts doc",
+		"build": "npm-run-all clean lint check unit:node dts compile doc",
 		"doc": "typedoc --options typedoc.json",
 		"perf:browser": "karma start config/karma.perf.config.js"
 	},

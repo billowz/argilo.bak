@@ -18,5 +18,5 @@ script:
   - npm run dts
   - npm run compile
   - npm run unit:node
-  - npm run unit:browser -- --browsers ChromeHeadless
+  - npm run unit:browser -- --browsers ChromeHeadless --single-run
   - cat coverage/*/lcov.info | codecov
