@@ -5,6 +5,8 @@ node_js:
 sudo: required
 addons:
   chrome: stable
+before_script:
+  - git config --global core.autocrlf input
 cache: npm
 before_install:
   - npm install -g codecov
