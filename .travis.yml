@@ -1,3 +1,4 @@
+os: windows
 language: node_js
 node_js:
   - '8'
@@ -18,5 +19,5 @@ script:
   - npm run dts
   - npm run compile
   - npm run unit:node
-  - npm run unit:browser -- --browsers ChromeHeadless --single-run
+  - npm run unit:browser -- --browsers ChromeHeadless,IE --single-run
   - cat coverage/*/lcov.info | codecov
