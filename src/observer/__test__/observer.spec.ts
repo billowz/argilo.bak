@@ -91,7 +91,7 @@ describe('observer', function() {
 		SimpleObjectEmail = 'mary@domain.com',
 		SimpleObjectAge = 18
 
-	function observeSimpleObject(o: SimpleObject, done: () => void) {
+	function observeSimpleObject(o: SimpleObject, end: () => void) {
 		new ObserveChain(o, [
 			{
 				setup(o, c) {
@@ -131,7 +131,7 @@ describe('observer', function() {
 					o.age = SimpleObjectAge
 				}
 			}
-		]).run(done)
+		]).run(end)
 	}
 	it('observe changes on an literal object', function(done) {
 		observeSimpleObject(
@@ -194,7 +194,7 @@ describe('observer', function() {
 		})
 	})
 
-	it('observe changes on an array property', function(done) {
+	it('observe changes on an array property', function(end) {
 		new ObserveChain(
 			[1],
 			[
@@ -258,7 +258,7 @@ describe('observer', function() {
 				},
 				{
 					// [4,3,2,1]
-					name: 'array.splice 1',
+					name: 'array.splice +1',
 					setup(o, c) {
 						o.splice(1, 0, 3)
 					},
@@ -367,7 +367,7 @@ describe('observer', function() {
 					}
 				}
 			]
-		).run(done)
+		).run(end)
 	})
 
 	it('observe & unobserve', function() {
@@ -451,13 +451,13 @@ class ObserveChain<T extends ObserverTarget> {
 		if (step) {
 			step.setup && step.setup(this.ob.proxy, this)
 
-			setTimeout(() => {
+			nextTick(() => {
 				step.done && step.done(mapObj(this.ctxs, ctx => ctx.dirties[stepIdx]), this)
 
 				this.stepIdx++
 
 				this.run(done)
-			}, 20)
+			})
 		} else {
 			this.stepIdx++
 			this.run(done)
@@ -485,34 +485,35 @@ class ObserveChain<T extends ObserverTarget> {
 				(ctxs[path] = {
 					called: 0,
 					cb(path: string[], value: any, original: any, observer: IObserver<T>) {
-						const stepIdx = chain.stepLabel()
+						const stepLabel = chain.stepLabel(),
+							stepIdx = chain.stepIdx
 						assert.eq(
 							this,
 							ctx,
-							`[{d}][{}]: invalid context on observer callback: {0j} expect to {1j}`,
-							stepIdx,
+							`[{}][{}]: invalid context on observer callback: {0j} expect to {1j}`,
+							stepLabel,
 							ctx.path
 						)
 						assert.is(
 							ctx.listenId,
-							`[{d}][{}]: observer callback is not listened, listen-id: {0}`,
-							stepIdx,
+							`[{}][{}]: observer callback is not listened, listen-id: {0}`,
+							stepLabel,
 							ctx.path
 						)
 
-						assert.eq(ob, observer, `[{d}][{}]: invalid observer on observer callback`, stepIdx, ctx.path)
+						assert.eq(ob, observer, `[{}][{}]: invalid observer on observer callback`, stepLabel, ctx.path)
 						assert.eql(
 							path,
 							parsePath(ctx.path),
-							`[{d}][{}]: invalid path[{}] on observer callback`,
-							stepIdx,
+							`[{}][{}]: invalid path[{}] on observer callback`,
+							stepLabel,
 							ctx.path,
 							formatPath(path)
 						)
 						assert.not(
 							ctx.dirties[stepIdx],
-							`[{d}][{}]: double notified observer callback`,
-							stepIdx,
+							`[{}][{}]: double notified observer callback`,
+							stepLabel,
 							ctx.path
 						)
 						ctx.dirties[stepIdx] = [value, original]
@@ -520,8 +521,8 @@ class ObserveChain<T extends ObserverTarget> {
 
 						console.log(
 							format(
-								`[{d}][{}]: collected dirty, value: {j}, origin: {j}`,
-								stepIdx,
+								`[{}][{}]: collected dirty, value: {j}, origin: {j}`,
+								stepLabel,
 								ctx.path,
 								value,
 								original
@@ -536,23 +537,23 @@ class ObserveChain<T extends ObserverTarget> {
 		if (!ctx.listenId) {
 			ctx.listenId = __p__++ & 1 ? observe(o, path, ctx.cb, ctx) : ob.observe(path, ctx.cb, ctx)
 
-			const stepIdx = this.stepLabel()
+			const stepLabel = this.stepLabel()
 			assert.is(
 				observedId(o, path, ctx.listenId),
-				`[{d}][{}]: observe failed, listen-id: {}`,
-				stepIdx,
+				`[{}][{}]: observe failed, listen-id: {}`,
+				stepLabel,
 				path,
 				ctx.listenId
 			)
 			assert.eq(
 				ctx.listenId,
 				ob.observed(path, ctx.cb, ctx),
-				`[{d}][{}]: observe failed, listen-id: {0}`,
-				stepIdx,
+				`[{}][{}]: observe failed, listen-id: {0}`,
+				stepLabel,
 				path
 			)
 
-			console.log(format(`[{d}][{}]: observe: {}`, stepIdx, path, ctx.listenId))
+			console.log(format(`[{}][{}]: observe: {}`, stepLabel, path, ctx.listenId))
 		}
 	}
 	uncollectPath(path: string) {
@@ -561,46 +562,46 @@ class ObserveChain<T extends ObserverTarget> {
 			ctx = this.ctxs[path]
 
 		if (ctx && ctx.listenId) {
-			const stepIdx = this.stepLabel()
+			const stepLabel = this.stepLabel()
 
 			assert.is(
 				observedId(o, path, ctx.listenId),
-				`[{d}][{}]: un-listened, listen-id: {}`,
-				stepIdx,
+				`[{}][{}]: un-listened, listen-id: {}`,
+				stepLabel,
 				path,
 				ctx.listenId
 			)
 			assert.eq(
 				ctx.listenId,
 				ob.observed(path, ctx.cb, ctx),
-				`[{d}][{}]: un-listened, listen-id: {0}`,
-				stepIdx,
+				`[{}][{}]: un-listened, listen-id: {0}`,
+				stepLabel,
 				path
 			)
 			__p__++ & 1 ? this.ob.unobserve(path, ctx.cb, ctx) : unobserveId(o, path, ctx.listenId)
 
 			assert.not(
 				this.ob.observedId(path, ctx.listenId),
-				`[{d}][{}]: unobserve failed, listen-id: {}`,
-				stepIdx,
+				`[{}][{}]: unobserve failed, listen-id: {}`,
+				stepLabel,
 				path,
 				ctx.listenId
 			)
 
 			assert.not(
 				observed(o, path, ctx.cb, ctx),
-				`[{d}][{}]: unobserve failed, listen-id: {}`,
-				stepIdx,
+				`[{}][{}]: unobserve failed, listen-id: {}`,
+				stepLabel,
 				path,
 				ctx.listenId
 			)
-			console.log(format(`[{d}][{}]: unobserved: {}`, stepIdx, path, ctx.listenId))
+			console.log(format(`[{}][{}]: unobserved: {}`, stepLabel, path, ctx.listenId))
 			ctx.listenId = null
 		}
 	}
 	expect(expect: { [path: string]: [any, any?] }) {
-		const { ctxs } = this
-		const stepIdx = this.stepLabel()
+		const { ctxs, stepIdx } = this
+		const stepLabel = this.stepLabel()
 		expect = expect || {}
 		try {
 			eachObj(expect, (e, path) => {
@@ -609,14 +610,14 @@ class ObserveChain<T extends ObserverTarget> {
 				if (e) {
 					assert.is(
 						d,
-						'[{d}][{}]: miss the dirty, expect to value: {{[0]}j}, origin: {@{[1]}j}',
-						stepIdx,
+						'[{}][{}]: miss the dirty, expect to value: {{[0]}j}, origin: {@{[1]}j}',
+						stepLabel,
 						path,
 						e
 					)
-					assert.eq(d[0], e[0], '[{d}][{}]: expect dirty value: {0j} to {1j}', stepIdx, path)
+					assert.eq(d[0], e[0], '[{}][{}]: expect dirty value: {0j} to {1j}', stepLabel, path)
 					if (e.length > 1)
-						assert.eq(d[1], e[1], '[{d}][{}]: expect origin value: {0j} to {1j}', stepIdx, path)
+						assert.eq(d[1], e[1], '[{}][{}]: expect origin value: {0j} to {1j}', stepLabel, path)
 				}
 			})
 
@@ -624,7 +625,7 @@ class ObserveChain<T extends ObserverTarget> {
 				const e = ctxs[path],
 					d = ctx.dirties[stepIdx]
 				if (!e)
-					assert.not(d, '[{d}][{}]: collected the dirty, value: {0{[0]}j}, origin: {0{[1]}j}', stepIdx, path)
+					assert.not(d, '[{}][{}]: collected the dirty, value: {0{[0]}j}, origin: {0{[1]}j}', stepLabel, path)
 			})
 		} catch (e) {
 			throw popErrStack(e, 3)

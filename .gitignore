@@ -9,3 +9,5 @@
 /.rpt2_cache
 /.sonarlint
 /.cover-tmp
+/package-lock.json
+/yarn.lock

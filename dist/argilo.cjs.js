@@ -11,8 +11,10 @@
  * Copyright (c) 2018 Tao Zeng <tao.zeng.zt@qq.com>
  * Released under the MIT license
  *
- * Date: Tue, 09 Apr 2019 10:07:13 GMT
+ * Date: Sat, 13 Apr 2019 09:43:18 GMT
  */
+'use strict';
+
 Object.defineProperty(exports, '__esModule', { value: true });
 
 /**
@@ -99,7 +101,7 @@ function toStrType(obj) {
  * @module util
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 13:57:32 GMT+0800 (China Standard Time)
- * @modified Mon Apr 08 2019 13:26:03 GMT+0800 (China Standard Time)
+ * @modified Wed Apr 10 2019 13:55:08 GMT+0800 (China Standard Time)
  */
 /**
  * is equals
@@ -265,7 +267,7 @@ const isArray = Array.isArray || mkIs(Array);
  * is Typed Array
  */
 
-const isTypedArray = isFn(ArrayBuffer) ? ArrayBuffer.isView : () => false;
+const isTypedArray = typeof ArrayBuffer === T_FN ? ArrayBuffer.isView : () => false;
 /**
  * is Array or pseudo-array
  * - Array
@@ -405,39 +407,9 @@ return fn.apply(${scope || 'null'}, ${offset ? 'arr' : 'args'});
 
 
 const applyScope = applyBuilder(8, 1, 0);
-/**
- * apply function without scope
- * @param fn		target function
- * @param args	arguments of function
- */
-
 const applyNoScope = applyBuilder(8, 0, 0);
-/**
- * apply function with scope
- * @param fn		target function
- * @param scope		scope of function
- * @param args		arguments of function
- * @param offset	start offset of args
- * @param len		arg size from offset
- */
-
 const applyScopeN = applyBuilder(8, 1, 1);
-/**
- * apply function without scope
- * @param fn		target function
- * @param args		arguments of function
- * @param offset	start offset of args
- * @param len		arg size from offset
- */
-
 const applyNoScopeN = applyBuilder(8, 0, 1);
-/**
- * apply function
- * @param fn		target function
- * @param scope		scope of function
- * @param args		arguments of function
- */
-
 function apply(fn, scope, args) {
   if (scope === undefined || scope === null || scope === GLOBAL) {
     return applyNoScope(fn, args || []);
@@ -537,15 +509,6 @@ if (funcProto.bind) {
 
 
 const bind = _bind;
-/**
- * bind
- * > not bind scope when scope is null or undefined
- * @param fn		source function
- * @param scope		bind scope
- * @param args		bind arguments
- * @param argOffset	offset of args
- * @return function proxy
- */
 
 function bindPolyfill(fn, scope, bindArgs, argOffset) {
   const argLen = bindArgs.length - argOffset;
@@ -625,7 +588,7 @@ function reEscape(str) {
  * @module util
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Jul 25 2018 15:23:56 GMT+0800 (China Standard Time)
- * @modified Mon Apr 08 2019 11:49:38 GMT+0800 (China Standard Time)
+ * @modified Wed Apr 10 2019 11:38:30 GMT+0800 (China Standard Time)
  */
 const $getProto = Object.getPrototypeOf,
       $setProto = Object.setPrototypeOf;
@@ -689,13 +652,13 @@ export { prototypeOf, protoProp, protoOf, __setProto, setProto } from './main'
  * @module util
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Jul 25 2018 15:22:57 GMT+0800 (China Standard Time)
- * @modified Mon Apr 08 2019 13:28:30 GMT+0800 (China Standard Time)
+ * @modified Wed Apr 10 2019 11:43:27 GMT+0800 (China Standard Time)
  */
 const {
   __defineGetter__,
   __defineSetter__
 } = Object[P_PROTOTYPE];
-let $defProp = Object.defineProperty;
+const $defProp = Object.defineProperty;
 /**
  * whether to support Object.defineProperty
  * @constant
@@ -727,7 +690,11 @@ if ($defProp) {
 
 
 const propAccessor = exports.propDescriptor || !!__defineSetter__;
-if (!exports.propDescriptor) $defProp = __defineSetter__ ? function defineProperty(obj, prop, desc) {
+/**
+ * define property
+ */
+
+const defProp = exports.propDescriptor ? $defProp : __defineSetter__ ? function defineProperty(obj, prop, desc) {
   const {
     get,
     set
@@ -741,39 +708,37 @@ if (!exports.propDescriptor) $defProp = __defineSetter__ ? function defineProper
   if ('value' in desc || !(prop in obj)) obj[prop] = desc.value;
   return obj;
 };
-/**
- * define property
- */
 
-const defProp = $defProp;
 /**
- * define property by value
+ * @module util
+ * @author Tao Zeng <tao.zeng.zt@qq.com>
+ * @created Wed Jul 25 2018 15:24:47 GMT+0800 (China Standard Time)
+ * @modified Wed Apr 10 2019 11:47:32 GMT+0800 (China Standard Time)
  */
+/*#else
 
-const defValue = exports.propDescriptor ? function defValue(obj, prop, value, configurable, writable, enumerable) {
-  $defProp(obj, prop, {
+import { defProp } from './polyfill'
+export { propDescriptor, propAccessor, defProp } from './main'
+
+//#endif */
+
+function defValue(obj, prop, value, enumerable, configurable, writable) {
+  defProp(obj, prop, {
     value,
     enumerable: enumerable !== false,
     configurable: configurable !== false,
     writable: writable !== false
   });
   return value;
-} : function defValue(obj, prop, value) {
-  obj[prop] = value;
-  return value;
-};
-
-/**
- * @module util
- * @author Tao Zeng <tao.zeng.zt@qq.com>
- * @created Wed Jul 25 2018 15:24:47 GMT+0800 (China Standard Time)
- * @modified Mon Apr 08 2019 13:28:25 GMT+0800 (China Standard Time)
- */
-/*#else
-
-export { propDescriptor, propAccessor, defProp, defValue } from './main'
-
-//#endif */
+}
+function defAccessor(obj, prop, get, set, enumerable, configurable) {
+  defProp(obj, prop, {
+    get,
+    set,
+    enumerable: enumerable !== false,
+    configurable: configurable !== false
+  });
+}
 
 /**
  * @module util
@@ -857,7 +822,7 @@ export { create } from './main'
  * @module util
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Jul 25 2018 15:24:47 GMT+0800 (China Standard Time)
- * @modified Mon Apr 08 2019 12:14:41 GMT+0800 (China Standard Time)
+ * @modified Wed Apr 10 2019 11:19:57 GMT+0800 (China Standard Time)
  */
 const REG_PROPS = ['source', 'global', 'ignoreCase', 'multiline'];
 function deepEq(actual, expected) {
@@ -882,7 +847,7 @@ function doDeepEqObj(actual, expected) {
   let k;
 
   for (k in actual) {
-    if (!DKeyMap[k] && notEqObjKey(actual, expected, k)) {
+    if (!DKeyMap[k] && (!(k in expected) || !deepEq(actual[k], expected[k]))) {
       return false;
     }
 
@@ -890,16 +855,12 @@ function doDeepEqObj(actual, expected) {
   }
 
   for (k in expected) {
-    if (!cache[k] && !DKeyMap[k] && notEqObjKey(actual, expected, k)) {
+    if (!cache[k] && !DKeyMap[k] && (!(k in actual) || !deepEq(actual[k], expected[k]))) {
       return false;
     }
   }
 
   return true;
-}
-
-function notEqObjKey(actual, expected, k) {
-  return hasOwnProp(actual, k) ? !hasOwnProp(expected, k) || !deepEq(actual[k], expected[k]) : hasOwnProp(expected, k);
 }
 
 function eqProps(actual, expected, props) {
@@ -1830,7 +1791,7 @@ function set(obj, path, value) {
  * @module format
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 03 2018 19:46:41 GMT+0800 (China Standard Time)
- * @modified Mon Apr 08 2019 13:50:54 GMT+0800 (China Standard Time)
+ * @modified Fri Apr 12 2019 14:14:40 GMT+0800 (China Standard Time)
  */
 
 /*                                                                                      *
@@ -2281,11 +2242,12 @@ function formatter(fmt, offset, getParam) {
       codes = [],
       i = 0;
   offset = offset || 0;
+  formatReg.lastIndex = 0;
 
   while (m = formatReg.exec(fmt)) {
     mEnd = formatReg.lastIndex;
     mStart = mEnd - m[0].length;
-    lastIdx < mStart && pushStr(cutStr(fmt, lastIdx, mStart), 0);
+    lastIdx < mStart && pushStr(cutStr(fmt, lastIdx, mStart));
 
     if (m[1]) {
       codes[i] = `arr[${i}](arguments, ${STATE_VAR})`;
@@ -2308,29 +2270,7 @@ function formatter(fmt, offset, getParam) {
       arr[i++] = str;
     }
   }
-}
-/*
-setTimeout(() => {
-	var f,
-		n = 100000
-	console.time()
-	for (var i = 0; i < n; i++) {
-		f = formatter(`{:.10="..."}`)
-	}
-	console.timeEnd()
-	console.time()
-	for (var i = 0; i < n; i++) {
-		f('abbdddded')
-	}
-	console.timeEnd()
-	console.time()
-	for (var i = 0; i < n; i++) {
-		format(`{:.10="..."}`, 'abbdddded')
-	}
-	console.timeEnd()
-	console.log(formatter(`{:.10="..."}`).toString())
-}) */
-//========================================================================================
+} //========================================================================================
 
 /*                                                                                      *
  *                                  default formatters                                  *
@@ -2369,7 +2309,7 @@ const BASE_RADIXS = {
 const BASE_PREFIXS = ['0b', '0o', '0x'];
 
 function baseFormatter(type) {
-  const base = BASE_RADIXS[type.toLowerCase()],
+  const base = BASE_RADIXS[lower(type)],
         n = base[0],
         __toStr = num => num.toString(n),
         toStr = type === 'X' ? num => upper(__toStr(num)) : __toStr;
@@ -2433,7 +2373,7 @@ function toStr$1(v) {
  * @module assert
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Nov 28 2018 11:01:45 GMT+0800 (China Standard Time)
- * @modified Mon Apr 08 2019 17:42:54 GMT+0800 (China Standard Time)
+ * @modified Thu Apr 11 2019 13:49:48 GMT+0800 (China Standard Time)
  */
 const formatters$1 = create(null);
 
@@ -2443,10 +2383,9 @@ function mkError(Err, msg, args, msgIdx) {
 }
 
 function popErrStack(err, i) {
-  while (i-- > 0) {
+  if (err.stack) while (i-- > 0) {
     err.stack = err.stack.replace(/(\n\s{4}at[^\n]*)/, '');
   }
-
   return err;
 }
 const assert = function assert(msg) {
@@ -4368,7 +4307,7 @@ function parseRuleOptions(args, i) {
  * @module observer
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Tue Mar 19 2019 14:12:23 GMT+0800 (China Standard Time)
- * @modified Mon Apr 08 2019 13:32:29 GMT+0800 (China Standard Time)
+ * @modified Wed Apr 10 2019 10:11:52 GMT+0800 (China Standard Time)
  */
 /**
  * Observer Key
@@ -4387,14 +4326,14 @@ const ARRAY_CHANGE = '$change',
  * @module observer
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Tue Mar 19 2019 14:12:23 GMT+0800 (China Standard Time)
- * @modified Tue Apr 09 2019 10:49:10 GMT+0800 (China Standard Time)
+ * @modified Wed Apr 10 2019 12:56:14 GMT+0800 (China Standard Time)
  */
 /**
  * @ignore
  */
 
 function proxyPolicy () {
-  if (GLOBAL.Proxy) return {
+  if (typeof Proxy !== T_UNDEF) return {
     __name: 'Proxy',
     __proxy: 'proxy',
 
@@ -4402,19 +4341,44 @@ function proxyPolicy () {
       let setter;
 
       if (isArray) {
-        const changeWatcher = observer.initWatcher(ARRAY_CHANGE);
+        var len = target[ARRAY_LENGTH];
 
         setter = (source, prop, value) => {
-          const watcher = observer.watcher(prop);
-          watcher && watcher.notify(source[prop]);
+          if (prop === ARRAY_LENGTH) {
+            if (len !== value) {
+              observer.notify(ARRAY_LENGTH, len);
+              observer.notify(ARRAY_CHANGE, observer.proxy);
+              len = value;
+            }
+          } else {
+            var orginal = source[prop],
+                changed = 0;
+
+            if (orginal !== value) {
+              observer.notify(prop, orginal);
+              changed = 1;
+            }
+
+            if (prop >= len) {
+              observer.notify(ARRAY_LENGTH, len);
+              len = target[ARRAY_LENGTH];
+              changed = 1;
+            }
+
+            changed && observer.notify(ARRAY_CHANGE, observer.proxy);
+          }
+
           source[prop] = value;
-          changeWatcher.notify(observer.proxy);
           return true;
         };
       } else {
         setter = (source, prop, value) => {
-          const watcher = observer.watcher(prop);
-          watcher && watcher.notify(source[prop]);
+          var orginal = source[prop];
+
+          if (orginal !== value) {
+            observer.notify(prop, orginal);
+          }
+
           source[prop] = value;
           return true;
         };
@@ -4432,7 +4396,7 @@ function proxyPolicy () {
  * @module observer
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Thu Apr 04 2019 20:42:20 GMT+0800 (China Standard Time)
- * @modified Mon Apr 08 2019 13:31:48 GMT+0800 (China Standard Time)
+ * @modified Fri Apr 12 2019 14:48:43 GMT+0800 (China Standard Time)
  */
 const arrayHooks = [];
 const ARRAY_LEN_CHANGE = [ARRAY_LENGTH, ARRAY_CHANGE];
@@ -4446,8 +4410,9 @@ const arrayHookCfg = {
       proxy
     } = ob;
     const start = args[0],
-          d = args.length - 2 - args[1];
-    ob.notifies(null, prop => prop === ARRAY_CHANGE ? proxy : prop === ARRAY_LENGTH ? d ? target[prop] : SKIP : prop > start && (d || prop < start + args[1]) ? target[prop] : SKIP);
+          d = args.length - 2 - args[1],
+          end = start + args[1];
+    ob.notifies(null, prop => prop === ARRAY_CHANGE ? proxy : prop === ARRAY_LENGTH ? d ? target[prop] : SKIP : prop >= start && (d || prop < end) ? target[prop] : SKIP);
   },
 
   shift: [],
@@ -4507,7 +4472,7 @@ function applyArrayHooks(array) {
  * @module observer
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Tue Mar 19 2019 14:12:23 GMT+0800 (China Standard Time)
- * @modified Thu Apr 04 2019 20:46:05 GMT+0800 (China Standard Time)
+ * @modified Wed Apr 10 2019 13:07:06 GMT+0800 (China Standard Time)
  */
 /**
  * @ignore
@@ -4530,16 +4495,20 @@ function accessorPolicy () {
 
       if (!observer.isArray) {
         setter = newValue => {
-          watcher.notify(value);
+          if (value !== newValue) {
+            watcher.notify(value);
+          }
+
           value = newValue;
         };
       } else if (prop !== ARRAY_CHANGE && prop !== ARRAY_LENGTH) {
-        const changeWatcher = observer.initWatcher(ARRAY_CHANGE);
-
         setter = newValue => {
-          watcher.notify(value);
+          if (value !== newValue) {
+            watcher.notify(value);
+            observer.notify(ARRAY_CHANGE, target);
+          }
+
           value = newValue;
-          changeWatcher.notify(target);
         };
       } else {
         return;
@@ -4548,13 +4517,7 @@ function accessorPolicy () {
       var value = target[prop];
 
       try {
-        defProp(target, prop, {
-          get() {
-            return value;
-          },
-
-          set: setter
-        });
+        defAccessor(target, prop, () => value, setter, true, false);
       } catch (e) {
         return e;
       }
@@ -4568,7 +4531,7 @@ function accessorPolicy () {
  * @module observer
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Tue Mar 19 2019 14:12:23 GMT+0800 (China Standard Time)
- * @modified Thu Apr 04 2019 20:45:57 GMT+0800 (China Standard Time)
+ * @modified Wed Apr 10 2019 19:55:47 GMT+0800 (China Standard Time)
  */
 function vbPolicy () {
   if (GLOBAL.VBArray) {
@@ -4611,14 +4574,16 @@ class VBProxy {
         j = 0;
 
     for (prop in source) {
-      propMap[prop] = true;
-      props[i++] = prop;
-      if (isFn(source[prop])) __fns[j++] = prop;
+      if (!isKey(prop)) {
+        propMap[prop] = true;
+        props[i++] = prop;
+        if (isFn(source[prop])) __fns[j++] = prop;
+      }
     }
 
     applyProps(props, propMap, OBJECT_DEFAULT_PROPS);
     applyProps(props, propMap, getDKeys());
-    const proxy = loadClassFactory(props)(this);
+    const proxy = createVBClass(props, this);
 
     while (j--) {
       prop = __fns[j];
@@ -4645,9 +4610,12 @@ class VBProxy {
       fns[prop] = null;
     }
 
-    const watcher = this.__observer.watcher(prop);
+    const original = source[prop];
 
-    watcher && watcher.notify(source[prop]);
+    if (original !== value) {
+      this.__observer.notify(prop, original);
+    }
+
     source[prop] = value;
   }
 
@@ -4666,16 +4634,20 @@ function applyProps(props, propMap, applyProps) {
   while (i--) {
     prop = applyProps[i];
 
-    if (!propMap[prop]) {
+    if (!isKey(prop) && propMap[prop] !== true) {
       propMap[prop] = true;
       props[j++] = prop;
     }
   }
 }
 
+function isKey(prop) {
+  return prop === VBPROXY_KEY || prop === VBPROXY_CTOR_KEY;
+}
+
 const VBPROXY_KEY = '__vbclass_binding__',
       VBPROXY_CTOR_KEY = '__vbclass_constructor__',
-      OBJECT_DEFAULT_PROPS = [VBPROXY_KEY, P_CTOR, P_OWNPROP, 'isPrototypeOf', 'propertyIsEnumerable', 'toLocaleString', 'toString', 'valueOf'];
+      OBJECT_DEFAULT_PROPS = [P_CTOR, P_OWNPROP, 'isPrototypeOf', 'propertyIsEnumerable', 'toLocaleString', 'toString', 'valueOf'];
 const CONSTRUCTOR_SCRIPT = `
 	Public [${VBPROXY_KEY}]
 	Public Default Function [${VBPROXY_CTOR_KEY}](source)
@@ -4688,10 +4660,10 @@ const CONSTRUCTOR_SCRIPT = `
 function genAccessorScript(prop) {
   return `
 	Public Property Let [${prop}](value)
-		Call [${VBPROXY_KEY}].set("${prop}", val)
+		Call [${VBPROXY_KEY}].set("${prop}", value)
 	End Property
 	Public Property Set [${prop}](value)
-		Call [${VBPROXY_KEY}].set("${prop}", val)
+		Call [${VBPROXY_KEY}].set("${prop}", value)
 	End Property
 
 	Public Property Get [${prop}]
@@ -4707,7 +4679,7 @@ function genAccessorScript(prop) {
 }
 
 function genClassScript(className, props) {
-  const buffer = ['Class ', className, CONSTRUCTOR_SCRIPT],
+  const buffer = ['Class ' + className, CONSTRUCTOR_SCRIPT],
         l = props.length;
   let i = 0;
 
@@ -4719,7 +4691,7 @@ function genClassScript(className, props) {
 
 let classNameGenerator = 1;
 
-function loadClassFactory(props) {
+function createVBClass(props, desc) {
   const classKey = props.sort().join('|');
   let factoryName = classPool[classKey];
 
@@ -4737,14 +4709,14 @@ End Function`);
     classPool[classKey] = factoryName;
   }
 
-  return GLOBAL[factoryName];
+  return GLOBAL[factoryName](desc);
 }
 
 /**
  * @module observer
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Dec 26 2018 13:59:10 GMT+0800 (China Standard Time)
- * @modified Mon Apr 08 2019 18:33:01 GMT+0800 (China Standard Time)
+ * @modified Wed Apr 10 2019 13:51:37 GMT+0800 (China Standard Time)
  */
 
 function isObserverTarget(obj) {
@@ -5488,44 +5460,6 @@ class Observer {
     }
   }
   /**
-   * get wather by property
-   *
-   * @protected
-   * @param prop the property
-   */
-
-
-  watcher(prop) {
-    const watcher = this.__watchers[prop];
-    if (watcher && watcher.size()) return watcher;
-  }
-  /**
-   * get or create wather by property
-   *
-   * @protected
-   * @param prop the property
-   */
-
-
-  initWatcher(prop) {
-    const {
-      __watchers: watchers
-    } = this;
-    let watcher = watchers[prop];
-
-    if (!watcher) {
-      watchers[prop] = watcher = new Watcher();
-
-      this.__watcherProps.push(prop);
-
-      const err = policy.__watch(this, prop, watcher);
-
-      assert.not(err, `can not watch property[{}] on the Observer, {{message}}`, prop, err, err, this.target);
-    }
-
-    return watcher;
-  }
-  /**
    * watch the topic
    *
    * @private
@@ -5633,11 +5567,6 @@ console.info(`the observer policy: ${policy.__name} -> `, policy); //#endif
 if (!policy.__createProxy) policy.__createProxy = (observer, target) => target;
 if (!policy.__watch) policy.__watch = () => {};
 const proxyEnable = policy.__proxy;
-/**
- * get existing observer on object
- *
- * @return existing observer
- */
 
 let __getObserver = target => {
   const ob = target[OBSERVER_KEY];
@@ -5753,11 +5682,22 @@ if (!proxyEnable) {
  * get or create observer on object
  *
  * @param target 	the target object
+ * @return the observer
  */
 
 
 function observer(target) {
   return __getObserver(target) || new Observer(target);
+}
+/**
+ * get or create observer on object
+ *
+ * @param target 	the target object
+ * @return the proxy object
+ */
+
+function observable(target) {
+  return observer(target).proxy;
 }
 /**
  * observe changes in the target object
@@ -5829,6 +5769,12 @@ function unobserveId(target, propPath, listenId) {
 
   __observer && __observer.unobserveId(propPath, listenId);
 }
+/**
+ * get existing observer on object
+ *
+ * @return existing observer
+ */
+
 const getObserver = __getObserver;
 
 /**
@@ -5848,161 +5794,163 @@ const getObserver = __getObserver;
  * @modified Mon Apr 08 2019 14:07:50 GMT+0800 (China Standard Time)
  */
 
-exports.isDKey = isDKey;
-exports.addDKey = addDKey;
-exports.addDKeys = addDKeys;
-exports.getDKeys = getDKeys;
-exports.getDKeyMap = getDKeyMap;
-exports.createFn = createFn;
-exports.applyScope = applyScope;
-exports.applyNoScope = applyNoScope;
-exports.applyScopeN = applyScopeN;
-exports.applyNoScopeN = applyNoScopeN;
-exports.apply = apply;
-exports.applyN = applyN;
-exports.fnName = fnName;
-exports.bind = bind;
-exports.eq = eq;
-exports.isNull = isNull;
-exports.isUndef = isUndef;
-exports.isNil = isNil;
-exports.isBool = isBool;
-exports.isNum = isNum;
-exports.isStr = isStr;
-exports.isFn = isFn;
-exports.isInt = isInt;
-exports.isPrimitive = isPrimitive;
-exports.instOf = instOf;
-exports.is = is;
-exports.isBoolean = isBoolean;
-exports.isNumber = isNumber;
-exports.isString = isString;
-exports.isDate = isDate;
-exports.isReg = isReg;
-exports.isArray = isArray;
-exports.isTypedArray = isTypedArray;
-exports.isArrayLike = isArrayLike;
-exports.isObj = isObj;
-exports.isObject = isObject;
-exports.isBlank = isBlank;
-exports.stickyReg = stickyReg;
-exports.unicodeReg = unicodeReg;
-exports.reEscape = reEscape;
-exports.prototypeOf = prototypeOf;
-exports.protoProp = protoProp;
-exports.protoOf = protoOf;
-exports.__setProto = __setProto;
-exports.setProto = setProto;
-exports.propAccessor = propAccessor;
-exports.defProp = defProp;
-exports.defValue = defValue;
-exports.hasOwnProp = hasOwnProp;
-exports.getOwnProp = getOwnProp;
-exports.deepEq = deepEq;
-exports.doDeepEq = doDeepEq;
-exports.doDeepEqObj = doDeepEqObj;
-exports.toStr = toStr;
-exports.toStrType = toStrType;
-exports.charCode = charCode;
-exports.char = char;
-exports.cutStr = cutStr;
-exports.cutLStr = cutLStr;
-exports.trim = trim;
-exports.upper = upper;
-exports.lower = lower;
-exports.upperFirst = upperFirst;
-exports.lowerFirst = lowerFirst;
-exports.escapeStr = escapeStr;
-exports.create = create;
-exports.doAssign = doAssign;
-exports.assign = assign;
-exports.assignIf = assignIf;
-exports.defaultAssignFilter = defaultAssignFilter;
-exports.assignIfFilter = assignIfFilter;
-exports.makeArray = makeArray;
-exports.STOP = STOP;
-exports.eachProps = eachProps;
-exports.eachArray = eachArray;
-exports.eachObj = eachObj;
-exports.each = each;
-exports.SKIP = SKIP;
-exports.mapArray = mapArray;
-exports.mapObj = mapObj;
-exports.map = map;
-exports.idxOfArray = idxOfArray;
-exports.idxOfObj = idxOfObj;
-exports.idxOf = idxOf;
-exports.reduceArray = reduceArray;
-exports.reduceObj = reduceObj;
-exports.reduce = reduce;
-exports.keys = keys;
-exports.values = values;
-exports.arr2obj = arr2obj;
-exports.makeMap = makeMap;
-exports.mixin = mixin;
-exports.popErrStack = popErrStack;
-exports.assert = assert;
-exports.pad = pad;
-exports.shorten = shorten;
-exports.thousandSeparate = thousandSeparate;
-exports.binarySeparate = binarySeparate;
-exports.octalSeparate = octalSeparate;
-exports.hexSeparate = hexSeparate;
-exports.plural = plural;
-exports.singular = singular;
-exports.FORMAT_XPREFIX = FORMAT_XPREFIX;
-exports.FORMAT_PLUS = FORMAT_PLUS;
-exports.FORMAT_ZERO = FORMAT_ZERO;
-exports.FORMAT_SPACE = FORMAT_SPACE;
-exports.FORMAT_SEPARATOR = FORMAT_SEPARATOR;
-exports.FORMAT_LEFT = FORMAT_LEFT;
-exports.extendFormatter = extendFormatter;
-exports.getFormatter = getFormatter;
-exports.vformat = vformat;
-exports.format = format;
-exports.formatter = formatter;
-exports.PATH_BINDING = PATH_BINDING;
-exports.parsePath = parsePath;
-exports.formatPath = formatPath;
-exports.get = get;
-exports.set = set;
-exports.List = List;
-exports.FnList = FnList;
-exports.nextTick = nextTick;
-exports.clearTick = clearTick;
-exports.clearTickId = clearTickId;
-exports.genCharCodes = genCharCodes;
-exports.Source = Source;
-exports.MatchError = MatchError;
-exports.Rule = Rule;
-exports.MatchContext = MatchContext;
-exports.ComplexRule = ComplexRule;
-exports.AndRule = AndRule;
-exports.OrRule = OrRule;
-exports.discardMatch = discardMatch;
-exports.appendMatch = appendMatch;
-exports.attachMatch = attachMatch;
-exports.match = match;
-exports.and = and;
-exports.any = any;
-exports.many = many;
-exports.option = option;
-exports.or = or;
-exports.anyOne = anyOne;
-exports.manyOne = manyOne;
-exports.optionOne = optionOne;
-exports.VBPROXY_KEY = VBPROXY_KEY;
-exports.VBPROXY_CTOR_KEY = VBPROXY_CTOR_KEY;
-exports.OBSERVER_KEY = OBSERVER_KEY;
 exports.ARRAY_CHANGE = ARRAY_CHANGE;
 exports.ARRAY_LENGTH = ARRAY_LENGTH;
+exports.AndRule = AndRule;
+exports.ComplexRule = ComplexRule;
+exports.FORMAT_LEFT = FORMAT_LEFT;
+exports.FORMAT_PLUS = FORMAT_PLUS;
+exports.FORMAT_SEPARATOR = FORMAT_SEPARATOR;
+exports.FORMAT_SPACE = FORMAT_SPACE;
+exports.FORMAT_XPREFIX = FORMAT_XPREFIX;
+exports.FORMAT_ZERO = FORMAT_ZERO;
+exports.FnList = FnList;
+exports.List = List;
+exports.MatchContext = MatchContext;
+exports.MatchError = MatchError;
+exports.OBSERVER_KEY = OBSERVER_KEY;
+exports.OrRule = OrRule;
+exports.PATH_BINDING = PATH_BINDING;
+exports.Rule = Rule;
+exports.SKIP = SKIP;
+exports.STOP = STOP;
+exports.Source = Source;
+exports.VBPROXY_CTOR_KEY = VBPROXY_CTOR_KEY;
+exports.VBPROXY_KEY = VBPROXY_KEY;
+exports.__setProto = __setProto;
+exports.addDKey = addDKey;
+exports.addDKeys = addDKeys;
+exports.and = and;
+exports.any = any;
+exports.anyOne = anyOne;
+exports.appendMatch = appendMatch;
+exports.apply = apply;
+exports.applyN = applyN;
+exports.applyNoScope = applyNoScope;
+exports.applyNoScopeN = applyNoScopeN;
+exports.applyScope = applyScope;
+exports.applyScopeN = applyScopeN;
+exports.arr2obj = arr2obj;
+exports.assert = assert;
+exports.assign = assign;
+exports.assignIf = assignIf;
+exports.assignIfFilter = assignIfFilter;
+exports.attachMatch = attachMatch;
+exports.binarySeparate = binarySeparate;
+exports.bind = bind;
+exports.char = char;
+exports.charCode = charCode;
+exports.clearTick = clearTick;
+exports.clearTickId = clearTickId;
 exports.collect = collect;
-exports.proxyEnable = proxyEnable;
-exports.observer = observer;
+exports.create = create;
+exports.createFn = createFn;
+exports.cutLStr = cutLStr;
+exports.cutStr = cutStr;
+exports.deepEq = deepEq;
+exports.defAccessor = defAccessor;
+exports.defProp = defProp;
+exports.defValue = defValue;
+exports.defaultAssignFilter = defaultAssignFilter;
+exports.discardMatch = discardMatch;
+exports.doAssign = doAssign;
+exports.doDeepEq = doDeepEq;
+exports.doDeepEqObj = doDeepEqObj;
+exports.each = each;
+exports.eachArray = eachArray;
+exports.eachObj = eachObj;
+exports.eachProps = eachProps;
+exports.eq = eq;
+exports.escapeStr = escapeStr;
+exports.extendFormatter = extendFormatter;
+exports.fnName = fnName;
+exports.format = format;
+exports.formatPath = formatPath;
+exports.formatter = formatter;
+exports.genCharCodes = genCharCodes;
+exports.get = get;
+exports.getDKeyMap = getDKeyMap;
+exports.getDKeys = getDKeys;
+exports.getFormatter = getFormatter;
+exports.getObserver = getObserver;
+exports.getOwnProp = getOwnProp;
+exports.hasOwnProp = hasOwnProp;
+exports.hexSeparate = hexSeparate;
+exports.idxOf = idxOf;
+exports.idxOfArray = idxOfArray;
+exports.idxOfObj = idxOfObj;
+exports.instOf = instOf;
+exports.is = is;
+exports.isArray = isArray;
+exports.isArrayLike = isArrayLike;
+exports.isBlank = isBlank;
+exports.isBool = isBool;
+exports.isBoolean = isBoolean;
+exports.isDKey = isDKey;
+exports.isDate = isDate;
+exports.isFn = isFn;
+exports.isInt = isInt;
+exports.isNil = isNil;
+exports.isNull = isNull;
+exports.isNum = isNum;
+exports.isNumber = isNumber;
+exports.isObj = isObj;
+exports.isObject = isObject;
+exports.isPrimitive = isPrimitive;
+exports.isReg = isReg;
+exports.isStr = isStr;
+exports.isString = isString;
+exports.isTypedArray = isTypedArray;
+exports.isUndef = isUndef;
+exports.keys = keys;
+exports.lower = lower;
+exports.lowerFirst = lowerFirst;
+exports.makeArray = makeArray;
+exports.makeMap = makeMap;
+exports.many = many;
+exports.manyOne = manyOne;
+exports.map = map;
+exports.mapArray = mapArray;
+exports.mapObj = mapObj;
+exports.match = match;
+exports.mixin = mixin;
+exports.nextTick = nextTick;
+exports.observable = observable;
 exports.observe = observe;
 exports.observed = observed;
 exports.observedId = observedId;
+exports.observer = observer;
+exports.octalSeparate = octalSeparate;
+exports.option = option;
+exports.optionOne = optionOne;
+exports.or = or;
+exports.pad = pad;
+exports.parsePath = parsePath;
+exports.plural = plural;
+exports.popErrStack = popErrStack;
+exports.propAccessor = propAccessor;
+exports.protoOf = protoOf;
+exports.protoProp = protoProp;
+exports.prototypeOf = prototypeOf;
+exports.proxyEnable = proxyEnable;
+exports.reEscape = reEscape;
+exports.reduce = reduce;
+exports.reduceArray = reduceArray;
+exports.reduceObj = reduceObj;
+exports.set = set;
+exports.setProto = setProto;
+exports.shorten = shorten;
+exports.singular = singular;
+exports.stickyReg = stickyReg;
+exports.thousandSeparate = thousandSeparate;
+exports.toStr = toStr;
+exports.toStrType = toStrType;
+exports.trim = trim;
+exports.unicodeReg = unicodeReg;
 exports.unobserve = unobserve;
 exports.unobserveId = unobserveId;
-exports.getObserver = getObserver;
+exports.upper = upper;
+exports.upperFirst = upperFirst;
+exports.values = values;
+exports.vformat = vformat;
 //# sourceMappingURL=argilo.cjs.js.map

@@ -1,7 +1,22 @@
 language: node_js
 node_js:
- - '10.15.0'
+    - '8'
+sudo: required
+addons:
+    chrome: stable
+before_script:
+    - 'sudo chown root /opt/google/chrome/chrome-sandbox'
+	- 'sudo chmod 4755 /opt/google/chrome/chrome-sandbox'
+cache: npm
+before_install:
+	- npm install -g codecov
 install:
-  - npm install
-  - mkdir travis-phantomjs
-script: npm run build-ci
+	- npm install
+script:
+    - npm run lint
+    - npm run check
+    - npm run dts
+    - npm run compile
+    - npm run unit:node
+	- npm run unit:browser
+	- cat coverage/*/lcov.info | codecov

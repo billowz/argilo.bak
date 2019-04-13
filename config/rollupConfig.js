@@ -118,7 +118,7 @@ function mkConfig(config) {
 
 	return Object.assign({}, rollup, {
 		plugins: [
-			nodeResolve({ jsnext: true, extensions }),
+			nodeResolve({ mainFields: ['module', 'main'], extensions }),
 			commonjs(),
 			babelPlugin({
 				presets: ['@babel/preset-typescript', ['@babel/preset-env', babelPresetENV]].concat(babelPresets),

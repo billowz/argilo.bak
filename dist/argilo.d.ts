@@ -101,7 +101,7 @@ export declare const bind: <T extends (...args: any[]) => any>(fn: T, scope: any
  * @module util
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 11 2017 13:57:32 GMT+0800 (China Standard Time)
- * @modified Mon Apr 08 2019 13:26:03 GMT+0800 (China Standard Time)
+ * @modified Wed Apr 10 2019 13:55:08 GMT+0800 (China Standard Time)
  */
 /**
  * is equals
@@ -383,10 +383,11 @@ declare class Control {
 	constructor(desc: string);
 	toString(): string;
 }
-export declare type IArray<T> = T[] | string | {
+export declare type ObjArray<T> = {
 	length: number;
 	[Symbol.iterator](): IterableIterator<T>;
 };
+export declare type IArray<T> = T[] | string | ObjArray<T>;
 /**
  * STOP Control
  * > stop each/map/indexOf...
@@ -727,7 +728,7 @@ export declare function mixin<B>(behaviour: B): <M extends B, T extends new (...
  * @module assert
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Nov 28 2018 11:01:45 GMT+0800 (China Standard Time)
- * @modified Mon Apr 08 2019 17:42:54 GMT+0800 (China Standard Time)
+ * @modified Thu Apr 11 2019 13:49:48 GMT+0800 (China Standard Time)
  */
 export interface assert {
 	(msg?: string, ...args: any[]): never;
@@ -799,7 +800,7 @@ export declare const assert: assert;
  * @module format
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 03 2018 19:46:41 GMT+0800 (China Standard Time)
- * @modified Mon Apr 08 2019 13:50:54 GMT+0800 (China Standard Time)
+ * @modified Fri Apr 12 2019 14:14:40 GMT+0800 (China Standard Time)
  */
 export declare function pad(str: string, len: number, chr?: string, leftAlign?: boolean | number): string;
 export declare function shorten(str: string, len: number, suffix?: string): string;
@@ -1725,5 +1726,10 @@ export declare function unobserve<T extends ObserverTarget>(target: T, propPath:
  * @param listenId	listen-id
  */
 export declare function unobserveId<T extends ObserverTarget>(target: T, propPath: string | string[], listenId: string): void;
+/**
+ * get existing observer on object
+ *
+ * @return existing observer
+ */
 export declare const getObserver: <T extends ObserverTarget>(target: T) => IObserver<T>;
 export declare const VBPROXY_KEY = "__vbclass_binding__", VBPROXY_CTOR_KEY = "__vbclass_constructor__", OBJECT_DEFAULT_PROPS: string[];

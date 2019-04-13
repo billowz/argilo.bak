@@ -2,10 +2,10 @@
  * @module format
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Mon Dec 03 2018 19:46:41 GMT+0800 (China Standard Time)
- * @modified Mon Apr 08 2019 13:50:54 GMT+0800 (China Standard Time)
+ * @modified Sat Apr 13 2019 18:23:46 GMT+0800 (China Standard Time)
  */
 
-import { create, createFn, charCode, upper, escapeStr, cutStr, isFn, isNil } from '../util'
+import { create, createFn, charCode, upper, escapeStr, cutStr, isFn, isNil, lower } from '../util'
 import { get, parsePath } from '../path'
 
 //========================================================================================
@@ -60,7 +60,7 @@ const PLURAL_REG = /([a-zA-Z]+)([^aeiou])y$|([sxzh])$|([aeiou]y)$|([^sxzhy])$/
 export function plural(str: string): string {
 	return str.replace(PLURAL_REG, pluralHandler)
 }
-function pluralHandler(m, v, ies, es, ys, s) {
+function pluralHandler(m: string, v: string, ies: string, es: string, ys: string, s: string) {
 	return v + (ies ? ies + 'ies' : es ? es + 'es' : (ys || s) + 's')
 }
 
@@ -456,7 +456,10 @@ function getFormatParam(args: IArguments, idx: number) {
 const GET_PARAM_VAR = 'getp',
 	GET_PROP_VAR = 'get',
 	STATE_VAR = 'state'
-function createFormatter(m: string[], getParam?: (args: IArguments, idx: number) => any) {
+function createFormatter(
+	m: string[],
+	getParam?: (args: IArguments, idx: number) => any
+): (args: any[], state: [number, number]) => string {
 	return createFn(
 		`return function(args, ${STATE_VAR}){
 return fmt(${getParamCode(m[2] || '$', m[3])},
@@ -501,18 +504,19 @@ export type FormatParamLoader = (args: IArguments, idx: number) => any
  * @param getParam	get parameter on arguments callback
  */
 export function formatter(fmt: string, offset?: number, getParam?: FormatParamLoader): Formatter {
-	let m,
+	let m: string[],
 		lastIdx = 0,
-		mStart,
-		mEnd,
-		arr = [],
-		codes = [],
+		mStart: number,
+		mEnd: number,
+		arr: (string | ((args: any[], state: [number, number]) => string))[] = [],
+		codes: string[] = [],
 		i = 0
 	offset = offset || 0
+	formatReg.lastIndex = 0
 	while ((m = formatReg.exec(fmt))) {
 		mEnd = formatReg.lastIndex
 		mStart = mEnd - m[0].length
-		lastIdx < mStart && pushStr(cutStr(fmt, lastIdx, mStart), 0)
+		lastIdx < mStart && pushStr(cutStr(fmt, lastIdx, mStart))
 		if (m[1]) {
 			codes[i] = `arr[${i}](arguments, ${STATE_VAR})`
 			arr[i++] = createFormatter(m, getParam || defaultGetParam)
@@ -526,8 +530,8 @@ export function formatter(fmt: string, offset?: number, getParam?: FormatParamLo
 		'arr'
 	])(arr)
 
-	function pushStr(str, append) {
-		if (append && arr[i - 1].match) {
+	function pushStr(str: string, append?: any) {
+		if (append && (arr[i - 1] as string).match) {
 			arr[i - 1] += str
 		} else {
 			codes[i] = `arr[${i}]`
@@ -535,27 +539,7 @@ export function formatter(fmt: string, offset?: number, getParam?: FormatParamLo
 		}
 	}
 }
-/*
-setTimeout(() => {
-	var f,
-		n = 100000
-	console.time()
-	for (var i = 0; i < n; i++) {
-		f = formatter(`{:.10="..."}`)
-	}
-	console.timeEnd()
-	console.time()
-	for (var i = 0; i < n; i++) {
-		f('abbdddded')
-	}
-	console.timeEnd()
-	console.time()
-	for (var i = 0; i < n; i++) {
-		format(`{:.10="..."}`, 'abbdddded')
-	}
-	console.timeEnd()
-	console.log(formatter(`{:.10="..."}`).toString())
-}) */
+
 //========================================================================================
 /*                                                                                      *
  *                                  default formatters                                  *
@@ -604,10 +588,10 @@ const BASE_RADIXS = {
 }
 const BASE_PREFIXS = ['0b', '0o', '0x']
 function baseFormatter(type: string): FormatCallback {
-	const base = BASE_RADIXS[type.toLowerCase()],
+	const base = BASE_RADIXS[lower(type)],
 		n = base[0],
-		__toStr = num => num.toString(n),
-		toStr = type === 'X' ? num => upper(__toStr(num)) : __toStr
+		__toStr = (num: number) => num.toString(n),
+		toStr = type === 'X' ? (num: number) => upper(__toStr(num)) : __toStr
 	let xprefix = n === 10 ? '' : BASE_PREFIXS[n >> 3]
 	charCode(type) < 96 && (xprefix = upper(xprefix))
 	return numFormatter(v => v >>> 0, (num, flags) => (flags & FORMAT_XPREFIX ? xprefix : ''), toStr, base[1])
@@ -616,8 +600,11 @@ function baseFormatter(type: string): FormatCallback {
 //──── float formatter ───────────────────────────────────────────────────────────────────
 function floatFormatter(type: string): FormatCallback {
 	const ____toStr = upper(type) === 'E' ? toExponential : type === 'f' ? toFixed : toPrecision,
-		__toStr = (num, flags, precision) => ____toStr(num, precision) || String(num),
-		toStr = charCode(type) > 96 ? __toStr : (num, flags, precision) => upper(__toStr(num, flags, precision))
+		__toStr = (num: number, flags: FormatFlags, precision: number) => ____toStr(num, precision) || String(num),
+		toStr =
+			charCode(type) > 96
+				? __toStr
+				: (num: number, flags: FormatFlags, precision: number) => upper(__toStr(num, flags, precision))
 	return numFormatter(parseFloat, decimalPrefix, toStr, thousandSeparate)
 }
 

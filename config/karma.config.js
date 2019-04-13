@@ -13,21 +13,20 @@ module.exports = function(config) {
 			.map(v => `../src/**/${v}.spec.ts`)
 			.concat(['../src/index.ts']),
 		preprocessors: {
-			'../src/**/*.ts': ['rollup', 'transformPath']
+			'../src/**/*.ts': ['rollup']
 		},
-		rollupPreprocessor: rollupConfig({
-			plugins: [json()],
-			progress: false,
-			//treeshake: false,
-			sourcemap: 'inline',
-			output: {
-				name: 'argilo',
-				format: 'umd',
-				file: false
-			}
-		}),
-		transformPathPreprocessor: {
-			transformer(filepath) {
+		rollupPreprocessor: {
+			options: rollupConfig({
+				plugins: [json()],
+				//progress: false,
+				sourcemap: 'inline',
+				output: {
+					name: 'argilo',
+					format: 'umd',
+					file: false
+				}
+			}),
+			transformPath(filepath) {
 				return filepath.replace(/\.ts$/, '.js')
 			}
 		},
@@ -62,10 +61,6 @@ module.exports = function(config) {
 				ui: 'bdd'
 			}
 		},
-		plugins: Object.keys(pkg.devDependencies)
-			.filter(name => {
-				return /^karma-/.test(name)
-			})
-			.map(name => require(name))
+		plugins: ['karma-*']
 	})
 }

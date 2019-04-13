@@ -2,7 +2,7 @@
  * @module observer
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Thu Apr 04 2019 20:42:20 GMT+0800 (China Standard Time)
- * @modified Mon Apr 08 2019 13:31:48 GMT+0800 (China Standard Time)
+ * @modified Fri Apr 12 2019 14:48:43 GMT+0800 (China Standard Time)
  */
 
 import { ARRAY_LENGTH, ARRAY_CHANGE, IObserver, OBSERVER_KEY } from './IObserver'
@@ -20,7 +20,8 @@ const arrayHookCfg: {
 	splice(ob: IObserver<any[]>, args: IArguments) {
 		const { target, proxy } = ob
 		const start = args[0],
-			d = args.length - 2 - args[1]
+			d = args.length - 2 - args[1],
+			end = start + args[1]
 		ob.notifies(null, prop =>
 			prop === ARRAY_CHANGE
 				? proxy
@@ -28,7 +29,7 @@ const arrayHookCfg: {
 				? d
 					? target[prop]
 					: SKIP
-				: prop > start && (d || prop < start + args[1])
+				: prop >= start && (d || prop < end)
 				? target[prop]
 				: SKIP
 		)
