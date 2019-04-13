@@ -5,9 +5,6 @@ node_js:
 sudo: required
 addons:
   chrome: stable
-before_script:
-  - 'sudo chown root /opt/google/chrome/chrome-sandbox'
-  - 'sudo chmod 4755 /opt/google/chrome/chrome-sandbox'
 cache: npm
 before_install:
   - npm install -g codecov
@@ -19,5 +16,5 @@ script:
   - npm run dts
   - npm run compile
   - npm run unit:node
-  - npm run unit:browser -- --browsers ChromeHeadless,IE --single-run
+  - npm run unit:browser -- --browsers IE9 --single-run
   - cat coverage/*/lcov.info | codecov
