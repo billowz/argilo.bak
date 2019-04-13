@@ -1,22 +1,22 @@
 language: node_js
 node_js:
-    - '8'
+  - '8'
 sudo: required
 addons:
-    chrome: stable
+  chrome: stable
 before_script:
-    - 'sudo chown root /opt/google/chrome/chrome-sandbox'
-	- 'sudo chmod 4755 /opt/google/chrome/chrome-sandbox'
+  - 'sudo chown root /opt/google/chrome/chrome-sandbox'
+  - 'sudo chmod 4755 /opt/google/chrome/chrome-sandbox'
 cache: npm
 before_install:
-	- npm install -g codecov
+  - npm install -g codecov
 install:
-	- npm install
+  - npm install
 script:
-    - npm run lint
-    - npm run check
-    - npm run dts
-    - npm run compile
-    - npm run unit:node
-	- npm run unit:browser
-	- cat coverage/*/lcov.info | codecov
+  - npm run lint
+  - npm run check
+  - npm run dts
+  - npm run compile
+  - npm run unit:node
+  - npm run unit:browser
+  - cat coverage/*/lcov.info | codecov
