@@ -8,6 +8,7 @@ init:
   
 environment:
   nodejs_version: '10'
+  ci: 'appveyor'
 
 install:
   - ps: Install-Product node $env:nodejs_version
@@ -20,6 +21,8 @@ test_script:
   - node --version
   - npm --version
   - npm run unit:node
-  - npm run unit:browser -- --browsers IE9,Chrome --single-run
+  - npm run unit:browser -- --browsers IE,Chrome --single-run
 
-build: off
+after_test:
+  - cat coverage/*/lcov.info | codecov
+
