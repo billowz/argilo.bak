@@ -9,7 +9,7 @@
 
 # Argilo
 
-[![Build](https://api.travis-ci.org/tao-zeng/argilo.svg?branch=ts)](https://travis-ci.org/tao-zeng/argilo)
+[![Build](https://ci.appveyor.com/api/projects/status/github/tao-zeng/argilo?branch=ts&svg=true)](https://ci.appveyor.com/project/tao-zeng/argilo/branch/ts)
 [![codecov.io](https://codecov.io/github/tao-zeng/argilo/coverage.svg?branch=ts)](https://codecov.io/github/tao-zeng/argilo?branch=ts)
 [![Version](https://img.shields.io/npm/v/argilo.svg)](https://npmjs.org/package/argilo)
 [![License](https://img.shields.io/npm/l/argilo.svg)](https://npmjs.org/package/argilo)
