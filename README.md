@@ -10,11 +10,11 @@
 # Argilo
 
 [![Build](https://ci.appveyor.com/api/projects/status/github/tao-zeng/argilo?branch=ts&svg=true)](https://ci.appveyor.com/project/tao-zeng/argilo/branch/ts)
-[![codecov.io](https://codecov.io/github/tao-zeng/argilo/coverage.svg?branch=ts)](https://codecov.io/github/tao-zeng/argilo?branch=ts)
+[![codecov.io](https://codecov.io/github/tao-zeng/argilo/coverage.svg?branch=ts)](https://codecov.io/github/tao-zeng/argilo/branch/ts)
 [![Version](https://img.shields.io/npm/v/argilo.svg)](https://npmjs.org/package/argilo)
 [![License](https://img.shields.io/npm/l/argilo.svg)](https://npmjs.org/package/argilo)
 [![Downloads](https://img.shields.io/npm/dt/argilo.svg)](https://npmjs.org/package/argilo)
-[![Sauce Test Status](https://saucelabs.com/browser-matrix/tpl_js.svg)](https://saucelabs.com/u/tpl_js)
+[![Sauce Test Status](https://saucelabs.com/browser-matrix/argilo.svg)](https://saucelabs.com/u/argilo)
 
 ## License
 
