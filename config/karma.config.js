@@ -2,6 +2,7 @@ const json = require('rollup-plugin-json'),
 	rollupConfig = require('./rollupConfig'),
 	pkg = require('../package.json')
 
+const ci = process.env.ci
 module.exports = function(config) {
 	config.set({
 		browsers: ['Chrome'],
@@ -18,8 +19,8 @@ module.exports = function(config) {
 		rollupPreprocessor: {
 			options: rollupConfig({
 				plugins: [json()],
-				//progress: false,
-				sourcemap: 'inline',
+				progress: !ci,
+				sourcemap: !ci && 'inline',
 				output: {
 					name: 'argilo',
 					format: 'umd',
@@ -35,11 +36,12 @@ module.exports = function(config) {
 			reporters: [
 				{
 					type: 'lcov'
-				},
+				}
+			].concat(ci ? [] : [
 				{
 					type: 'text'
 				}
-			]
+			])
 		},
 		customLaunchers: {
 			IE9: {
@@ -51,6 +53,7 @@ module.exports = function(config) {
 				'x-ua-compatible': 'IE=EmulateIE8'
 			}
 		},
+		singleRun: !!ci,
 		concurrency: Infinity,
 		colors: true,
 		client: {
