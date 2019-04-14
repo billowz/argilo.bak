@@ -22,7 +22,7 @@ test_script:
   - node --version
   - npm --version
   - npm run unit:node
-  - npm run unit:browser -- --browsers IE,Chrome --single-run
+  - npm run unit:browser -- --browsers IE8,IE9,Chrome --single-run
 
 after_test:
   - cat coverage/*/lcov.info | codecov
