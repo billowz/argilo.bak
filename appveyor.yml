@@ -1,8 +1,10 @@
-version: "{build}"
+version: "v1 - {build}"
+image: Visual Studio 2015
 init:
   - appveyor version
-  - echo "worker cloud is $env:APPVEYOR_BUILD_WORKER_CLOUD"
-  - echo "worker image is $env:APPVEYOR_BUILD_WORKER_IMAGE"
+  - echo worker cloud is $env:APPVEYOR_BUILD_WORKER_CLOUD
+  - echo worker image is $env:APPVEYOR_BUILD_WORKER_IMAGE
+  - git config --global core.autocrlf input
   
 environment:
   nodejs_version: '10'
