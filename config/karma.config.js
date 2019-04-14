@@ -9,10 +9,21 @@ module.exports = function(config) {
 		transports: ['websocket', 'polling', 'jsonp-polling'],
 		frameworks: ['mocha'],
 		reporters: ['spec', 'coverage'],
-		files: (process.env.specs || '*')
-			.split(',')
-			.map(v => `../src/**/${v}.spec.ts`)
-			.concat(['../src/index.ts']),
+		files: [
+			{
+				pattern: '../node_modules/json3/lib/json3.min.js',
+				watched: false
+			},
+			{
+				pattern: '../node_modules/console-polyfill/index.js',
+				watched: false
+			},
+			'../src/index.ts'
+		].concat(
+			(process.env.specs || '*')
+			    .split(',')
+			    .map(v => `../src/**/${v}.spec.ts`)
+		),
 		preprocessors: {
 			'../src/**/*.ts': ['rollup']
 		},
