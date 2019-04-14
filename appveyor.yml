@@ -2,8 +2,8 @@ version: "v1 - {build}"
 image: Visual Studio 2015
 init:
   - appveyor version
-  - ps: echo worker cloud is $env:APPVEYOR_BUILD_WORKER_CLOUD
-  - ps: echo worker image is $env:APPVEYOR_BUILD_WORKER_IMAGE
+  - ps: echo $env:APPVEYOR_BUILD_WORKER_CLOUD
+  - ps: echo $env:APPVEYOR_BUILD_WORKER_IMAGE
   - git config --global core.autocrlf input
   
 environment:
