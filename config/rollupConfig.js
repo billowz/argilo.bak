@@ -8,6 +8,7 @@ const path = require('path'),
 	visualizer = require('rollup-plugin-visualizer'),
 	progress = require('rollup-plugin-progress')
 
+const ci = process.env.ci
 const configOptions = mkMap(
 		'target,debug,compact,strict,sourcemap,sourceRoot,outDir,extensions,banner,footer,babel,progress,codeAnalysis'
 	),
@@ -126,7 +127,7 @@ function mkConfig(config) {
 				extensions
 			}),
 			//jscc({ values: { _TARGET: target, _DEBUG: debug } }),
-			config.progress !== false && progress()
+			!ci && config.progress !== false && progress()
 		]
 			.concat(rollup.plugins || [])
 			.concat([
@@ -159,7 +160,7 @@ function mkConfig(config) {
 							}
 						)
 					),
-				codeAnalysis &&
+				!ci && codeAnalysis &&
 					visualizer({
 						filename:
 							typeof codeAnalysis === 'string'
