@@ -1,8 +1,8 @@
 version: "{build}"
 init:
   - appveyor version
-  - sh: echo "worker cloud is $APPVEYOR_BUILD_WORKER_CLOUD"
-  - sh: echo "worker image is $APPVEYOR_BUILD_WORKER_IMAGE"
+  - echo "worker cloud is $env:APPVEYOR_BUILD_WORKER_CLOUD"
+  - echo "worker image is $env:APPVEYOR_BUILD_WORKER_IMAGE"
   
 environment:
   nodejs_version: '10'
