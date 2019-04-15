@@ -65,6 +65,11 @@ module.exports = function(config) {
 				base: 'IE',
 				displayName: 'IE8',
 				'x-ua-compatible': 'IE=EmulateIE8'
+			},
+			IE8: {
+				base: 'IE',
+				displayName: 'IE7',
+				'x-ua-compatible': 'IE=EmulateIE7'
 			}
 		},
 		singleRun: !!ci,
