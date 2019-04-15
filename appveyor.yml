@@ -33,7 +33,7 @@ install:
   - ps: Install-Product node $env:nodejs_version
   - node --version
   - npm --version
-  - npm install -g coveralls
+  - npm install -g codecov
   - npm install
 
 build_script:
@@ -44,7 +44,7 @@ test_script:
   - npm run unit:browser -- --browsers IE8,IE9,Chrome --single-run
 
 after_test:
-  - cat coverage/*/lcov.info | coveralls
+  - cat coverage/*/lcov.info | codecov
 
 deploy_script:
   - ps: '"//registry.npmjs.org/:_authToken=$env:npm_auth_token`n" | out-file "$env:userprofile\.npmrc" -Encoding ASCII'
