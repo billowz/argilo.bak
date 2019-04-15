@@ -4,8 +4,10 @@ image: Visual Studio 2015
 environment:
   ci: 'appveyor'
   nodejs_version: '10'
-  npm_auth_token: ''
-
+  npm_auth_token:
+    secure: zTogpCh9AtlTR+osabCb9UMXMtIT8qTE0Rvay78bTORSysIVo5Ev+y6oOsHdDSO9
+  github_auth_token:
+    secure: wMVG1uvMB8qswngCrsL0eg6E/7HEaCjbAmXFM26V+sVO1OnP1/mgMu6kGX2uCWm0
 cache:
   - node_modules -> package.json
   - '%APPDATA%\npm-cache'
@@ -47,5 +49,5 @@ after_test:
   - cat coverage/*/lcov.info | codecov
 
 deploy_script:
-  - ps: '"//registry.npmjs.org/:_authToken=$env:npm_auth_token`n" | out-file "$env:userprofile\.npmrc" -Encoding ASCII'
+  - ps: '"//registry.npmjs.org/:_authToken=$env:npm_auth_token`n" | out-file "$env:userprofile\.npmrc" -Encoding ascii'
   - npm whoami
