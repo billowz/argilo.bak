@@ -1,22 +1,24 @@
 os: windows
-language: node_js
-node_js:
-  - '8'
 sudo: required
+
+language: node_js
+
+node_js:
+  - '10'
+
 addons:
   chrome: stable
-before_script:
-  - git config --global core.autocrlf input
-cache: npm
-before_install:
-  - npm install -g codecov
+
+env:
+  - ci=travis
+
+cache: node_modules
+
 install:
+  - npm install -g codecov
   - npm install
+
 script:
-  - npm run lint
-  - npm run check
-  - npm run dts
-  - npm run compile
+  - npm run build
   - npm run unit:node
-  - npm run unit:browser -- --browsers IE9 --single-run
   - cat coverage/*/lcov.info | codecov

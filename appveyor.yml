@@ -1,29 +1,55 @@
 version: "v1 - {build}"
 image: Visual Studio 2015
+
+environment:
+  ci: 'appveyor'
+  nodejs_version: '10'
+  npm_auth_token: ''
+
+cache:
+  - node_modules -> package.json
+  - '%APPDATA%\npm-cache'
+
+only_commits:
+  files:
+    - config/
+    - src/
+    - types/
+    - .babelrc
+    - .nycrc
+    - tsconfig.json
+    - rollup.config.js
+    - mocha.opts
+    - tslint.json
+    - package.json
+    - appveyor.yml
+
 init:
   - appveyor version
-  - ps: echo $env:APPVEYOR_BUILD_WORKER_CLOUD
-  - ps: echo $env:APPVEYOR_BUILD_WORKER_IMAGE
+  - echo %APPVEYOR_BUILD_WORKER_IMAGE%
   - git config --global core.autocrlf input
-  
-environment:
-  nodejs_version: '10'
-  ci: 'appveyor'
 
 install:
   - ps: Install-Product node $env:nodejs_version
-  - npm install -g codecov
+  - node --version
+  - npm --version
+  - npm install -g coveralls
   - npm install
 
 build_script:
   - npm run build
-  
+
 test_script:
-  - node --version
-  - npm --version
   - npm run unit:node
   - npm run unit:browser -- --browsers IE8,IE9,Chrome --single-run
 
 after_test:
-  - cat coverage/*/lcov.info | codecov
+  - cat coverage/*/lcov.info | coveralls
 
+deploy_script:
+
+  - ps: "//registry.npmjs.org/:_authToken=$env:npm_auth_token`n" | out-file "$env:userprofile\.npmrc" -Encoding ASCII
+  - npm publish
+    on:
+      branch: ts
+      appveyor_repo_tag: true
