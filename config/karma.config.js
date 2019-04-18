@@ -49,11 +49,7 @@ module.exports = function(config) {
 				{
 					type: 'lcov'
 				}
-			].concat(ci ? [] : [
-				{
-					type: 'text'
-				}
-			])
+			]
 		},
 		customLaunchers: {
 			IE9: {

@@ -2,7 +2,7 @@
  * @module observer
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Wed Dec 26 2018 13:59:10 GMT+0800 (China Standard Time)
- * @modified Wed Apr 10 2019 13:51:37 GMT+0800 (China Standard Time)
+ * @modified Mon Apr 15 2019 19:33:15 GMT+0800 (China Standard Time)
  */
 
 import { ObserverTarget, IWatcher, OBSERVER_KEY, IObserver, ARRAY_CHANGE, ObserverCallback } from './IObserver'

@@ -2,7 +2,7 @@
  * @module observer
  * @author Tao Zeng <tao.zeng.zt@qq.com>
  * @created Thu Apr 04 2019 20:42:20 GMT+0800 (China Standard Time)
- * @modified Fri Apr 12 2019 14:48:43 GMT+0800 (China Standard Time)
+ * @modified Mon Apr 15 2019 16:30:29 GMT+0800 (China Standard Time)
  */
 
 import { ARRAY_LENGTH, ARRAY_CHANGE, IObserver, OBSERVER_KEY } from './IObserver'
@@ -32,6 +32,14 @@ const arrayHookCfg: {
 				: prop >= start && (d || prop < end)
 				? target[prop]
 				: SKIP
+		)
+	},
+	copyWithin(ob: IObserver<any[]>, args: IArguments) {
+		const { target, proxy } = ob
+		const start = args[1],
+			end = args[2]
+		ob.notifies(null, prop =>
+			prop === ARRAY_CHANGE ? proxy : prop !== ARRAY_LENGTH && (prop >= start && prop < end) ? target[prop] : SKIP
 		)
 	},
 	shift: [],
